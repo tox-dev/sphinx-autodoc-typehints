@@ -56,6 +56,10 @@ def process_docstring(app, what, name, obj, options, lines):
         if what == 'class':
             obj = getattr(obj, '__init__')
 
+        # Unwrap until we get to the original definition
+        while hasattr(obj, '__wrapped__'):
+            obj = obj.__wrapped__
+
         try:
             type_hints = get_type_hints(obj)
         except AttributeError:
