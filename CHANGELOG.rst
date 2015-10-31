@@ -1,3 +1,9 @@
+1.0.2
+=====
+
+* Fixed exception classes not being processed like normal classes
+
+
 1.0.1
 =====
 
