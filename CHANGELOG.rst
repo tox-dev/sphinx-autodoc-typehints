@@ -1,3 +1,10 @@
+1.0.3
+=====
+
+* Fixed "self" parameter not being removed from exception class constructor signatures
+* Fixed process_signature() erroneously removing the first argument of a static method
+
+
 1.0.2
 =====
 

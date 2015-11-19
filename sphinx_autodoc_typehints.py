@@ -45,9 +45,8 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
         except TypeError:
             return
 
-        if what in ('method', 'class'):
-            if argspec.args:
-                del argspec.args[0]
+        if what in ('method', 'class', 'exception') and argspec.args:
+            del argspec.args[0]
 
         return formatargspec(*argspec[:-1]), None
 
