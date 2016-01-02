@@ -36,7 +36,7 @@ setup(
         'Sphinx >= 1.1'
     ],
     extras_require={
-        ':python_version == "3.3"': 'typing >= 3.5.0b1',
-        ':python_version == "3.4"': 'typing >= 3.5.0b1'
+        ':python_version == "3.3"': 'typing >= 3.5',
+        ':python_version == "3.4"': 'typing >= 3.5'
     }
 )
