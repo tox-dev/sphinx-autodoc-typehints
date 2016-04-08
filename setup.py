@@ -16,6 +16,7 @@ setup(
     url='https://github.com/agronholm/sphinx-autodoc-typehints',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
+        'Framework :: Sphinx :: Extension',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Framework :: Sphinx :: Extension',
