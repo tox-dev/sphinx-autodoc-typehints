@@ -48,7 +48,7 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
         if what in ('method', 'class', 'exception') and argspec.args:
             del argspec.args[0]
 
-        return formatargspec(*argspec[:-1]), None
+        return formatargspec(obj, *argspec[:-1]), None
 
 
 def process_docstring(app, what, name, obj, options, lines):

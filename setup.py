@@ -34,7 +34,7 @@ setup(
         'setuptools_scm >= 1.7.0'
     ],
     install_requires=[
-        'Sphinx >= 1.1'
+        'Sphinx >= 1.4'
     ],
     extras_require={
         ':python_version == "3.3"': 'typing >= 3.5',

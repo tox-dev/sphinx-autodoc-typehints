@@ -1,3 +1,9 @@
+1.0.4
+=====
+
+* Fixed compatibility with Sphinx 1.4
+
+
 1.0.3
 =====
 
