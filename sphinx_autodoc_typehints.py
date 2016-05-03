@@ -36,7 +36,7 @@ def format_annotation(annotation):
 
 
 def process_signature(app, what: str, name: str, obj, options, signature, return_annotation):
-    if what in ('function', 'method', 'class', 'exception'):
+    if callable(obj):
         if what in ('class', 'exception'):
             obj = getattr(obj, '__init__')
 
@@ -52,7 +52,7 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
 
 
 def process_docstring(app, what, name, obj, options, lines):
-    if what in ('function', 'method', 'class', 'exception'):
+    if callable(obj):
         if what in ('class', 'exception'):
             obj = getattr(obj, '__init__')
 

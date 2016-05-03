@@ -1,3 +1,9 @@
+1.0.5
+=====
+
+* Fixed coroutine functions' signatures not being processed when using sphinxcontrib-asyncio
+
+
 1.0.4
 =====
 
