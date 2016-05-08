@@ -74,11 +74,9 @@ def process_docstring(app, what, name, obj, options, lines):
                     if line.startswith(':rtype:'):
                         insert_index = None
                         break
-                    elif line.startswith(':return:'):
+                    elif line.startswith(':return:') or line.startswith(':returns:'):
                         insert_index = i
                         break
-                    elif line.startswith(':param '):
-                        insert_index = i + 1
 
                 if insert_index is not None:
                     lines.insert(insert_index, ':rtype: {}'.format(formatted_annotation))

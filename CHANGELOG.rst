@@ -1,3 +1,9 @@
+1.0.6
+=====
+
+* Fixed wrong placement of ``:rtype:`` if a multi-line ``:param:`` or a ``:returns:`` is used
+
+
 1.0.5
 =====
 
