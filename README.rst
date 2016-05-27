@@ -33,6 +33,10 @@ to this:
         return '{} {}'.format(value, unit)
 
 
+There is also support for google docstrings or numpy docstrings with help of the napoleon
+`napoleon sphinx extention http://sphinxcontrib-napoleon.readthedocs.io/en/latest/`_.
+
+
 Installation and setup
 ----------------------
 
