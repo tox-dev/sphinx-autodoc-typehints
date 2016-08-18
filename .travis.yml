@@ -1,0 +1,19 @@
+sudo: false
+
+language: python
+
+python: '3.5'
+
+install: pip install flake8
+
+script: flake8 sphinx_autodoc_typehints.py
+
+deploy:
+  provider: pypi
+  user: agronholm
+  password:
+    secure: F9vRPdOg4S0sbn05FzYdYXKItWzEBoC2BOhtmwamkQclF/V1ir9uG/ZmkXbS3tWbSda+hhq69iSn3mFnK5QecJKgbpY1L/5UCThgnVTWFQkeI9obqGtgFNu4EzUdkD/fxtVQN8hYYKGYMHnFqVCEJEdgfLaxPBuoLcW3peSbz+7DUPv376xrRUd0WSHKzQGQBJuyMDmKOLSbQmapHWvN3phlwUN6fskq9/ikwMttsJVnvX2e6z3scXkVsQX1Hdq3LuBWU/kBOTveOCMVDzfTATbLSc0N+HqJuY4xMFTnH8dvlIPLnps24JGX7UHaB1LY/wMJg/jIG/haL4m6WFtmEn6dh2x/7pZZbIR7Gsp7vSqQSF+lO+AMgZja7TO0dT87Rsx7H38gz0wtqPvnimJbYR7UX/tRJr9c/uK+qGzxczKmsNvCQCPQ4OZ4nuvYai0YtcwFTBido9bnl50Sw/BTTdTIuB+cUmPF9/4qbCgK5zlZBVvVO89nxD88bcOep3+1Zs+dID1H6ZlKborrMkfvwPmaV75K3qAM8vxvB7ah7jVFpUINBsTPahBin62Fx79SravEO0RAh2wY4MvlINYZ38azUfACnODvhHisXDcLzXL7lK9C/WTujSK3Y3l4fs6RWS0mLAc9Hl5syBEhmCVz7mmkYle050XCn32I+jYBSls=
+  on:
+    tags: true
+    distributions: sdist bdist_wheel
+    repo: agronholm/sphinx-autodoc-typehints
