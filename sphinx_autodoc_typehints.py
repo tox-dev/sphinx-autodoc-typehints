@@ -40,9 +40,6 @@ def format_annotation(annotation):
 
 
 def process_signature(app, what: str, name: str, obj, options, signature, return_annotation):
-    if isinstance(obj, property):
-        obj = obj.fget
-
     if callable(obj):
         if what in ('class', 'exception'):
             obj = getattr(obj, '__init__')
