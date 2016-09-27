@@ -18,7 +18,6 @@ def format_annotation(annotation):
                 return ':class:`{}`'.format(annotation.__qualname__)
 
         extra = ''
-        ellipsis = False
         if annotation.__module__ in ('typing', 'backports.typing'):
             if annotation.__qualname__ == 'Union':
                 params = annotation.__union_params__
@@ -27,20 +26,17 @@ def format_annotation(annotation):
                     params = (params[0],)
             elif annotation.__qualname__ == 'Tuple':
                 params = annotation.__tuple_params__
-                ellipsis = annotation.__tuple_use_ellipsis__
+                if annotation.__tuple_use_ellipsis__:
+                    params += ('...',)
             else:
                 params = getattr(annotation, '__parameters__', None)
                 if not params:
                     params = getattr(annotation, '__args__', None)
                 if params is Ellipsis:
-                    ellipsis = True
-                    params = []
+                    params = ('...',)
 
-            if params or ellipsis:
-                formatted_params = list(format_annotation(param) for param in (params or []))
-                if ellipsis:
-                    formatted_params.append('...')
-                extra = '\\[' + ', '.join(formatted_params) + ']'
+            if params:
+                extra = '\\[' + ', '.join(format_annotation(param) for param in params) + ']'
 
         return ':class:`~{}.{}`{}'.format(annotation.__module__, annotation.__qualname__, extra)
 

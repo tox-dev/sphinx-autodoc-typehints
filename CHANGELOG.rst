@@ -1,3 +1,9 @@
+1.1.0
+=====
+
+* Added proper support for ``typing.Tuple`` (pull request by Manuel Krebber)
+
+
 1.0.6
 =====
 
