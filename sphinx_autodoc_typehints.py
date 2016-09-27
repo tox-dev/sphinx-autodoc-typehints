@@ -30,9 +30,14 @@ def format_annotation(annotation):
                 ellipsis = annotation.__tuple_use_ellipsis__
             else:
                 params = getattr(annotation, '__parameters__', None)
+                if not params:
+                    params = getattr(annotation, '__args__', None)
+                if params is Ellipsis:
+                    ellipsis = True
+                    params = []
 
-            if params:
-                formatted_params = list(format_annotation(param) for param in params)
+            if params or ellipsis:
+                formatted_params = list(format_annotation(param) for param in (params or []))
                 if ellipsis:
                     formatted_params.append('...')
                 extra = '\\[' + ', '.join(formatted_params) + ']'
@@ -76,6 +81,8 @@ def process_docstring(app, what, name, obj, options, lines):
             formatted_annotation = format_annotation(annotation)
 
             if argname == 'return':
+                if what in ('class', 'exception'):
+                    continue # Don't add return type None from __init__
                 insert_index = len(lines)
                 for i, line in enumerate(lines):
                     if line.startswith(':rtype:'):
