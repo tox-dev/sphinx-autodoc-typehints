@@ -78,7 +78,7 @@ def process_docstring(app, what, name, obj, options, lines):
 
             if argname == 'return':
                 if what in ('class', 'exception'):
-                    continue # Don't add return type None from __init__
+                    continue  # Don't add return type None from __init__
                 insert_index = len(lines)
                 for i, line in enumerate(lines):
                     if line.startswith(':rtype:'):
