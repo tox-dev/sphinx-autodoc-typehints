@@ -18,19 +18,17 @@ except ImportError:
 
 def format_annotation(annotation, obj=None):
     if isinstance(annotation, type):
-        qname = sys.version_info[:2] >= (3, 3) and annotation.__qualname__ or annotation.__name__
-
         # builtin types don't need to be qualified with a module name
         if annotation.__module__ == 'builtins':
-            if qname == 'NoneType':
+            if annotation.__qualname__ == 'NoneType':
                 return '``None``'
             else:
-                return ':class:`%s`' % qname
+                return ':class:`%s`' % annotation.__qualname__
 
         params = None
 
         # Check first if we have an TypingMeta instance, because when mixing in another meta class,
-        # some informatiion might get lost.
+        # some information might get lost.
         # For example, a class inheriting from both tuple and Enum ends up not having the
         # TypingMeta metaclass and hence none of the Tuple typing information.
         if isinstance(annotation, TypingMeta):
@@ -66,7 +64,7 @@ def format_annotation(annotation, obj=None):
                     # Union[T,None]   => Optional[T]
                     # Union[T,U,None] => Optional[Union[T, U]]
                     if type(None) in (annotation.__union_set_params__ or tuple()):
-                        qname = 'Optional'
+                        annotation.__qualname__ = 'Optional'
                         params.remove(type(None))
                         if len(params) > 1:
                             params = [Union[tuple(params)]]
@@ -110,7 +108,7 @@ def format_annotation(annotation, obj=None):
                 return format_annotation(annotation.__type__, obj)
 
         generic = params and '\\[%s]' % ', '.join(format_annotation(p, obj) for p in params) or ''
-        return ':class:`~%s.%s`%s' % (annotation.__module__, qname, generic)
+        return ':class:`~%s.%s`%s' % (annotation.__module__, annotation.__qualname__, generic)
 
     # _TypeAlias is an internal class used for the Pattern/Match types
     # It represents an alias for another type, e.g. Pattern is an alias for any string type
