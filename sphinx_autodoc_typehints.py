@@ -1,5 +1,3 @@
-import sys
-
 from sphinx.util.inspect import getargspec
 from sphinx.ext.autodoc import formatargspec
 
@@ -9,11 +7,6 @@ try:
 except ImportError:
     from typing import (Any, Callable, Generic, GenericMeta, Tuple, TypeVar, TypingMeta,
                         Union, _ForwardRef, _TypeAlias, get_type_hints)
-
-try:
-    from typing import ClassVar
-except ImportError:
-    ClassVar = None
 
 
 def format_annotation(annotation, obj=None):
@@ -48,8 +41,6 @@ def format_annotation(annotation, obj=None):
                 # Tuples can have variable size with a fixed type, indicated by an Ellipsis:
                 # e.g. Tuple[T, ...]
                 if annotation.__tuple_use_ellipsis__:
-                    if params is None:
-                        params = []
                     params.append(Ellipsis)
             # Unions are not Generics, so handle their type parameters separately.
             elif issubclass(annotation, Union):
@@ -58,7 +49,7 @@ def format_annotation(annotation, obj=None):
                     # If the Union contains None, wrap it in an Optional, i.e.
                     # Union[T,None]   => Optional[T]
                     # Union[T,U,None] => Optional[Union[T, U]]
-                    if type(None) in (annotation.__union_set_params__ or tuple()):
+                    if type(None) in annotation.__union_set_params__:
                         annotation.__qualname__ = 'Optional'
                         params.remove(type(None))
                         if len(params) > 1:
@@ -83,19 +74,14 @@ def format_annotation(annotation, obj=None):
             elif isinstance(annotation, _ForwardRef):
                 try:
                     try:
-                        global_vars = obj is not None and obj.__globals__
+                        global_vars = obj is not None and obj.__globals__ or dict()
                     except AttributeError:
-                        global_vars = None
+                        global_vars = dict()
                     # Evaluate the type annotation string and then format it
-                    # pylint: disable=eval-used
                     actual_type = eval(annotation.__forward_arg__, global_vars)
                     return format_annotation(actual_type, obj)
-                except SyntaxError:
+                except Exception:
                     return annotation.__forward_arg__
-            # ClassVar is just a wrapper for another type to indicate it
-            # annotates a class variable.
-            elif ClassVar and issubclass(annotation, ClassVar):
-                return format_annotation(annotation.__type__, obj)
 
         generic = params and '\\[%s]' % ', '.join(format_annotation(p, obj) for p in params) or ''
         return ':class:`~%s.%s`%s' % (annotation.__module__, annotation.__qualname__, generic)
