@@ -62,11 +62,11 @@ class C(Dict[T, int]):
     (Callable[[T], T],              ':class:`~typing.Callable`\\[\\[\\~T], \\~T]'),
     (Pattern,                       ':class:`~typing.Pattern`\\[\\~AnyStr]'),
     (Pattern[str],                  ':class:`~typing.Pattern`\\[:class:`str`]'),
-    (A,                             ':class:`~test.A`'),
-    (B,                             ':class:`~test.B`\\[\\~T]'),
-    (C,                             ':class:`~test.C`\\[\\~T]'),
+    (A,                             ':class:`~%s.A`' % __name__),
+    (B,                             ':class:`~%s.B`\\[\\~T]' % __name__),
+    (C,                             ':class:`~%s.C`\\[\\~T]' % __name__),
     (Type,                          ':class:`~typing.Type`\\[\\+CT]'),
-    (Type[A],                       ':class:`~typing.Type`\\[:class:`~test.A`]'),
+    (Type[A],                       ':class:`~typing.Type`\\[:class:`~%s.A`]' % __name__),
     (Type['A'],                     ':class:`~typing.Type`\\[A]'),
     (Type['str'],                   ':class:`~typing.Type`\\[:class:`str`]'),
 ])
@@ -77,7 +77,7 @@ def test_format_annotation(annotation, expected_result):
 
 def test_format_annotation_with_obj():
     result = format_annotation(Type['A'], A.get_type)
-    assert result == ':class:`~typing.Type`\\[:class:`~test.A`]'
+    assert result == ':class:`~typing.Type`\\[:class:`~%s.A`]' % __name__
 
     result = format_annotation(Type['A'], A)
     assert result == ':class:`~typing.Type`\\[A]'
