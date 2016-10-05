@@ -1,4 +1,3 @@
-import inspect
 import sys
 
 from sphinx.util.inspect import getargspec
@@ -16,7 +15,7 @@ try:
 except ImportError:
     ClassVar = None
 
-    
+
 def format_annotation(annotation, obj=None):
     if isinstance(annotation, type):
         qname = sys.version_info[:2] >= (3, 3) and annotation.__qualname__ or annotation.__name__
@@ -32,17 +31,17 @@ def format_annotation(annotation, obj=None):
 
         # Check first if we have an TypingMeta instance, because when mixing in another meta class,
         # some informatiion might get lost.
-        # For example, a class inheriting from both tuple and Enum ends up not having the TypingMeta
-        # metaclass and hence none of the Tuple typing information.
+        # For example, a class inheriting from both tuple and Enum ends up not having the
+        # TypingMeta metaclass and hence none of the Tuple typing information.
         if isinstance(annotation, TypingMeta):
             # Since Any is a superclass of everything, make sure it gets handled normally.
             if annotation is Any:
-                pass 
+                pass
 
             # Generic classes have type arguments
             elif isinstance(annotation, GenericMeta):
                 params = annotation.__args__
-                
+
                 # Make sure to format Generic[T, U, ...] correctly, because it only
                 # has parameters but nor argument values for them
                 if not params and issubclass(annotation, Generic):
@@ -52,7 +51,8 @@ def format_annotation(annotation, obj=None):
             elif issubclass(annotation, Tuple):
                 if annotation.__tuple_params__:
                     params = list(annotation.__tuple_params__)
-                # Tuples can have variable size with a fixed type, indicated by an Ellipsis: Tuple[T, ...].
+                # Tuples can have variable size with a fixed type, indicated by an Ellipsis:
+                # e.g. Tuple[T, ...]
                 if annotation.__tuple_use_ellipsis__:
                     if params is None:
                         params = []
@@ -65,7 +65,7 @@ def format_annotation(annotation, obj=None):
                     # If the Union contains None, wrap it in an Optional, i.e.
                     # Union[T,None]   => Optional[T]
                     # Union[T,U,None] => Optional[Union[T, U]]
-                    if annotation.__union_set_params__ and type(None) in annotation.__union_set_params__:
+                    if type(None) in (annotation.__union_set_params__ or tuple()):
                         qname = 'Optional'
                         params.remove(type(None))
                         if len(params) > 1:
@@ -73,17 +73,20 @@ def format_annotation(annotation, obj=None):
 
             # Callables are not Generics, so handle their type parameters separately.
             # They have the format Callable[arg_types, return_type].
-            # arg_types is either a list of types or an Ellipsis for Callables with variable arguments.
+            # arg_types is either a list of types or an Ellipsis for Callables with
+            # variable arguments.
             elif issubclass(annotation, Callable):
                 if annotation.__args__ is not None or annotation.__result__ is not None:
                     if annotation.__args__ is Ellipsis:
                         args_r = Ellipsis
                     else:
-                        args_r = '\\[%s]' % ', '.join(format_annotation(a, obj) for a in annotation.__args__)
+                        args_r = '\\[%s]' % ', '.join(format_annotation(a, obj)
+                                                      for a in annotation.__args__)
 
                     params = [args_r, annotation.__result__]
 
-            # Type variables are formatted with a prefix character (~, +, -) which has to be escaped.
+            # Type variables are formatted with a prefix character (~, +, -)
+            # which have to be escaped.
             elif isinstance(annotation, TypeVar):
                 return '\\' + repr(annotation)
 
@@ -95,22 +98,25 @@ def format_annotation(annotation, obj=None):
                     except AttributeError:
                         global_vars = None
                     # Evaluate the type annotation string and then format it
-                    actual_type = eval(annotation.__forward_arg__, global_vars) # pylint: disable=eval-used
+                    # pylint: disable=eval-used
+                    actual_type = eval(annotation.__forward_arg__, global_vars)
                     return format_annotation(actual_type, obj)
                 except SyntaxError:
                     return annotation.__forward_arg__
 
-            # ClassVar is just a wrapper for another type to indicate it annotates a class variable.
+            # ClassVar is just a wrapper for another type to indicate it
+            # annotates a class variable.
             elif ClassVar and issubclass(annotation, ClassVar):
                 return format_annotation(annotation.__type__, obj)
 
         generic = params and '\\[%s]' % ', '.join(format_annotation(p, obj) for p in params) or ''
         return ':class:`~%s.%s`%s' % (annotation.__module__, qname, generic)
-    
+
     # _TypeAlias is an internal class used for the Pattern/Match types
     # It represents an alias for another type, e.g. Pattern is an alias for any string type
     elif isinstance(annotation, _TypeAlias):
-        return ':class:`~typing.%s`\\[%s]' % (annotation.name, format_annotation(annotation.type_var, obj))
+        actual_type = format_annotation(annotation.type_var, obj)
+        return ':class:`~typing.%s`\\[%s]' % (annotation.name, actual_type)
 
     # Ellipsis is used in Callable/Tuple
     elif annotation is Ellipsis:
