@@ -26,7 +26,6 @@ def format_annotation(annotation, obj=None):
                 return ':class:`%s`' % annotation.__qualname__
 
         params = None
-
         # Check first if we have an TypingMeta instance, because when mixing in another meta class,
         # some information might get lost.
         # For example, a class inheriting from both tuple and Enum ends up not having the
@@ -35,16 +34,13 @@ def format_annotation(annotation, obj=None):
             # Since Any is a superclass of everything, make sure it gets handled normally.
             if annotation is Any:
                 pass
-
             # Generic classes have type arguments
             elif isinstance(annotation, GenericMeta):
                 params = annotation.__args__
-
                 # Make sure to format Generic[T, U, ...] correctly, because it only
                 # has parameters but nor argument values for them
                 if not params and issubclass(annotation, Generic):
                     params = annotation.__parameters__
-
             # Tuples are not Generics, so handle their type parameters separately.
             elif issubclass(annotation, Tuple):
                 if annotation.__tuple_params__:
@@ -55,7 +51,6 @@ def format_annotation(annotation, obj=None):
                     if params is None:
                         params = []
                     params.append(Ellipsis)
-
             # Unions are not Generics, so handle their type parameters separately.
             elif issubclass(annotation, Union):
                 if annotation.__union_params__:
@@ -68,7 +63,6 @@ def format_annotation(annotation, obj=None):
                         params.remove(type(None))
                         if len(params) > 1:
                             params = [Union[tuple(params)]]
-
             # Callables are not Generics, so handle their type parameters separately.
             # They have the format Callable[arg_types, return_type].
             # arg_types is either a list of types or an Ellipsis for Callables with
@@ -80,14 +74,11 @@ def format_annotation(annotation, obj=None):
                     else:
                         args_r = '\\[%s]' % ', '.join(format_annotation(a, obj)
                                                       for a in annotation.__args__)
-
                     params = [args_r, annotation.__result__]
-
             # Type variables are formatted with a prefix character (~, +, -)
             # which have to be escaped.
             elif isinstance(annotation, TypeVar):
                 return '\\' + repr(annotation)
-
             # Strings inside of type annotations are converted to _ForwardRef internally
             elif isinstance(annotation, _ForwardRef):
                 try:
@@ -101,7 +92,6 @@ def format_annotation(annotation, obj=None):
                     return format_annotation(actual_type, obj)
                 except SyntaxError:
                     return annotation.__forward_arg__
-
             # ClassVar is just a wrapper for another type to indicate it
             # annotates a class variable.
             elif ClassVar and issubclass(annotation, ClassVar):
@@ -109,13 +99,11 @@ def format_annotation(annotation, obj=None):
 
         generic = params and '\\[%s]' % ', '.join(format_annotation(p, obj) for p in params) or ''
         return ':class:`~%s.%s`%s' % (annotation.__module__, annotation.__qualname__, generic)
-
     # _TypeAlias is an internal class used for the Pattern/Match types
     # It represents an alias for another type, e.g. Pattern is an alias for any string type
     elif isinstance(annotation, _TypeAlias):
         actual_type = format_annotation(annotation.type_var, obj)
         return ':class:`~typing.%s`\\[%s]' % (annotation.name, actual_type)
-
     # Ellipsis is used in Callable/Tuple
     elif annotation is Ellipsis:
         return '...'
