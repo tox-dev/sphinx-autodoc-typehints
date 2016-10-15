@@ -2,6 +2,7 @@ from typing import (Any, Callable, Dict, Generic, Mapping, Optional, Pattern,
                     Tuple, Type, TypeVar, Union)
 
 import pytest
+
 from sphinx_autodoc_typehints import format_annotation
 
 T = TypeVar('T')
@@ -81,5 +82,3 @@ def test_format_annotation_with_obj():
 
     result = format_annotation(Type['A'], A)
     assert result == ':class:`~typing.Type`\\[A]'
-
-test_format_annotation_with_obj()

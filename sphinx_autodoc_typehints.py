@@ -1,12 +1,12 @@
-from sphinx.util.inspect import getargspec
-from sphinx.ext.autodoc import formatargspec
-
 try:
     from backports.typing import (Any, Callable, Generic, GenericMeta, Tuple, TypeVar, TypingMeta,
                                   Union, _ForwardRef, _TypeAlias, get_type_hints)
 except ImportError:
     from typing import (Any, Callable, Generic, GenericMeta, Tuple, TypeVar, TypingMeta,
                         Union, _ForwardRef, _TypeAlias, get_type_hints)
+
+from sphinx.ext.autodoc import formatargspec
+from sphinx.util.inspect import getargspec
 
 
 def format_annotation(annotation, obj=None):
