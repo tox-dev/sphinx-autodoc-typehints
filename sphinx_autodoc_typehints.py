@@ -8,6 +8,27 @@ try:
 except ImportError:
     from typing import Optional, get_type_hints
 
+try:
+    from inspect import unwrap
+except ImportError:
+    def unwrap(func, *, stop=None):
+        """This is the inspect.unwrap() method copied from Python 3.5's standard library."""
+        if stop is None:
+            def _is_wrapper(f):
+                return hasattr(f, '__wrapped__')
+        else:
+            def _is_wrapper(f):
+                return hasattr(f, '__wrapped__') and not stop(f)
+        f = func  # remember the original func for error reporting
+        memo = {id(f)} # Memoise by id to tolerate non-hashable objects
+        while _is_wrapper(func):
+            func = func.__wrapped__
+            id_func = id(func)
+            if id_func in memo:
+                raise ValueError('wrapper loop when unwrapping {!r}'.format(f))
+            memo.add(id_func)
+        return func
+
 
 def format_annotation(annotation):
     if inspect.isclass(annotation):
@@ -44,6 +65,7 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
         if what in ('class', 'exception'):
             obj = getattr(obj, '__init__')
 
+        obj = unwrap(obj)
         try:
             argspec = getargspec(obj)
         except TypeError:
@@ -60,10 +82,7 @@ def process_docstring(app, what, name, obj, options, lines):
         if what in ('class', 'exception'):
             obj = getattr(obj, '__init__')
 
-        # Unwrap until we get to the original definition
-        while hasattr(obj, '__wrapped__'):
-            obj = obj.__wrapped__
-
+        obj = unwrap(obj)
         try:
             type_hints = get_type_hints(obj)
         except AttributeError:
