@@ -20,7 +20,7 @@ except ImportError:
             def _is_wrapper(f):
                 return hasattr(f, '__wrapped__') and not stop(f)
         f = func  # remember the original func for error reporting
-        memo = {id(f)} # Memoise by id to tolerate non-hashable objects
+        memo = {id(f)}  # Memoise by id to tolerate non-hashable objects
         while _is_wrapper(func):
             func = func.__wrapped__
             id_func = id(func)
