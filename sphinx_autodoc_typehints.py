@@ -1,12 +1,12 @@
-import inspect
-
-from sphinx.util.inspect import getargspec
-from sphinx.ext.autodoc import formatargspec
-
 try:
-    from backports.typing import Optional, get_type_hints
+    from backports.typing import (Any, Callable, Generic, GenericMeta, Tuple, TypeVar, TypingMeta,
+                                  Union, _ForwardRef, _TypeAlias, get_type_hints)
 except ImportError:
-    from typing import Optional, get_type_hints
+    from typing import (Any, Callable, Generic, GenericMeta, Tuple, TypeVar, TypingMeta,
+                        Union, _ForwardRef, _TypeAlias, get_type_hints)
+
+from sphinx.ext.autodoc import formatargspec
+from sphinx.util.inspect import getargspec
 
 try:
     from inspect import unwrap
@@ -30,32 +30,90 @@ except ImportError:
         return func
 
 
-def format_annotation(annotation):
-    if inspect.isclass(annotation):
+def format_annotation(annotation, obj=None):
+    if isinstance(annotation, type):
+        # builtin types don't need to be qualified with a module name
         if annotation.__module__ == 'builtins':
             if annotation.__qualname__ == 'NoneType':
                 return '``None``'
             else:
-                return ':class:`{}`'.format(annotation.__qualname__)
+                return ':class:`%s`' % annotation.__qualname__
 
-        extra = ''
-        if annotation.__module__ in ('typing', 'backports.typing'):
-            if annotation.__qualname__ == 'Union':
-                params = annotation.__union_params__
-                if len(params) == 2 and params[1].__qualname__ == 'NoneType':
-                    annotation = Optional
-                    params = (params[0],)
-            elif annotation.__qualname__ == 'Tuple':
-                params = annotation.__tuple_params__
+        params = None
+        # Check first if we have an TypingMeta instance, because when mixing in another meta class,
+        # some information might get lost.
+        # For example, a class inheriting from both tuple and Enum ends up not having the
+        # TypingMeta metaclass and hence none of the Tuple typing information.
+        if isinstance(annotation, TypingMeta):
+            # Since Any is a superclass of everything, make sure it gets handled normally.
+            if annotation is Any:
+                pass
+            # Generic classes have type arguments
+            elif isinstance(annotation, GenericMeta):
+                params = annotation.__args__
+                # Make sure to format Generic[T, U, ...] correctly, because it only
+                # has parameters but nor argument values for them
+                if not params and issubclass(annotation, Generic):
+                    params = annotation.__parameters__
+            # Tuples are not Generics, so handle their type parameters separately.
+            elif issubclass(annotation, Tuple):
+                if annotation.__tuple_params__:
+                    params = list(annotation.__tuple_params__)
+                # Tuples can have variable size with a fixed type, indicated by an Ellipsis:
+                # e.g. Tuple[T, ...]
                 if annotation.__tuple_use_ellipsis__:
-                    params += ('...',)
-            else:
-                params = getattr(annotation, '__parameters__', None)
+                    params.append(Ellipsis)
+            # Unions are not Generics, so handle their type parameters separately.
+            elif issubclass(annotation, Union):
+                if annotation.__union_params__:
+                    params = list(annotation.__union_params__)
+                    # If the Union contains None, wrap it in an Optional, i.e.
+                    # Union[T,None]   => Optional[T]
+                    # Union[T,U,None] => Optional[Union[T, U]]
+                    if type(None) in annotation.__union_set_params__:
+                        annotation.__qualname__ = 'Optional'
+                        params.remove(type(None))
+                        if len(params) > 1:
+                            params = [Union[tuple(params)]]
+            # Callables are not Generics, so handle their type parameters separately.
+            # They have the format Callable[arg_types, return_type].
+            # arg_types is either a list of types or an Ellipsis for Callables with
+            # variable arguments.
+            elif issubclass(annotation, Callable):
+                if annotation.__args__ is not None or annotation.__result__ is not None:
+                    if annotation.__args__ is Ellipsis:
+                        args_r = Ellipsis
+                    else:
+                        args_r = '\\[%s]' % ', '.join(format_annotation(a, obj)
+                                                      for a in annotation.__args__)
+                    params = [args_r, annotation.__result__]
+            # Type variables are formatted with a prefix character (~, +, -)
+            # which have to be escaped.
+            elif isinstance(annotation, TypeVar):
+                return '\\' + repr(annotation)
+            # Strings inside of type annotations are converted to _ForwardRef internally
+            elif isinstance(annotation, _ForwardRef):
+                try:
+                    try:
+                        global_vars = obj is not None and obj.__globals__ or dict()
+                    except AttributeError:
+                        global_vars = dict()
+                    # Evaluate the type annotation string and then format it
+                    actual_type = eval(annotation.__forward_arg__, global_vars)
+                    return format_annotation(actual_type, obj)
+                except Exception:
+                    return annotation.__forward_arg__
 
-            if params:
-                extra = '\\[' + ', '.join(format_annotation(param) for param in params) + ']'
-
-        return ':class:`~{}.{}`{}'.format(annotation.__module__, annotation.__qualname__, extra)
+        generic = params and '\\[%s]' % ', '.join(format_annotation(p, obj) for p in params) or ''
+        return ':class:`~%s.%s`%s' % (annotation.__module__, annotation.__qualname__, generic)
+    # _TypeAlias is an internal class used for the Pattern/Match types
+    # It represents an alias for another type, e.g. Pattern is an alias for any string type
+    elif isinstance(annotation, _TypeAlias):
+        actual_type = format_annotation(annotation.type_var, obj)
+        return ':class:`~typing.%s`\\[%s]' % (annotation.name, actual_type)
+    # Ellipsis is used in Callable/Tuple
+    elif annotation is Ellipsis:
+        return '...'
 
     return str(annotation)
 
@@ -89,7 +147,7 @@ def process_docstring(app, what, name, obj, options, lines):
             return
 
         for argname, annotation in type_hints.items():
-            formatted_annotation = format_annotation(annotation)
+            formatted_annotation = format_annotation(annotation, obj)
 
             if argname == 'return':
                 insert_index = len(lines)
