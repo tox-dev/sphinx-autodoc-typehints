@@ -1,7 +1,10 @@
+# coding=utf-8
+""" Extend typing"""
+
 import inspect
 
-from sphinx.util.inspect import getargspec
 from sphinx.ext.autodoc import formatargspec
+from sphinx.util.inspect import getargspec
 
 try:
     from backports.typing import get_type_hints, TypeVar, Any, AnyStr, GenericMeta

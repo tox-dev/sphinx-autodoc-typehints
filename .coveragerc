@@ -1,0 +1,6 @@
+[html]
+directory = build/coverage
+[run]
+data_file = build/.coverage
+source = .
+omit = setup.py
