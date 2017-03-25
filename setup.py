@@ -25,7 +25,8 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5'
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6'
     ],
     license='MIT',
     zip_safe=True,
@@ -37,6 +38,7 @@ setup(
         'Sphinx >= 1.4'
     ],
     extras_require={
+        'testing': 'pytest',
         ':python_version == "3.3"': 'typing >= 3.5',
         ':python_version == "3.4"': 'typing >= 3.5'
     }

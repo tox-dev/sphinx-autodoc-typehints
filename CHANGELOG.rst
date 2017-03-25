@@ -1,3 +1,11 @@
+1.2.0
+=====
+
+* Fixed compatibility with Python 3.6 and 3.5.3
+* Fixed ``NameError`` when processing signatures of wrapped functions with type hints
+* Added a test suite (thanks Manuel Krebber)
+
+
 1.1.0
 =====
 

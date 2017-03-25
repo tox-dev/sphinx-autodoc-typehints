@@ -4,9 +4,9 @@ from sphinx.util.inspect import getargspec
 from sphinx.ext.autodoc import formatargspec
 
 try:
-    from backports.typing import Optional, get_type_hints
+    from backports.typing import get_type_hints, TypeVar, Any, AnyStr, GenericMeta
 except ImportError:
-    from typing import Optional, get_type_hints
+    from typing import get_type_hints, TypeVar, Any, AnyStr, GenericMeta
 
 try:
     from inspect import unwrap
@@ -31,33 +31,81 @@ except ImportError:
 
 
 def format_annotation(annotation):
-    if inspect.isclass(annotation):
-        if annotation.__module__ == 'builtins':
-            if annotation.__qualname__ == 'NoneType':
-                return '``None``'
-            else:
-                return ':class:`{}`'.format(annotation.__qualname__)
+    if inspect.isclass(annotation) and annotation.__module__ == 'builtins':
+        if annotation.__qualname__ == 'NoneType':
+            return '``None``'
+        else:
+            return ':class:`{}`'.format(annotation.__qualname__)
 
+    annotation_cls = annotation if inspect.isclass(annotation) else type(annotation)
+    if annotation_cls.__module__ in ('typing', 'backports.typing'):
+        params = None
+        prefix = ':class:'
         extra = ''
-        if annotation.__module__ in ('typing', 'backports.typing'):
-            if annotation.__qualname__ == 'Union':
+        class_name = annotation_cls.__qualname__
+        if annotation is Any:
+            return ':data:`~typing.Any`'
+        elif annotation is AnyStr:
+            return ':data:`~typing.AnyStr`'
+        elif isinstance(annotation, TypeVar):
+            return '\\%r' % annotation
+        elif class_name in ('Union', '_Union'):
+            prefix = ':data:'
+            class_name = 'Union'
+            if hasattr(annotation, '__union_params__'):
                 params = annotation.__union_params__
-                if len(params) == 2 and params[1].__qualname__ == 'NoneType':
-                    annotation = Optional
-                    params = (params[0],)
-            elif annotation.__qualname__ == 'Tuple':
-                params = annotation.__tuple_params__
-                if annotation.__tuple_use_ellipsis__:
-                    params += ('...',)
             else:
-                params = getattr(annotation, '__parameters__', None)
+                params = annotation.__args__
 
-            if params:
-                extra = '\\[' + ', '.join(format_annotation(param) for param in params) + ']'
+            if params and len(params) == 2 and params[1].__qualname__ == 'NoneType':
+                class_name = 'Optional'
+                params = (params[0],)
+        elif annotation_cls.__qualname__ == 'Tuple' and hasattr(annotation, '__tuple_params__'):
+            params = annotation.__tuple_params__
+            if annotation.__tuple_use_ellipsis__:
+                params += (Ellipsis,)
+        elif annotation_cls.__qualname__ == 'Callable':
+            prefix = ':data:'
+            arg_annotations = result_annotation = None
+            if hasattr(annotation, '__result__'):
+                arg_annotations = annotation.__args__
+                result_annotation = annotation.__result__
+            elif getattr(annotation, '__args__', None) is not None:
+                arg_annotations = annotation.__args__[:-1]
+                result_annotation = annotation.__args__[-1]
+
+            if arg_annotations in (Ellipsis, (Ellipsis,)):
+                params = [Ellipsis, result_annotation]
+            elif arg_annotations is not None:
+                params = [
+                    '\\[{}]'.format(
+                        ', '.join(format_annotation(param) for param in arg_annotations)),
+                    result_annotation
+                ]
+        elif hasattr(annotation, 'type_var'):
+            # Type alias
+            class_name = annotation.name
+            params = (annotation.type_var,)
+        elif getattr(annotation, '__args__', None) is not None:
+            params = annotation.__args__
+        elif hasattr(annotation, '__parameters__'):
+            params = annotation.__parameters__
+
+        if params:
+            extra = '\\[{}]'.format(', '.join(format_annotation(param) for param in params))
+
+        return '{}`~typing.{}`{}'.format(prefix, class_name, extra)
+    elif annotation is Ellipsis:
+        return '...'
+    elif inspect.isclass(annotation):
+        extra = ''
+        if isinstance(annotation, GenericMeta):
+            extra = '\\[{}]'.format(', '.join(format_annotation(param)
+                                              for param in annotation.__parameters__))
 
         return ':class:`~{}.{}`{}'.format(annotation.__module__, annotation.__qualname__, extra)
-
-    return str(annotation)
+    else:
+        return str(annotation)
 
 
 def process_signature(app, what: str, name: str, obj, options, signature, return_annotation):
