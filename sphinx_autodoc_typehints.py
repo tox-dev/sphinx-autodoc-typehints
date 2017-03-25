@@ -162,3 +162,4 @@ def process_docstring(app, what, name, obj, options, lines):
 def setup(app):
     app.connect('autodoc-process-signature', process_signature)
     app.connect('autodoc-process-docstring', process_docstring)
+    return dict(parallel_read_safe=True)

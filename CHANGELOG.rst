@@ -3,6 +3,7 @@
 
 * Fixed compatibility with Python 3.6 and 3.5.3
 * Fixed ``NameError`` when processing signatures of wrapped functions with type hints
+* Fixed Sphinx warning about parallel reads
 * Added a test suite (thanks Manuel Krebber)
 
 
