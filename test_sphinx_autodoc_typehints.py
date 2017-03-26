@@ -15,7 +15,7 @@ except ImportError:
 
 import pytest
 
-from sphinx_autodoc_typehints import format_annotation
+from sphinx_autodoc_typehints import format_annotation, process_docstring
 
 T = TypeVar('T')
 U = TypeVar('U', covariant=True)
@@ -29,6 +29,10 @@ class A:
 
 class B(Generic[T]):
     pass
+
+
+class Slotted:
+    __slots__ = ()
 
 
 @pytest.mark.parametrize('annotation, expected_result', [
@@ -83,3 +87,9 @@ def test_format_annotation_type(type_param, expected_result):
     annotation = Type[type_param] if type_param else Type
     result = format_annotation(annotation)
     assert result.startswith(expected_result)
+
+
+def test_process_docstring_slot_wrapper():
+    lines = []
+    process_docstring(None, 'class', 'SlotWrapper', Slotted, None, lines)
+    assert not lines
