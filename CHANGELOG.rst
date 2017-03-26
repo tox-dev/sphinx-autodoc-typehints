@@ -7,6 +7,7 @@
 * Fixed Sphinx warning about parallel reads
 * Fixed return type being added to class docstring from its ``__init__()`` method
   (thanks to Manuel Krebber for the patch)
+* Fixed return type hints of ``@property`` methods being omitted (thanks to pknight for the patch)
 * Added a test suite (thanks Manuel Krebber)
 
 
