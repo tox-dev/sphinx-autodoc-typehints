@@ -5,6 +5,8 @@
 * Fixed ``NameError`` when processing signatures of wrapped functions with type hints
 * Fixed handling of slotted classes with no ``__init__()`` method
 * Fixed Sphinx warning about parallel reads
+* Fixed return type being added to class docstring from its ``__init__()`` method
+  (thanks to Manuel Krebber for the patch)
 * Added a test suite (thanks Manuel Krebber)
 
 

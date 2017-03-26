@@ -141,6 +141,10 @@ def process_docstring(app, what, name, obj, options, lines):
             formatted_annotation = format_annotation(annotation)
 
             if argname == 'return':
+                if what in ('class', 'exception'):
+                    # Don't add return type None from __init__()
+                    continue
+
                 insert_index = len(lines)
                 for i, line in enumerate(lines):
                     if line.startswith(':rtype:'):
