@@ -64,6 +64,17 @@ Only arguments that have an existing ``:param:`` directive in the docstring get 
 This extension does not currently have any configuration options.
 
 
+Compatibility with sphinx.ext.napoleon
+--------------------------------------
+
+To use `sphinx.ext.napoleon`_ with sphinx-autodoc-typehints, make sure you load
+`sphinx.ext.napoleon`_ first, **before** sphinx-autodoc-typehints. See `Issue 15`_ on the issue
+tracker for more information.
+
+.. _sphinx.ext.napoleon: http://www.sphinx-doc.org/en/stable/ext/napoleon.html
+.. _Issue 15: https://github.com/agronholm/sphinx-autodoc-typehints/issues/15
+
+
 Project links
 -------------
 
