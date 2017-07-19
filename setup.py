@@ -38,7 +38,9 @@ setup(
         'Sphinx >= 1.4'
     ],
     extras_require={
-        'testing': 'pytest',
+        'testing': ['pytest >= 3.0.7, < 4',
+                    'sphinx-testing >= 0.7.2',
+                    'pytest-cov >= 2.4.0, < 3'],
         ':python_version == "3.3"': 'typing >= 3.5',
         ':python_version == "3.4"': 'typing >= 3.5'
     }
