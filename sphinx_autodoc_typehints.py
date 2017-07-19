@@ -143,6 +143,22 @@ def process_docstring(app, what, name, obj, options, lines):
             # Introspecting a slot wrapper will raise TypeError
             return
 
+        if not type_hints and callable(obj):
+            marker = '# type: '
+            try:
+                source = inspect.getsourcelines(obj)
+                type_line = next(i.strip() for i in source[0] if i.strip().startswith(marker))
+            except (IOError, StopIteration, TypeError):
+                type_line = ''
+            if type_line:
+                type_info = type_line[len(marker):]
+                at = type_info.rfind('->')
+                types = eval(type_info[:at], obj.__globals__)
+                return_type = eval(type_info[at + 2:], obj.__globals__)
+                obj_arg = inspect.signature(obj)
+                type_hints = {'return': return_type}
+                type_hints.update(dict(zip(obj_arg.parameters.keys(), types)))
+
         for argname, annotation in type_hints.items():
             formatted_annotation = format_annotation(annotation)
 
