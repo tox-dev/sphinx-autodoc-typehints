@@ -57,7 +57,8 @@ def format_annotation(annotation):
             else:
                 params = annotation.__args__
 
-            if params and len(params) == 2 and params[1].__qualname__ == 'NoneType':
+            if params and len(params) == 2 and (hasattr(params[1], '__qualname__')
+                                                and params[1].__qualname__ == 'NoneType'):
                 class_name = 'Optional'
                 params = (params[0],)
         elif annotation_cls.__qualname__ == 'Tuple' and hasattr(annotation, '__tuple_params__'):

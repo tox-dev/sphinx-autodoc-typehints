@@ -60,6 +60,7 @@ class Slotted:
     (Tuple[str, ...],               ':class:`~typing.Tuple`\\[:class:`str`, ...]'),
     (Union,                         ':data:`~typing.Union`'),
     (Union[str, bool],              ':data:`~typing.Union`\\[:class:`str`, :class:`bool`]'),
+    (Union[str, Any],               ':data:`~typing.Union`\\[:class:`str`, :data:`~typing.Any`]'),
     (Optional[str],                 ':data:`~typing.Optional`\\[:class:`str`]'),
     (Callable,                      ':data:`~typing.Callable`'),
     (Callable[..., int],            ':data:`~typing.Callable`\\[..., :class:`int`]'),
