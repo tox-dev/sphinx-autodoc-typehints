@@ -17,13 +17,13 @@ except ImportError:
     def unwrap(func, *, stop=None):
         """This is the inspect.unwrap() method copied from Python 3.5's standard library."""
         if stop is None:
-            def _is_wrapper(f):
-                return hasattr(f, '__wrapped__')
+            def _is_wrapper(of_f):
+                return hasattr(of_f, '__wrapped__')
         else:
-            def _is_wrapper(f):
-                return hasattr(f, '__wrapped__') and not stop(f)
+            def _is_wrapper(of_f):
+                return hasattr(of_f, '__wrapped__') and not stop(of_f)
         f = func  # remember the original func for error reporting
-        memo = {id(f)}  # Memoise by id to tolerate non-hashable objects
+        memo = {id(f)}  # Memoize by id to tolerate non-hashable objects
         while _is_wrapper(func):
             func = func.__wrapped__
             id_func = id(func)
@@ -111,6 +111,7 @@ def format_annotation(annotation):
         return str(annotation)
 
 
+# noinspection PyUnusedLocal
 def process_signature(app, what: str, name: str, obj, options, signature, return_annotation):
     if callable(obj):
         if what in ('class', 'exception'):
@@ -128,6 +129,7 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
         return formatargspec(obj, *argspec[:-1]), None
 
 
+# noinspection PyUnusedLocal
 def process_docstring(app, what, name, obj, options, lines):
     if isinstance(obj, property):
         obj = obj.fget
@@ -153,8 +155,9 @@ def process_docstring(app, what, name, obj, options, lines):
             if type_line:
                 type_info = type_line[len(marker):]
                 at = type_info.rfind('->')
-                types = eval(type_info[:at], obj.__globals__)
-                return_type = eval(type_info[at + 2:], obj.__globals__)
+                obj_globals = getattr(obj, '__globals__', None)
+                types = eval(type_info[:at], obj_globals)
+                return_type = eval(type_info[at + 2:], obj_globals)
                 obj_arg = inspect.signature(obj)
                 type_hints = {'return': return_type}
                 type_hints.update(dict(zip(obj_arg.parameters.keys(), types)))
@@ -179,9 +182,9 @@ def process_docstring(app, what, name, obj, options, lines):
                 if insert_index is not None:
                     lines.insert(insert_index, ':rtype: {}'.format(formatted_annotation))
             else:
-                searchfor = ':param {}:'.format(argname)
+                search_for = ':param {}:'.format(argname)
                 for i, line in enumerate(lines):
-                    if line.startswith(searchfor):
+                    if line.startswith(search_for):
                         lines.insert(i, ':type {}: {}'.format(argname, formatted_annotation))
                         break
 
