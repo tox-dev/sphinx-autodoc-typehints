@@ -2,6 +2,8 @@
 """ Extend typing"""
 
 import inspect
+import re
+from tokenize import COMMENT, INDENT, tokenize, OP
 
 from sphinx.ext.autodoc import formatargspec
 from sphinx.util.inspect import getargspec
@@ -146,21 +148,7 @@ def process_docstring(app, what, name, obj, options, lines):
             return
 
         if not type_hints and callable(obj):
-            marker = '# type: '
-            try:
-                source = inspect.getsourcelines(obj)
-                type_line = next(i.strip() for i in source[0] if i.strip().startswith(marker))
-            except (IOError, StopIteration, TypeError):
-                type_line = ''
-            if type_line:
-                type_info = type_line[len(marker):]
-                at = type_info.rfind('->')
-                obj_globals = getattr(obj, '__globals__', None)
-                types = eval(type_info[:at], obj_globals)
-                return_type = eval(type_info[at + 2:], obj_globals)
-                obj_arg = inspect.signature(obj)
-                type_hints = {'return': return_type}
-                type_hints.update(dict(zip(obj_arg.parameters.keys(), types)))
+            type_hints = get_comment_type_hint(obj)
 
         for argname, annotation in type_hints.items():
             formatted_annotation = format_annotation(annotation)
@@ -187,6 +175,54 @@ def process_docstring(app, what, name, obj, options, lines):
                     if line.startswith(search_for):
                         lines.insert(i, ':type {}: {}'.format(argname, formatted_annotation))
                         break
+
+
+TYPE_INFO = r'.*:# type: (.*)'
+TYPE_COMMENT_RE = re.compile(TYPE_INFO)
+
+
+def get_comment_type_hint(obj):
+    type_hints = {}
+    marker = '# type: '
+    type_info = ''
+    try:
+        from io import BytesIO
+        source = '\n'.join(inspect.getsourcelines(obj)[0])
+        g = tokenize(BytesIO(source.encode('utf-8')).readline)
+
+        found_func_end = False
+        prev_op = None
+        for toknum, tokval, a, b, c in g:
+            if found_func_end is False:
+                if toknum == OP:
+                    if prev_op == ')' and tokval == ':':
+                        found_func_end = True
+                    prev_op = tokval
+            else:
+                if toknum == INDENT:
+                    break
+                elif toknum == COMMENT and tokval.startswith(marker):
+                    type_info = tokval[len(marker):]
+                    break
+
+    except (IOError, TypeError):
+        pass
+    if type_info:
+        print(obj)
+        obj_arg = inspect.signature(obj)
+        at = type_info.rfind('->')
+        obj_globals = getattr(obj, '__globals__', None)
+        types = eval('{}'.format(type_info[:at]), obj_globals)
+
+        if not isinstance(types, tuple):
+            types = [types]
+        return_type = eval(type_info[at + 2:], obj_globals)
+        type_hints = {'return': return_type}
+        keys = list(obj_arg.parameters.keys())
+        if keys and keys[0] == 'self':
+            keys = keys[1:]  # skip self
+        type_hints.update(dict(zip(keys, types)))
+    return type_hints
 
 
 def setup(app):
