@@ -17,7 +17,7 @@ TYPE_MARKER = '# type: '
 LOGGER = logging.getLogger(__name__)
 
 
-def format_annotation(annotation):  # pylint: disable=too-many-return-statements
+def format_annotation(annotation, aliases):  # pylint: disable=too-many-return-statements
     if inspect.isclass(annotation) and annotation.__module__ == 'builtins':
         if annotation.__qualname__ == 'NoneType':
             return '``None``'
@@ -25,21 +25,23 @@ def format_annotation(annotation):  # pylint: disable=too-many-return-statements
 
     annotation_cls = annotation if inspect.isclass(annotation) else type(annotation)
     if annotation_cls.__module__ in ('typing',):
-        return format_typing_annotation(annotation, annotation_cls)
+        return format_typing_annotation(annotation, annotation_cls, aliases)
     elif annotation is Ellipsis:
         return '...'
     elif inspect.isclass(annotation):
         extra = ''
         if isinstance(annotation, GenericMeta):
-            extra = '\\[{}]'.format(', '.join(format_annotation(param)
+            extra = '\\[{}]'.format(', '.join(format_annotation(param, aliases)
                                               for param in annotation.__parameters__))
-
-        return ':class:`~{}.{}`{}'.format(annotation.__module__, annotation.__qualname__, extra)
+        module_name, annotation_name = annotation.__module__, annotation.__qualname__
+        if (module_name, annotation_name) in aliases:
+            module_name, annotation_name = aliases[module_name, annotation_name]
+        return ':class:`~{}.{}`{}'.format(module_name, annotation_name, extra)
     else:
         return str(annotation)
 
 
-def format_typing_annotation(annotation, annotation_cls):
+def format_typing_annotation(annotation, annotation_cls, aliases):
     params = None
     prefix = ':class:'
     extra = ''
@@ -51,14 +53,14 @@ def format_typing_annotation(annotation, annotation_cls):
     elif isinstance(annotation, TypeVar):
         return '\\%r' % annotation
     elif class_name in ('Union', '_Union'):
-        class_name, params, prefix = format_union_annotation(annotation, class_name, params, prefix)
+        class_name, params, prefix = format_union_annotation(annotation, class_name, params, prefix, aliases)
     elif annotation_cls.__qualname__ == 'Tuple' and hasattr(annotation, '__tuple_params__'):
         # initial behavior, reworked in 3.6
         params = annotation.__tuple_params__  # pragma: no coverage
         if annotation.__tuple_use_ellipsis__:  # pragma: no coverage
             params += (Ellipsis,)  # pragma: no coverage
     elif annotation_cls.__qualname__ == 'Callable':
-        params, prefix = format_callable_annotation(annotation, params, prefix)
+        params, prefix = format_callable_annotation(annotation, params, prefix, aliases)
     elif hasattr(annotation, 'type_var'):
         # Type alias
         class_name = annotation.name
@@ -68,11 +70,11 @@ def format_typing_annotation(annotation, annotation_cls):
     elif hasattr(annotation, '__parameters__'):
         params = annotation.__parameters__
     if params:
-        extra = '\\[{}]'.format(', '.join(format_annotation(param) for param in params))
+        extra = '\\[{}]'.format(', '.join(format_annotation(param, aliases) for param in params))
     return '{}`~typing.{}`{}'.format(prefix, class_name, extra)
 
 
-def format_callable_annotation(annotation, params, prefix):
+def format_callable_annotation(annotation, params, prefix, aliases):
     prefix = ':data:'
     arg_annotations = result_annotation = None
     if hasattr(annotation, '__result__'):
@@ -85,26 +87,26 @@ def format_callable_annotation(annotation, params, prefix):
     if arg_annotations in (Ellipsis, (Ellipsis,)):
         params = [Ellipsis, result_annotation]
     elif arg_annotations is not None:
-        params = ['\\[{}]'.format(', '.join(format_annotation(param) for param in arg_annotations)),
+        params = ['\\[{}]'.format(', '.join(format_annotation(param, aliases) for param in arg_annotations)),
                   result_annotation]
     return params, prefix
 
 
-def format_union_annotation(annotation, class_name, params, prefix):
+def format_union_annotation(annotation, class_name, params, prefix, aliases):
     prefix = ':data:'
     class_name = 'Union'
     if hasattr(annotation, '__union_params__'):
         # initial behavior, reworked in 3.6
-        params = annotation.__union_params__  # pragma: no coverage
+        un_params = annotation.__union_params__  # pragma: no coverage
     else:
-        params = annotation.__args__
-    if params and len(params) == 2:
-        first_is_none = getattr(params[0], '__qualname__', None) == 'NoneType'
-        second_is_none = getattr(params[1], '__qualname__', None) == 'NoneType'
+        un_params = annotation.__args__
+    if un_params and len(un_params) == 2:
+        first_is_none = getattr(un_params[0], '__qualname__', None) == 'NoneType'
+        second_is_none = getattr(un_params[1], '__qualname__', None) == 'NoneType'
         if first_is_none or second_is_none:
             class_name = 'Optional'
-            params = (params[0] if second_is_none else params[1],)
-    return class_name, params, prefix
+            un_params = (un_params[0] if second_is_none else un_params[1],)
+    return class_name, un_params, prefix
 
 
 # noinspection PyUnusedLocal
@@ -147,12 +149,12 @@ def process_docstring(app, what, name, obj, options, lines):  # pylint: disable=
         LOGGER.debug('[autodoc-typehints][process-docstring] for %d id %s got %s', id(obj), obj.__qualname__,
                      '|'.join('{} - {}'.format(k, v) for k, v in type_hints.items()))
 
-        insert_type_hints(lines, type_hints, what)
+        insert_type_hints(lines, type_hints, what, app.config.sphinx_autodoc_alias)
 
 
-def insert_type_hints(lines, type_hints, what):
+def insert_type_hints(lines, type_hints, what,aliases):
     for arg_name, annotation in type_hints.items():
-        formatted_annotation = format_annotation(annotation)
+        formatted_annotation = format_annotation(annotation, aliases)
         if arg_name == 'return':
             if what in ('class', 'exception'):
                 # Don't add return type None from __init__()
@@ -226,4 +228,5 @@ def get_comment_type_str(obj):
 def setup(app):
     app.connect('autodoc-process-signature', process_signature)
     app.connect('autodoc-process-docstring', process_docstring)
+    app.add_config_value('sphinx_autodoc_alias', {}, False)
     return dict(parallel_read_safe=True)

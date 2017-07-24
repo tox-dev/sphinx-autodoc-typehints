@@ -5,6 +5,7 @@ from sphinx.util import logging
 
 @pytest.mark.sphinx('html', testroot='annotation')
 def test_annotation_html(app, status, warning):
+    app.config.sphinx_autodoc_alias = {('A', 'B'), ('C', 'D')}
     app.verbosity = 2
     logging.setup(app, status, warning)
     app.builder.doctreedir.rmtree()

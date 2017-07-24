@@ -1,3 +1,4 @@
+from collections import namedtuple
 from typing import Any, AnyStr, Callable, Dict, Generic, Mapping, Optional, Pattern, Tuple, Type, TypeVar, Union
 
 import pytest
@@ -61,12 +62,12 @@ class Slotted:
     (ExampleB, ':class:`~%s.ExampleB`\\[\\~T]' % __name__)
 ])
 def test_format_annotation(annotation, expected_result):
-    result = format_annotation(annotation)
+    result = format_annotation(annotation, {})
     assert result == expected_result
 
 
 def test_format_annotation_test():
-    result = format_annotation(Tuple[str, ...])
+    result = format_annotation(Tuple[str, ...], {})
     assert result
 
 
@@ -77,11 +78,25 @@ def test_format_annotation_test():
 ])
 def test_format_annotation_type(type_param, expected_result):
     annotation = Type[type_param] if type_param else Type
-    result = format_annotation(annotation)
+    result = format_annotation(annotation, {})
     assert result.startswith(expected_result)
 
 
 def test_process_docstring_slotted():
+    A = namedtuple('A', ['config'])
+    B = namedtuple('B', ['sphinx_autodoc_alias'])
+
     lines = []
-    process_docstring(None, 'class', 'SlotWrapper', Slotted, None, lines)
+    process_docstring(A(config=B(sphinx_autodoc_alias={})), 'class', 'SlotWrapper', Slotted, None, lines)
     assert not lines
+
+
+@pytest.mark.parametrize('annotation, expected_result, alias', [
+    (ExampleA, ':class:`~K.ExampleA`', {(__name__, 'ExampleA'): ('K', 'ExampleA')}),
+    (Union[ExampleA, ExampleB],
+     ':data:`~typing.Union`\\[:class:`~%s.ExampleA`, :class:`~K.Example`\\[\\~T]]' % __name__,
+     {(__name__, 'ExampleB'): ('K', 'Example')}),
+])
+def test_format_annotation_alias(annotation, expected_result, alias):
+    result = format_annotation(annotation, alias)
+    assert expected_result == result
