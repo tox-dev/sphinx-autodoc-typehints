@@ -1,16 +1,11 @@
-import os.path
+# coding=utf-8
 
 from setuptools import setup
-
-here = os.path.dirname(__file__)
-readme_path = os.path.join(here, 'README.rst')
-readme = open(readme_path).read()
 
 setup(
     name='sphinx-autodoc-typehints',
     use_scm_version=True,
     description='Type hints (PEP 484) support for the Sphinx autodoc extension',
-    long_description=readme,
     author='Alex Grönholm',
     author_email='alex.gronholm@nextday.fi',
     url='https://github.com/agronholm/sphinx-autodoc-typehints',
@@ -35,11 +30,14 @@ setup(
         'setuptools_scm >= 1.7.0'
     ],
     install_requires=[
-        'Sphinx >= 1.4'
+        'Sphinx >= 1.6.3, < 2'
     ],
     extras_require={
-        'testing': 'pytest',
-        ':python_version == "3.3"': 'typing >= 3.5',
-        ':python_version == "3.4"': 'typing >= 3.5'
+        'testing': ['pytest >= 3.0.7, < 4',
+                    'pytest-catchlog >= 1.2.2, < 2',
+                    'pytest-cov >= 2.4.0, < 3'],
+        ':python_version < "3.5"': [
+            'typing >= 3.5.3, <4'
+        ]
     }
 )

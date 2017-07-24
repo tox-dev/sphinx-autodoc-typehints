@@ -1,114 +1,117 @@
+# coding=utf-8
+""" Extend typing"""
+
 import inspect
+from inspect import unwrap
+from io import BytesIO
+import re
+from tokenize import COMMENT, INDENT, OP, tokenize
+from typing import Any, AnyStr, GenericMeta, TypeVar, get_type_hints
 
-from sphinx.util.inspect import getargspec
 from sphinx.ext.autodoc import formatargspec
+from sphinx.util import logging
+from sphinx.util.inspect import getargspec
 
-try:
-    from backports.typing import get_type_hints, TypeVar, Any, AnyStr, GenericMeta
-except ImportError:
-    from typing import get_type_hints, TypeVar, Any, AnyStr, GenericMeta
+TYPE_MARKER = '# type: '
 
-try:
-    from inspect import unwrap
-except ImportError:
-    def unwrap(func, *, stop=None):
-        """This is the inspect.unwrap() method copied from Python 3.5's standard library."""
-        if stop is None:
-            def _is_wrapper(f):
-                return hasattr(f, '__wrapped__')
-        else:
-            def _is_wrapper(f):
-                return hasattr(f, '__wrapped__') and not stop(f)
-        f = func  # remember the original func for error reporting
-        memo = {id(f)}  # Memoise by id to tolerate non-hashable objects
-        while _is_wrapper(func):
-            func = func.__wrapped__
-            id_func = id(func)
-            if id_func in memo:
-                raise ValueError('wrapper loop when unwrapping {!r}'.format(f))
-            memo.add(id_func)
-        return func
+LOGGER = logging.getLogger(__name__)
 
 
-def format_annotation(annotation):
+def format_annotation(annotation, aliases):  # pylint: disable=too-many-return-statements
     if inspect.isclass(annotation) and annotation.__module__ == 'builtins':
         if annotation.__qualname__ == 'NoneType':
             return '``None``'
-        else:
-            return ':class:`{}`'.format(annotation.__qualname__)
+        return ':class:`{}`'.format(annotation.__qualname__)
 
     annotation_cls = annotation if inspect.isclass(annotation) else type(annotation)
-    if annotation_cls.__module__ in ('typing', 'backports.typing'):
-        params = None
-        prefix = ':class:'
-        extra = ''
-        class_name = annotation_cls.__qualname__
-        if annotation is Any:
-            return ':data:`~typing.Any`'
-        elif annotation is AnyStr:
-            return ':data:`~typing.AnyStr`'
-        elif isinstance(annotation, TypeVar):
-            return '\\%r' % annotation
-        elif class_name in ('Union', '_Union'):
-            prefix = ':data:'
-            class_name = 'Union'
-            if hasattr(annotation, '__union_params__'):
-                params = annotation.__union_params__
-            else:
-                params = annotation.__args__
-
-            if params and len(params) == 2 and params[1].__qualname__ == 'NoneType':
-                class_name = 'Optional'
-                params = (params[0],)
-        elif annotation_cls.__qualname__ == 'Tuple' and hasattr(annotation, '__tuple_params__'):
-            params = annotation.__tuple_params__
-            if annotation.__tuple_use_ellipsis__:
-                params += (Ellipsis,)
-        elif annotation_cls.__qualname__ == 'Callable':
-            prefix = ':data:'
-            arg_annotations = result_annotation = None
-            if hasattr(annotation, '__result__'):
-                arg_annotations = annotation.__args__
-                result_annotation = annotation.__result__
-            elif getattr(annotation, '__args__', None) is not None:
-                arg_annotations = annotation.__args__[:-1]
-                result_annotation = annotation.__args__[-1]
-
-            if arg_annotations in (Ellipsis, (Ellipsis,)):
-                params = [Ellipsis, result_annotation]
-            elif arg_annotations is not None:
-                params = [
-                    '\\[{}]'.format(
-                        ', '.join(format_annotation(param) for param in arg_annotations)),
-                    result_annotation
-                ]
-        elif hasattr(annotation, 'type_var'):
-            # Type alias
-            class_name = annotation.name
-            params = (annotation.type_var,)
-        elif getattr(annotation, '__args__', None) is not None:
-            params = annotation.__args__
-        elif hasattr(annotation, '__parameters__'):
-            params = annotation.__parameters__
-
-        if params:
-            extra = '\\[{}]'.format(', '.join(format_annotation(param) for param in params))
-
-        return '{}`~typing.{}`{}'.format(prefix, class_name, extra)
+    if annotation_cls.__module__ in ('typing',):
+        return format_typing_annotation(annotation, annotation_cls, aliases)
     elif annotation is Ellipsis:
         return '...'
     elif inspect.isclass(annotation):
         extra = ''
         if isinstance(annotation, GenericMeta):
-            extra = '\\[{}]'.format(', '.join(format_annotation(param)
+            extra = '\\[{}]'.format(', '.join(format_annotation(param, aliases)
                                               for param in annotation.__parameters__))
-
-        return ':class:`~{}.{}`{}'.format(annotation.__module__, annotation.__qualname__, extra)
+        module_name, annotation_name = annotation.__module__, annotation.__qualname__
+        if (module_name, annotation_name) in aliases:
+            module_name, annotation_name = aliases[module_name, annotation_name]
+        return ':class:`~{}.{}`{}'.format(module_name, annotation_name, extra)
     else:
         return str(annotation)
 
 
-def process_signature(app, what: str, name: str, obj, options, signature, return_annotation):
+def format_typing_annotation(annotation, annotation_cls, aliases):
+    params = None
+    prefix = ':class:'
+    extra = ''
+    class_name = annotation_cls.__qualname__
+    if annotation is Any:
+        return ':data:`~typing.Any`'
+    elif annotation is AnyStr:
+        return ':data:`~typing.AnyStr`'
+    elif isinstance(annotation, TypeVar):
+        return '\\%r' % annotation
+    elif class_name in ('Union', '_Union'):
+        class_name, params, prefix = format_union_annotation(annotation, class_name, params, prefix, aliases)
+    elif annotation_cls.__qualname__ == 'Tuple' and hasattr(annotation, '__tuple_params__'):
+        # initial behavior, reworked in 3.6
+        params = annotation.__tuple_params__  # pragma: no coverage
+        if annotation.__tuple_use_ellipsis__:  # pragma: no coverage
+            params += (Ellipsis,)  # pragma: no coverage
+    elif annotation_cls.__qualname__ == 'Callable':
+        params, prefix = format_callable_annotation(annotation, params, prefix, aliases)
+    elif hasattr(annotation, 'type_var'):
+        # Type alias
+        class_name = annotation.name
+        params = (annotation.type_var,)
+    elif getattr(annotation, '__args__', None) is not None:
+        params = annotation.__args__
+    elif hasattr(annotation, '__parameters__'):
+        params = annotation.__parameters__
+    if params:
+        extra = '\\[{}]'.format(', '.join(format_annotation(param, aliases) for param in params))
+    return '{}`~typing.{}`{}'.format(prefix, class_name, extra)
+
+
+def format_callable_annotation(annotation, params, prefix, aliases):
+    prefix = ':data:'
+    arg_annotations = result_annotation = None
+    if hasattr(annotation, '__result__'):
+        # initial behavior, reworked in 3.6
+        arg_annotations = annotation.__args__  # pragma: no coverage
+        result_annotation = annotation.__result__  # pragma: no coverage
+    elif getattr(annotation, '__args__', None) is not None:
+        arg_annotations = annotation.__args__[:-1]
+        result_annotation = annotation.__args__[-1]
+    if arg_annotations in (Ellipsis, (Ellipsis,)):
+        params = [Ellipsis, result_annotation]
+    elif arg_annotations is not None:
+        params = ['\\[{}]'.format(', '.join(format_annotation(param, aliases) for param in arg_annotations)),
+                  result_annotation]
+    return params, prefix
+
+
+def format_union_annotation(annotation, class_name, params, prefix, aliases):
+    prefix = ':data:'
+    class_name = 'Union'
+    if hasattr(annotation, '__union_params__'):
+        # initial behavior, reworked in 3.6
+        un_params = annotation.__union_params__  # pragma: no coverage
+    else:
+        un_params = annotation.__args__
+    if un_params and len(un_params) == 2:
+        first_is_none = getattr(un_params[0], '__qualname__', None) == 'NoneType'
+        second_is_none = getattr(un_params[1], '__qualname__', None) == 'NoneType'
+        if first_is_none or second_is_none:
+            class_name = 'Optional'
+            un_params = (un_params[0] if second_is_none else un_params[1],)
+    return class_name, un_params, prefix
+
+
+# noinspection PyUnusedLocal
+def process_signature(app, what: str, name: str, obj,  # pylint: disable=too-many-arguments,unused-argument
+                      options, signature, return_annotation):  # pylint: disable=unused-argument
     if callable(obj):
         if what in ('class', 'exception'):
             obj = getattr(obj, '__init__')
@@ -125,9 +128,10 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
         return formatargspec(obj, *argspec[:-1]), None
 
 
-def process_docstring(app, what, name, obj, options, lines):
+# noinspection PyUnusedLocal
+def process_docstring(app, what, name, obj, options, lines):  # pylint: disable=too-many-arguments,unused-argument
     if isinstance(obj, property):
-        obj = obj.fget
+        obj = obj.fget  # pragma: no coverage
 
     if callable(obj):
         if what in ('class', 'exception'):
@@ -137,37 +141,92 @@ def process_docstring(app, what, name, obj, options, lines):
         try:
             type_hints = get_type_hints(obj)
         except (AttributeError, TypeError):
-            # Introspecting a slot wrapper will raise TypeError
-            return
+            return  # Introspecting a slot wrapper will raise TypeError
 
-        for argname, annotation in type_hints.items():
-            formatted_annotation = format_annotation(annotation)
+        if not type_hints:
+            type_hints = get_comment_type_hint(obj)
 
-            if argname == 'return':
-                if what in ('class', 'exception'):
-                    # Don't add return type None from __init__()
-                    continue
+        LOGGER.debug('[autodoc-typehints][process-docstring] for %d id %s got %s', id(obj), obj.__qualname__,
+                     '|'.join('{} - {}'.format(k, v) for k, v in type_hints.items()))
 
-                insert_index = len(lines)
-                for i, line in enumerate(lines):
-                    if line.startswith(':rtype:'):
-                        insert_index = None
-                        break
-                    elif line.startswith(':return:') or line.startswith(':returns:'):
-                        insert_index = i
-                        break
+        insert_type_hints(lines, type_hints, what, app.config.sphinx_autodoc_alias)
 
-                if insert_index is not None:
-                    lines.insert(insert_index, ':rtype: {}'.format(formatted_annotation))
+
+def insert_type_hints(lines, type_hints, what,aliases):
+    for arg_name, annotation in type_hints.items():
+        formatted_annotation = format_annotation(annotation, aliases)
+        if arg_name == 'return':
+            if what in ('class', 'exception'):
+                # Don't add return type None from __init__()
+                continue
+
+            insert_index = len(lines)
+            for i, line in enumerate(lines):
+                if line.startswith(':rtype:'):
+                    insert_index = None
+                    break
+                elif line.startswith(':return:') or line.startswith(':returns:'):
+                    insert_index = i
+                    break
+
+            if insert_index is not None:
+                lines.insert(insert_index, ':rtype: {}'.format(formatted_annotation))
+        else:
+            search_for = ':param {}:'.format(arg_name)
+            for i, line in enumerate(lines):
+                if line.startswith(search_for):
+                    lines.insert(i, ':type {}: {}'.format(arg_name, formatted_annotation))
+                    break
+
+
+TYPE_INFO = r'.*:# type: (.*)'
+TYPE_COMMENT_RE = re.compile(TYPE_INFO)
+
+
+def get_comment_type_hint(obj):
+    type_hints = {}
+    type_info = get_comment_type_str(obj)
+    if type_info:
+        obj_arg = inspect.signature(obj)
+        at_pos = type_info.rfind('->')
+        obj_globals = getattr(obj, '__globals__', None)
+        types = eval('{}'.format(type_info[:at_pos]), obj_globals)  # pylint: disable=eval-used
+        if not isinstance(types, tuple):
+            types = [types]
+        return_type = eval(type_info[at_pos + 2:], obj_globals)  # pylint: disable=eval-used
+        type_hints = {'return': return_type}
+        keys = list(obj_arg.parameters.keys())
+        if keys and keys[0] == 'self':
+            keys = keys[1:]  # skip self
+        type_hints.update(dict(zip(keys, types)))
+    return type_hints
+
+
+def get_comment_type_str(obj):
+    type_info = ''
+    try:
+        source = '\n'.join(inspect.getsourcelines(obj)[0]).encode()
+        tokens_generator = tokenize(BytesIO(source).readline)
+        found_func_end, prev_op = False, None
+        for tok_num, tok_val, _, _, _ in tokens_generator:
+            if found_func_end is False:
+                if tok_num == OP:
+                    if prev_op == ')' and tok_val == ':':
+                        found_func_end = True
+                    prev_op = tok_val
             else:
-                searchfor = ':param {}:'.format(argname)
-                for i, line in enumerate(lines):
-                    if line.startswith(searchfor):
-                        lines.insert(i, ':type {}: {}'.format(argname, formatted_annotation))
-                        break
+                if tok_num == INDENT:
+                    break
+                elif tok_num == COMMENT and tok_val.startswith(TYPE_MARKER):
+                    type_info = tok_val[len(TYPE_MARKER):]
+                    break
+    except (IOError, TypeError):
+        pass
+    return type_info
 
 
 def setup(app):
     app.connect('autodoc-process-signature', process_signature)
     app.connect('autodoc-process-docstring', process_docstring)
+    app.add_config_value('sphinx_autodoc_alias', {}, False)
     return dict(parallel_read_safe=True)
