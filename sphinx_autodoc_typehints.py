@@ -98,9 +98,12 @@ def format_union_annotation(annotation, class_name, params, prefix):
         params = annotation.__union_params__  # pragma: no coverage
     else:
         params = annotation.__args__
-    if params and len(params) == 2 and params[1].__qualname__ == 'NoneType':
-        class_name = 'Optional'
-        params = (params[0],)
+    if params and len(params) == 2:
+        first_is_none = getattr(params[0], '__qualname__', None) == 'NoneType'
+        second_is_none = getattr(params[1], '__qualname__', None) == 'NoneType'
+        if first_is_none or second_is_none:
+            class_name = 'Optional'
+            params = (params[0] if second_is_none else params[1],)
     return class_name, params, prefix
 
 
