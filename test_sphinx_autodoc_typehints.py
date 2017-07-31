@@ -1,4 +1,5 @@
 import pytest
+import sys
 
 from sphinx_autodoc_typehints import format_annotation, process_docstring
 
@@ -60,7 +61,9 @@ class Slotted:
     (Tuple[str, ...],               ':class:`~typing.Tuple`\\[:class:`str`, ...]'),
     (Union,                         ':data:`~typing.Union`'),
     (Union[str, bool],              ':data:`~typing.Union`\\[:class:`str`, :class:`bool`]'),
-    (Union[str, Any],               ':data:`~typing.Union`\\[:class:`str`, :data:`~typing.Any`]'),
+    pytest.param(Union[str, Any],   ':data:`~typing.Union`\\[:class:`str`, :data:`~typing.Any`]',
+                 marks=pytest.mark.skipif((3, 5, 0) <= sys.version_info[:3] <= (3, 5, 2),
+                                          reason='Union erases the str on 3.5.0 -> 3.5.2')),
     (Optional[str],                 ':data:`~typing.Optional`\\[:class:`str`]'),
     (Callable,                      ':data:`~typing.Callable`'),
     (Callable[..., int],            ':data:`~typing.Callable`\\[..., :class:`int`]'),
