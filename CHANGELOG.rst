@@ -1,3 +1,9 @@
+1.2.1
+=====
+
+* Fixed `ValueError` when `getargspec()` encounters a built-in function
+
+
 1.2.0
 =====
 

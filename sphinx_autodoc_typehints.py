@@ -116,7 +116,7 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
         obj = unwrap(obj)
         try:
             argspec = getargspec(obj)
-        except TypeError:
+        except (TypeError, ValueError):
             return
 
         if what in ('method', 'class', 'exception') and argspec.args:
