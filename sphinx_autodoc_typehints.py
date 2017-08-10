@@ -35,30 +35,30 @@ def format_annotation(annotation):
         if annotation.__qualname__ == 'NoneType':
             return '``None``'
         else:
-            return ':class:`{}`'.format(annotation.__qualname__)
+            return ':py:class:`{}`'.format(annotation.__qualname__)
 
     annotation_cls = annotation if inspect.isclass(annotation) else type(annotation)
     if annotation_cls.__module__ in ('typing', 'backports.typing'):
         params = None
-        prefix = ':class:'
+        prefix = ':py:class:'
         extra = ''
         class_name = annotation_cls.__qualname__
         if annotation is Any:
-            return ':data:`~typing.Any`'
+            return ':py:data:`~typing.Any`'
         elif annotation is AnyStr:
-            return ':data:`~typing.AnyStr`'
+            return ':py:data:`~typing.AnyStr`'
         elif isinstance(annotation, TypeVar):
             return '\\%r' % annotation
         elif class_name in ('Union', '_Union'):
-            prefix = ':data:'
+            prefix = ':py:data:'
             class_name = 'Union'
             if hasattr(annotation, '__union_params__'):
                 params = annotation.__union_params__
             else:
                 params = annotation.__args__
 
-            if params and len(params) == 2 and (hasattr(params[1], '__qualname__')
-                                                and params[1].__qualname__ == 'NoneType'):
+            if params and len(params) == 2 and (hasattr(params[1], '__qualname__') and
+                                                params[1].__qualname__ == 'NoneType'):
                 class_name = 'Optional'
                 params = (params[0],)
         elif annotation_cls.__qualname__ == 'Tuple' and hasattr(annotation, '__tuple_params__'):
@@ -66,7 +66,7 @@ def format_annotation(annotation):
             if annotation.__tuple_use_ellipsis__:
                 params += (Ellipsis,)
         elif annotation_cls.__qualname__ == 'Callable':
-            prefix = ':data:'
+            prefix = ':py:data:'
             arg_annotations = result_annotation = None
             if hasattr(annotation, '__result__'):
                 arg_annotations = annotation.__args__
@@ -104,7 +104,7 @@ def format_annotation(annotation):
             extra = '\\[{}]'.format(', '.join(format_annotation(param)
                                               for param in annotation.__parameters__))
 
-        return ':class:`~{}.{}`{}'.format(annotation.__module__, annotation.__qualname__, extra)
+        return ':py:class:`~{}.{}`{}'.format(annotation.__module__, annotation.__qualname__, extra)
     else:
         return str(annotation)
 

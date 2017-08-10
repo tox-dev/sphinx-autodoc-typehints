@@ -38,45 +38,54 @@ class Slotted:
 
 
 @pytest.mark.parametrize('annotation, expected_result', [
-    (str,                           ':class:`str`'),
-    (int,                           ':class:`int`'),
+    (str,                           ':py:class:`str`'),
+    (int,                           ':py:class:`int`'),
     (type(None),                    '``None``'),
-    (Any,                           ':data:`~typing.Any`'),
-    (AnyStr,                        ':data:`~typing.AnyStr`'),
-    (Generic[T],                    ':class:`~typing.Generic`\\[\\~T]'),
-    (Mapping,                       ':class:`~typing.Mapping`\\[\\~KT, \\+VT_co]'),
-    (Mapping[T, int],               ':class:`~typing.Mapping`\\[\\~T, :class:`int`]'),
-    (Mapping[str, V],               ':class:`~typing.Mapping`\\[:class:`str`, \\-V]'),
-    (Mapping[T, U],                 ':class:`~typing.Mapping`\\[\\~T, \\+U]'),
-    (Mapping[str, bool],            ':class:`~typing.Mapping`\\[:class:`str`, :class:`bool`]'),
-    (Dict,                          ':class:`~typing.Dict`\\[\\~KT, \\~VT]'),
-    (Dict[T, int],                  ':class:`~typing.Dict`\\[\\~T, :class:`int`]'),
-    (Dict[str, V],                  ':class:`~typing.Dict`\\[:class:`str`, \\-V]'),
-    (Dict[T, U],                    ':class:`~typing.Dict`\\[\\~T, \\+U]'),
-    (Dict[str, bool],               ':class:`~typing.Dict`\\[:class:`str`, :class:`bool`]'),
-    (Tuple,                         ':class:`~typing.Tuple`'),
-    (Tuple[str, bool],              ':class:`~typing.Tuple`\\[:class:`str`, :class:`bool`]'),
-    (Tuple[int, int, int],          ':class:`~typing.Tuple`\\[:class:`int`, :class:`int`, '
-                                    ':class:`int`]'),
-    (Tuple[str, ...],               ':class:`~typing.Tuple`\\[:class:`str`, ...]'),
-    (Union,                         ':data:`~typing.Union`'),
-    (Union[str, bool],              ':data:`~typing.Union`\\[:class:`str`, :class:`bool`]'),
-    pytest.param(Union[str, Any],   ':data:`~typing.Union`\\[:class:`str`, :data:`~typing.Any`]',
+    (Any,                           ':py:data:`~typing.Any`'),
+    (AnyStr,                        ':py:data:`~typing.AnyStr`'),
+    (Generic[T],                    ':py:class:`~typing.Generic`\\[\\~T]'),
+    (Mapping,                       ':py:class:`~typing.Mapping`\\[\\~KT, \\+VT_co]'),
+    (Mapping[T, int],               ':py:class:`~typing.Mapping`\\[\\~T, :py:class:`int`]'),
+    (Mapping[str, V],               ':py:class:`~typing.Mapping`\\[:py:class:`str`, \\-V]'),
+    (Mapping[T, U],                 ':py:class:`~typing.Mapping`\\[\\~T, \\+U]'),
+    (Mapping[str, bool],            ':py:class:`~typing.Mapping`\\[:py:class:`str`,'
+     ' :py:class:`bool`]'),
+    (Dict,                          ':py:class:`~typing.Dict`\\[\\~KT, \\~VT]'),
+    (Dict[T, int],                  ':py:class:`~typing.Dict`\\[\\~T, :py:class:`int`]'),
+    (Dict[str, V],                  ':py:class:`~typing.Dict`\\[:py:class:`str`, \\-V]'),
+    (Dict[T, U],                    ':py:class:`~typing.Dict`\\[\\~T, \\+U]'),
+    (Dict[str, bool],               ':py:class:`~typing.Dict`\\[:py:class:`str`, '
+     ' :py:class:`bool`]'),
+    (Tuple,                         ':py:class:`~typing.Tuple`'),
+    (Tuple[str, bool],              ':py:class:`~typing.Tuple`\\[:py:class:`str`,'
+     ' :py:class:`bool`]'),
+    (Tuple[int, int, int],          ':py:class:`~typing.Tuple`\\[:py:class:`int`,'
+     ':py:class:`int`, '
+                                    ':py:class:`int`]'),
+    (Tuple[str, ...],               ':py:class:`~typing.Tuple`\\[:py:class:`str`, ...]'),
+    (Union,                         ':py:data:`~typing.Union`'),
+    (Union[str, bool],              ':py:data:`~typing.Union`\\[:py:class:`str`,'
+     ' :py:class:`bool`]'),
+    pytest.param(Union[str, Any],   ':py:data:`~typing.Union`\\[:py:class:`str`,'
+                 ' :py:data:`~typing.Any`]',
                  marks=pytest.mark.skipif((3, 5, 0) <= sys.version_info[:3] <= (3, 5, 2),
                                           reason='Union erases the str on 3.5.0 -> 3.5.2')),
-    (Optional[str],                 ':data:`~typing.Optional`\\[:class:`str`]'),
-    (Callable,                      ':data:`~typing.Callable`'),
-    (Callable[..., int],            ':data:`~typing.Callable`\\[..., :class:`int`]'),
-    (Callable[[int], int],          ':data:`~typing.Callable`\\[\\[:class:`int`], :class:`int`]'),
-    (Callable[[int, str], bool],    ':data:`~typing.Callable`\\[\\[:class:`int`, :class:`str`], '
-                                    ':class:`bool`]'),
-    (Callable[[int, str], None],    ':data:`~typing.Callable`\\[\\[:class:`int`, :class:`str`], '
+    (Optional[str],                 ':py:data:`~typing.Optional`\\[:py:class:`str`]'),
+    (Callable,                      ':py:data:`~typing.Callable`'),
+    (Callable[..., int],            ':py:data:`~typing.Callable`\\[..., :py:class:`int`]'),
+    (Callable[[int], int],          ':py:data:`~typing.Callable`\\[\\[:py:class:`int`],'
+     ' :py:class:`int`]'),
+    (Callable[[int, str], bool],    ':py:data:`~typing.Callable`\\[\\[:py:class:`int`,'
+     ' :py:class:`str`], '
+                                    ':py:class:`bool`]'),
+    (Callable[[int, str], None],    ':py:data:`~typing.Callable`\\[\\[:py:class:`int`,'
+     ' :py:class:`str`], '
                                     '``None``]'),
-    (Callable[[T], T],              ':data:`~typing.Callable`\\[\\[\\~T], \\~T]'),
-    (Pattern,                       ':class:`~typing.Pattern`\\[:data:`~typing.AnyStr`]'),
-    (Pattern[str],                  ':class:`~typing.Pattern`\\[:class:`str`]'),
-    (A,                             ':class:`~%s.A`' % __name__),
-    (B,                             ':class:`~%s.B`\\[\\~T]' % __name__)
+    (Callable[[T], T],              ':py:data:`~typing.Callable`\\[\\[\\~T], \\~T]'),
+    (Pattern,                       ':py:class:`~typing.Pattern`\\[:py:data:`~typing.AnyStr`]'),
+    (Pattern[str],                  ':py:class:`~typing.Pattern`\\[:py:class:`str`]'),
+    (A,                             ':py:class:`~%s.A`' % __name__),
+    (B,                             ':py:class:`~%s.B`\\[\\~T]' % __name__)
 ])
 def test_format_annotation(annotation, expected_result):
     result = format_annotation(annotation)
@@ -85,8 +94,8 @@ def test_format_annotation(annotation, expected_result):
 
 @pytest.mark.skipif(Type is None, reason='Type does not exist in the typing module')
 @pytest.mark.parametrize('type_param, expected_result', [
-    (None, ':class:`~typing.Type`\\[\\+CT'),
-    (A, ':class:`~typing.Type`\\[:class:`~%s.A`]' % __name__)
+    (None, ':py:class:`~typing.Type`\\[\\+CT'),
+    (A, ':py:class:`~typing.Type`\\[:py:class:`~%s.A`]' % __name__)
 ])
 def test_format_annotation_type(type_param, expected_result):
     annotation = Type[type_param] if type_param else Type
