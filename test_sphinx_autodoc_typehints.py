@@ -48,39 +48,36 @@ class Slotted:
     (Mapping[T, int],               ':py:class:`~typing.Mapping`\\[\\~T, :py:class:`int`]'),
     (Mapping[str, V],               ':py:class:`~typing.Mapping`\\[:py:class:`str`, \\-V]'),
     (Mapping[T, U],                 ':py:class:`~typing.Mapping`\\[\\~T, \\+U]'),
-    (Mapping[str, bool],            ':py:class:`~typing.Mapping`\\[:py:class:`str`,'
-     ' :py:class:`bool`]'),
+    (Mapping[str, bool],            ':py:class:`~typing.Mapping`\\[:py:class:`str`, '
+                                    ':py:class:`bool`]'),
     (Dict,                          ':py:class:`~typing.Dict`\\[\\~KT, \\~VT]'),
     (Dict[T, int],                  ':py:class:`~typing.Dict`\\[\\~T, :py:class:`int`]'),
     (Dict[str, V],                  ':py:class:`~typing.Dict`\\[:py:class:`str`, \\-V]'),
     (Dict[T, U],                    ':py:class:`~typing.Dict`\\[\\~T, \\+U]'),
     (Dict[str, bool],               ':py:class:`~typing.Dict`\\[:py:class:`str`, '
-     ' :py:class:`bool`]'),
+                                    ':py:class:`bool`]'),
     (Tuple,                         ':py:class:`~typing.Tuple`'),
-    (Tuple[str, bool],              ':py:class:`~typing.Tuple`\\[:py:class:`str`,'
-     ' :py:class:`bool`]'),
-    (Tuple[int, int, int],          ':py:class:`~typing.Tuple`\\[:py:class:`int`,'
-     ':py:class:`int`, '
-                                    ':py:class:`int`]'),
+    (Tuple[str, bool],              ':py:class:`~typing.Tuple`\\[:py:class:`str`, '
+                                    ':py:class:`bool`]'),
+    (Tuple[int, int, int],          ':py:class:`~typing.Tuple`\\[:py:class:`int`, '
+                                    ':py:class:`int`, :py:class:`int`]'),
     (Tuple[str, ...],               ':py:class:`~typing.Tuple`\\[:py:class:`str`, ...]'),
     (Union,                         ':py:data:`~typing.Union`'),
-    (Union[str, bool],              ':py:data:`~typing.Union`\\[:py:class:`str`,'
-     ' :py:class:`bool`]'),
-    pytest.param(Union[str, Any],   ':py:data:`~typing.Union`\\[:py:class:`str`,'
-                 ' :py:data:`~typing.Any`]',
+    (Union[str, bool],              ':py:data:`~typing.Union`\\[:py:class:`str`, '
+                                    ':py:class:`bool`]'),
+    pytest.param(Union[str, Any],   ':py:data:`~typing.Union`\\[:py:class:`str`, '
+                                    ':py:data:`~typing.Any`]',
                  marks=pytest.mark.skipif((3, 5, 0) <= sys.version_info[:3] <= (3, 5, 2),
                                           reason='Union erases the str on 3.5.0 -> 3.5.2')),
     (Optional[str],                 ':py:data:`~typing.Optional`\\[:py:class:`str`]'),
     (Callable,                      ':py:data:`~typing.Callable`'),
     (Callable[..., int],            ':py:data:`~typing.Callable`\\[..., :py:class:`int`]'),
-    (Callable[[int], int],          ':py:data:`~typing.Callable`\\[\\[:py:class:`int`],'
-     ' :py:class:`int`]'),
-    (Callable[[int, str], bool],    ':py:data:`~typing.Callable`\\[\\[:py:class:`int`,'
-     ' :py:class:`str`], '
-                                    ':py:class:`bool`]'),
-    (Callable[[int, str], None],    ':py:data:`~typing.Callable`\\[\\[:py:class:`int`,'
-     ' :py:class:`str`], '
-                                    '``None``]'),
+    (Callable[[int], int],          ':py:data:`~typing.Callable`\\[\\[:py:class:`int`], '
+                                    ':py:class:`int`]'),
+    (Callable[[int, str], bool],    ':py:data:`~typing.Callable`\\[\\[:py:class:`int`, '
+                                    ':py:class:`str`], :py:class:`bool`]'),
+    (Callable[[int, str], None],    ':py:data:`~typing.Callable`\\[\\[:py:class:`int`, '
+                                    ':py:class:`str`], ``None``]'),
     (Callable[[T], T],              ':py:data:`~typing.Callable`\\[\\[\\~T], \\~T]'),
     (Pattern,                       ':py:class:`~typing.Pattern`\\[:py:data:`~typing.AnyStr`]'),
     (Pattern[str],                  ':py:class:`~typing.Pattern`\\[:py:class:`str`]'),
