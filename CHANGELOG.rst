@@ -1,3 +1,9 @@
+1.2.2
+=====
+
+* Explicitly prefix ``:class:``, ``:mod:`` et al with ``:py:``, in case ``py`` is not the default
+  domain of the project (thanks Monty Taylor)
+
 1.2.1
 =====
 
