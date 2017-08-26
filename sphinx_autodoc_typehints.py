@@ -110,7 +110,7 @@ def format_annotation(annotation):
 
 
 def process_signature(app, what: str, name: str, obj, options, signature, return_annotation):
-    if callable(obj):
+    if callable(obj) and getattr(obj, '__annotations__', None):
         if what in ('class', 'exception'):
             obj = getattr(obj, '__init__')
 

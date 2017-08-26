@@ -1,8 +1,15 @@
+1.2.3
+=====
+
+* Fixed `process_signature()` clobbering any explicitly overridden signatures from the docstring
+
+
 1.2.2
 =====
 
 * Explicitly prefix ``:class:``, ``:mod:`` et al with ``:py:``, in case ``py`` is not the default
   domain of the project (thanks Monty Taylor)
+
 
 1.2.1
 =====
