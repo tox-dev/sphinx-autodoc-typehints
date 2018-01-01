@@ -53,6 +53,17 @@ class Class:
         pass
 
 
+class DummyException(Exception):
+    """
+    Exception docstring
+
+    :param message: blah
+    """
+
+    def __init__(self, message: str):
+        super().__init__(message)
+
+
 def function(x: bool, y: int, z: typing.Optional[str]=None) -> str:
     """
     Function docstring.

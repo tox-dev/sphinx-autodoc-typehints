@@ -196,6 +196,13 @@ def test_sphinx_output():
               Return type:
                  "str"
 
+        exception dummy_module.DummyException(message)
+
+           Exception docstring
+
+           Parameters:
+              **message** ("str") – blah
+
         dummy_module.function(x, y, z=None)
 
            Function docstring.

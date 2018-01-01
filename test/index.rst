@@ -5,4 +5,8 @@ Dummy Module
    :members:
    :undoc-members:
 
+.. autoexception:: dummy_module.DummyException
+   :members:
+   :undoc-members:
+
 .. autofunction:: dummy_module.function
