@@ -1,9 +1,13 @@
+import pathlib
 import pytest
 import sys
+import textwrap
+from sphinx_testing import with_app
 from typing import (
     Any, AnyStr, Callable, Dict, Generic, Mapping, Optional, Pattern, Tuple, TypeVar, Union)
 
 from sphinx_autodoc_typehints import format_annotation, process_docstring
+
 
 try:
     from typing import Type
@@ -96,3 +100,111 @@ def test_process_docstring_slot_wrapper():
     lines = []
     process_docstring(None, 'class', 'SlotWrapper', Slotted, None, lines)
     assert not lines
+
+
+def test_sphinx_output():
+    test_path = pathlib.Path(__file__).parent
+    if str(test_path) not in sys.path:
+        sys.path.insert(0, str(test_path))
+
+    result = {}
+
+    @with_app(
+        buildername='text',
+        srcdir=test_path / 'fake_docs',
+        copy_srcdir_to_tmpdir=False,
+        )
+    def run_sphinx(app, status, warning):
+        app.build()
+        # The sphinx-testing with_app decorator does not return decorated
+        # function's return value, so we stash the results into a dict
+        result['app'] = app
+        result['status'] = status.getvalue()
+        result['warning'] = warning.getvalue()
+        builddir = pathlib.Path(result['app'].builddir)
+        text_path = builddir / 'text' / 'index.txt'
+        with text_path.open('r') as f:
+            result['text'] = f.read()
+
+    run_sphinx()
+
+    assert not result['warning'].strip()  # No warnings
+    assert 'build succeeded' in result['status']
+    assert result['text'] == textwrap.dedent('''\
+        Fake Package
+        ************
+
+        class fake_package.Class(x, y, z=None)
+
+           Initializer docstring.
+
+           Parameters:
+              * **x** ("bool") – foo
+
+              * **y** ("int") – bar
+
+              * **z** ("Optional"["str"]) – baz
+
+           classmethod a_classmethod(y, z=None)
+
+              Classmethod docstring.
+
+              Parameters:
+                 * **x** ("bool") – foo
+
+                 * **y** ("int") – bar
+
+                 * **z** ("Optional"["str"]) – baz
+
+              Return type:
+                 "str"
+
+           a_method(x, y, z=None)
+
+              Method docstring.
+
+              Parameters:
+                 * **x** ("bool") – foo
+
+                 * **y** ("int") – bar
+
+                 * **z** ("Optional"["str"]) – baz
+
+              Return type:
+                 "str"
+
+           a_property
+
+              Property docstring
+
+              Return type:
+                 "str"
+
+           static a_staticmethod(y, z=None)
+
+              Staticmethod docstring.
+
+              Parameters:
+                 * **x** ("bool") – foo
+
+                 * **y** ("int") – bar
+
+                 * **z** ("Optional"["str"]) – baz
+
+              Return type:
+                 "str"
+
+        fake_package.function(x, y, z=None)
+
+           Function docstring.
+
+           Parameters:
+              * **x** ("bool") – foo
+
+              * **y** ("int") – bar
+
+              * **z** ("Optional"["str"]) – baz
+
+           Return type:
+              "str"
+        ''')
