@@ -147,7 +147,7 @@ def test_sphinx_output():
 
               * **z** ("Optional"["str"]) – baz
 
-           classmethod a_classmethod(y, z=None)
+           classmethod a_classmethod(x, y, z=None)
 
               Classmethod docstring.
 
@@ -182,7 +182,7 @@ def test_sphinx_output():
               Return type:
                  "str"
 
-           static a_staticmethod(y, z=None)
+           static a_staticmethod(x, y, z=None)
 
               Staticmethod docstring.
 
