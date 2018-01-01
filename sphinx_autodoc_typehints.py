@@ -106,20 +106,25 @@ def format_annotation(annotation):
 
 
 def process_signature(app, what: str, name: str, obj, options, signature, return_annotation):
-    if callable(obj) and getattr(obj, '__annotations__', None):
-        if what in ('class', 'exception'):
-            obj = getattr(obj, '__init__')
+    if not callable(obj):
+        return
 
-        obj = unwrap(obj)
-        try:
-            argspec = getargspec(obj)
-        except (TypeError, ValueError):
-            return
+    if what in ('class', 'exception'):
+        obj = getattr(obj, '__init__', getattr(obj, '__new__', None))
 
-        if what in ('method', 'class', 'exception') and argspec.args:
-            del argspec.args[0]
+    if not getattr(obj, '__annotations__', None):
+        return
 
-        return formatargspec(obj, *argspec[:-1]), None
+    obj = unwrap(obj)
+    try:
+        argspec = getargspec(obj)
+    except (TypeError, ValueError):
+        return
+
+    if what in ('method', 'class', 'exception') and argspec.args:
+        del argspec.args[0]
+
+    return formatargspec(obj, *argspec[:-1]), None
 
 
 def process_docstring(app, what, name, obj, options, lines):
