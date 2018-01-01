@@ -1,3 +1,9 @@
+1.2.4
+=====
+
+* Removed support for ``backports.typing`` as it has been removed from the PyPI
+
+
 1.2.3
 =====
 

@@ -1,22 +1,14 @@
 import pytest
 import sys
+from typing import (
+    Any, AnyStr, Callable, Dict, Generic, Mapping, Optional, Pattern, Tuple, TypeVar, Union)
 
 from sphinx_autodoc_typehints import format_annotation, process_docstring
 
 try:
-    from backports.typing import (Any, AnyStr, Callable, Dict, Generic, Mapping, Optional, Pattern,
-                                  Tuple, TypeVar, Union)
+    from typing import Type
 except ImportError:
-    from typing import (Any, AnyStr, Callable, Dict, Generic, Mapping, Optional, Pattern,
-                        Tuple, TypeVar, Union)
-
-try:
-    from backports.typing import Type
-except ImportError:
-    try:
-        from typing import Type
-    except ImportError:
-        Type = None
+    Type = None
 
 
 T = TypeVar('T')
