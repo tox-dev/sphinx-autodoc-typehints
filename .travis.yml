@@ -1,24 +1,48 @@
+language: python
 sudo: false
 
-language: python
+stages:
+  - name: test
+  - name: deploy to pypi
+    if: type = push AND tag =~ ^\d+\.\d+\.\d+
 
-python:
-  - "3.4"
-  - "3.5.0"
-  - "3.5.2"
-  - "3.6"
+jobs:
+  fast_finish: true
+  include:
+    - env: TOXENV=flake8
 
-install: pip install tox-travis
+    - env: TOXENV=py34
+      python: "3.4"
+      after_success: &after_success
+        - pip install coveralls
+        - coveralls
+
+    - env: TOXENV=py35
+      python: "3.5.0"
+      after_success: *after_success
+
+    - env: TOXENV=py35
+      python: "3.5.2"
+      after_success: *after_success
+
+    - env: TOXENV=py36
+      python: "3.6"
+      after_success: *after_success
+
+    - stage: deploy to pypi
+      install: skip
+      script: skip
+      deploy:
+        provider: pypi
+        user: agronholm
+        password:
+          secure: d/87aXO/yS1O6DHyO+vrwpkFfiQ03bwEfcWjMT+HcsHAmzmiBjgOmlkIGYIt9lKuRHReZ4yQExFvUd5vUp5lm4a1dV48PGzx+SGf49LvltZxJr6DJzkr4NdsZz7pQIPKBhSxO1olj1OMfdHS+sLnfP9Ulp6eMh7ATN6JF9tuxch6bFEFEc2lCXlRklEUfm/QyZto2I9etW6L7Aj/ZERsmA3E8ldMw4prRKB0oAuy2socP19Hc4Eps4ITlCRLDFSl0ASTtY68kZZMAK+NAII7UHn8sjVMlYZQQmDyn61voOz83X0p4hVhPzOJS3h/0/x4LTsLWJ40xynUc2KkRuT3HA9Rk44bjxLdA4Au3aqe7tEvR48pk95Ze1+pJQ/Dm8ocqsRavcUh/8FtKvMxPRr5fLC/HiN7Oi+1Wwryj0Zm9ecVdVQFHCF4EwDc1KPt/yK7t/YsbpbrKdQqsF32O7mgYqAg+qQkUQ+4ts7QD6gc+lI7mT5CDaFwI2oTJS7AYuY2X5blBTl4ClVKLZ1xS6UZCcS23sio0haA6e8V0xQWKn5qG52LZHzedfnxQUyB4AwZ8VdOZBIzgMuWT8dkaibpu+15uYxcuhdXWI46cV/oOjHHi7OmAIDfOkeOi8B5bhGL8MpsIaGjPYccuevjEWo0V6lDjcr/dI6ytsdInxnsswc=
+        distributions: sdist bdist_wheel
+        on:
+          tags: true
+
+python: "3.4"
+
+install: pip install tox
 
 script: tox
-
-deploy:
-  provider: pypi
-  user: agronholm
-  password:
-    secure: d/87aXO/yS1O6DHyO+vrwpkFfiQ03bwEfcWjMT+HcsHAmzmiBjgOmlkIGYIt9lKuRHReZ4yQExFvUd5vUp5lm4a1dV48PGzx+SGf49LvltZxJr6DJzkr4NdsZz7pQIPKBhSxO1olj1OMfdHS+sLnfP9Ulp6eMh7ATN6JF9tuxch6bFEFEc2lCXlRklEUfm/QyZto2I9etW6L7Aj/ZERsmA3E8ldMw4prRKB0oAuy2socP19Hc4Eps4ITlCRLDFSl0ASTtY68kZZMAK+NAII7UHn8sjVMlYZQQmDyn61voOz83X0p4hVhPzOJS3h/0/x4LTsLWJ40xynUc2KkRuT3HA9Rk44bjxLdA4Au3aqe7tEvR48pk95Ze1+pJQ/Dm8ocqsRavcUh/8FtKvMxPRr5fLC/HiN7Oi+1Wwryj0Zm9ecVdVQFHCF4EwDc1KPt/yK7t/YsbpbrKdQqsF32O7mgYqAg+qQkUQ+4ts7QD6gc+lI7mT5CDaFwI2oTJS7AYuY2X5blBTl4ClVKLZ1xS6UZCcS23sio0haA6e8V0xQWKn5qG52LZHzedfnxQUyB4AwZ8VdOZBIzgMuWT8dkaibpu+15uYxcuhdXWI46cV/oOjHHi7OmAIDfOkeOi8B5bhGL8MpsIaGjPYccuevjEWo0V6lDjcr/dI6ytsdInxnsswc=
-  distributions: sdist bdist_wheel
-  on:
-    tags: true
-    python: "3.6"
-    repo: agronholm/sphinx-autodoc-typehints

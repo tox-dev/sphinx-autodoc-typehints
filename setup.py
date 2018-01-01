@@ -38,7 +38,6 @@ setup(
     ],
     extras_require={
         'test': 'pytest >= 3.1.0',
-        ':python_version == "3.3"': 'typing >= 3.5',
         ':python_version == "3.4"': 'typing >= 3.5'
     }
 )
