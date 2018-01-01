@@ -104,6 +104,8 @@ def test_process_docstring_slot_wrapper():
 
 def test_sphinx_output():
     test_path = pathlib.Path(__file__).parent
+
+    # Add test directory to sys.path to allow imports of dummy module.
     if str(test_path) not in sys.path:
         sys.path.insert(0, str(test_path))
 
@@ -111,7 +113,7 @@ def test_sphinx_output():
 
     @with_app(
         buildername='text',
-        srcdir=test_path / 'fake_docs',
+        srcdir=test_path,
         copy_srcdir_to_tmpdir=False,
         )
     def run_sphinx(app, status, warning):
@@ -131,10 +133,10 @@ def test_sphinx_output():
     assert not result['warning'].strip()  # No warnings
     assert 'build succeeded' in result['status']
     assert result['text'] == textwrap.dedent('''\
-        Fake Package
+        Dummy Module
         ************
 
-        class fake_package.Class(x, y, z=None)
+        class dummy_module.Class(x, y, z=None)
 
            Initializer docstring.
 
@@ -194,7 +196,7 @@ def test_sphinx_output():
               Return type:
                  "str"
 
-        fake_package.function(x, y, z=None)
+        dummy_module.function(x, y, z=None)
 
            Function docstring.
 
