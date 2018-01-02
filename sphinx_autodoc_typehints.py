@@ -28,7 +28,7 @@ except ImportError:
 
 def get_class_that_defined_method(meth):
     """
-    Via https://stackoverflow.com/questions/3589311/get-defining-class-of-unbound-method-object-in-python-3/25959545#25959545
+    Via https://stackoverflow.com/questions/3589311
     """
     if inspect.ismethod(meth):
         for cls in inspect.getmro(meth.__self__.__class__):
