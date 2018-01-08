@@ -2,7 +2,6 @@ import pathlib
 import pytest
 import sys
 import textwrap
-from sphinx_testing import with_app
 from typing import (
     Any, AnyStr, Callable, Dict, Generic, Mapping, Optional, Pattern, Tuple, TypeVar, Union)
 
@@ -102,37 +101,23 @@ def test_process_docstring_slot_wrapper():
     assert not lines
 
 
-def test_sphinx_output():
+@pytest.mark.sphinx('text', testroot='dummy')
+def test_sphinx_output(app, status, warning):
     test_path = pathlib.Path(__file__).parent
 
     # Add test directory to sys.path to allow imports of dummy module.
     if str(test_path) not in sys.path:
         sys.path.insert(0, str(test_path))
 
-    result = {}
+    app.build()
 
-    @with_app(
-        buildername='text',
-        srcdir=test_path,
-        copy_srcdir_to_tmpdir=False,
-        )
-    def run_sphinx(app, status, warning):
-        app.build()
-        # The sphinx-testing with_app decorator does not return decorated
-        # function's return value, so we stash the results into a dict
-        result['app'] = app
-        result['status'] = status.getvalue()
-        result['warning'] = warning.getvalue()
-        builddir = pathlib.Path(result['app'].builddir)
-        text_path = builddir / 'text' / 'index.txt'
-        with text_path.open('r') as f:
-            result['text'] = f.read()
+    assert 'build succeeded' in status.getvalue()  # Build succeeded
+    assert not warning.getvalue().strip()  # No warnings
 
-    run_sphinx()
-
-    assert not result['warning'].strip()  # No warnings
-    assert 'build succeeded' in result['status']
-    assert result['text'] == textwrap.dedent('''\
+    text_path = pathlib.Path(app.srcdir) / '_build' / 'text' / 'index.txt'
+    with text_path.open('r') as f:
+        text_contents = f.read().replace('–', '--')
+        text_contents == textwrap.dedent('''\
         Dummy Module
         ************
 
@@ -216,4 +201,4 @@ def test_sphinx_output():
 
            Return type:
               "str"
-        ''')
+        ''').replace('–', '--')
