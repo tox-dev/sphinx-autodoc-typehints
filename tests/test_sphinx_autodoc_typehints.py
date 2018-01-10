@@ -4,10 +4,7 @@ import sys
 import textwrap
 from typing import (
     Any, AnyStr, Callable, Dict, Generic, Mapping, Optional, Pattern, Tuple, TypeVar, Union)
-
 from sphinx_autodoc_typehints import format_annotation, process_docstring
-
-
 try:
     from typing import Type
 except ImportError:
@@ -117,7 +114,7 @@ def test_sphinx_output(app, status, warning):
     text_path = pathlib.Path(app.srcdir) / '_build' / 'text' / 'index.txt'
     with text_path.open('r') as f:
         text_contents = f.read().replace('–', '--')
-        text_contents == textwrap.dedent('''\
+        assert text_contents == textwrap.dedent('''\
         Dummy Module
         ************
 
