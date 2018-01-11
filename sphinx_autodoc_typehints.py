@@ -26,6 +26,23 @@ except ImportError:
         return func
 
 
+def get_class_that_defined_method(meth):
+    """
+    Via https://stackoverflow.com/questions/3589311
+    """
+    if inspect.ismethod(meth):
+        for cls in inspect.getmro(meth.__self__.__class__):
+            if cls.__dict__.get(meth.__name__) is meth:
+                return cls
+        meth = meth.__func__  # fallback to __qualname__ parsing
+    if inspect.isfunction(meth):
+        cls = getattr(inspect.getmodule(meth),
+                      meth.__qualname__.split('.<locals>', 1)[0].rsplit('.', 1)[0])
+        if isinstance(cls, type):
+            return cls
+    return None  # not required since None would have been implicitly returned anyway
+
+
 def format_annotation(annotation):
     if inspect.isclass(annotation) and annotation.__module__ == 'builtins':
         if annotation.__qualname__ == 'NoneType':
@@ -106,20 +123,31 @@ def format_annotation(annotation):
 
 
 def process_signature(app, what: str, name: str, obj, options, signature, return_annotation):
-    if callable(obj) and getattr(obj, '__annotations__', None):
+    if not callable(obj):
+        return
+
+    if what in ('class', 'exception'):
+        obj = getattr(obj, '__init__', getattr(obj, '__new__', None))
+
+    if not getattr(obj, '__annotations__', None):
+        return
+
+    obj = unwrap(obj)
+    try:
+        argspec = getargspec(obj)
+    except (TypeError, ValueError):
+        return
+
+    if argspec.args:
         if what in ('class', 'exception'):
-            obj = getattr(obj, '__init__')
-
-        obj = unwrap(obj)
-        try:
-            argspec = getargspec(obj)
-        except (TypeError, ValueError):
-            return
-
-        if what in ('method', 'class', 'exception') and argspec.args:
             del argspec.args[0]
+        elif what == 'method':
+            class_ = get_class_that_defined_method(obj)
+            method_object = class_.__dict__[obj.__name__]
+            if not isinstance(method_object, (classmethod, staticmethod)):
+                del argspec.args[0]
 
-        return formatargspec(obj, *argspec[:-1]), None
+    return formatargspec(obj, *argspec[:-1]), None
 
 
 def process_docstring(app, what, name, obj, options, lines):

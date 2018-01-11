@@ -1,10 +1,10 @@
+import pathlib
 import pytest
 import sys
+import textwrap
 from typing import (
     Any, AnyStr, Callable, Dict, Generic, Mapping, Optional, Pattern, Tuple, TypeVar, Union)
-
 from sphinx_autodoc_typehints import format_annotation, process_docstring
-
 try:
     from typing import Type
 except ImportError:
@@ -96,3 +96,106 @@ def test_process_docstring_slot_wrapper():
     lines = []
     process_docstring(None, 'class', 'SlotWrapper', Slotted, None, lines)
     assert not lines
+
+
+@pytest.mark.sphinx('text', testroot='dummy')
+def test_sphinx_output(app, status, warning):
+    test_path = pathlib.Path(__file__).parent
+
+    # Add test directory to sys.path to allow imports of dummy module.
+    if str(test_path) not in sys.path:
+        sys.path.insert(0, str(test_path))
+
+    app.build()
+
+    assert 'build succeeded' in status.getvalue()  # Build succeeded
+    assert not warning.getvalue().strip()  # No warnings
+
+    text_path = pathlib.Path(app.srcdir) / '_build' / 'text' / 'index.txt'
+    with text_path.open('r') as f:
+        text_contents = f.read().replace('–', '--')
+        assert text_contents == textwrap.dedent('''\
+        Dummy Module
+        ************
+
+        class dummy_module.Class(x, y, z=None)
+
+           Initializer docstring.
+
+           Parameters:
+              * **x** ("bool") – foo
+
+              * **y** ("int") – bar
+
+              * **z** ("Optional"["str"]) – baz
+
+           classmethod a_classmethod(x, y, z=None)
+
+              Classmethod docstring.
+
+              Parameters:
+                 * **x** ("bool") – foo
+
+                 * **y** ("int") – bar
+
+                 * **z** ("Optional"["str"]) – baz
+
+              Return type:
+                 "str"
+
+           a_method(x, y, z=None)
+
+              Method docstring.
+
+              Parameters:
+                 * **x** ("bool") – foo
+
+                 * **y** ("int") – bar
+
+                 * **z** ("Optional"["str"]) – baz
+
+              Return type:
+                 "str"
+
+           a_property
+
+              Property docstring
+
+              Return type:
+                 "str"
+
+           static a_staticmethod(x, y, z=None)
+
+              Staticmethod docstring.
+
+              Parameters:
+                 * **x** ("bool") – foo
+
+                 * **y** ("int") – bar
+
+                 * **z** ("Optional"["str"]) – baz
+
+              Return type:
+                 "str"
+
+        exception dummy_module.DummyException(message)
+
+           Exception docstring
+
+           Parameters:
+              **message** ("str") – blah
+
+        dummy_module.function(x, y, z=None)
+
+           Function docstring.
+
+           Parameters:
+              * **x** ("bool") – foo
+
+              * **y** ("int") – bar
+
+              * **z** ("Optional"["str"]) – baz
+
+           Return type:
+              "str"
+        ''').replace('–', '--')
