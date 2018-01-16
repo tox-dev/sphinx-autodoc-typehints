@@ -180,7 +180,6 @@ def process_docstring(app, what, name, obj, options, lines):
                         break
                     elif line.startswith(':return:') or line.startswith(':returns:'):
                         insert_index = i
-                        break
 
                 if insert_index is not None:
                     lines.insert(insert_index, ':rtype: {}'.format(formatted_annotation))
