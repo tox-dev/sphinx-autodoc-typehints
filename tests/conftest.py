@@ -16,8 +16,11 @@ def remove_sphinx_projects(sphinx_test_tempdir):
     # See https://github.com/sphinx-doc/sphinx/issues/4040
     roots_path = pathlib.Path(sphinx_test_tempdir)
     for entry in roots_path.iterdir():
-        if entry.is_dir() and pathlib.Path(entry, '_build').exists():
-            shutil.rmtree(str(entry))
+        try:
+            if entry.is_dir() and pathlib.Path(entry, '_build').exists():
+                shutil.rmtree(str(entry))
+        except PermissionError:
+            pass
 
 
 @pytest.fixture
