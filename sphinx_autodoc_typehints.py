@@ -34,7 +34,7 @@ def format_annotation(annotation):
             return ':py:class:`{}`'.format(annotation.__qualname__)
 
     annotation_cls = annotation if inspect.isclass(annotation) else type(annotation)
-    if annotation_cls.__module__ in ('typing', 'backports.typing'):
+    if annotation_cls.__module__ == 'typing':
         params = None
         prefix = ':py:class:'
         extra = ''
