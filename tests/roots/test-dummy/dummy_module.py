@@ -67,4 +67,6 @@ def function(x: bool, y: int, z: typing.Optional[str] = None) -> str:
     :param x: foo
     :param y: bar
     :param z: baz
+    :return: something
+    :rtype: bytes
     """

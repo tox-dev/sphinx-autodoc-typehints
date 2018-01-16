@@ -198,6 +198,9 @@ def test_sphinx_output(app, status, warning):
 
               * **z** ("Optional"["str"]) – baz
 
+           Returns:
+              something
+
            Return type:
-              "str"
+              bytes
         ''').replace('–', '--')
