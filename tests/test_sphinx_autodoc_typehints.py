@@ -4,7 +4,9 @@ import sys
 import textwrap
 from typing import (
     Any, AnyStr, Callable, Dict, Generic, Mapping, Optional, Pattern, Tuple, TypeVar, Union)
+
 from sphinx_autodoc_typehints import format_annotation, process_docstring
+
 try:
     from typing import Type
 except ImportError:
