@@ -167,6 +167,12 @@ def process_docstring(app, what, name, obj, options, lines):
                         insert_index = i
 
                 if insert_index is not None:
+                    if insert_index == len(lines):
+                        # Ensure that :rtype: doesn't get joined with a paragraph of text, which
+                        # prevents it being interpreted.
+                        lines.append('')
+                        insert_index += 1
+
                     lines.insert(insert_index, ':rtype: {}'.format(formatted_annotation))
             else:
                 searchfor = ':param {}:'.format(argname)
