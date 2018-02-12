@@ -1,11 +1,16 @@
+1.2.5
+=====
+
+* Ensured that ``:rtype:`` doesn't get joined with a paragraph of text
+  (thanks to Bruce Merry for the PR)
+
+
 1.2.4
 =====
 
 * Removed support for ``backports.typing`` as it has been removed from the PyPI
 * Fixed first parameter being cut out from class methods and static methods
   (thanks to Josiah Wolf Oberholtzer for the PR)
-* Fixed an extra ``:rtype:`` being inserted to the docstring when it already has one
-  (thanks to David Vo for the PR)
 
 
 1.2.3
