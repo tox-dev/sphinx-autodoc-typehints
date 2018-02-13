@@ -44,7 +44,7 @@ def format_annotation(annotation):
         elif annotation is AnyStr:
             return ':py:data:`~typing.AnyStr`'
         elif isinstance(annotation, TypeVar):
-            return '\\%r' % annotation
+            return annotation.__name__
         elif class_name in ('Union', '_Union'):
             prefix = ':py:data:'
             class_name = 'Union'
