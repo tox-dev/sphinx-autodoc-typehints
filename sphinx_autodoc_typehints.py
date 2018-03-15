@@ -125,10 +125,10 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
         if what in ('class', 'exception'):
             del argspec.args[0]
         elif what == 'method':
-            module = inspect.getmodule(obj)
-            clsname = obj.__qualname__.rsplit('.', 1)[0]
-            cls = getattr(module, clsname)
-            method_object = cls.__dict__[obj.__name__]
+            outer = inspect.getmodule(obj)
+            for clsname in obj.__qualname__.split('.')[:-1]:
+                outer = getattr(outer, clsname)
+            method_object = outer.__dict__[obj.__name__]
             if not isinstance(method_object, (classmethod, staticmethod)):
                 del argspec.args[0]
 
