@@ -97,9 +97,12 @@ def format_annotation(annotation):
     elif inspect.isclass(annotation):
         extra = ''
         if isinstance(annotation, GenericMeta):
-            extra = '\\[{}]'.format(', '.join(format_annotation(param)
-                                              for param in annotation.__parameters__))
-
+            if getattr(annotation, '__parameters__', None):
+                extra = '\\[{}]'.format(', '.join(format_annotation(param)
+                                                  for param in annotation.__parameters__))
+            elif getattr(annotation, '__args__', None):
+                extra = '\\[{}]'.format(', '.join(format_annotation(arg)
+                                                  for arg in annotation.__args__))
         return ':py:class:`~{}.{}`{}'.format(annotation.__module__, annotation.__qualname__, extra)
     else:
         return str(annotation)
