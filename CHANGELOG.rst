@@ -1,3 +1,9 @@
+1.2.6
+=====
+
+* Fixed crash when processing docstrings from nested classes (thanks to dilyanpalauzov for the fix)
+
+
 1.2.5
 =====
 
