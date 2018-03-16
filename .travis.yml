@@ -18,10 +18,6 @@ jobs:
         - coveralls
 
     - env: TOXENV=py35
-      python: "3.5.0"
-      after_success: *after_success
-
-    - env: TOXENV=py35
       python: "3.5.2"
       after_success: *after_success
 
