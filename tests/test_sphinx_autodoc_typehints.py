@@ -70,7 +70,8 @@ class Slotted:
     (Pattern,                       ':py:class:`~typing.Pattern`\\[:py:data:`~typing.AnyStr`]'),
     (Pattern[str],                  ':py:class:`~typing.Pattern`\\[:py:class:`str`]'),
     (A,                             ':py:class:`~%s.A`' % __name__),
-    (B,                             ':py:class:`~%s.B`\\[\\~T]' % __name__)
+    (B,                             ':py:class:`~%s.B`\\[\\~T]' % __name__),
+    (B[int],                        ':py:class:`~%s.B`\\[:py:class:`int`]' % __name__)
 ])
 def test_format_annotation(annotation, expected_result):
     result = format_annotation(annotation)

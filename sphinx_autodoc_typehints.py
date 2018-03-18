@@ -38,8 +38,14 @@ def format_annotation(annotation):
     if annotation_cls.__module__ == 'typing':
         params = None
         prefix = ':py:class:'
+        module = 'typing'
         extra = ''
-        annotation_cls = getattr(annotation, '__origin__', None) or annotation_cls
+
+        if inspect.isclass(getattr(annotation, '__origin__', None)):
+            annotation_cls = annotation.__origin__
+            if annotation_cls is not type and Generic in annotation_cls.mro():
+                module = annotation_cls.__module__
+
         if annotation is Any:
             return ':py:data:`~typing.Any`'
         elif annotation is AnyStr:
@@ -96,18 +102,23 @@ def format_annotation(annotation):
         if not class_name:
             class_name = annotation_cls.__qualname__.title()
 
-        return '{}`~typing.{}`{}'.format(prefix, class_name, extra)
+        return '{}`~{}.{}`{}'.format(prefix, module, class_name, extra)
     elif annotation is Ellipsis:
         return '...'
-    elif inspect.isclass(annotation):
+    elif inspect.isclass(annotation) or inspect.isclass(getattr(annotation, '__origin__', None)):
+        if not inspect.isclass(annotation):
+            annotation_cls = annotation.__origin__
+
         extra = ''
         if Generic in annotation_cls.mro():
-            extra = '\\[{}]'.format(', '.join(format_annotation(param)
-                                              for param in annotation.__parameters__))
+            params = (getattr(annotation, '__parameters__', None) or
+                      getattr(annotation, '__args__', None))
+            extra = '\\[{}]'.format(', '.join(format_annotation(param) for param in params))
 
-        return ':py:class:`~{}.{}`{}'.format(annotation.__module__, annotation.__qualname__, extra)
-    else:
-        return str(annotation)
+        return ':py:class:`~{}.{}`{}'.format(annotation.__module__, annotation_cls.__qualname__,
+                                             extra)
+
+    return str(annotation)
 
 
 def process_signature(app, what: str, name: str, obj, options, signature, return_annotation):
