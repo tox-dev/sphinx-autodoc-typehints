@@ -26,7 +26,7 @@ jobs:
       after_success: *after_success
 
     - env: TOXENV=py37
-      python: "3.7"
+      python: nightly
       after_success: *after_success
 
     - stage: deploy to pypi
