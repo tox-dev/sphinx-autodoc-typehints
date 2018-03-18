@@ -43,8 +43,11 @@ def format_annotation(annotation):
 
         if inspect.isclass(getattr(annotation, '__origin__', None)):
             annotation_cls = annotation.__origin__
-            if annotation_cls is not type and Generic in annotation_cls.mro():
-                module = annotation_cls.__module__
+            try:
+                if Generic in annotation_cls.mro():
+                    module = annotation_cls.__module__
+            except TypeError:
+                pass  # annotation_cls was either the "type" object or typing.Type
 
         if annotation is Any:
             return ':py:data:`~typing.Any`'
