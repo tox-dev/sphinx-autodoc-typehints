@@ -1,3 +1,9 @@
+1.3.1
+=====
+
+* Fixed rendering of generic types outside the typing module (thanks to Tim Poterba for the PR)
+
+
 1.3.0
 =====
 
