@@ -73,10 +73,3 @@ tracker for more information.
 
 .. _sphinx.ext.napoleon: http://www.sphinx-doc.org/en/stable/ext/napoleon.html
 .. _Issue 15: https://github.com/agronholm/sphinx-autodoc-typehints/issues/15
-
-
-Project links
--------------
-
-* `Source repository <https://github.com/agronholm/sphinx-autodoc-typehints>`_
-* `Issue tracker <https://github.com/agronholm/sphinx-autodoc-typehints/issues>`_
