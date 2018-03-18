@@ -2,6 +2,7 @@
 =====
 
 * Fixed crash when processing docstrings from nested classes (thanks to dilyanpalauzov for the fix)
+* Added support for Python 3.7
 
 
 1.2.5

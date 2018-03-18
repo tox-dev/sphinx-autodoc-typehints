@@ -1,5 +1,5 @@
 import inspect
-from typing import get_type_hints, TypeVar, Any, AnyStr, GenericMeta
+from typing import get_type_hints, TypeVar, Any, AnyStr, Generic, Union
 
 from sphinx.util.inspect import getargspec
 from sphinx.ext.autodoc import formatargspec
@@ -34,23 +34,25 @@ def format_annotation(annotation):
             return ':py:class:`{}`'.format(annotation.__qualname__)
 
     annotation_cls = annotation if inspect.isclass(annotation) else type(annotation)
+    # from pdb import set_trace; set_trace()
+    class_name = None
     if annotation_cls.__module__ == 'typing':
         params = None
         prefix = ':py:class:'
         extra = ''
-        class_name = annotation_cls.__qualname__
+        annotation_cls = getattr(annotation, '__origin__', None) or annotation_cls
         if annotation is Any:
             return ':py:data:`~typing.Any`'
         elif annotation is AnyStr:
             return ':py:data:`~typing.AnyStr`'
         elif isinstance(annotation, TypeVar):
             return '\\%r' % annotation
-        elif class_name in ('Union', '_Union'):
+        elif annotation is Union or getattr(annotation, '__origin__', None) is Union:
             prefix = ':py:data:'
             class_name = 'Union'
             if hasattr(annotation, '__union_params__'):
                 params = annotation.__union_params__
-            else:
+            elif hasattr(annotation, '__args__'):
                 params = annotation.__args__
 
             if params and len(params) == 2 and (hasattr(params[1], '__qualname__') and
@@ -67,7 +69,7 @@ def format_annotation(annotation):
             if hasattr(annotation, '__result__'):
                 arg_annotations = annotation.__args__
                 result_annotation = annotation.__result__
-            elif getattr(annotation, '__args__', None) is not None:
+            elif getattr(annotation, '__args__', None):
                 arg_annotations = annotation.__args__[:-1]
                 result_annotation = annotation.__args__[-1]
 
@@ -91,12 +93,15 @@ def format_annotation(annotation):
         if params:
             extra = '\\[{}]'.format(', '.join(format_annotation(param) for param in params))
 
+        if not class_name:
+            class_name = annotation_cls.__qualname__.title()
+
         return '{}`~typing.{}`{}'.format(prefix, class_name, extra)
     elif annotation is Ellipsis:
         return '...'
     elif inspect.isclass(annotation):
         extra = ''
-        if isinstance(annotation, GenericMeta):
+        if Generic in annotation_cls.mro():
             extra = '\\[{}]'.format(', '.join(format_annotation(param)
                                               for param in annotation.__parameters__))
 
