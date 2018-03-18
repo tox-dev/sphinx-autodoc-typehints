@@ -3,15 +3,9 @@ import pytest
 import sys
 import textwrap
 from typing import (
-    Any, AnyStr, Callable, Dict, Generic, Mapping, Optional, Pattern, Tuple, TypeVar, Union)
+    Any, AnyStr, Callable, Dict, Generic, Mapping, Optional, Pattern, Tuple, TypeVar, Union, Type)
 
 from sphinx_autodoc_typehints import format_annotation, process_docstring
-
-try:
-    from typing import Type
-except ImportError:
-    Type = None
-
 
 T = TypeVar('T')
 U = TypeVar('U', covariant=True)
@@ -83,7 +77,6 @@ def test_format_annotation(annotation, expected_result):
     assert result == expected_result
 
 
-@pytest.mark.skipif(Type is None, reason='Type does not exist in the typing module')
 @pytest.mark.parametrize('type_param, expected_result', [
     (None, ':py:class:`~typing.Type`\\[\\+CT'),
     (A, ':py:class:`~typing.Type`\\[:py:class:`~%s.A`]' % __name__)

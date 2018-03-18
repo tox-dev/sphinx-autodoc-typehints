@@ -1,8 +1,9 @@
-1.2.6
+1.3.0
 =====
 
 * Fixed crash when processing docstrings from nested classes (thanks to dilyanpalauzov for the fix)
 * Added support for Python 3.7
+* Dropped support for Python 3.5.0 and 3.5.1
 
 
 1.2.5
