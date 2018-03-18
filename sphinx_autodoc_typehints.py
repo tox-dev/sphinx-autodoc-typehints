@@ -46,14 +46,23 @@ def format_annotation(annotation):
             return ':py:data:`~typing.AnyStr`'
         elif isinstance(annotation, TypeVar):
             return '\\%r' % annotation
-        elif annotation is Union or getattr(annotation, '__origin__', None) is Union:
+        elif (annotation is Union or getattr(annotation, '__origin__', None) is Union or
+              hasattr(annotation, '__union_params__')):
             prefix = ':py:data:'
             class_name = 'Union'
-            params = getattr(annotation, '__args__', None)
+            if hasattr(annotation, '__union_params__'):
+                params = annotation.__union_params__
+            elif hasattr(annotation, '__args__'):
+                params = annotation.__args__
+
             if params and len(params) == 2 and (hasattr(params[1], '__qualname__') and
                                                 params[1].__qualname__ == 'NoneType'):
                 class_name = 'Optional'
                 params = (params[0],)
+        elif annotation_cls.__qualname__ == 'Tuple' and hasattr(annotation, '__tuple_params__'):
+            params = annotation.__tuple_params__
+            if annotation.__tuple_use_ellipsis__:
+                params += (Ellipsis,)
         elif annotation_cls.__qualname__ == 'Callable':
             prefix = ':py:data:'
             arg_annotations = result_annotation = None
@@ -64,7 +73,7 @@ def format_annotation(annotation):
                 arg_annotations = annotation.__args__[:-1]
                 result_annotation = annotation.__args__[-1]
 
-            if arg_annotations == (Ellipsis,):
+            if arg_annotations in (Ellipsis, (Ellipsis,)):
                 params = [Ellipsis, result_annotation]
             elif arg_annotations is not None:
                 params = [
