@@ -108,6 +108,9 @@ def format_annotation(annotation):
         return '{}`~{}.{}`{}'.format(prefix, module, class_name, extra)
     elif annotation is Ellipsis:
         return '...'
+    elif hasattr(annotation,'__name__'):
+        # May be a NewType
+        return annotation.__name__
     elif inspect.isclass(annotation) or inspect.isclass(getattr(annotation, '__origin__', None)):
         if not inspect.isclass(annotation):
             annotation_cls = annotation.__origin__
