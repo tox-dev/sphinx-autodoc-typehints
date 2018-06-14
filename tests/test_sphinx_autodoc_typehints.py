@@ -2,8 +2,8 @@ import pathlib
 import pytest
 import sys
 import textwrap
-from typing import (
-    Any, AnyStr, Callable, Dict, Generic, Mapping, Optional, Pattern, Tuple, TypeVar, Union, Type, NewType)
+from typing import Any, AnyStr, Callable, Dict, Generic, \
+    Mapping, Optional, Pattern, Tuple, TypeVar, Union, Type, NewType
 
 from sphinx_autodoc_typehints import format_annotation, process_docstring
 
