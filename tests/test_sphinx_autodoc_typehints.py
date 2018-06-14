@@ -3,13 +3,14 @@ import pytest
 import sys
 import textwrap
 from typing import (
-    Any, AnyStr, Callable, Dict, Generic, Mapping, Optional, Pattern, Tuple, TypeVar, Union, Type)
+    Any, AnyStr, Callable, Dict, Generic, Mapping, Optional, Pattern, Tuple, TypeVar, Union, Type, NewType)
 
 from sphinx_autodoc_typehints import format_annotation, process_docstring
 
 T = TypeVar('T')
 U = TypeVar('U', covariant=True)
 V = TypeVar('V', contravariant=True)
+Z = NewType('Z', float)
 
 
 class A:
@@ -69,6 +70,7 @@ class Slotted:
     (Callable[[T], T],              ':py:data:`~typing.Callable`\\[\\[\\~T], \\~T]'),
     (Pattern,                       ':py:class:`~typing.Pattern`\\[:py:data:`~typing.AnyStr`]'),
     (Pattern[str],                  ':py:class:`~typing.Pattern`\\[:py:class:`str`]'),
+    (Z,                             ':py:class:`~typing.NewType.Z`\\[:py:class:`float`]'),
     (A,                             ':py:class:`~%s.A`' % __name__),
     (B,                             ':py:class:`~%s.B`\\[\\~T]' % __name__),
     (B[int],                        ':py:class:`~%s.B`\\[:py:class:`int`]' % __name__)
