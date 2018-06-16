@@ -151,7 +151,13 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
             if not isinstance(method_object, (classmethod, staticmethod)):
                 del argspec.args[0]
 
-    return formatargspec(obj, *argspec[:-1]), None
+    try:
+        result = formatargspec(obj, *argspec[:-1]), None
+    except NameError:
+        # Error in case when type annotation is optionaly importer with TYPE_CHECKING
+        return
+
+    return result
 
 
 def process_docstring(app, what, name, obj, options, lines):
@@ -167,6 +173,9 @@ def process_docstring(app, what, name, obj, options, lines):
             type_hints = get_type_hints(obj)
         except (AttributeError, TypeError):
             # Introspecting a slot wrapper will raise TypeError
+            return
+        except NameError:
+            # Error in case when type annotation is optionaly importer with TYPE_CHECKING
             return
 
         for argname, annotation in type_hints.items():
