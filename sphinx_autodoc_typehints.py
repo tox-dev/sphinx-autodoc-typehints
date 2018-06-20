@@ -154,7 +154,7 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
     try:
         result = formatargspec(obj, *argspec[:-1]), None
     except NameError:
-        # Error in case when type annotation is optionaly importer with TYPE_CHECKING
+        # This happens when the type annotation is conditionally imported with TYPE_CHECKING
         return
 
     return result
