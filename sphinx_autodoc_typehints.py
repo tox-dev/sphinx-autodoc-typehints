@@ -175,7 +175,7 @@ def process_docstring(app, what, name, obj, options, lines):
             # Introspecting a slot wrapper will raise TypeError
             return
         except NameError:
-            # Error in case when type annotation is optionaly importer with TYPE_CHECKING
+            # This happens when the type annotation is conditionally imported with TYPE_CHECKING
             return
 
         for argname, annotation in type_hints.items():
