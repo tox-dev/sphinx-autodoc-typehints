@@ -147,7 +147,7 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
             outer = inspect.getmodule(obj)
             for clsname in obj.__qualname__.split('.')[:-1]:
                 outer = getattr(outer, clsname)
-            method_object = outer.__dict__[obj.__name__]
+            method_object = outer.__dict__.get(obj.__name__)
             if not isinstance(method_object, (classmethod, staticmethod)):
                 del argspec.args[0]
 
