@@ -35,7 +35,13 @@ class Class:
 
         :param x: foo
         """
-        pass
+
+    def __magic_custom_method__(self, x: str) -> str:
+        """
+        Magic dunder method docstring.
+
+        :param x: foo
+        """
 
     @classmethod
     def a_classmethod(cls, x: bool, y: int, z: typing.Optional[str] = None) -> str:

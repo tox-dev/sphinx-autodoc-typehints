@@ -159,6 +159,16 @@ def test_sphinx_output(app, status, warning):
               Return type:
                  "str"
 
+           __magic_custom_method__(x)
+
+              Magic dunder method docstring.
+
+              Parameters:
+                 **x** ("str") -- foo
+
+              Return type:
+                 "str"
+
            _private_method(x)
 
               Private method docstring.

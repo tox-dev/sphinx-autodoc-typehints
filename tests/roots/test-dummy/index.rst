@@ -5,6 +5,7 @@ Dummy Module
    :members:
    :undoc-members:
    :private-members:
+   :special-members: __magic_custom_method__
 
 .. autoexception:: dummy_module.DummyException
    :members:
