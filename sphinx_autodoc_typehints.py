@@ -147,7 +147,15 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
             outer = inspect.getmodule(obj)
             for clsname in obj.__qualname__.split('.')[:-1]:
                 outer = getattr(outer, clsname)
-            method_object = outer.__dict__.get(obj.__name__)
+
+            method_name = obj.__name__
+            if method_name.startswith("__"):
+                # If it's a dunder method because of the mangling we need to
+                # prepend the name of the class
+                class_name = obj.__qualname__.split('.')[-2]
+                method_name = "_{c}{m}".format(c=class_name, m=method_name)
+
+            method_object = outer.__dict__[method_name]
             if not isinstance(method_object, (classmethod, staticmethod)):
                 del argspec.args[0]
 
