@@ -125,6 +125,60 @@ def test_sphinx_output(app, status, warning):
 
               * **z** ("Optional"["str"]) – baz
 
+           class InnerClass
+
+              Inner class.
+
+              _InnerClass__dunder_inner_method(x)
+
+                 Dunder inner method.
+
+                 Parameters:
+                    **x** ("bool") -- foo
+
+                 Return type:
+                    "str"
+
+              inner_method(x)
+
+                 Inner method.
+
+                 Parameters:
+                    **x** ("bool") -- foo
+
+                 Return type:
+                    "str"
+
+           _Class__dunder_method(x)
+
+              Dunder method docstring.
+
+              Parameters:
+                 **x** ("str") -- foo
+
+              Return type:
+                 "str"
+
+           __magic_custom_method__(x)
+
+              Magic dunder method docstring.
+
+              Parameters:
+                 **x** ("str") -- foo
+
+              Return type:
+                 "str"
+
+           _private_method(x)
+
+              Private method docstring.
+
+              Parameters:
+                 **x** ("str") -- foo
+
+              Return type:
+                 "str"
+
            classmethod a_classmethod(x, y, z=None)
 
               Classmethod docstring.

@@ -22,6 +22,27 @@ class Class:
         :param z: baz
         """
 
+    def _private_method(self, x: str) -> str:
+        """
+        Private method docstring.
+
+        :param x: foo
+        """
+
+    def __dunder_method(self, x: str) -> str:
+        """
+        Dunder method docstring.
+
+        :param x: foo
+        """
+
+    def __magic_custom_method__(self, x: str) -> str:
+        """
+        Magic dunder method docstring.
+
+        :param x: foo
+        """
+
     @classmethod
     def a_classmethod(cls, x: bool, y: int, z: typing.Optional[str] = None) -> str:
         """
@@ -47,6 +68,25 @@ class Class:
         """
         Property docstring
         """
+
+    class InnerClass:
+        """
+        Inner class.
+        """
+
+        def inner_method(self, x: bool) -> str:
+            """
+            Inner method.
+
+            :param x: foo
+            """
+
+        def __dunder_inner_method(self, x: bool) -> str:
+            """
+            Dunder inner method.
+
+            :param x: foo
+            """
 
 
 class DummyException(Exception):
