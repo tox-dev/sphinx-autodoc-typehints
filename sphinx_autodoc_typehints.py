@@ -169,7 +169,7 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
     result = app.emit_firstresult(AUTODOC_TYPEHINTS_PROCCESS_SIGNATURE_EVENT, what, name, obj, options, signature, return_annotation)
     
     if result:
-        signature, result_annotation = *result
+        signature, result_annotation = result
     
     return signature, return_annotation
 
