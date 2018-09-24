@@ -26,6 +26,10 @@ except ImportError:
         return func
 
 
+AUTODOC_TYPEHINTS_PROCCESS_SIGNATURE_EVENT = 'autodoc-typehints-process-signature'
+AUTODOC_TYPEHINTS_PROCCESS_DOCSTRING_EVENT = 'autodoc-typehints-process-docstring'
+
+
 def format_annotation(annotation):
     if inspect.isclass(annotation) and annotation.__module__ == 'builtins':
         if annotation.__qualname__ == 'NoneType':
@@ -160,7 +164,14 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
             if not isinstance(method_object, (classmethod, staticmethod)):
                 del argspec.args[0]
 
-    return formatargspec(obj, *argspec[:-1]), None
+    signiture, return_annotation = formatargspec(obj, *argspec[:-1]), None
+
+    result = app.emit_firstresult(AUTODOC_TYPEHINTS_PROCCESS_SIGNATURE_EVENT, what, name, obj, options, signature, return_annotation)
+    
+    if result:
+        signature, result_annotation = *result
+    
+    return signature, return_annotation
 
 
 def process_docstring(app, what, name, obj, options, lines):
@@ -209,8 +220,14 @@ def process_docstring(app, what, name, obj, options, lines):
                         lines.insert(i, ':type {}: {}'.format(argname, formatted_annotation))
                         break
 
+    app.emit(AUTODOC_TYPEHINTS_PROCCESS_DOCSTRING_EVENT, what, name, obj, options, lines)
+
 
 def setup(app):
     app.connect('autodoc-process-signature', process_signature)
     app.connect('autodoc-process-docstring', process_docstring)
+
+    app.events.add(AUTODOC_TYPEHINTS_PROCCESS_SIGNATURE_EVENT)
+    app.events.add(AUTODOC_TYPEHINTS_PROCCESS_DOCSTRING_EVENT)
+
     return dict(parallel_read_safe=True)
