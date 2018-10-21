@@ -1,8 +1,7 @@
 import inspect
 from typing import get_type_hints, TypeVar, Any, AnyStr, Generic, Union
 
-from sphinx.util.inspect import getargspec
-from sphinx.ext.autodoc import formatargspec
+from sphinx.util.inspect import Signature
 
 try:
     from inspect import unwrap
@@ -135,14 +134,15 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
         return
 
     obj = unwrap(obj)
-    try:
-        argspec = getargspec(obj)
-    except (TypeError, ValueError):
-        return
+    signature = Signature(obj)
+    parameters = [
+        param.replace(annotation=inspect.Parameter.empty)
+        for param in signature.signature.parameters.values()
+    ]
 
-    if argspec.args:
+    if parameters:
         if what in ('class', 'exception'):
-            del argspec.args[0]
+            del parameters[0]
         elif what == 'method':
             outer = inspect.getmodule(obj)
             for clsname in obj.__qualname__.split('.')[:-1]:
@@ -158,9 +158,13 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
 
             method_object = outer.__dict__[method_name]
             if not isinstance(method_object, (classmethod, staticmethod)):
-                del argspec.args[0]
+                del parameters[0]
 
-    return formatargspec(obj, *argspec[:-1]), None
+    signature.signature = signature.signature.replace(
+        parameters=parameters,
+        return_annotation=inspect.Signature.empty)
+
+    return signature.format_args(), None
 
 
 def process_docstring(app, what, name, obj, options, lines):
