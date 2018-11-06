@@ -100,13 +100,13 @@ class DummyException(Exception):
         super().__init__(message)
 
 
-def function(x: bool, y: int, z: typing.Optional[str] = None) -> str:
+def function(x: bool, y: int, z_: typing.Optional[str] = None) -> str:
     """
     Function docstring.
 
     :param x: foo
     :param y: bar
-    :param z: baz
+    :param z\\_: baz
     :return: something
     :rtype: bytes
     """
