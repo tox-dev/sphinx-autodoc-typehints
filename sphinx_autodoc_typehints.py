@@ -1,4 +1,5 @@
 import inspect
+import typing
 from typing import get_type_hints, TypeVar, Any, AnyStr, Generic, Union
 
 from sphinx.util.inspect import Signature
@@ -218,6 +219,7 @@ def process_docstring(app, what, name, obj, options, lines):
 
 
 def setup(app):
+    typing.TYPE_CHECKING = True
     app.connect('autodoc-process-signature', process_signature)
     app.connect('autodoc-process-docstring', process_docstring)
     return dict(parallel_read_safe=True)
