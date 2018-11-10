@@ -235,7 +235,7 @@ def test_sphinx_output(app, status, warning):
            Parameters:
               **message** ("str") – blah
 
-        dummy_module.function(x, y, z=None)
+        dummy_module.function(x, y, z_=None)
 
            Function docstring.
 
@@ -244,7 +244,7 @@ def test_sphinx_output(app, status, warning):
 
               * **y** ("int") – bar
 
-              * **z** ("Optional"["str"]) – baz
+              * **z_** ("Optional"["str"]) – baz
 
            Returns:
               something

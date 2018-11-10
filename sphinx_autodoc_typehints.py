@@ -183,6 +183,9 @@ def process_docstring(app, what, name, obj, options, lines):
             return
 
         for argname, annotation in type_hints.items():
+            if argname.endswith('_'):
+                argname = '{}\\_'.format(argname[:-1])
+
             formatted_annotation = format_annotation(annotation)
 
             if argname == 'return':
