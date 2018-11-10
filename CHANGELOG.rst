@@ -1,3 +1,14 @@
+1.4.0
+=====
+
+* The extension now sets ``typing.TYPECHECKING`` to ``True`` during setup to include conditional
+  imports which may be used in type annotations
+* Fixed parameters with trailing underscores (PR by Daniel Knell)
+* Fixed KeyError with private methods (PR by Benito Palacios Sánchez)
+* Fixed deprecation warning about the use of formatargspec (PR by Y. Somda)
+* The minimum Sphinx version is now v1.7.0
+
+
 1.3.1
 =====
 
