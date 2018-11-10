@@ -73,3 +73,16 @@ tracker for more information.
 
 .. _sphinx.ext.napoleon: http://www.sphinx-doc.org/en/stable/ext/napoleon.html
 .. _Issue 15: https://github.com/agronholm/sphinx-autodoc-typehints/issues/15
+
+
+Dealing with circular imports
+-----------------------------
+
+Sometimes functions or classes from two different modules need to reference each other in their
+type annotations. This creates a circular import problem. The solution to this is the following:
+
+#. Import only the module, not the classes/functions from it
+#. Use forward references in the type annotations (e.g.
+   ``def methodname(self, param1: 'othermodule.OtherClass'):``)
+
+On Python 3.7, you can even use ``from __future__ import annotations`` and remove the quotes.
