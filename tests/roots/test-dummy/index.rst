@@ -12,3 +12,5 @@ Dummy Module
    :undoc-members:
 
 .. autofunction:: dummy_module.function
+
+.. autofunction:: dummy_module.function_with_escaped_default

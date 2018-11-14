@@ -165,7 +165,7 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
         parameters=parameters,
         return_annotation=inspect.Signature.empty)
 
-    return signature.format_args(), None
+    return signature.format_args().replace('\\', '\\\\'), None
 
 
 def process_docstring(app, what, name, obj, options, lines):

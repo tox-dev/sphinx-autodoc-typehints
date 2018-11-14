@@ -1,3 +1,9 @@
+UNRELEASED
+==========
+
+* Fixed escape characters in parameter default values getting lost during signature processing
+
+
 1.5.0
 =====
 

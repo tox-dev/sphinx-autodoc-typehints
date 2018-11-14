@@ -110,3 +110,11 @@ def function(x: bool, y: int, z_: typing.Optional[str] = None) -> str:
     :return: something
     :rtype: bytes
     """
+
+
+def function_with_escaped_default(x: str = '\b'):
+    """
+    Function docstring.
+
+    :param x: foo
+    """

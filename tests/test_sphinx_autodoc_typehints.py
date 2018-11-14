@@ -251,4 +251,11 @@ def test_sphinx_output(app, status, warning):
 
            Return type:
               bytes
+
+        dummy_module.function_with_escaped_default(x='\\x08')
+
+           Function docstring.
+
+           Parameters:
+              **x** ("str") – foo
         ''').replace('–', '--')
