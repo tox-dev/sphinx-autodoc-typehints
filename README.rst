@@ -50,6 +50,15 @@ Then, add the extension to your ``conf.py``:
     ]
 
 
+Options
+-------
+
+The following configuration options are accepted:
+
+* ``set_type_checking_flag`` (default: ``True``): if ``True``, set ``typing.TYPE_CHECKING`` to
+  ``True`` to enable "expensive" typing imports
+
+
 How it works
 ------------
 
@@ -60,8 +69,6 @@ it injects the appropriate ``:type argname:`` and ``:rtype:`` directives into th
 Only arguments that have an existing ``:param:`` directive in the docstring get their respective
 ``:type:`` directives added. The ``:rtype:`` directive is added if and only if no existing
 ``:rtype:`` is found.
-
-This extension does not currently have any configuration options.
 
 
 Compatibility with sphinx.ext.napoleon

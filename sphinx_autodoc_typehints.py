@@ -218,8 +218,14 @@ def process_docstring(app, what, name, obj, options, lines):
                         break
 
 
+def config_ready(app, config):
+    if config.set_type_checking_flag:
+        typing.TYPE_CHECKING = True
+
+
 def setup(app):
-    typing.TYPE_CHECKING = True
+    app.add_config_value('set_type_checking_flag', True, 'html')
+    app.connect('config-inited', config_ready)
     app.connect('autodoc-process-signature', process_signature)
     app.connect('autodoc-process-docstring', process_docstring)
     return dict(parallel_read_safe=True)

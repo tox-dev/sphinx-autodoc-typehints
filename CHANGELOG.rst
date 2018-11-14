@@ -1,3 +1,10 @@
+1.5.0
+=====
+
+* The setting of the ``typing.TYPECHECKING`` flag is now configurable using the
+  ``set_type_checking_flag`` option
+
+
 1.4.0
 =====
 
