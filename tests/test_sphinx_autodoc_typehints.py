@@ -5,6 +5,8 @@ import textwrap
 from typing import (
     Any, AnyStr, Callable, Dict, Generic, Mapping, Optional, Pattern, Tuple, TypeVar, Union, Type)
 
+from typing_extensions import Protocol
+
 from sphinx_autodoc_typehints import format_annotation, process_docstring
 
 T = TypeVar('T')
@@ -18,6 +20,14 @@ class A:
 
 
 class B(Generic[T]):
+    pass
+
+
+class C(Protocol):
+    pass
+
+
+class D(Protocol[T]):
     pass
 
 
@@ -71,7 +81,10 @@ class Slotted:
     (Pattern[str],                  ':py:class:`~typing.Pattern`\\[:py:class:`str`]'),
     (A,                             ':py:class:`~%s.A`' % __name__),
     (B,                             ':py:class:`~%s.B`\\[\\~T]' % __name__),
-    (B[int],                        ':py:class:`~%s.B`\\[:py:class:`int`]' % __name__)
+    (B[int],                        ':py:class:`~%s.B`\\[:py:class:`int`]' % __name__),
+    (C,                             ':py:class:`~%s.C`' % __name__),
+    (D,                             ':py:class:`~%s.D`\\[\\~T]' % __name__),
+    (D[int],                        ':py:class:`~%s.D`\\[:py:class:`int`]' % __name__)
 ])
 def test_format_annotation(annotation, expected_result):
     result = format_annotation(annotation)

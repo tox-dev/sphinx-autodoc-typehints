@@ -6,6 +6,11 @@ from sphinx.util import logging
 from sphinx.util.inspect import Signature
 
 try:
+    from typing_extensions import Protocol
+except ImportError:
+    Protocol = None
+
+try:
     from inspect import unwrap
 except ImportError:
     def unwrap(func, *, stop=None):
@@ -47,7 +52,8 @@ def format_annotation(annotation):
         if inspect.isclass(getattr(annotation, '__origin__', None)):
             annotation_cls = annotation.__origin__
             try:
-                if Generic in annotation_cls.mro():
+                mro = annotation_cls.mro()
+                if Generic in mro or (Protocol and Protocol in mro):
                     module = annotation_cls.__module__
             except TypeError:
                 pass  # annotation_cls was either the "type" object or typing.Type
@@ -116,10 +122,12 @@ def format_annotation(annotation):
             annotation_cls = annotation.__origin__
 
         extra = ''
-        if Generic in annotation_cls.mro():
+        mro = annotation_cls.mro()
+        if Generic in mro or (Protocol and Protocol in mro):
             params = (getattr(annotation, '__parameters__', None) or
                       getattr(annotation, '__args__', None))
-            extra = '\\[{}]'.format(', '.join(format_annotation(param) for param in params))
+            if params:
+                extra = '\\[{}]'.format(', '.join(format_annotation(param) for param in params))
 
         return ':py:class:`~{}.{}`{}'.format(annotation.__module__, annotation_cls.__qualname__,
                                              extra)
