@@ -182,6 +182,8 @@ def process_docstring(app, what, name, obj, options, lines):
         except (AttributeError, TypeError):
             # Introspecting a slot wrapper will raise TypeError
             return
+        except NameError:
+            type_hints = obj.__annotations__
 
         for argname, annotation in type_hints.items():
             if argname.endswith('_'):
