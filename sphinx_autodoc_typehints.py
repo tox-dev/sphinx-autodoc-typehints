@@ -2,6 +2,7 @@ import inspect
 import typing
 from typing import get_type_hints, TypeVar, Any, AnyStr, Generic, Union
 
+from sphinx.util import logging
 from sphinx.util.inspect import Signature
 
 try:
@@ -24,6 +25,8 @@ except ImportError:
                 raise ValueError('wrapper loop when unwrapping {!r}'.format(f))
             memo.add(id_func)
         return func
+
+logger = logging.getLogger(__name__)
 
 
 def format_annotation(annotation):
@@ -181,6 +184,10 @@ def process_docstring(app, what, name, obj, options, lines):
             type_hints = get_type_hints(obj)
         except (AttributeError, TypeError):
             # Introspecting a slot wrapper will raise TypeError
+            return
+        except NameError as exc:
+            logger.warning('Cannot resolve forward reference in type annotations of "%s": %s',
+                           name, exc)
             return
 
         for argname, annotation in type_hints.items():

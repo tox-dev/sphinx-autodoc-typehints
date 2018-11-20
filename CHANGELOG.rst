@@ -1,3 +1,10 @@
+UNRELEASED
+==========
+
+* Emit a warning instead of crashing when an unresolvable forward reference is encountered in type
+  annotations
+
+
 1.5.1
 =====
 
