@@ -188,7 +188,7 @@ def process_docstring(app, what, name, obj, options, lines):
         except NameError as exc:
             logger.warning('Cannot resolve forward reference in type annotations of "%s": %s',
                            name, exc)
-            return
+            type_hints = obj.__annotations__
 
         for argname, annotation in type_hints.items():
             if argname.endswith('_'):
