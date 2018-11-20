@@ -3,6 +3,9 @@ import typing
 from typing import get_type_hints, TypeVar, Any, AnyStr, Generic, Union
 
 from sphinx.util.inspect import Signature
+from sphinx.util import logging
+
+logger = logging.getLogger(__name__)
 
 try:
     from inspect import unwrap
@@ -182,8 +185,11 @@ def process_docstring(app, what, name, obj, options, lines):
         except (AttributeError, TypeError):
             # Introspecting a slot wrapper will raise TypeError
             return
-        except NameError:
-            type_hints = obj.__annotations__
+        except NameError as e:
+            logger.warning('Impossible to ge_type_hints for %s (%s)' % (name, e))
+            type_hints = getattr(obj, '__annotations__', None)
+            if not type_hints:
+                return
 
         for argname, annotation in type_hints.items():
             if argname.endswith('_'):
