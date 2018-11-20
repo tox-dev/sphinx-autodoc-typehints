@@ -1,7 +1,9 @@
-UNRELEASED
-==========
+1.5.1
+=====
 
 * Fixed escape characters in parameter default values getting lost during signature processing
+* Replaced use of the ``config-inited`` event (which inadvertently required Sphinx 1.8) with the
+  ``builder-inited`` event
 
 
 1.5.0
