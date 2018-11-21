@@ -3,13 +3,15 @@ import pytest
 import sys
 import textwrap
 from typing import (
-    Any, AnyStr, Callable, Dict, Generic, Mapping, Optional, Pattern, Tuple, TypeVar, Union, Type)
+    Any, AnyStr, Callable, Dict, Generic, Mapping, NewType, Optional, Pattern,
+    Tuple, TypeVar, Union, Type)
 
 from sphinx_autodoc_typehints import format_annotation, process_docstring
 
 T = TypeVar('T')
 U = TypeVar('U', covariant=True)
 V = TypeVar('V', contravariant=True)
+W = NewType('W', str)
 
 
 class A:
@@ -71,7 +73,9 @@ class Slotted:
     (Pattern[str],                  ':py:class:`~typing.Pattern`\\[:py:class:`str`]'),
     (A,                             ':py:class:`~%s.A`' % __name__),
     (B,                             ':py:class:`~%s.B`\\[\\~T]' % __name__),
-    (B[int],                        ':py:class:`~%s.B`\\[:py:class:`int`]' % __name__)
+    (B[int],                        ':py:class:`~%s.B`\\[:py:class:`int`]' % __name__),
+    (W,                             ':py:func:`~typing.NewType`\\(:py:data:`~W`, '
+                                    ':py:class:`str`)'),
 ])
 def test_format_annotation(annotation, expected_result):
     result = format_annotation(annotation)
