@@ -118,3 +118,11 @@ def function_with_escaped_default(x: str = '\b'):
 
     :param x: foo
     """
+
+
+def function_with_unresolvable_annotation(x: 'a.b.c'):
+    """
+    Function docstring.
+
+    :param x: foo
+    """

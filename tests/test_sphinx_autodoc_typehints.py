@@ -105,7 +105,10 @@ def test_sphinx_output(app, status, warning):
     app.build()
 
     assert 'build succeeded' in status.getvalue()  # Build succeeded
-    assert not warning.getvalue().strip()  # No warnings
+
+    # There should be a warning about an unresolved forward reference
+    warnings = warning.getvalue().strip()
+    assert 'Cannot resolve forward reference in type annotations of ' in warnings
 
     text_path = pathlib.Path(app.srcdir) / '_build' / 'text' / 'index.txt'
     with text_path.open('r') as f:
@@ -258,4 +261,11 @@ def test_sphinx_output(app, status, warning):
 
            Parameters:
               **x** ("str") – foo
+
+        dummy_module.function_with_unresolvable_annotation(x)
+
+           Function docstring.
+
+           Parameters:
+              **x** (*a.b.c*) – foo
         ''').replace('–', '--')
