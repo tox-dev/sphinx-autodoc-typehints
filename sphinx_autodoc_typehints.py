@@ -119,7 +119,48 @@ def format_annotation(annotation):
         if Generic in annotation_cls.mro():
             params = (getattr(annotation, '__parameters__', None) or
                       getattr(annotation, '__args__', None))
-            extra = '\\[{}]'.format(', '.join(format_annotation(param) for param in params))
+
+            try:
+                # join type annotation together in a formatted string
+                extra = '\\[{}]'.format(', '.join(format_annotation(param) for param in params))
+            except TypeError:
+                # in some cases, a "Generic" has been inherited from another Generic
+                # with a concrete type, and therefore cannot be assigned a Type
+                # annotation. In this case, ``params`` will return None. Consider the
+                # following:
+                #
+                # T = TypeVar('T')
+                #
+                # class A(Generic[T])
+                #     def method() -> T
+                #         pass
+                #
+                #
+                # class B(A[str])
+                #     pass
+                #
+                #
+                # def some_method_for_a(value: A[int]) -> None:
+                #
+                #
+                # def some_method_for_b(value: B) -> None:
+                #     pass
+                #
+                # In the above, B inherits from a Generic type, but supplies a concrete
+                # type (str). As such, it does not get an additional annotation when
+                # used in a signature, since it will always be B[str]. This is unlike A,
+                # which is truly Generic. See the difference between the signatures of
+                # the two example functions above.
+                #
+                # B still passes as a Generic type, since it inherits from one, but has
+                # no annotations, since its Type Variable is set upon class definition.
+                # This causes, ``params`` above to return None, and throw a TypeError
+                # when joined.
+                #
+                # Here we need to detect this case, and just set ``extra`` to a blank
+                # string, so no additional annotation information is returned for B in
+                # signature annotations.
+                extra = ''
 
         return ':py:class:`~{}.{}`{}'.format(annotation.__module__, annotation_cls.__qualname__,
                                              extra)

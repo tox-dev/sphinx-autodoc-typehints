@@ -21,6 +21,11 @@ class B(Generic[T]):
     pass
 
 
+# Tests inheriting a concrete generic
+class C(B[str]):
+    pass
+
+
 class Slotted:
     __slots__ = ()
 
@@ -71,7 +76,8 @@ class Slotted:
     (Pattern[str],                  ':py:class:`~typing.Pattern`\\[:py:class:`str`]'),
     (A,                             ':py:class:`~%s.A`' % __name__),
     (B,                             ':py:class:`~%s.B`\\[\\~T]' % __name__),
-    (B[int],                        ':py:class:`~%s.B`\\[:py:class:`int`]' % __name__)
+    (B[int],                        ':py:class:`~%s.B`\\[:py:class:`int`]' % __name__),
+    (C,                             ':py:class:`~%s.C`' % __name__)
 ])
 def test_format_annotation(annotation, expected_result):
     result = format_annotation(annotation)
