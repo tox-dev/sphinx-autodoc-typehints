@@ -1,3 +1,10 @@
+UNRELEASED
+==========
+
+* Fixed ``TypeError`` when formatting annotations from a class that inherits from a concrete
+  generic type (report and tests by bpeake-illuscio)
+
+
 1.5.2
 =====
 

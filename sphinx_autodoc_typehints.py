@@ -119,7 +119,10 @@ def format_annotation(annotation):
         if Generic in annotation_cls.mro():
             params = (getattr(annotation, '__parameters__', None) or
                       getattr(annotation, '__args__', None))
-            extra = '\\[{}]'.format(', '.join(format_annotation(param) for param in params))
+            if params:
+                extra = '\\[{}]'.format(', '.join(format_annotation(param) for param in params))
+            else:
+                extra = ''
 
         return ':py:class:`~{}.{}`{}'.format(annotation.__module__, annotation_cls.__qualname__,
                                              extra)
