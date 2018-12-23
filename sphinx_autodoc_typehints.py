@@ -121,8 +121,6 @@ def format_annotation(annotation):
                       getattr(annotation, '__args__', None))
             if params:
                 extra = '\\[{}]'.format(', '.join(format_annotation(param) for param in params))
-            else:
-                extra = ''
 
         return ':py:class:`~{}.{}`{}'.format(annotation.__module__, annotation_cls.__qualname__,
                                              extra)
