@@ -23,11 +23,14 @@ class B(Generic[T]):
     pass
 
 
-class C(Protocol):
+class C(B[str]):
+    pass
+
+class D(Protocol):
     pass
 
 
-class D(Protocol[T]):
+class E(Protocol[T]):
     pass
 
 
@@ -82,9 +85,10 @@ class Slotted:
     (A,                             ':py:class:`~%s.A`' % __name__),
     (B,                             ':py:class:`~%s.B`\\[\\~T]' % __name__),
     (B[int],                        ':py:class:`~%s.B`\\[:py:class:`int`]' % __name__),
-    (C,                             ':py:class:`~%s.C`' % __name__),
-    (D,                             ':py:class:`~%s.D`\\[\\~T]' % __name__),
-    (D[int],                        ':py:class:`~%s.D`\\[:py:class:`int`]' % __name__)
+    (C,                             ':py:class:`~%s.C`' % __name__)
+    (D,                             ':py:class:`~%s.D`' % __name__),
+    (E,                             ':py:class:`~%s.E`\\[\\~T]' % __name__),
+    (E[int],                        ':py:class:`~%s.E`\\[:py:class:`int`]' % __name__)
 ])
 def test_format_annotation(annotation, expected_result):
     result = format_annotation(annotation)
@@ -118,7 +122,10 @@ def test_sphinx_output(app, status, warning):
     app.build()
 
     assert 'build succeeded' in status.getvalue()  # Build succeeded
-    assert not warning.getvalue().strip()  # No warnings
+
+    # There should be a warning about an unresolved forward reference
+    warnings = warning.getvalue().strip()
+    assert 'Cannot resolve forward reference in type annotations of ' in warnings
 
     text_path = pathlib.Path(app.srcdir) / '_build' / 'text' / 'index.txt'
     with text_path.open('r') as f:
@@ -271,4 +278,11 @@ def test_sphinx_output(app, status, warning):
 
            Parameters:
               **x** ("str") – foo
+
+        dummy_module.function_with_unresolvable_annotation(x)
+
+           Function docstring.
+
+           Parameters:
+              **x** (*a.b.c*) – foo
         ''').replace('–', '--')

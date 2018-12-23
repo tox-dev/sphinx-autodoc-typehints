@@ -1,32 +1,38 @@
+dist: xenial
 language: python
-sudo: false
+python: "3.6"
 
 stages:
+  - name: static analysis
   - name: test
   - name: deploy to pypi
     if: type = push AND tag =~ ^\d+\.\d+\.\d+
 
 jobs:
-  fast_finish: true
   include:
-    - env: TOXENV=flake8
+    - stage: static analysis
+      env: TOXENV=flake8
 
-    - env: TOXENV=py34
+    - stage: test
+      env: TOXENV=py34
       python: "3.4"
       after_success: &after_success
         - pip install coveralls
         - coveralls
 
-    - env: TOXENV=py35
-      python: "3.5.2"
+    - stage: test
+      env: TOXENV=py35
+      python: "3.5"
       after_success: *after_success
 
-    - env: TOXENV=py36
+    - stage: test
+      env: TOXENV=py36
       python: "3.6"
       after_success: *after_success
 
-    - env: TOXENV=py37
-      python: nightly
+    - stage: test
+      env: TOXENV=py37
+      python: "3.7"
       after_success: *after_success
 
     - stage: deploy to pypi
@@ -36,12 +42,10 @@ jobs:
         provider: pypi
         user: agronholm
         password:
-          secure: d/87aXO/yS1O6DHyO+vrwpkFfiQ03bwEfcWjMT+HcsHAmzmiBjgOmlkIGYIt9lKuRHReZ4yQExFvUd5vUp5lm4a1dV48PGzx+SGf49LvltZxJr6DJzkr4NdsZz7pQIPKBhSxO1olj1OMfdHS+sLnfP9Ulp6eMh7ATN6JF9tuxch6bFEFEc2lCXlRklEUfm/QyZto2I9etW6L7Aj/ZERsmA3E8ldMw4prRKB0oAuy2socP19Hc4Eps4ITlCRLDFSl0ASTtY68kZZMAK+NAII7UHn8sjVMlYZQQmDyn61voOz83X0p4hVhPzOJS3h/0/x4LTsLWJ40xynUc2KkRuT3HA9Rk44bjxLdA4Au3aqe7tEvR48pk95Ze1+pJQ/Dm8ocqsRavcUh/8FtKvMxPRr5fLC/HiN7Oi+1Wwryj0Zm9ecVdVQFHCF4EwDc1KPt/yK7t/YsbpbrKdQqsF32O7mgYqAg+qQkUQ+4ts7QD6gc+lI7mT5CDaFwI2oTJS7AYuY2X5blBTl4ClVKLZ1xS6UZCcS23sio0haA6e8V0xQWKn5qG52LZHzedfnxQUyB4AwZ8VdOZBIzgMuWT8dkaibpu+15uYxcuhdXWI46cV/oOjHHi7OmAIDfOkeOi8B5bhGL8MpsIaGjPYccuevjEWo0V6lDjcr/dI6ytsdInxnsswc=
+          secure: EnJn6vbbOORBaEFLQ1ITpjR2+mXX+DGPCGklfdCQCdF9iLr1LKVDe5V+DRPPmrg7uXN1fNYPQawG16rqsmIKLkANq7S5pDZ1HpVffyAKN5DPWxP1+f97SE8I978NcgpZwrXIbcM6p8UMfOO0u11ICYdDsSU5mkE6qYTNFW1lDL3G06DW8dedR6zbZmVDBrrh6E4DmOjS8o+kxkmtv9W59ZvocwaQFrs+3zRe3ybzxDlk9DyincD5mRn7f3UOaMGUmI9rzA43v8MD34yB0pF22TlEeOV3WcnuXxSuqqMOdd8WaZMm2rH6zkIJJwSjkgEolE942CSkh+tuwUVBneG0FNXjiIaIDFBLic9o1hC8kcjkQEN/2d2ldVUDpJCQKvg6nc9y3CNUl935PIzMcit3csWlEbJsPdSCSkB8A1xX9XY/Y38A1V/iJ1GUKJjthQgiT2VL6g/tkdqlsn0jTsOODaS170ULOJhyehpDk3bQ2uLESnwOGIiscksYxy1XOTWrmB+it99eAniAqEZC77hZGL5ma577m7IU1ianTqXkRaoLwBV30zXQGXETTeVu0h46W0pkVcuBnwp8GprXtl10mtiMbbh85XAOLWA3k1S087leSIxWLPKP8FjfBdQvbuk+JMef4p3KzDjBbJZEtalBlhaGZ7lQuxoRV0fuL4uZuLs=
         distributions: sdist bdist_wheel
         on:
           tags: true
-
-python: "3.4"
 
 install: pip install tox
 
