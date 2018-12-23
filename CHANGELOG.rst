@@ -1,8 +1,10 @@
-UNRELEASED
-==========
+1.6.0
+=====
 
 * Fixed ``TypeError`` when formatting annotations from a class that inherits from a concrete
   generic type (report and tests by bpeake-illuscio)
+* Added support for ``typing_extensions.Protocol`` (PR by Ian Good)
+* Added support for ``typing.NewType`` (PR by George Leslie-Waksman)
 
 
 1.5.2
