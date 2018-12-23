@@ -26,6 +26,7 @@ class B(Generic[T]):
 class C(B[str]):
     pass
 
+
 class D(Protocol):
     pass
 
