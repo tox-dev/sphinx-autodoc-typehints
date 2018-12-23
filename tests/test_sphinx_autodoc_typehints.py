@@ -86,7 +86,7 @@ class Slotted:
     (A,                             ':py:class:`~%s.A`' % __name__),
     (B,                             ':py:class:`~%s.B`\\[\\~T]' % __name__),
     (B[int],                        ':py:class:`~%s.B`\\[:py:class:`int`]' % __name__),
-    (C,                             ':py:class:`~%s.C`' % __name__)
+    (C,                             ':py:class:`~%s.C`' % __name__),
     (D,                             ':py:class:`~%s.D`' % __name__),
     (E,                             ':py:class:`~%s.E`\\[\\~T]' % __name__),
     (E[int],                        ':py:class:`~%s.E`\\[:py:class:`int`]' % __name__)
