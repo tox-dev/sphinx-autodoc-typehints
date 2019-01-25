@@ -34,7 +34,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-def format_annotation(annotation):
+def format_annotation(annotation, fully_qualified=False):
     if inspect.isclass(annotation) and annotation.__module__ == 'builtins':
         if annotation.__qualname__ == 'NoneType':
             return '``None``'
@@ -59,9 +59,9 @@ def format_annotation(annotation):
                 pass  # annotation_cls was either the "type" object or typing.Type
 
         if annotation is Any:
-            return ':py:data:`~typing.Any`'
+            return ':py:data:`{}typing.Any`'.format("" if fully_qualified else "~")
         elif annotation is AnyStr:
-            return ':py:data:`~typing.AnyStr`'
+            return ':py:data:`{}typing.AnyStr`'.format("" if fully_qualified else "~")
         elif isinstance(annotation, TypeVar):
             return '\\%r' % annotation
         elif (annotation is Union or getattr(annotation, '__origin__', None) is Union or
@@ -96,7 +96,9 @@ def format_annotation(annotation):
             elif arg_annotations is not None:
                 params = [
                     '\\[{}]'.format(
-                        ', '.join(format_annotation(param) for param in arg_annotations)),
+                        ', '.join(
+                            format_annotation(param, fully_qualified)
+                            for param in arg_annotations)),
                     result_annotation
                 ]
         elif hasattr(annotation, 'type_var'):
@@ -109,18 +111,28 @@ def format_annotation(annotation):
             params = annotation.__parameters__
 
         if params:
-            extra = '\\[{}]'.format(', '.join(format_annotation(param) for param in params))
+            extra = '\\[{}]'.format(', '.join(
+                format_annotation(param, fully_qualified) for param in params))
 
         if not class_name:
             class_name = annotation_cls.__qualname__.title()
 
-        return '{}`~{}.{}`{}'.format(prefix, module, class_name, extra)
+        return '{prefix}`{qualify}{module}.{name}`{extra}'.format(
+            prefix=prefix,
+            qualify="" if fully_qualified else "~",
+            module=module,
+            name=class_name,
+            extra=extra
+        )
     elif annotation is Ellipsis:
         return '...'
     elif (inspect.isfunction(annotation) and annotation.__module__ == 'typing' and
           hasattr(annotation, '__name__') and hasattr(annotation, '__supertype__')):
-        return ':py:func:`~typing.NewType`\\(:py:data:`~{}`, {})'.format(
-            annotation.__name__, format_annotation(annotation.__supertype__))
+        return ':py:func:`{qualify}typing.NewType`\\(:py:data:`~{name}`, {extra})'.format(
+            qualify="" if fully_qualified else "~",
+            name=annotation.__name__,
+            extra=format_annotation(annotation.__supertype__, fully_qualified),
+        )
     elif inspect.isclass(annotation) or inspect.isclass(getattr(annotation, '__origin__', None)):
         if not inspect.isclass(annotation):
             annotation_cls = annotation.__origin__
@@ -131,10 +143,15 @@ def format_annotation(annotation):
             params = (getattr(annotation, '__parameters__', None) or
                       getattr(annotation, '__args__', None))
             if params:
-                extra = '\\[{}]'.format(', '.join(format_annotation(param) for param in params))
+                extra = '\\[{}]'.format(', '.join(
+                    format_annotation(param, fully_qualified) for param in params))
 
-        return ':py:class:`~{}.{}`{}'.format(annotation.__module__, annotation_cls.__qualname__,
-                                             extra)
+        return ':py:class:`{qualify}{module}.{name}`{extra}'.format(
+            qualify="" if fully_qualified else "~",
+            module=annotation.__module__,
+            name=annotation_cls.__qualname__,
+            extra=extra
+        )
 
     return str(annotation)
 
@@ -206,7 +223,8 @@ def process_docstring(app, what, name, obj, options, lines):
             if argname.endswith('_'):
                 argname = '{}\\_'.format(argname[:-1])
 
-            formatted_annotation = format_annotation(annotation)
+            formatted_annotation = format_annotation(
+                annotation, fully_qualified=app.config.typehints_fully_qualified)
 
             if argname == 'return':
                 if what in ('class', 'exception'):
@@ -244,6 +262,7 @@ def builder_ready(app):
 
 def setup(app):
     app.add_config_value('set_type_checking_flag', False, 'html')
+    app.add_config_value('typehints_fully_qualified', False, 'env')
     app.connect('builder-inited', builder_ready)
     app.connect('autodoc-process-signature', process_signature)
     app.connect('autodoc-process-docstring', process_docstring)
