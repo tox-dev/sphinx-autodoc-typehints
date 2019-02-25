@@ -252,6 +252,13 @@ def test_sphinx_output(app, status, warning):
               Return type:
                  "str"
 
+           locally_defined_callable_field() -> str
+
+              Wrapper
+
+              Return type:
+                 "str"
+
         exception dummy_module.DummyException(message)
 
            Exception docstring
