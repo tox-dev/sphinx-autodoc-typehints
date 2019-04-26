@@ -117,7 +117,10 @@ def test_process_docstring_slot_wrapper():
 
 
 def test_add_type_hints_to_docstring_option(monkeypatch):
-    class Dummy(object): pass
+
+    class Dummy(object):
+        pass
+
     class App(object):
         """
         Mock app object for testing.
@@ -127,6 +130,7 @@ def test_add_type_hints_to_docstring_option(monkeypatch):
         def __init__(self, value: bool):
             self.config = Dummy()
             self.config.add_type_hints_to_docstring = value
+
     # ensure :type ...: is added when option is True
     lines = inspect.cleandoc(App.__doc__).splitlines()
     process_docstring(App(True), 'class', 'App', App, None, lines)
