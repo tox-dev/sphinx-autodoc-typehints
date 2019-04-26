@@ -184,6 +184,9 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
 
 
 def process_docstring(app, what, name, obj, options, lines):
+    if app and not app.config.add_type_hints_to_docstring:
+        return
+
     if isinstance(obj, property):
         obj = obj.fget
 
@@ -244,6 +247,7 @@ def builder_ready(app):
 
 def setup(app):
     app.add_config_value('set_type_checking_flag', False, 'html')
+    app.add_config_value('add_type_hints_to_docstring', True, 'html')
     app.connect('builder-inited', builder_ready)
     app.connect('autodoc-process-signature', process_signature)
     app.connect('autodoc-process-docstring', process_docstring)

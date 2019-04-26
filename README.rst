@@ -58,6 +58,9 @@ The following configuration options are accepted:
 * ``set_type_checking_flag`` (default: ``False``): if ``True``, set ``typing.TYPE_CHECKING`` to
   ``True`` to enable "expensive" typing imports
 
+* ``add_type_hints_to_docstring`` (default: ``True``): if ``True``, insert parameter types from the
+  signatures of callable objects into their docstrings
+
 
 How it works
 ------------

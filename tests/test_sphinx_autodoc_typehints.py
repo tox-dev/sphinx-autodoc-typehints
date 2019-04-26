@@ -5,6 +5,7 @@ import textwrap
 from typing import (
     Any, AnyStr, Callable, Dict, Generic, Mapping, NewType, Optional, Pattern,
     Tuple, TypeVar, Union, Type)
+import inspect
 
 from typing_extensions import Protocol
 
@@ -113,6 +114,27 @@ def test_process_docstring_slot_wrapper():
     lines = []
     process_docstring(None, 'class', 'SlotWrapper', Slotted, None, lines)
     assert not lines
+
+
+def test_add_type_hints_to_docstring_option(monkeypatch):
+    class Dummy(object): pass
+    class App(object):
+        """
+        Mock app object for testing.
+
+        :param value: The value to set `config.add_type_hints_to_docstring`
+        """
+        def __init__(self, value: bool):
+            self.config = Dummy()
+            self.config.add_type_hints_to_docstring = value
+    # ensure :type ...: is added when option is True
+    lines = inspect.cleandoc(App.__doc__).splitlines()
+    process_docstring(App(True), 'class', 'App', App, None, lines)
+    assert ':type value: :py:class:`bool`' in lines
+    # ensure :type ...: is not added when option is False
+    lines = inspect.cleandoc(App.__doc__).splitlines()
+    process_docstring(App(False), 'class', 'App', App, None, lines)
+    assert ':type value: :py:class:`bool`' not in lines
 
 
 @pytest.mark.sphinx('text', testroot='dummy')
