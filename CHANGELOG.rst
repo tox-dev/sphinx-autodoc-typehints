@@ -1,3 +1,9 @@
+UNRELEASED
+==========
+
+* Dropped support for Python 3.4
+
+
 1.6.0
 =====
 
