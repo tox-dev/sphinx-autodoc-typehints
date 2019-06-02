@@ -231,7 +231,7 @@ def test_sphinx_output(app, status, warning):
               Return type:
                  "str"
 
-           a_property
+           property a_property
 
               Property docstring
 
