@@ -126,7 +126,10 @@ def format_annotation(annotation):
             annotation_cls = annotation.__origin__
 
         extra = ''
-        mro = annotation_cls.mro()
+        if isinstance(annotation_cls, type):
+            mro = type.mro(annotation_cls)
+        else:
+            mro = annotation_cls.mro()
         if Generic in mro or (Protocol and Protocol in mro):
             params = (getattr(annotation, '__parameters__', None) or
                       getattr(annotation, '__args__', None))
