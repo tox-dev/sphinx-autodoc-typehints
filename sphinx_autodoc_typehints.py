@@ -156,6 +156,12 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
         for param in signature.signature.parameters.values()
     ]
 
+    if '<locals>' in obj.__qualname__:
+        logger.warning(
+            'Cannot treat a function defined as a local function: "%s"  (use @functools.wraps)',
+            name)
+        return
+
     if parameters:
         if what in ('class', 'exception'):
             del parameters[0]

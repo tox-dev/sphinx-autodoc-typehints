@@ -1,6 +1,14 @@
 import typing
 
 
+def get_local_function():
+    def wrapper(self) -> str:
+        """
+        Wrapper
+        """
+    return wrapper
+
+
 class Class:
     """
     Initializer docstring.
@@ -87,6 +95,8 @@ class Class:
 
             :param x: foo
             """
+
+    locally_defined_callable_field = get_local_function()
 
 
 class DummyException(Exception):
