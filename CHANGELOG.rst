@@ -2,6 +2,7 @@ UNRELEASED
 ==========
 
 * Dropped support for Python 3.4
+* Fixed unwrapped local functions causing errors (PR by Kimiyuki Onaka)
 
 
 1.6.0
