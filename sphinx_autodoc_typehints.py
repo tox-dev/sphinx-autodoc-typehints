@@ -191,6 +191,8 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
 
 
 def get_all_type_hints(obj, name):
+    rv = {}
+
     try:
         rv = get_type_hints(obj)
     except (AttributeError, TypeError):
@@ -204,6 +206,26 @@ def get_all_type_hints(obj, name):
     if rv:
         return rv
 
+    rv = backfill_type_hints(obj, name)
+
+    try:
+        obj.__annotations__ = rv
+    except AttributeError:
+        return rv
+
+    try:
+        rv = get_type_hints(obj)
+    except (AttributeError, TypeError):
+        pass
+    except NameError as exc:
+        logger.warning('Cannot resolve forward reference in type annotations of "%s": %s',
+                       name, exc)
+        rv = obj.__annotations__
+
+    return rv
+
+
+def backfill_type_hints(obj, name):
     rv = {}
 
     try:
@@ -211,20 +233,27 @@ def get_all_type_hints(obj, name):
     except ImportError:
         return rv
 
+    def _one_child(module):
+        children = list(ast.iter_child_nodes(module))
+
+        if len(children) != 1:
+            logger.warning(
+                'Did not get exactly one node from AST for "%s", got %s',
+                name,
+                len(children)
+            )
+            return
+
+        return children[0]
+
     try:
-        obj_ast = list(ast.iter_child_nodes(ast.parse(textwrap.dedent(inspect.getsource(obj)))))
+        obj_ast = ast.parse(textwrap.dedent(inspect.getsource(obj)))
     except TypeError:
         return rv
 
-    if len(obj_ast) != 1:
-        logger.warning(
-            'Did not get exactly one node from AST for "%s", got %s',
-            name,
-            len(obj_ast)
-        )
+    obj_ast = _one_child(obj_ast)
+    if obj_ast is None:
         return rv
-
-    obj_ast = obj_ast[0]
 
     try:
         type_comment = obj_ast.type_comment
@@ -235,12 +264,35 @@ def get_all_type_hints(obj, name):
         return rv
 
     try:
-        comment_args, comment_returns = type_comment.split(' -> ')
+        comment_args_str, comment_returns = type_comment.split(' -> ')
     except ValueError:
         logger.warning('Unparseable type hint comment for "%s": Expected to contain ` -> `', name)
         return rv
 
-    comment_args = comment_args.strip('()').split(',')
+    if comment_returns:
+        rv['return'] = comment_returns
+
+    comment_args_str = comment_args_str.replace('*', '').strip('()')
+    comment_args_ast = ast.parse(comment_args_str)
+
+    comment_args_ast = _one_child(comment_args_ast)
+    if comment_args_ast is None:
+        return rv
+
+    try:
+        tuple_elem = comment_args_ast.value.elts
+    except AttributeError:
+        comment_args = [comment_args_str]
+    else:
+        comment_args = []
+
+        for comment_arg_ast in reversed(tuple_elem):
+            comment_args.insert(
+                0,
+                comment_args_str[comment_arg_ast.col_offset:].strip().rstrip(', ')
+            )
+
+            comment_args_str = comment_args_str[:comment_arg_ast.col_offset]
 
     try:
         args = list(ast.iter_child_nodes(obj_ast.args))
@@ -253,11 +305,14 @@ def get_all_type_hints(obj, name):
     elif len(args) > len(comment_args):
         comment_args = [None] * (len(args) - len(comment_args)) + comment_args
 
-    rv['return'] = comment_returns
-
     for comment, arg in zip(comment_args, args):
         if not comment:
             comment = getattr(arg, 'type_comment', None)
+        if not comment:
+            continue
+
+        if not hasattr(arg, 'arg'):
+            continue
 
         rv[arg.arg] = comment
 

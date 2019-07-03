@@ -302,39 +302,39 @@ def test_sphinx_output(app, status, warning):
            Function docstring.
 
            Parameters:
-              * **x** (*int*) – foo
+              * **x** ("int") – foo
 
-              * **y** (*str*) – bar
+              * **y** ("str") – bar
 
            Return type:
-              None
+              "None"
 
         dummy_module.function_with_inline_typehint_comment(x, y)
 
            Function docstring.
 
            Parameters:
-              * **x** (*int*) – foo
+              * **x** ("int") – foo
 
-              * **y** (*str*) – bar
+              * **y** ("str") – bar
 
            Return type:
-              None
+              "None"
 
         class dummy_module.ClassWithTypehints(x)
 
            Class docstring.
 
            Parameters:
-              **x** (*int*) -- foo
+              **x** ("int") -- foo
 
            foo(x)
 
               Method docstring.
 
               Parameters:
-                 **x** (*str*) -- foo
+                 **x** ("str") -- foo
 
               Return type:
-                 int
+                 "int"
         ''').replace('–', '--')
