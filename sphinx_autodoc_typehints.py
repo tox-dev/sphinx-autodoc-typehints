@@ -272,7 +272,7 @@ def backfill_type_hints(obj, name):
     if comment_returns:
         rv['return'] = comment_returns
 
-    if comment_args_str != '(...)':
+    if comment_args_str not in ('()', '(...)'):
         logger.warning(
             'Only supporting `type: (...) -> rv`-style type hint comments, '
             'skipping types for "%s"',
