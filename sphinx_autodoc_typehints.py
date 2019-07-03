@@ -250,9 +250,8 @@ def get_all_type_hints(obj, name):
 
     if comment_args == ['...']:
         comment_args = [None] * len(args)
-    elif len(comment_args) != len(args):
-        logger.warning('Wrong argument count in type hint comment for "%s"', name)
-        return rv
+    elif len(args) > len(comment_args):
+        comment_args = [None] * (len(args) - len(comment_args)) + comment_args
 
     rv['return'] = comment_returns
 
