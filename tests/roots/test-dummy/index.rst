@@ -16,3 +16,8 @@ Dummy Module
 .. autofunction:: dummy_module.function_with_escaped_default
 
 .. autofunction:: dummy_module.function_with_unresolvable_annotation
+
+.. autofunction:: dummy_module.function_with_typehint_comment
+
+.. autoclass:: dummy_module.ClassWithTypehints
+   :members:

@@ -1,4 +1,5 @@
 import inspect
+import textwrap
 import typing
 from typing import get_type_hints, TypeVar, Any, AnyStr, Generic, Union
 
@@ -189,6 +190,77 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
     return signature.format_args().replace('\\', '\\\\'), None
 
 
+def get_all_type_hints(obj, name):
+    try:
+        rv = get_type_hints(obj)
+    except (AttributeError, TypeError):
+        # Introspecting a slot wrapper will raise TypeError
+        pass
+    except NameError as exc:
+        logger.warning('Cannot resolve forward reference in type annotations of "%s": %s',
+                       name, exc)
+        rv = obj.__annotations__
+
+    if rv:
+        return rv
+
+    rv = {}
+
+    try:
+        import typed_ast.ast3 as ast
+    except ImportError:
+        return rv
+
+    try:
+        obj_ast = list(ast.iter_child_nodes(ast.parse(textwrap.dedent(inspect.getsource(obj)))))
+    except TypeError:
+        return rv
+
+    if len(obj_ast) != 1:
+        logger.warning('Did not get exactly one node from AST for "%s", got %s', name, len(obj_ast))
+        return rv
+
+    obj_ast = obj_ast[0]
+
+    try:
+        type_comment = obj_ast.type_comment
+    except AttributeError:
+        return rv
+
+    if not type_comment:
+        return rv
+
+    try:
+        comment_args, comment_returns = type_comment.split(' -> ')
+    except ValueError:
+        logger.warning('Unparseable type hint comment for "%s": Expected to contain ` -> `', name)
+        return rv
+
+    comment_args = comment_args.strip('()').split(',')
+
+    try:
+        args = list(ast.iter_child_nodes(obj_ast.args))
+    except AttributeError:
+        logger.warning('No args found on "%s"', name)
+        return rv
+
+    if comment_args == ['...']:
+        comment_args = [None] * len(args)
+    elif len(comment_args) != len(args):
+        logger.warning('Wrong argument count in type hint comment for "%s"', name)
+        return rv
+
+    rv['return'] = comment_returns
+
+    for comment, arg in zip(comment_args, args):
+        if not comment:
+            comment = getattr(arg, 'type_comment', None)
+
+        rv[arg.arg] = comment
+
+    return rv
+
+
 def process_docstring(app, what, name, obj, options, lines):
     if isinstance(obj, property):
         obj = obj.fget
@@ -198,15 +270,7 @@ def process_docstring(app, what, name, obj, options, lines):
             obj = getattr(obj, '__init__')
 
         obj = unwrap(obj)
-        try:
-            type_hints = get_type_hints(obj)
-        except (AttributeError, TypeError):
-            # Introspecting a slot wrapper will raise TypeError
-            return
-        except NameError as exc:
-            logger.warning('Cannot resolve forward reference in type annotations of "%s": %s',
-                           name, exc)
-            type_hints = obj.__annotations__
+        type_hints = get_all_type_hints(obj, name)
 
         for argname, annotation in type_hints.items():
             if argname.endswith('_'):

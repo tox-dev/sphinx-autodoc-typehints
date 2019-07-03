@@ -136,3 +136,33 @@ def function_with_unresolvable_annotation(x: 'a.b.c'):
 
     :param x: foo
     """
+
+
+def function_with_typehint_comment(x):
+    # type: (int) -> None
+    """
+    Function docstring.
+
+    :param x: foo
+    """
+
+
+class ClassWithTypehints(object):
+    """
+    Class docstring.
+
+    :param x: foo
+    """
+
+    def __init__(self, x):
+        # type: (int) -> None
+        pass
+
+    def foo(self, x):
+        # type: (str) -> int
+        """
+        Method docstring.
+
+        :param x: foo
+        """
+        return 42
