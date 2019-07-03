@@ -309,18 +309,6 @@ def test_sphinx_output(app, status, warning):
            Return type:
               "None"
 
-        dummy_module.function_with_inline_typehint_comment(x, y)
-
-           Function docstring.
-
-           Parameters:
-              * **x** ("int") – foo
-
-              * **y** ("str") – bar
-
-           Return type:
-              "None"
-
         class dummy_module.ClassWithTypehints(x)
 
            Class docstring.

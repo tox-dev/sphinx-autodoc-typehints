@@ -19,7 +19,5 @@ Dummy Module
 
 .. autofunction:: dummy_module.function_with_typehint_comment
 
-.. autofunction:: dummy_module.function_with_inline_typehint_comment
-
 .. autoclass:: dummy_module.ClassWithTypehints
    :members:

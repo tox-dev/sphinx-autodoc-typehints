@@ -272,27 +272,13 @@ def backfill_type_hints(obj, name):
     if comment_returns:
         rv['return'] = comment_returns
 
-    comment_args_str = comment_args_str.replace('*', '').strip('()')
-    comment_args_ast = ast.parse(comment_args_str)
-
-    comment_args_ast = _one_child(comment_args_ast)
-    if comment_args_ast is None:
+    if comment_args_str != '(...)':
+        logger.warning(
+            'Only supporting `type: (...) -> rv`-style type hint comments, '
+            'skipping types for "%s"',
+            name
+        )
         return rv
-
-    try:
-        tuple_elem = comment_args_ast.value.elts
-    except AttributeError:
-        comment_args = [comment_args_str]
-    else:
-        comment_args = []
-
-        for comment_arg_ast in reversed(tuple_elem):
-            comment_args.insert(
-                0,
-                comment_args_str[comment_arg_ast.col_offset:].strip().rstrip(', ')
-            )
-
-            comment_args_str = comment_args_str[:comment_arg_ast.col_offset]
 
     try:
         args = list(ast.iter_child_nodes(obj_ast.args))
@@ -300,14 +286,8 @@ def backfill_type_hints(obj, name):
         logger.warning('No args found on "%s"', name)
         return rv
 
-    if comment_args == ['...']:
-        comment_args = [None] * len(args)
-    elif len(args) > len(comment_args):
-        comment_args = [None] * (len(args) - len(comment_args)) + comment_args
-
-    for comment, arg in zip(comment_args, args):
-        if not comment:
-            comment = getattr(arg, 'type_comment', None)
+    for arg in args:
+        comment = getattr(arg, 'type_comment', None)
         if not comment:
             continue
 
