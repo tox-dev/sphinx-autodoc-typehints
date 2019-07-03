@@ -217,7 +217,11 @@ def get_all_type_hints(obj, name):
         return rv
 
     if len(obj_ast) != 1:
-        logger.warning('Did not get exactly one node from AST for "%s", got %s', name, len(obj_ast))
+        logger.warning(
+            'Did not get exactly one node from AST for "%s", got %s',
+            name,
+            len(obj_ast)
+        )
         return rv
 
     obj_ast = obj_ast[0]
