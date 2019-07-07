@@ -296,4 +296,33 @@ def test_sphinx_output(app, status, warning):
 
            Parameters:
               **x** (*a.b.c*) – foo
+
+        dummy_module.function_with_typehint_comment(x, y)
+
+           Function docstring.
+
+           Parameters:
+              * **x** ("int") – foo
+
+              * **y** ("str") – bar
+
+           Return type:
+              "None"
+
+        class dummy_module.ClassWithTypehints(x)
+
+           Class docstring.
+
+           Parameters:
+              **x** ("int") -- foo
+
+           foo(x)
+
+              Method docstring.
+
+              Parameters:
+                 **x** ("str") -- foo
+
+              Return type:
+                 "int"
         ''').replace('–', '--')
