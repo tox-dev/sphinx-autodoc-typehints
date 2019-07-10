@@ -55,8 +55,12 @@ Options
 
 The following configuration options are accepted:
 
-* ``set_type_checking_flag`` (default: ``True``): if ``True``, set ``typing.TYPE_CHECKING`` to
+* ``set_type_checking_flag`` (default: ``False``): if ``True``, set ``typing.TYPE_CHECKING`` to
   ``True`` to enable "expensive" typing imports
+
+* ``always_document_param_types`` (default: ``False``): If ``False``, do not add type info for
+  undocumented parameters.  If ``True``, add stub documentation for undocumented parameters to
+  be able to add type info.
 
 
 How it works
