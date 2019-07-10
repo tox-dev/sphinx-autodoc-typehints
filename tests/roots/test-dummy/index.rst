@@ -21,3 +21,5 @@ Dummy Module
 
 .. autoclass:: dummy_module.ClassWithTypehints
    :members:
+
+.. autofunction:: dummy_module.undocumented_function

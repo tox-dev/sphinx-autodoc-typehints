@@ -177,3 +177,11 @@ class ClassWithTypehints(object):
         :param x: foo
         """
         return 42
+
+
+def undocumented_function(x: int) -> str:
+    """
+    Hi
+    """
+
+    return str(x)
