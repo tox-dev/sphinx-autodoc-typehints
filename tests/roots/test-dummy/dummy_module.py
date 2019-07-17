@@ -180,8 +180,6 @@ class ClassWithTypehints(object):
 
 
 def undocumented_function(x: int) -> str:
-    """
-    Hi
-    """
+    """Hi"""
 
     return str(x)
