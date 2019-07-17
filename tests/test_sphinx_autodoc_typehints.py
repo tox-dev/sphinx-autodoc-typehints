@@ -117,7 +117,7 @@ def test_process_docstring_slot_wrapper():
 
 @pytest.mark.parametrize('always_document_param_types', [True, False])
 @pytest.mark.sphinx('text', testroot='dummy')
-def test_sphinx_output(app, request, status, warning, always_document_param_types):
+def test_sphinx_output(app, status, warning, always_document_param_types):
     test_path = pathlib.Path(__file__).parent
 
     # Add test directory to sys.path to allow imports of dummy module.
