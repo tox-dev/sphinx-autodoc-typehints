@@ -4,6 +4,7 @@ UNRELEASED
 * Dropped support for Python 3.4
 * Fixed unwrapped local functions causing errors (PR by Kimiyuki Onaka)
 * Added support for type hint comments (PR by Markus Unterwaditzer)
+* Added flag for rendering classes with their fully qualified names (PR by Holly Becker)
 
 
 1.6.0
