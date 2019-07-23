@@ -55,8 +55,11 @@ Options
 
 The following configuration options are accepted:
 
-* ``set_type_checking_flag`` (default: ``True``): if ``True``, set ``typing.TYPE_CHECKING`` to
+* ``set_type_checking_flag`` (default: ``False``): if ``True``, set ``typing.TYPE_CHECKING`` to
   ``True`` to enable "expensive" typing imports
+* ``typehints_fully_qualified`` (default: ``False``): if ``True``, class names are always fully
+  qualified (e.g. ``module.for.Class``). If ``False``, just the class name displays (e.g.
+  ``Class``)
 
 
 How it works
