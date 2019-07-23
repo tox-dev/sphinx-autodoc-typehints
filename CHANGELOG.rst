@@ -3,6 +3,7 @@ UNRELEASED
 
 * Dropped support for Python 3.4
 * Fixed unwrapped local functions causing errors (PR by Kimiyuki Onaka)
+* Added support for type hint comments (PR by Markus Unterwaditzer)
 
 
 1.6.0

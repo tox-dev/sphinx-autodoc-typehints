@@ -255,10 +255,7 @@ def backfill_type_hints(obj, name):
 
         if len(children) != 1:
             logger.warning(
-                'Did not get exactly one node from AST for "%s", got %s',
-                name,
-                len(children)
-            )
+                'Did not get exactly one node from AST for "%s", got %s', name, len(children))
             return
 
         return children[0]
@@ -292,8 +289,7 @@ def backfill_type_hints(obj, name):
     if comment_args_str not in ('()', '(...)'):
         logger.warning(
             'Only supporting `type: (...) -> rv`-style type hint comments, '
-            'skipping types for "%s"',
-            name
+            'skipping types for "%s"', name
         )
         return rv
 

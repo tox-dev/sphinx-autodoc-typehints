@@ -96,3 +96,22 @@ type annotations. This creates a circular import problem. The solution to this i
    ``def methodname(self, param1: 'othermodule.OtherClass'):``)
 
 On Python 3.7, you can even use ``from __future__ import annotations`` and remove the quotes.
+
+
+Using type hint comments
+------------------------
+
+If you're documenting code that needs to stay compatible with Python 2.7, you cannot use regular
+type annotations. Instead, you must have typed_ast_ installed and add type hint comments in the
+following manner:
+
+.. code-block:: python
+
+    def myfunction(
+        arg1,  # type: int
+        arg2  # type: str
+    )
+        # type: (...) -> int
+        return 42
+
+.. _typed_ast: https://pypi.org/project/typed-ast/
