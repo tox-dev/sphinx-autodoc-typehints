@@ -11,27 +11,6 @@ try:
 except ImportError:
     Protocol = None
 
-try:
-    from inspect import unwrap
-except ImportError:
-    def unwrap(func, *, stop=None):
-        """This is the inspect.unwrap() method copied from Python 3.5's standard library."""
-        if stop is None:
-            def _is_wrapper(f):
-                return hasattr(f, '__wrapped__')
-        else:
-            def _is_wrapper(f):
-                return hasattr(f, '__wrapped__') and not stop(f)
-        f = func  # remember the original func for error reporting
-        memo = {id(f)}  # Memoise by id to tolerate non-hashable objects
-        while _is_wrapper(func):
-            func = func.__wrapped__
-            id_func = id(func)
-            if id_func in memo:
-                raise ValueError('wrapper loop when unwrapping {!r}'.format(f))
-            memo.add(id_func)
-        return func
-
 logger = logging.getLogger(__name__)
 
 
@@ -167,7 +146,7 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
     if not getattr(obj, '__annotations__', None):
         return
 
-    obj = unwrap(obj)
+    obj = inspect.unwrap(obj)
     signature = Signature(obj)
     parameters = [
         param.replace(annotation=inspect.Parameter.empty)
@@ -320,7 +299,7 @@ def process_docstring(app, what, name, obj, options, lines):
         if what in ('class', 'exception'):
             obj = getattr(obj, '__init__')
 
-        obj = unwrap(obj)
+        obj = inspect.unwrap(obj)
         type_hints = get_all_type_hints(obj, name)
 
         for argname, annotation in type_hints.items():
