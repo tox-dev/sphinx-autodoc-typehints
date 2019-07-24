@@ -1,5 +1,5 @@
-UNRELEASED
-==========
+1.7.0
+=====
 
 * Dropped support for Python 3.4
 * Fixed unwrapped local functions causing errors (PR by Kimiyuki Onaka)
