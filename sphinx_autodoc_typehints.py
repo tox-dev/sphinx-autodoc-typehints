@@ -175,7 +175,7 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
                 class_name = obj.__qualname__.split('.')[-2]
                 method_name = "_{c}{m}".format(c=class_name, m=method_name)
 
-            method_object = outer.__dict__[method_name]
+            method_object = outer.__dict__[method_name] if outer else obj
             if not isinstance(method_object, (classmethod, staticmethod)):
                 del parameters[0]
 

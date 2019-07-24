@@ -188,7 +188,7 @@ def test_sphinx_output(app, status, warning):
     text_path = pathlib.Path(app.srcdir) / '_build' / 'text' / 'index.txt'
     with text_path.open('r') as f:
         text_contents = f.read().replace('–', '--')
-        assert text_contents == textwrap.dedent('''\
+        expected_contents = textwrap.dedent('''\
         Dummy Module
         ************
 
@@ -379,4 +379,22 @@ def test_sphinx_output(app, status, warning):
 
               Return type:
                  "int"
+
+        class dummy_module.DataClass
+
+           Class docstring.
+
+           __init__()
         ''').replace('–', '--')
+
+        if sys.version_info < (3, 6):
+            expected_contents += '''
+      Initialize self.  See help(type(self)) for accurate signature.
+'''
+        else:
+            expected_contents += '''
+      Return type:
+         "None"
+'''
+
+        assert text_contents == expected_contents

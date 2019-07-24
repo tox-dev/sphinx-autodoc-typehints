@@ -1,5 +1,11 @@
 import typing
 
+try:
+    from dataclasses import dataclass
+except ImportError:
+    def dataclass(cls):
+        return cls
+
 
 def get_local_function():
     def wrapper(self) -> str:
@@ -177,3 +183,8 @@ class ClassWithTypehints(object):
         :param x: foo
         """
         return 42
+
+
+@dataclass
+class DataClass:
+    """Class docstring."""
