@@ -1,3 +1,10 @@
+UNRELEASED
+==========
+
+* Fixed regression which caused ``TypeError`` or ``OSError`` when trying to set annotations due to
+  PR #87
+
+
 1.7.0
 =====
 
