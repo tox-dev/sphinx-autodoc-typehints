@@ -191,8 +191,9 @@ def get_all_type_hints(obj, name):
 
     try:
         rv = get_type_hints(obj)
-    except (AttributeError, TypeError):
-        # Introspecting a slot wrapper will raise TypeError
+    except (AttributeError, TypeError, RecursionError):
+        # Introspecting a slot wrapper will raise TypeError, and and some recursive type
+        # definitions will cause a RecursionError (https://github.com/python/typing/issues/574).
         pass
     except NameError as exc:
         logger.warning('Cannot resolve forward reference in type annotations of "%s": %s',
