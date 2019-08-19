@@ -99,6 +99,60 @@ def test_format_annotation(annotation, expected_result):
     assert result == expected_result
 
 
+@pytest.mark.parametrize('annotation, expected_result', [
+    (str,                           ':py:class:`str`'),
+    (int,                           ':py:class:`int`'),
+    (type(None),                    '``None``'),
+    (Any,                           ':py:data:`typing.Any`'),
+    (AnyStr,                        ':py:data:`typing.AnyStr`'),
+    (Generic[T],                    ':py:class:`typing.Generic`\\[\\~T]'),
+    (Mapping,                       ':py:class:`typing.Mapping`\\[\\~KT, \\+VT_co]'),
+    (Mapping[T, int],               ':py:class:`typing.Mapping`\\[\\~T, :py:class:`int`]'),
+    (Mapping[str, V],               ':py:class:`typing.Mapping`\\[:py:class:`str`, \\-V]'),
+    (Mapping[T, U],                 ':py:class:`typing.Mapping`\\[\\~T, \\+U]'),
+    (Mapping[str, bool],            ':py:class:`typing.Mapping`\\[:py:class:`str`, '
+                                    ':py:class:`bool`]'),
+    (Dict,                          ':py:class:`typing.Dict`\\[\\~KT, \\~VT]'),
+    (Dict[T, int],                  ':py:class:`typing.Dict`\\[\\~T, :py:class:`int`]'),
+    (Dict[str, V],                  ':py:class:`typing.Dict`\\[:py:class:`str`, \\-V]'),
+    (Dict[T, U],                    ':py:class:`typing.Dict`\\[\\~T, \\+U]'),
+    (Dict[str, bool],               ':py:class:`typing.Dict`\\[:py:class:`str`, '
+                                    ':py:class:`bool`]'),
+    (Tuple,                         ':py:class:`typing.Tuple`'),
+    (Tuple[str, bool],              ':py:class:`typing.Tuple`\\[:py:class:`str`, '
+                                    ':py:class:`bool`]'),
+    (Tuple[int, int, int],          ':py:class:`typing.Tuple`\\[:py:class:`int`, '
+                                    ':py:class:`int`, :py:class:`int`]'),
+    (Tuple[str, ...],               ':py:class:`typing.Tuple`\\[:py:class:`str`, ...]'),
+    (Union,                         ':py:data:`typing.Union`'),
+    (Union[str, bool],              ':py:data:`typing.Union`\\[:py:class:`str`, '
+                                    ':py:class:`bool`]'),
+    (Optional[str],                 ':py:data:`typing.Optional`\\[:py:class:`str`]'),
+    (Callable,                      ':py:data:`typing.Callable`'),
+    (Callable[..., int],            ':py:data:`typing.Callable`\\[..., :py:class:`int`]'),
+    (Callable[[int], int],          ':py:data:`typing.Callable`\\[\\[:py:class:`int`], '
+                                    ':py:class:`int`]'),
+    (Callable[[int, str], bool],    ':py:data:`typing.Callable`\\[\\[:py:class:`int`, '
+                                    ':py:class:`str`], :py:class:`bool`]'),
+    (Callable[[int, str], None],    ':py:data:`typing.Callable`\\[\\[:py:class:`int`, '
+                                    ':py:class:`str`], ``None``]'),
+    (Callable[[T], T],              ':py:data:`typing.Callable`\\[\\[\\~T], \\~T]'),
+    (Pattern,                       ':py:class:`typing.Pattern`\\[:py:data:`typing.AnyStr`]'),
+    (Pattern[str],                  ':py:class:`typing.Pattern`\\[:py:class:`str`]'),
+    (A,                             ':py:class:`%s.A`' % __name__),
+    (B,                             ':py:class:`%s.B`\\[\\~T]' % __name__),
+    (B[int],                        ':py:class:`%s.B`\\[:py:class:`int`]' % __name__),
+    (C,                             ':py:class:`%s.C`' % __name__),
+    (D,                             ':py:class:`%s.D`' % __name__),
+    (E,                             ':py:class:`%s.E`\\[\\~T]' % __name__),
+    (E[int],                        ':py:class:`%s.E`\\[:py:class:`int`]' % __name__),
+    (W,                             ':py:func:`typing.NewType`\\(:py:data:`~W`, :py:class:`str`)')
+])
+def test_format_annotation_fully_qualified(annotation, expected_result):
+    result = format_annotation(annotation, fully_qualified=True)
+    assert result == expected_result
+
+
 @pytest.mark.parametrize('type_param, expected_result', [
     (None, ':py:class:`~typing.Type`\\[\\+CT'),
     (A, ':py:class:`~typing.Type`\\[:py:class:`~%s.A`]' % __name__)
@@ -145,7 +199,7 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
     text_path = pathlib.Path(app.srcdir) / '_build' / 'text' / 'index.txt'
     with text_path.open('r') as f:
         text_contents = f.read().replace('–', '--')
-        assert text_contents == textwrap.dedent('''\
+        expected_contents = textwrap.dedent('''\
         Dummy Module
         ************
 
@@ -343,4 +397,22 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
 
            Return type:
               "str"
+
+        class dummy_module.DataClass
+
+           Class docstring.
+
+           __init__()
         '''.format(undoc_params=undoc_params)).replace('–', '--')
+
+        if sys.version_info < (3, 6):
+            expected_contents += '''
+      Initialize self.  See help(type(self)) for accurate signature.
+'''
+        else:
+            expected_contents += '''
+      Return type:
+         "None"
+'''
+
+        assert text_contents == expected_contents

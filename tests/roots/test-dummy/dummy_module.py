@@ -1,5 +1,11 @@
 import typing
 
+try:
+    from dataclasses import dataclass
+except ImportError:
+    def dataclass(cls):
+        return cls
+
 
 def get_local_function():
     def wrapper(self) -> str:
@@ -183,3 +189,8 @@ def undocumented_function(x: int) -> str:
     """Hi"""
 
     return str(x)
+
+
+@dataclass
+class DataClass:
+    """Class docstring."""

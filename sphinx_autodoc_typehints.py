@@ -11,31 +11,10 @@ try:
 except ImportError:
     Protocol = None
 
-try:
-    from inspect import unwrap
-except ImportError:
-    def unwrap(func, *, stop=None):
-        """This is the inspect.unwrap() method copied from Python 3.5's standard library."""
-        if stop is None:
-            def _is_wrapper(f):
-                return hasattr(f, '__wrapped__')
-        else:
-            def _is_wrapper(f):
-                return hasattr(f, '__wrapped__') and not stop(f)
-        f = func  # remember the original func for error reporting
-        memo = {id(f)}  # Memoise by id to tolerate non-hashable objects
-        while _is_wrapper(func):
-            func = func.__wrapped__
-            id_func = id(func)
-            if id_func in memo:
-                raise ValueError('wrapper loop when unwrapping {!r}'.format(f))
-            memo.add(id_func)
-        return func
-
 logger = logging.getLogger(__name__)
 
 
-def format_annotation(annotation):
+def format_annotation(annotation, fully_qualified=False):
     if inspect.isclass(annotation) and annotation.__module__ == 'builtins':
         if annotation.__qualname__ == 'NoneType':
             return '``None``'
@@ -60,9 +39,9 @@ def format_annotation(annotation):
                 pass  # annotation_cls was either the "type" object or typing.Type
 
         if annotation is Any:
-            return ':py:data:`~typing.Any`'
+            return ':py:data:`{}typing.Any`'.format("" if fully_qualified else "~")
         elif annotation is AnyStr:
-            return ':py:data:`~typing.AnyStr`'
+            return ':py:data:`{}typing.AnyStr`'.format("" if fully_qualified else "~")
         elif isinstance(annotation, TypeVar):
             return '\\%r' % annotation
         elif (annotation is Union or getattr(annotation, '__origin__', None) is Union or
@@ -97,7 +76,9 @@ def format_annotation(annotation):
             elif arg_annotations is not None:
                 params = [
                     '\\[{}]'.format(
-                        ', '.join(format_annotation(param) for param in arg_annotations)),
+                        ', '.join(
+                            format_annotation(param, fully_qualified)
+                            for param in arg_annotations)),
                     result_annotation
                 ]
         elif hasattr(annotation, 'type_var'):
@@ -110,18 +91,28 @@ def format_annotation(annotation):
             params = annotation.__parameters__
 
         if params:
-            extra = '\\[{}]'.format(', '.join(format_annotation(param) for param in params))
+            extra = '\\[{}]'.format(', '.join(
+                format_annotation(param, fully_qualified) for param in params))
 
         if not class_name:
             class_name = annotation_cls.__qualname__.title()
 
-        return '{}`~{}.{}`{}'.format(prefix, module, class_name, extra)
+        return '{prefix}`{qualify}{module}.{name}`{extra}'.format(
+            prefix=prefix,
+            qualify="" if fully_qualified else "~",
+            module=module,
+            name=class_name,
+            extra=extra
+        )
     elif annotation is Ellipsis:
         return '...'
     elif (inspect.isfunction(annotation) and annotation.__module__ == 'typing' and
           hasattr(annotation, '__name__') and hasattr(annotation, '__supertype__')):
-        return ':py:func:`~typing.NewType`\\(:py:data:`~{}`, {})'.format(
-            annotation.__name__, format_annotation(annotation.__supertype__))
+        return ':py:func:`{qualify}typing.NewType`\\(:py:data:`~{name}`, {extra})'.format(
+            qualify="" if fully_qualified else "~",
+            name=annotation.__name__,
+            extra=format_annotation(annotation.__supertype__, fully_qualified),
+        )
     elif inspect.isclass(annotation) or inspect.isclass(getattr(annotation, '__origin__', None)):
         if not inspect.isclass(annotation):
             annotation_cls = annotation.__origin__
@@ -132,10 +123,15 @@ def format_annotation(annotation):
             params = (getattr(annotation, '__parameters__', None) or
                       getattr(annotation, '__args__', None))
             if params:
-                extra = '\\[{}]'.format(', '.join(format_annotation(param) for param in params))
+                extra = '\\[{}]'.format(', '.join(
+                    format_annotation(param, fully_qualified) for param in params))
 
-        return ':py:class:`~{}.{}`{}'.format(annotation.__module__, annotation_cls.__qualname__,
-                                             extra)
+        return ':py:class:`{qualify}{module}.{name}`{extra}'.format(
+            qualify="" if fully_qualified else "~",
+            module=annotation.__module__,
+            name=annotation_cls.__qualname__,
+            extra=extra
+        )
 
     return str(annotation)
 
@@ -150,7 +146,7 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
     if not getattr(obj, '__annotations__', None):
         return
 
-    obj = unwrap(obj)
+    obj = inspect.unwrap(obj)
     signature = Signature(obj)
     parameters = [
         param.replace(annotation=inspect.Parameter.empty)
@@ -179,7 +175,7 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
                 class_name = obj.__qualname__.split('.')[-2]
                 method_name = "_{c}{m}".format(c=class_name, m=method_name)
 
-            method_object = outer.__dict__[method_name]
+            method_object = outer.__dict__[method_name] if outer else obj
             if not isinstance(method_object, (classmethod, staticmethod)):
                 del parameters[0]
 
@@ -195,8 +191,9 @@ def get_all_type_hints(obj, name):
 
     try:
         rv = get_type_hints(obj)
-    except (AttributeError, TypeError):
-        # Introspecting a slot wrapper will raise TypeError
+    except (AttributeError, TypeError, RecursionError):
+        # Introspecting a slot wrapper will raise TypeError, and and some recursive type
+        # definitions will cause a RecursionError (https://github.com/python/typing/issues/574).
         pass
     except NameError as exc:
         logger.warning('Cannot resolve forward reference in type annotations of "%s": %s',
@@ -238,10 +235,7 @@ def backfill_type_hints(obj, name):
 
         if len(children) != 1:
             logger.warning(
-                'Did not get exactly one node from AST for "%s", got %s',
-                name,
-                len(children)
-            )
+                'Did not get exactly one node from AST for "%s", got %s', name, len(children))
             return
 
         return children[0]
@@ -275,8 +269,7 @@ def backfill_type_hints(obj, name):
     if comment_args_str not in ('()', '(...)'):
         logger.warning(
             'Only supporting `type: (...) -> rv`-style type hint comments, '
-            'skipping types for "%s"',
-            name
+            'skipping types for "%s"', name
         )
         return rv
 
@@ -307,14 +300,15 @@ def process_docstring(app, what, name, obj, options, lines):
         if what in ('class', 'exception'):
             obj = getattr(obj, '__init__')
 
-        obj = unwrap(obj)
+        obj = inspect.unwrap(obj)
         type_hints = get_all_type_hints(obj, name)
 
         for argname, annotation in type_hints.items():
             if argname.endswith('_'):
                 argname = '{}\\_'.format(argname[:-1])
 
-            formatted_annotation = format_annotation(annotation)
+            formatted_annotation = format_annotation(
+                annotation, fully_qualified=app.config.typehints_fully_qualified)
 
             if argname == 'return':
                 if what in ('class', 'exception'):
@@ -365,6 +359,7 @@ def builder_ready(app):
 def setup(app):
     app.add_config_value('set_type_checking_flag', False, 'html')
     app.add_config_value('always_document_param_types', False, 'html')
+    app.add_config_value('typehints_fully_qualified', False, 'env')
     app.connect('builder-inited', builder_ready)
     app.connect('autodoc-process-signature', process_signature)
     app.connect('autodoc-process-docstring', process_docstring)

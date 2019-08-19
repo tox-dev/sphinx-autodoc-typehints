@@ -57,6 +57,9 @@ The following configuration options are accepted:
 
 * ``set_type_checking_flag`` (default: ``False``): if ``True``, set ``typing.TYPE_CHECKING`` to
   ``True`` to enable "expensive" typing imports
+* ``typehints_fully_qualified`` (default: ``False``): if ``True``, class names are always fully
+  qualified (e.g. ``module.for.Class``). If ``False``, just the class name displays (e.g.
+  ``Class``)
 * ``always_document_param_types`` (default: ``False``): If ``False``, do not add type info for
   undocumented parameters.  If ``True``, add stub documentation for undocumented parameters to
   be able to add type info.
@@ -96,3 +99,22 @@ type annotations. This creates a circular import problem. The solution to this i
    ``def methodname(self, param1: 'othermodule.OtherClass'):``)
 
 On Python 3.7, you can even use ``from __future__ import annotations`` and remove the quotes.
+
+
+Using type hint comments
+------------------------
+
+If you're documenting code that needs to stay compatible with Python 2.7, you cannot use regular
+type annotations. Instead, you must have typed_ast_ installed and add type hint comments in the
+following manner:
+
+.. code-block:: python
+
+    def myfunction(
+        arg1,  # type: int
+        arg2  # type: str
+    )
+        # type: (...) -> int
+        return 42
+
+.. _typed_ast: https://pypi.org/project/typed-ast/

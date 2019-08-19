@@ -1,8 +1,11 @@
-UNRELEASED
-==========
+1.7.0
+=====
 
 * Dropped support for Python 3.4
 * Fixed unwrapped local functions causing errors (PR by Kimiyuki Onaka)
+* Fixed ``AttributeError`` when documenting the ``__init__()`` method of a data class
+* Added support for type hint comments (PR by Markus Unterwaditzer)
+* Added flag for rendering classes with their fully qualified names (PR by Holly Becker)
 
 
 1.6.0
