@@ -169,14 +169,16 @@ def test_process_docstring_slot_wrapper():
     assert not lines
 
 
+@pytest.mark.parametrize('always_document_param_types', [True, False])
 @pytest.mark.sphinx('text', testroot='dummy')
-def test_sphinx_output(app, status, warning):
+def test_sphinx_output(app, status, warning, always_document_param_types):
     test_path = pathlib.Path(__file__).parent
 
     # Add test directory to sys.path to allow imports of dummy module.
     if str(test_path) not in sys.path:
         sys.path.insert(0, str(test_path))
 
+    app.config.always_document_param_types = always_document_param_types
     app.build()
 
     assert 'build succeeded' in status.getvalue()  # Build succeeded
@@ -184,6 +186,15 @@ def test_sphinx_output(app, status, warning):
     # There should be a warning about an unresolved forward reference
     warnings = warning.getvalue().strip()
     assert 'Cannot resolve forward reference in type annotations of ' in warnings
+
+    if always_document_param_types:
+        undoc_params = '''
+
+           Parameters:
+              **x** ("int") --'''
+
+    else:
+        undoc_params = ""
 
     text_path = pathlib.Path(app.srcdir) / '_build' / 'text' / 'index.txt'
     with text_path.open('r') as f:
@@ -380,12 +391,19 @@ def test_sphinx_output(app, status, warning):
               Return type:
                  "int"
 
+        dummy_module.undocumented_function(x)
+
+           Hi{undoc_params}
+
+           Return type:
+              "str"
+
         class dummy_module.DataClass
 
            Class docstring.
 
            __init__()
-        ''').replace('–', '--')
+        '''.format(undoc_params=undoc_params)).replace('–', '--')
 
         if sys.version_info < (3, 6):
             expected_contents += '''

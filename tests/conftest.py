@@ -9,7 +9,7 @@ pytest_plugins = 'sphinx.testing.fixtures'
 collect_ignore = ['roots']
 
 
-@pytest.fixture(scope='session', autouse=True)
+@pytest.fixture(autouse=True)
 def remove_sphinx_projects(sphinx_test_tempdir):
     # Remove any directory which appears to be a Sphinx project from
     # the temporary directory area.
@@ -21,6 +21,7 @@ def remove_sphinx_projects(sphinx_test_tempdir):
                 shutil.rmtree(str(entry))
         except PermissionError:
             pass
+
 
 
 @pytest.fixture

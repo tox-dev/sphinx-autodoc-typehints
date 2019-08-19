@@ -60,6 +60,9 @@ The following configuration options are accepted:
 * ``typehints_fully_qualified`` (default: ``False``): if ``True``, class names are always fully
   qualified (e.g. ``module.for.Class``). If ``False``, just the class name displays (e.g.
   ``Class``)
+* ``always_document_param_types`` (default: ``False``): If ``False``, do not add type info for
+  undocumented parameters.  If ``True``, add stub documentation for undocumented parameters to
+  be able to add type info.
 
 
 How it works

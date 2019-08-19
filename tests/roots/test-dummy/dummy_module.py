@@ -185,6 +185,12 @@ class ClassWithTypehints(object):
         return 42
 
 
+def undocumented_function(x: int) -> str:
+    """Hi"""
+
+    return str(x)
+
+
 @dataclass
 class DataClass:
     """Class docstring."""

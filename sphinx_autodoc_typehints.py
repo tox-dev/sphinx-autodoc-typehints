@@ -333,10 +333,22 @@ def process_docstring(app, what, name, obj, options, lines):
                     lines.insert(insert_index, ':rtype: {}'.format(formatted_annotation))
             else:
                 searchfor = ':param {}:'.format(argname)
+                insert_index = None
+
                 for i, line in enumerate(lines):
                     if line.startswith(searchfor):
-                        lines.insert(i, ':type {}: {}'.format(argname, formatted_annotation))
+                        insert_index = i
                         break
+
+                if insert_index is None and app.config.always_document_param_types:
+                    lines.append(searchfor)
+                    insert_index = len(lines)
+
+                if insert_index is not None:
+                    lines.insert(
+                        insert_index,
+                        ':type {}: {}'.format(argname, formatted_annotation)
+                    )
 
 
 def builder_ready(app):
@@ -346,6 +358,7 @@ def builder_ready(app):
 
 def setup(app):
     app.add_config_value('set_type_checking_flag', False, 'html')
+    app.add_config_value('always_document_param_types', False, 'html')
     app.add_config_value('typehints_fully_qualified', False, 'env')
     app.connect('builder-inited', builder_ready)
     app.connect('autodoc-process-signature', process_signature)

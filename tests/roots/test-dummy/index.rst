@@ -22,6 +22,8 @@ Dummy Module
 .. autoclass:: dummy_module.ClassWithTypehints
    :members:
 
+.. autofunction:: dummy_module.undocumented_function
+
 .. autoclass:: dummy_module.DataClass
     :undoc-members:
     :special-members: __init__
