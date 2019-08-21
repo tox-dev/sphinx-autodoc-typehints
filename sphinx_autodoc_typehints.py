@@ -2,7 +2,12 @@ import builtins
 import inspect
 import textwrap
 import typing
-from typing import get_type_hints, TypeVar, ClassVar, Any, AnyStr, Generic, NoReturn, Union
+from typing import get_type_hints, TypeVar, Any, AnyStr, Generic, Union
+try:  # Those aren’t available on Ubuntu Xenial’s Python 3.5.1
+    from typing import ClassVar, NoReturn
+except ImportError:
+    ClassVar = type('ClassVar', (object,), {})
+    NoReturn = type('NoReturn', (object,), {})
 
 from sphinx.util import logging
 from sphinx.util.inspect import Signature

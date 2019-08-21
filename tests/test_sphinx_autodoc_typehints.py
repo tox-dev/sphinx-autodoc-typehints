@@ -3,14 +3,16 @@ import pytest
 import sys
 import textwrap
 from typing import (
-    Any, AnyStr, Callable, ClassVar, Dict, Generic,
-    List, Mapping, NewType, NoReturn, Optional, Pattern,
+    Any, AnyStr, Callable, Dict, Generic,
+    List, Mapping, NewType, Optional, Pattern,
     Set, TextIO, Tuple, Type, TypeVar, Union,
 )
 
 from typing_extensions import Protocol
 
 from sphinx_autodoc_typehints import format_annotation, process_docstring
+# Those aren’t available in `typing` from Ubuntu Xenial’s Python 3.5.1
+from sphinx_autodoc_typehints import ClassVar, NoReturn
 
 T = TypeVar('T')
 U = TypeVar('U', covariant=True)
