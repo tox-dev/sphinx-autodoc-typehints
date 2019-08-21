@@ -4,8 +4,8 @@ import sys
 import textwrap
 from typing import (
     Any, AnyStr, Callable, ClassVar, Dict, Generic,
-    Mapping, NewType, NoReturn, Optional, Pattern,
-    Tuple, Type, TypeVar, Union,
+    List, Mapping, NewType, NoReturn, Optional, Pattern,
+    Set, TextIO, Tuple, Type, TypeVar, Union,
 )
 
 from typing_extensions import Protocol
@@ -63,6 +63,10 @@ class Slotted:
     (Dict[T, U],                    ':py:class:`~typing.Dict`\\[\\~T, \\+U]'),
     (Dict[str, bool],               ':py:class:`~typing.Dict`\\[:py:class:`str`, '
                                     ':py:class:`bool`]'),
+    (List,                          ':py:class:`~typing.List`\\[\\~T]'),
+    (List[int],                     ':py:class:`~typing.List`\\[:py:class:`int`]'),
+    (Set,                           ':py:class:`~typing.Set`\\[\\~T]'),
+    (Set[int],                      ':py:class:`~typing.Set`\\[:py:class:`int`]'),
     (Tuple,                         ':py:data:`~typing.Tuple`'),
     (Tuple[str, bool],              ':py:data:`~typing.Tuple`\\[:py:class:`str`, '
                                     ':py:class:`bool`]'),
@@ -90,6 +94,7 @@ class Slotted:
     (Pattern[str],                  ':py:class:`~typing.Pattern`\\[:py:class:`str`]'),
     (ClassVar,                      ':py:data:`~typing.ClassVar`'),
     (ClassVar[str],                 ':py:data:`~typing.ClassVar`\\[:py:class:`str`]'),
+    (TextIO,                        ':py:class:`~typing.TextIO`'),
     (A,                             ':py:class:`~%s.A`' % __name__),
     (B,                             ':py:class:`~%s.B`\\[\\~T]' % __name__),
     (B[int],                        ':py:class:`~%s.B`\\[:py:class:`int`]' % __name__),

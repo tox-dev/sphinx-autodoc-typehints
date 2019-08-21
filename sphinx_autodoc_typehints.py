@@ -1,3 +1,4 @@
+import builtins
 import inspect
 import textwrap
 import typing
@@ -76,14 +77,17 @@ def format_annotation(annotation, fully_qualified=False):
             class_name = 'ClassVar'
             if hasattr(annotation, '__args__'):
                 params = annotation.__args__
-            elif getattr(annotation, '__type__', None):
+            elif getattr(annotation, '__type__', None) is not None:
                 params = [annotation.__type__]
-        # Python 3.5’s typing.Tuple. 3.6’s has .__origin__=tuple and .__args__=[...]
-        elif annotation_cls.__qualname__ == 'Tuple' and hasattr(annotation, '__tuple_params__'):
+        elif annotation_cls.__qualname__.lower() == 'tuple':
             prefix = ':py:data:'
-            params = annotation.__tuple_params__
-            if annotation.__tuple_use_ellipsis__:
-                params += (Ellipsis,)
+            class_name = 'Tuple'
+            if hasattr(annotation, '__args__'):
+                params = annotation.__args__
+            elif hasattr(annotation, '__tuple_params__'):
+                params = annotation.__tuple_params__
+                if annotation.__tuple_use_ellipsis__:
+                    params += (Ellipsis,)
         elif annotation_cls.__qualname__ == 'Callable':
             prefix = ':py:data:'
             arg_annotations = result_annotation = None
@@ -120,9 +124,10 @@ def format_annotation(annotation, fully_qualified=False):
             ))
 
         if not class_name:
-            class_name = annotation_cls.__qualname__.title()
-            if class_name == 'Tuple':
-                prefix = ':py:data:'
+            class_name = annotation_cls.__qualname__
+            # list, set, dict, …
+            if class_name in dir(builtins):
+                class_name = class_name.title()
 
         return '{prefix}`{qualify}{module}.{name}`{extra}'.format(
             prefix=prefix,
