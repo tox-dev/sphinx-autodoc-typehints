@@ -1,7 +1,7 @@
 import inspect
 import textwrap
 import typing
-from typing import get_type_hints, TypeVar, Any, AnyStr, Generic, Union
+from typing import get_type_hints, TypeVar, ClassVar, Any, AnyStr, Generic, NoReturn, Union
 
 from sphinx.util import logging
 from sphinx.util.inspect import Signature
@@ -38,14 +38,21 @@ def format_annotation(annotation, fully_qualified=False):
             except TypeError:
                 pass  # annotation_cls was either the "type" object or typing.Type
 
-        if annotation is Any:
-            return ':py:data:`{}typing.Any`'.format("" if fully_qualified else "~")
-        elif annotation is AnyStr:
-            return ':py:data:`{}typing.AnyStr`'.format("" if fully_qualified else "~")
+        singletons = {Any: 'Any', AnyStr: 'AnyStr', NoReturn: 'NoReturn'}
+        if annotation in singletons:
+            return ':py:data:`{}typing.{}`'.format(
+                "" if fully_qualified else "~", singletons[annotation]
+            )
         elif isinstance(annotation, TypeVar):
             return '\\%r' % annotation
-        elif (annotation is Union or getattr(annotation, '__origin__', None) is Union or
-              hasattr(annotation, '__union_params__')):
+        elif (
+            # Union
+            annotation is Union
+            # Union[...] in Python 3.6+
+            or getattr(annotation, '__origin__', None) is Union
+            # Union[...] in Python 3.5
+            or hasattr(annotation, '__union_params__')
+        ):
             prefix = ':py:data:'
             class_name = 'Union'
             if hasattr(annotation, '__union_params__'):
@@ -57,7 +64,23 @@ def format_annotation(annotation, fully_qualified=False):
                                                 params[1].__qualname__ == 'NoneType'):
                 class_name = 'Optional'
                 params = (params[0],)
+        elif (
+            # ClassVar
+            annotation is ClassVar
+            # ClassVar[C] in Python 3.6+
+            or getattr(annotation, '__origin__', None) is ClassVar
+            # ClassVar[C] in Python 3.5
+            or hasattr(annotation, '__type__')
+        ):
+            prefix = ':py:data:'
+            class_name = 'ClassVar'
+            if hasattr(annotation, '__args__'):
+                params = annotation.__args__
+            elif getattr(annotation, '__type__', None):
+                params = [annotation.__type__]
+        # Python 3.5’s typing.Tuple. 3.6’s has .__origin__=tuple and .__args__=[...]
         elif annotation_cls.__qualname__ == 'Tuple' and hasattr(annotation, '__tuple_params__'):
+            prefix = ':py:data:'
             params = annotation.__tuple_params__
             if annotation.__tuple_use_ellipsis__:
                 params += (Ellipsis,)
@@ -92,10 +115,14 @@ def format_annotation(annotation, fully_qualified=False):
 
         if params:
             extra = '\\[{}]'.format(', '.join(
-                format_annotation(param, fully_qualified) for param in params))
+                param if isinstance(param, str) else format_annotation(param, fully_qualified)
+                for param in params
+            ))
 
         if not class_name:
             class_name = annotation_cls.__qualname__.title()
+            if class_name == 'Tuple':
+                prefix = ':py:data:'
 
         return '{prefix}`{qualify}{module}.{name}`{extra}'.format(
             prefix=prefix,
@@ -124,7 +151,9 @@ def format_annotation(annotation, fully_qualified=False):
                       getattr(annotation, '__args__', None))
             if params:
                 extra = '\\[{}]'.format(', '.join(
-                    format_annotation(param, fully_qualified) for param in params))
+                    format_annotation(param, fully_qualified)
+                    for param in params
+                ))
 
         return ':py:class:`{qualify}{module}.{name}`{extra}'.format(
             qualify="" if fully_qualified else "~",

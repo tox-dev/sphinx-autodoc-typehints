@@ -3,8 +3,10 @@ import pytest
 import sys
 import textwrap
 from typing import (
-    Any, AnyStr, Callable, Dict, Generic, Mapping, NewType, Optional, Pattern,
-    Tuple, TypeVar, Union, Type)
+    Any, AnyStr, Callable, ClassVar, Dict, Generic,
+    Mapping, NewType, NoReturn, Optional, Pattern,
+    Tuple, Type, TypeVar, Union,
+)
 
 from typing_extensions import Protocol
 
@@ -47,6 +49,7 @@ class Slotted:
     (type(None),                    '``None``'),
     (Any,                           ':py:data:`~typing.Any`'),
     (AnyStr,                        ':py:data:`~typing.AnyStr`'),
+    (NoReturn,                      ':py:data:`~typing.NoReturn`'),
     (Generic[T],                    ':py:class:`~typing.Generic`\\[\\~T]'),
     (Mapping,                       ':py:class:`~typing.Mapping`\\[\\~KT, \\+VT_co]'),
     (Mapping[T, int],               ':py:class:`~typing.Mapping`\\[\\~T, :py:class:`int`]'),
@@ -60,12 +63,12 @@ class Slotted:
     (Dict[T, U],                    ':py:class:`~typing.Dict`\\[\\~T, \\+U]'),
     (Dict[str, bool],               ':py:class:`~typing.Dict`\\[:py:class:`str`, '
                                     ':py:class:`bool`]'),
-    (Tuple,                         ':py:class:`~typing.Tuple`'),
-    (Tuple[str, bool],              ':py:class:`~typing.Tuple`\\[:py:class:`str`, '
+    (Tuple,                         ':py:data:`~typing.Tuple`'),
+    (Tuple[str, bool],              ':py:data:`~typing.Tuple`\\[:py:class:`str`, '
                                     ':py:class:`bool`]'),
-    (Tuple[int, int, int],          ':py:class:`~typing.Tuple`\\[:py:class:`int`, '
+    (Tuple[int, int, int],          ':py:data:`~typing.Tuple`\\[:py:class:`int`, '
                                     ':py:class:`int`, :py:class:`int`]'),
-    (Tuple[str, ...],               ':py:class:`~typing.Tuple`\\[:py:class:`str`, ...]'),
+    (Tuple[str, ...],               ':py:data:`~typing.Tuple`\\[:py:class:`str`, ...]'),
     (Union,                         ':py:data:`~typing.Union`'),
     (Union[str, bool],              ':py:data:`~typing.Union`\\[:py:class:`str`, '
                                     ':py:class:`bool`]'),
@@ -85,6 +88,8 @@ class Slotted:
     (Callable[[T], T],              ':py:data:`~typing.Callable`\\[\\[\\~T], \\~T]'),
     (Pattern,                       ':py:class:`~typing.Pattern`\\[:py:data:`~typing.AnyStr`]'),
     (Pattern[str],                  ':py:class:`~typing.Pattern`\\[:py:class:`str`]'),
+    (ClassVar,                      ':py:data:`~typing.ClassVar`'),
+    (ClassVar[str],                 ':py:data:`~typing.ClassVar`\\[:py:class:`str`]'),
     (A,                             ':py:class:`~%s.A`' % __name__),
     (B,                             ':py:class:`~%s.B`\\[\\~T]' % __name__),
     (B[int],                        ':py:class:`~%s.B`\\[:py:class:`int`]' % __name__),
@@ -93,7 +98,7 @@ class Slotted:
     (E,                             ':py:class:`~%s.E`\\[\\~T]' % __name__),
     (E[int],                        ':py:class:`~%s.E`\\[:py:class:`int`]' % __name__),
     (W,                             ':py:func:`~typing.NewType`\\(:py:data:`~W`, :py:class:`str`)')
-])
+], ids=str)
 def test_format_annotation(annotation, expected_result):
     result = format_annotation(annotation)
     assert result == expected_result
@@ -118,12 +123,12 @@ def test_format_annotation(annotation, expected_result):
     (Dict[T, U],                    ':py:class:`typing.Dict`\\[\\~T, \\+U]'),
     (Dict[str, bool],               ':py:class:`typing.Dict`\\[:py:class:`str`, '
                                     ':py:class:`bool`]'),
-    (Tuple,                         ':py:class:`typing.Tuple`'),
-    (Tuple[str, bool],              ':py:class:`typing.Tuple`\\[:py:class:`str`, '
+    (Tuple,                         ':py:data:`typing.Tuple`'),
+    (Tuple[str, bool],              ':py:data:`typing.Tuple`\\[:py:class:`str`, '
                                     ':py:class:`bool`]'),
-    (Tuple[int, int, int],          ':py:class:`typing.Tuple`\\[:py:class:`int`, '
+    (Tuple[int, int, int],          ':py:data:`typing.Tuple`\\[:py:class:`int`, '
                                     ':py:class:`int`, :py:class:`int`]'),
-    (Tuple[str, ...],               ':py:class:`typing.Tuple`\\[:py:class:`str`, ...]'),
+    (Tuple[str, ...],               ':py:data:`typing.Tuple`\\[:py:class:`str`, ...]'),
     (Union,                         ':py:data:`typing.Union`'),
     (Union[str, bool],              ':py:data:`typing.Union`\\[:py:class:`str`, '
                                     ':py:class:`bool`]'),
@@ -147,7 +152,7 @@ def test_format_annotation(annotation, expected_result):
     (E,                             ':py:class:`%s.E`\\[\\~T]' % __name__),
     (E[int],                        ':py:class:`%s.E`\\[:py:class:`int`]' % __name__),
     (W,                             ':py:func:`typing.NewType`\\(:py:data:`~W`, :py:class:`str`)')
-])
+], ids=str)
 def test_format_annotation_fully_qualified(annotation, expected_result):
     result = format_annotation(annotation, fully_qualified=True)
     assert result == expected_result
