@@ -18,6 +18,7 @@ except ImportError:
     Protocol = None
 
 logger = logging.getLogger(__name__)
+pydata_annotations = {'Any', 'AnyStr', 'Callable', 'ClassVar', 'NoReturn', 'Optional', 'Union'}
 
 
 def format_annotation(annotation, fully_qualified=False):
@@ -28,14 +29,14 @@ def format_annotation(annotation, fully_qualified=False):
             return ':py:class:`{}`'.format(annotation.__qualname__)
 
     annotation_cls = annotation if inspect.isclass(annotation) else type(annotation)
-    class_name = None
     if annotation_cls.__module__ == 'typing':
+        class_name = str(annotation).split('[')[0].split('.')[-1]
         params = None
-        prefix = ':py:class:'
         module = 'typing'
         extra = ''
 
-        if inspect.isclass(getattr(annotation, '__origin__', None)):
+        origin = getattr(annotation, '__origin__', None)
+        if inspect.isclass(origin):
             annotation_cls = annotation.__origin__
             try:
                 mro = annotation_cls.mro()
@@ -94,7 +95,6 @@ def format_annotation(annotation, fully_qualified=False):
                 if annotation.__tuple_use_ellipsis__:
                     params += (Ellipsis,)
         elif annotation_cls.__qualname__ == 'Callable':
-            prefix = ':py:data:'
             arg_annotations = result_annotation = None
             if hasattr(annotation, '__result__'):
                 arg_annotations = annotation.__args__
@@ -113,6 +113,9 @@ def format_annotation(annotation, fully_qualified=False):
                             for param in arg_annotations)),
                     result_annotation
                 ]
+        elif str(annotation).startswith('typing.ClassVar[') and hasattr(annotation, '__type__'):
+            # < py3.7
+            params = (annotation.__type__,)
         elif hasattr(annotation, 'type_var'):
             # Type alias
             class_name = annotation.name
@@ -135,7 +138,7 @@ def format_annotation(annotation, fully_qualified=False):
                 class_name = class_name.title()
 
         return '{prefix}`{qualify}{module}.{name}`{extra}'.format(
-            prefix=prefix,
+            prefix=':py:data:' if class_name in pydata_annotations else ':py:class:',
             qualify="" if fully_qualified else "~",
             module=module,
             name=class_name,
@@ -246,7 +249,7 @@ def get_all_type_hints(obj, name):
 
     try:
         obj.__annotations__ = rv
-    except AttributeError:
+    except (AttributeError, TypeError):
         return rv
 
     try:

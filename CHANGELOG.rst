@@ -1,3 +1,12 @@
+UNRELEASED
+==========
+
+* Fixed regression which caused ``TypeError`` or ``OSError`` when trying to set annotations due to
+  PR #87
+* Fixed unintentional mangling of annotation type names
+* Added proper ``:py:data`` targets for ``NoReturn`` and ``ClassVar``
+
+
 1.7.0
 =====
 
