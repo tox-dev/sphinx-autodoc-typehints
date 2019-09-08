@@ -10,6 +10,16 @@ from typing_extensions import Protocol
 
 from sphinx_autodoc_typehints import format_annotation, process_docstring
 
+try:
+    from typing import ClassVar  # not available prior to Python 3.5.3
+except ImportError:
+    ClassVar = None
+
+try:
+    from typing import NoReturn  # not available prior to Python 3.6.5
+except ImportError:
+    NoReturn = None
+
 T = TypeVar('T')
 U = TypeVar('U', covariant=True)
 V = TypeVar('V', contravariant=True)
@@ -45,6 +55,12 @@ class Slotted:
     (str,                           ':py:class:`str`'),
     (int,                           ':py:class:`int`'),
     (type(None),                    '``None``'),
+    pytest.param(NoReturn,          ':py:data:`~typing.NoReturn`',
+                 marks=[pytest.mark.skipif(NoReturn is None,
+                                           reason='typing.NoReturn is not available')]),
+    pytest.param(ClassVar[str],      ':py:data:`~typing.ClassVar`\\[:py:class:`str`]',
+                 marks=[pytest.mark.skipif(ClassVar is None,
+                                           reason='typing.ClassVar is not available')]),
     (Any,                           ':py:data:`~typing.Any`'),
     (AnyStr,                        ':py:data:`~typing.AnyStr`'),
     (Generic[T],                    ':py:class:`~typing.Generic`\\[\\~T]'),
@@ -103,6 +119,12 @@ def test_format_annotation(annotation, expected_result):
     (str,                           ':py:class:`str`'),
     (int,                           ':py:class:`int`'),
     (type(None),                    '``None``'),
+    pytest.param(NoReturn,          ':py:data:`typing.NoReturn`',
+                 marks=[pytest.mark.skipif(NoReturn is None,
+                                           reason='typing.NoReturn is not available')]),
+    pytest.param(ClassVar[str],      ':py:data:`typing.ClassVar`\\[:py:class:`str`]',
+                 marks=[pytest.mark.skipif(ClassVar is None,
+                                           reason='typing.ClassVar is not available')]),
     (Any,                           ':py:data:`typing.Any`'),
     (AnyStr,                        ':py:data:`typing.AnyStr`'),
     (Generic[T],                    ':py:class:`typing.Generic`\\[\\~T]'),
