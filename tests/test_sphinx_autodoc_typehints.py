@@ -183,7 +183,7 @@ def test_format_annotation_fully_qualified(annotation, expected_result):
 
 @pytest.mark.parametrize('annotation, result', [
     a for a in annotations
-    if a[0] is not type(None)
+    if a[0] is not type(None)  # noqa
 ])
 def test_role_categories(inv, annotation, result):
     m = re.match('^:py:(?P<role>class|data|func):`(?P<name>[^`]+)`', result)
