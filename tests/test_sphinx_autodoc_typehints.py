@@ -1,5 +1,6 @@
 import pathlib
 import pytest
+import re
 import sys
 import textwrap
 from typing import (
@@ -51,7 +52,7 @@ class Slotted:
     __slots__ = ()
 
 
-@pytest.mark.parametrize('annotation, expected_result', [
+annotations = [
     (str,                           ':py:class:`str`'),
     (int,                           ':py:class:`int`'),
     (type(None),                    '``None``'),
@@ -76,12 +77,12 @@ class Slotted:
     (Dict[T, U],                    ':py:class:`~typing.Dict`\\[\\~T, \\+U]'),
     (Dict[str, bool],               ':py:class:`~typing.Dict`\\[:py:class:`str`, '
                                     ':py:class:`bool`]'),
-    (Tuple,                         ':py:class:`~typing.Tuple`'),
-    (Tuple[str, bool],              ':py:class:`~typing.Tuple`\\[:py:class:`str`, '
+    (Tuple,                         ':py:data:`~typing.Tuple`'),
+    (Tuple[str, bool],              ':py:data:`~typing.Tuple`\\[:py:class:`str`, '
                                     ':py:class:`bool`]'),
-    (Tuple[int, int, int],          ':py:class:`~typing.Tuple`\\[:py:class:`int`, '
+    (Tuple[int, int, int],          ':py:data:`~typing.Tuple`\\[:py:class:`int`, '
                                     ':py:class:`int`, :py:class:`int`]'),
-    (Tuple[str, ...],               ':py:class:`~typing.Tuple`\\[:py:class:`str`, ...]'),
+    (Tuple[str, ...],               ':py:data:`~typing.Tuple`\\[:py:class:`str`, ...]'),
     (Union,                         ':py:data:`~typing.Union`'),
     (Union[str, bool],              ':py:data:`~typing.Union`\\[:py:class:`str`, '
                                     ':py:class:`bool`]'),
@@ -109,13 +110,9 @@ class Slotted:
     (E,                             ':py:class:`~%s.E`\\[\\~T]' % __name__),
     (E[int],                        ':py:class:`~%s.E`\\[:py:class:`int`]' % __name__),
     (W,                             ':py:func:`~typing.NewType`\\(:py:data:`~W`, :py:class:`str`)')
-])
-def test_format_annotation(annotation, expected_result):
-    result = format_annotation(annotation)
-    assert result == expected_result
+]
 
-
-@pytest.mark.parametrize('annotation, expected_result', [
+annotations_qualified = [
     (str,                           ':py:class:`str`'),
     (int,                           ':py:class:`int`'),
     (type(None),                    '``None``'),
@@ -140,12 +137,12 @@ def test_format_annotation(annotation, expected_result):
     (Dict[T, U],                    ':py:class:`typing.Dict`\\[\\~T, \\+U]'),
     (Dict[str, bool],               ':py:class:`typing.Dict`\\[:py:class:`str`, '
                                     ':py:class:`bool`]'),
-    (Tuple,                         ':py:class:`typing.Tuple`'),
-    (Tuple[str, bool],              ':py:class:`typing.Tuple`\\[:py:class:`str`, '
+    (Tuple,                         ':py:data:`typing.Tuple`'),
+    (Tuple[str, bool],              ':py:data:`typing.Tuple`\\[:py:class:`str`, '
                                     ':py:class:`bool`]'),
-    (Tuple[int, int, int],          ':py:class:`typing.Tuple`\\[:py:class:`int`, '
+    (Tuple[int, int, int],          ':py:data:`typing.Tuple`\\[:py:class:`int`, '
                                     ':py:class:`int`, :py:class:`int`]'),
-    (Tuple[str, ...],               ':py:class:`typing.Tuple`\\[:py:class:`str`, ...]'),
+    (Tuple[str, ...],               ':py:data:`typing.Tuple`\\[:py:class:`str`, ...]'),
     (Union,                         ':py:data:`typing.Union`'),
     (Union[str, bool],              ':py:data:`typing.Union`\\[:py:class:`str`, '
                                     ':py:class:`bool`]'),
@@ -169,10 +166,35 @@ def test_format_annotation(annotation, expected_result):
     (E,                             ':py:class:`%s.E`\\[\\~T]' % __name__),
     (E[int],                        ':py:class:`%s.E`\\[:py:class:`int`]' % __name__),
     (W,                             ':py:func:`typing.NewType`\\(:py:data:`~W`, :py:class:`str`)')
-])
+]
+
+
+@pytest.mark.parametrize('annotation, expected_result', annotations)
+def test_format_annotation(annotation, expected_result):
+    result = format_annotation(annotation)
+    assert result == expected_result
+
+
+@pytest.mark.parametrize('annotation, expected_result', annotations_qualified)
 def test_format_annotation_fully_qualified(annotation, expected_result):
     result = format_annotation(annotation, fully_qualified=True)
     assert result == expected_result
+
+
+@pytest.mark.parametrize('annotation, result', [
+    a for a in annotations
+    if a[0] is not type(None)
+])
+def test_role_categories(inv, annotation, result):
+    m = re.match('^:py:(?P<role>class|data|func):`(?P<name>[^`]+)`', result)
+    name = m['name']
+    if not name.startswith('typing.'):
+        return
+    if name in {'typing.Pattern', 'typing.Match'} and '3.5' in inv._url:
+        name = name.replace('typing', 'typing.re')
+    role = next((o.role for o in inv.objects if o.name == name), None)
+    assert role, 'Name {} not found'.format(name)
+    assert m['role'] == 'func' if role == 'function' else role
 
 
 @pytest.mark.parametrize('type_param, expected_result', [

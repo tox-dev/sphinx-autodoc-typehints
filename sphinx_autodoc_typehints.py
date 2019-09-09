@@ -1,5 +1,6 @@
 import inspect
 import textwrap
+import collections.abc
 import typing
 from typing import get_type_hints, TypeVar, Any, AnyStr, Generic, Union
 
@@ -12,7 +13,19 @@ except ImportError:
     Protocol = None
 
 logger = logging.getLogger(__name__)
-pydata_annotations = {'Any', 'AnyStr', 'Callable', 'ClassVar', 'NoReturn', 'Optional', 'Union'}
+# type(annotation)
+data_types = (
+    typing.TypeVar,
+    typing._VariadicGenericAlias,
+    typing._SpecialForm,
+)
+# annotation.__origin__
+data_origins = (
+    tuple,
+    collections.abc.Callable,
+    typing.ClassVar,
+    typing.Union,
+)
 
 
 def format_annotation(annotation, fully_qualified=False):
@@ -95,8 +108,10 @@ def format_annotation(annotation, fully_qualified=False):
             extra = '\\[{}]'.format(', '.join(
                 format_annotation(param, fully_qualified) for param in params))
 
+        data = annotation_cls in data_types or origin in data_origins
+
         return '{prefix}`{qualify}{module}.{name}`{extra}'.format(
-            prefix=':py:data:' if class_name in pydata_annotations else ':py:class:',
+            prefix=':py:data:' if data else ':py:class:',
             qualify="" if fully_qualified else "~",
             module=module,
             name=class_name,

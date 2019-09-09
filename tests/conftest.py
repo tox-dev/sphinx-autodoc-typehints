@@ -4,9 +4,20 @@ import shutil
 
 import pytest
 from sphinx.testing.path import path
+from sphobjinv import Inventory
 
 pytest_plugins = 'sphinx.testing.fixtures'
 collect_ignore = ['roots']
+inv_cache = {}
+
+
+@pytest.fixture(params=["3.5", "3.6", "3.7"])
+def inv(request):
+    pyver = request.param
+    inv = inv_cache.get(pyver)
+    if not inv:
+        inv = inv_cache[pyver] = Inventory(url=f"https://docs.python.org/{pyver}/objects.inv")
+    return inv
 
 
 @pytest.fixture(autouse=True)
@@ -21,7 +32,6 @@ def remove_sphinx_projects(sphinx_test_tempdir):
                 shutil.rmtree(str(entry))
         except PermissionError:
             pass
-
 
 
 @pytest.fixture
