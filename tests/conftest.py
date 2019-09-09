@@ -16,7 +16,8 @@ def inv(request):
     pyver = request.param
     inv = inv_cache.get(pyver)
     if not inv:
-        inv = inv_cache[pyver] = Inventory(url=f"https://docs.python.org/{pyver}/objects.inv")
+        url = "https://docs.python.org/{}/objects.inv".format(pyver)
+        inv = inv_cache[pyver] = Inventory(url=url)
     return inv
 
 
