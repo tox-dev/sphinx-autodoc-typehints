@@ -5,7 +5,7 @@ UNRELEASED
   PR #87
 * Fixed unintentional mangling of annotation type names
 * Added proper ``:py:data`` targets for ``NoReturn`` and ``ClassVar``
-
+* Use the native AST parser for type comment support on Python 3.8+
 
 1.7.0
 =====

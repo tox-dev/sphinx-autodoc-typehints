@@ -1,4 +1,5 @@
 import inspect
+import sys
 import textwrap
 import typing
 from typing import get_type_hints, TypeVar, Any, AnyStr, Generic, Union
@@ -224,10 +225,15 @@ def get_all_type_hints(obj, name):
 def backfill_type_hints(obj, name):
     rv = {}
 
-    try:
-        import typed_ast.ast3 as ast
-    except ImportError:
-        return rv
+    parse_kwargs = {}
+    if sys.version_info < (3, 8):
+        try:
+            import typed_ast.ast3 as ast
+        except ImportError:
+            return rv
+    else:
+        import ast
+        parse_kwargs = {'type_comments': True}
 
     def _one_child(module):
         children = list(ast.iter_child_nodes(module))
@@ -240,7 +246,7 @@ def backfill_type_hints(obj, name):
         return children[0]
 
     try:
-        obj_ast = ast.parse(textwrap.dedent(inspect.getsource(obj)))
+        obj_ast = ast.parse(textwrap.dedent(inspect.getsource(obj)), **parse_kwargs)
     except TypeError:
         return rv
 
