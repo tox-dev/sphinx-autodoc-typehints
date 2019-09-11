@@ -12,7 +12,8 @@ except ImportError:
     Protocol = None
 
 logger = logging.getLogger(__name__)
-pydata_annotations = {'Any', 'AnyStr', 'Callable', 'ClassVar', 'NoReturn', 'Optional', 'Union'}
+pydata_annotations = {'Any', 'AnyStr', 'Callable', 'ClassVar', 'NoReturn', 'Optional', 'Tuple',
+                      'Union'}
 
 
 def format_annotation(annotation, fully_qualified=False):

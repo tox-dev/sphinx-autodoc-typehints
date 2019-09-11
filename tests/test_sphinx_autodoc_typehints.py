@@ -76,12 +76,12 @@ class Slotted:
     (Dict[T, U],                    ':py:class:`~typing.Dict`\\[\\~T, \\+U]'),
     (Dict[str, bool],               ':py:class:`~typing.Dict`\\[:py:class:`str`, '
                                     ':py:class:`bool`]'),
-    (Tuple,                         ':py:class:`~typing.Tuple`'),
-    (Tuple[str, bool],              ':py:class:`~typing.Tuple`\\[:py:class:`str`, '
+    (Tuple,                         ':py:data:`~typing.Tuple`'),
+    (Tuple[str, bool],              ':py:data:`~typing.Tuple`\\[:py:class:`str`, '
                                     ':py:class:`bool`]'),
-    (Tuple[int, int, int],          ':py:class:`~typing.Tuple`\\[:py:class:`int`, '
+    (Tuple[int, int, int],          ':py:data:`~typing.Tuple`\\[:py:class:`int`, '
                                     ':py:class:`int`, :py:class:`int`]'),
-    (Tuple[str, ...],               ':py:class:`~typing.Tuple`\\[:py:class:`str`, ...]'),
+    (Tuple[str, ...],               ':py:data:`~typing.Tuple`\\[:py:class:`str`, ...]'),
     (Union,                         ':py:data:`~typing.Union`'),
     (Union[str, bool],              ':py:data:`~typing.Union`\\[:py:class:`str`, '
                                     ':py:class:`bool`]'),
@@ -140,12 +140,12 @@ def test_format_annotation(annotation, expected_result):
     (Dict[T, U],                    ':py:class:`typing.Dict`\\[\\~T, \\+U]'),
     (Dict[str, bool],               ':py:class:`typing.Dict`\\[:py:class:`str`, '
                                     ':py:class:`bool`]'),
-    (Tuple,                         ':py:class:`typing.Tuple`'),
-    (Tuple[str, bool],              ':py:class:`typing.Tuple`\\[:py:class:`str`, '
+    (Tuple,                         ':py:data:`typing.Tuple`'),
+    (Tuple[str, bool],              ':py:data:`typing.Tuple`\\[:py:class:`str`, '
                                     ':py:class:`bool`]'),
-    (Tuple[int, int, int],          ':py:class:`typing.Tuple`\\[:py:class:`int`, '
+    (Tuple[int, int, int],          ':py:data:`typing.Tuple`\\[:py:class:`int`, '
                                     ':py:class:`int`, :py:class:`int`]'),
-    (Tuple[str, ...],               ':py:class:`typing.Tuple`\\[:py:class:`str`, ...]'),
+    (Tuple[str, ...],               ':py:data:`typing.Tuple`\\[:py:class:`str`, ...]'),
     (Union,                         ':py:data:`typing.Union`'),
     (Union[str, bool],              ':py:data:`typing.Union`\\[:py:class:`str`, '
                                     ':py:class:`bool`]'),
