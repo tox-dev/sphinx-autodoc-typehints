@@ -223,14 +223,12 @@ def get_all_type_hints(obj, name):
 
 
 def backfill_type_hints(obj, name):
-    rv = {}
-
     parse_kwargs = {}
     if sys.version_info < (3, 8):
         try:
             import typed_ast.ast3 as ast
         except ImportError:
-            return rv
+            return {}
     else:
         import ast
         parse_kwargs = {'type_comments': True}
@@ -248,35 +246,31 @@ def backfill_type_hints(obj, name):
     try:
         obj_ast = ast.parse(textwrap.dedent(inspect.getsource(obj)), **parse_kwargs)
     except TypeError:
-        return rv
+        return {}
 
     obj_ast = _one_child(obj_ast)
     if obj_ast is None:
-        return rv
+        return {}
 
     try:
         type_comment = obj_ast.type_comment
     except AttributeError:
-        return rv
+        return {}
 
     if not type_comment:
-        return rv
+        return {}
 
     try:
         comment_args_str, comment_returns = type_comment.split(' -> ')
     except ValueError:
         logger.warning('Unparseable type hint comment for "%s": Expected to contain ` -> `', name)
-        return rv
+        return {}
 
+    rv = {}
     if comment_returns:
         rv['return'] = comment_returns
 
-    try:
-        args = list(ast.iter_child_nodes(obj_ast.args))
-    except AttributeError:
-        logger.warning('No args found on "%s"', name)
-        return rv
-
+    args = load_args(obj_ast)
     comment_args = split_type_comment_args(comment_args_str)
     is_inline = len(comment_args) == 1 and comment_args[0] == "..."
     if not is_inline:
@@ -297,6 +291,21 @@ def backfill_type_hints(obj, name):
         if value is not None:
             rv[arg_key] = value
     return rv
+
+
+def load_args(obj_ast):
+    func_args = obj_ast.args
+    args = []
+    pos_only = getattr(func_args, 'posonlyargs', None)
+    if pos_only:
+        args.extend(pos_only)
+    args.extend(func_args.args)
+    if func_args.vararg:
+        args.append(func_args.vararg)
+    args.extend(func_args.kwonlyargs)
+    if func_args.kwarg:
+        args.append(func_args.kwarg)
+    return args
 
 
 def split_type_comment_args(comment):

@@ -186,13 +186,14 @@ class ClassWithTypehints(object):
         return 42
 
 
-def function_with_typehint_comment_not_inline(x, *y, **kwargs):
-    # type: (Union[str, bytes], *str, **int) -> None
+def function_with_typehint_comment_not_inline(x=None, *y, z, **kwargs):
+    # type: (Union[str, bytes], *str, bytes, **int) -> None
     """
     Function docstring.
 
     :param x: foo
     :param y: bar
+    :param z: baz
     :param kwargs: some kwargs
     """
 
@@ -204,11 +205,11 @@ class ClassWithTypehintsNotInline(object):
     :param x: foo
     """
 
-    def __init__(self, x):
+    def __init__(self, x=None):
         # type: (Callable[[int, bytes], int]) -> None
         pass
 
-    def foo(self, x):
+    def foo(self, x=1):
         # type: (Callable[[int, bytes], int]) -> int
         """
         Method docstring.
@@ -218,7 +219,7 @@ class ClassWithTypehintsNotInline(object):
         return x(1, b'')
 
     @classmethod
-    def mk(cls, x):
+    def mk(cls, x=None):
         # type: (Callable[[int, bytes], int]) -> ClassWithTypehintsNotInline
         """
         Method docstring.
