@@ -1,4 +1,5 @@
 import os
+import sys
 import pathlib
 import shutil
 
@@ -8,16 +9,17 @@ from sphobjinv import Inventory
 
 pytest_plugins = 'sphinx.testing.fixtures'
 collect_ignore = ['roots']
-inv_cache = {}
 
 
-@pytest.fixture(params=["3.5", "3.6", "3.7"])
+@pytest.fixture
 def inv(request):
-    pyver = request.param
-    inv = inv_cache.get(pyver)
-    if not inv:
-        url = "https://docs.python.org/{}/objects.inv".format(pyver)
-        inv = inv_cache[pyver] = Inventory(url=url)
+    inv_dict = request.config.cache.get('python/objects.inv', None)
+    if inv_dict is not None:
+        return Inventory(inv_dict)
+    print("Downloading objects.inv")
+    url = 'https://docs.python.org/{v.major}.{v.minor}/objects.inv'.format(v=sys.version_info)
+    inv = Inventory(url=url)
+    request.config.cache.set('python/objects.inv', inv.json_dict())
     return inv
 
 
