@@ -413,12 +413,12 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
               Return type:
                  "int"
 
-        dummy_module.function_with_typehint_comment_not_inline(x, *y, **kwargs)
+        dummy_module.function_with_typehint_comment_not_inline(x=None, *y, **kwargs)
 
            Function docstring.
 
            Parameters:
-              * **x** ("Union"["str", "bytes"]) -- foo
+              * **x** ("Union"["str", "bytes", "None"]) -- foo
 
               * **y** ("str") -- bar
 
@@ -427,14 +427,14 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
            Return type:
               "None"
 
-        class dummy_module.ClassWithTypehintsNotInline(x)
+        class dummy_module.ClassWithTypehintsNotInline(x=None)
 
            Class docstring.
 
            Parameters:
-              **x** ("Callable"[["int", "bytes"], "int"]) -- foo
+              **x** ("Optional"["Callable"[["int", "bytes"], "int"]]) -- foo
 
-           foo(x)
+           foo(x=1)
 
               Method docstring.
 
@@ -444,7 +444,7 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
               Return type:
                  "int"
 
-           classmethod mk(x)
+           classmethod mk(x=None)
 
               Method docstring.
 
