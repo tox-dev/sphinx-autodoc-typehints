@@ -186,13 +186,14 @@ class ClassWithTypehints(object):
         return 42
 
 
-def function_with_typehint_comment_not_inline(x=None, *y, **kwargs):
-    # type: (Union[str, bytes], *str, **int) -> None
+def function_with_typehint_comment_not_inline(x=None, *y, z, **kwargs):
+    # type: (Union[str, bytes], *str, bytes, **int) -> None
     """
     Function docstring.
 
     :param x: foo
     :param y: bar
+    :param z: baz
     :param kwargs: some kwargs
     """
 

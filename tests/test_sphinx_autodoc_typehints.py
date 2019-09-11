@@ -207,7 +207,7 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
 
     # There should be a warning about an unresolved forward reference
     warnings = warning.getvalue().strip()
-    assert 'Cannot resolve forward reference in type annotations of ' in warnings
+    assert 'Cannot resolve forward reference in type annotations of ' in warnings, warnings
 
     if always_document_param_types:
         undoc_params = '''
@@ -413,7 +413,7 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
               Return type:
                  "int"
 
-        dummy_module.function_with_typehint_comment_not_inline(x=None, *y, **kwargs)
+        dummy_module.function_with_typehint_comment_not_inline(x=None, *y, z, **kwargs)
 
            Function docstring.
 
@@ -421,6 +421,8 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
               * **x** ("Union"["str", "bytes", "None"]) -- foo
 
               * **y** ("str") -- bar
+
+              * **z** ("bytes") -- baz
 
               * **kwargs** ("int") -- some kwargs
 
