@@ -9,14 +9,10 @@ from sphobjinv import Inventory
 
 pytest_plugins = 'sphinx.testing.fixtures'
 collect_ignore = ['roots']
-inv_dict = None
 
 
 @pytest.fixture
 def inv(request):
-    global inv_dict
-    if inv_dict is not None:
-        return Inventory(inv_dict)
     inv_dict = request.config.cache.get('python/objects.inv', None)
     if inv_dict is not None:
         return Inventory(inv_dict)
