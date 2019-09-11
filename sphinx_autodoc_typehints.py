@@ -236,7 +236,7 @@ def backfill_type_hints(obj, name):
         parse_kwargs = {'type_comments': True}
 
     def _one_child(module):
-        children = list(ast.iter_child_nodes(module))
+        children = module.body  # use the body to ignore type comments
 
         if len(children) != 1:
             logger.warning(
@@ -271,30 +271,53 @@ def backfill_type_hints(obj, name):
     if comment_returns:
         rv['return'] = comment_returns
 
-    if comment_args_str not in ('()', '(...)'):
-        logger.warning(
-            'Only supporting `type: (...) -> rv`-style type hint comments, '
-            'skipping types for "%s"', name
-        )
-        return rv
-
     try:
         args = list(ast.iter_child_nodes(obj_ast.args))
     except AttributeError:
         logger.warning('No args found on "%s"', name)
         return rv
 
-    for arg in args:
-        comment = getattr(arg, 'type_comment', None)
-        if not comment:
+    comment_args = split_type_comment_args(comment_args_str)
+    is_inline = len(comment_args) == 1 and comment_args[0] == "..."
+    if not is_inline:
+        if args and args[0].arg in ("self", "cls") and len(comment_args) != len(args):
+            comment_args.insert(0, None)  # self/cls may be omitted in type comments, insert blank
+        if len(args) != len(comment_args):
+            logger.warning('Not enough type comments found on "%s"', name)
+            return rv
+
+    for at, arg in enumerate(args):
+        arg_key = getattr(arg, "arg", None)
+        if arg_key is None:
             continue
-
-        if not hasattr(arg, 'arg'):
-            continue
-
-        rv[arg.arg] = comment
-
+        if is_inline:  # the type information now is tied to the argument
+            value = getattr(arg, "type_comment", None)
+        else:  # type data from comment
+            value = comment_args[at]
+        if value is not None:
+            rv[arg_key] = value
     return rv
+
+
+def split_type_comment_args(comment):
+    def add(val):
+        result.append(val.strip().lstrip("*"))  # remove spaces, and var/kw arg marker
+
+    comment = comment.strip().lstrip("(").rstrip(")")
+    result = []
+    if not comment:
+        return result
+    brackets, start_arg_at, at = 0, 0, 0
+    for at, char in enumerate(comment):
+        if char in ("[", "("):
+            brackets += 1
+        elif char in ("]", ")"):
+            brackets -= 1
+        elif char == "," and brackets == 0:
+            add(comment[start_arg_at:at])
+            start_arg_at = at + 1
+    add(comment[start_arg_at: at + 1])
+    return result
 
 
 def process_docstring(app, what, name, obj, options, lines):
