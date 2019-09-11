@@ -12,14 +12,14 @@ collect_ignore = ['roots']
 
 
 @pytest.fixture
-def inv(request):
-    inv_dict = request.config.cache.get('python/objects.inv', None)
+def inv(pytestconfig):
+    inv_dict = pytestconfig.cache.get('python/objects.inv', None)
     if inv_dict is not None:
         return Inventory(inv_dict)
     print("Downloading objects.inv")
     url = 'https://docs.python.org/{v.major}.{v.minor}/objects.inv'.format(v=sys.version_info)
     inv = Inventory(url=url)
-    request.config.cache.set('python/objects.inv', inv.json_dict())
+    pytestconfig.cache.set('python/objects.inv', inv.json_dict())
     return inv
 
 
