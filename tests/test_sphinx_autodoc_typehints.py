@@ -187,14 +187,14 @@ def test_format_annotation_fully_qualified(annotation, expected_result):
 ])
 def test_role_categories(inv, annotation, result):
     m = re.match('^:py:(?P<role>class|data|func):`(?P<name>[^`]+)`', result)
-    name = m['name']
+    name = m.group('name')
     if not name.startswith('typing.'):
         return
     if name in {'typing.Pattern', 'typing.Match'} and '3.5' in inv._url:
         name = name.replace('typing', 'typing.re')
     role = next((o.role for o in inv.objects if o.name == name), None)
     assert role, 'Name {} not found'.format(name)
-    assert m['role'] == 'func' if role == 'function' else role
+    assert m.group('role') == 'func' if role == 'function' else role
 
 
 @pytest.mark.parametrize('type_param, expected_result', [
