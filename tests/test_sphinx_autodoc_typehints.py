@@ -435,6 +435,48 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
               Return type:
                  "int"
 
+        dummy_module.function_with_typehint_comment_not_inline(x, *y, **kwargs)
+
+           Function docstring.
+
+           Parameters:
+              * **x** ("Union"["str", "bytes"]) -- foo
+
+              * **y** ("str") -- bar
+
+              * **kwargs** ("int") -- some kwargs
+
+           Return type:
+              "None"
+
+        class dummy_module.ClassWithTypehintsNotInline(x)
+
+           Class docstring.
+
+           Parameters:
+              **x** ("Callable"[["int", "bytes"], "int"]) -- foo
+
+           foo(x)
+
+              Method docstring.
+
+              Parameters:
+                 **x** ("Callable"[["int", "bytes"], "int"]) -- foo
+
+              Return type:
+                 "int"
+
+           classmethod mk(x)
+
+              Method docstring.
+
+              Parameters:
+                 **x** (*Callable**[**[**int**, **bytes**]**, **int**]*) --
+                 foo
+
+              Return type:
+                 ClassWithTypehintsNotInline
+
         dummy_module.undocumented_function(x)
 
            Hi{undoc_params}

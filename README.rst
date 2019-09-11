@@ -105,15 +105,24 @@ Using type hint comments
 ------------------------
 
 If you're documenting code that needs to stay compatible with Python 2.7, you cannot use regular
-type annotations. Instead, you must have typed_ast_ installed and add type hint comments in the
-following manner:
+type annotations. Instead, you must either be using Python 3.8 or later or have typed_ast_
+installed. The package extras ``type_comments`` will pull in the appropiate dependencies automatically.
+Then you can add type hint comments in the following manner:
+
+.. code-block:: python
+
+    def myfunction(arg1, arg2):
+        # type: (int, str) -> int
+        return 42
+
+or alternatively:
 
 .. code-block:: python
 
     def myfunction(
         arg1,  # type: int
         arg2  # type: str
-    )
+    ):
         # type: (...) -> int
         return 42
 

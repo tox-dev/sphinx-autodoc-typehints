@@ -22,6 +22,11 @@ Dummy Module
 .. autoclass:: dummy_module.ClassWithTypehints
    :members:
 
+.. autofunction:: dummy_module.function_with_typehint_comment_not_inline
+
+.. autoclass:: dummy_module.ClassWithTypehintsNotInline
+   :members:
+
 .. autofunction:: dummy_module.undocumented_function
 
 .. autoclass:: dummy_module.DataClass

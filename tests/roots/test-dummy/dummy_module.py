@@ -1,4 +1,5 @@
 import typing
+from typing import Callable, Union
 
 try:
     from dataclasses import dataclass
@@ -183,6 +184,48 @@ class ClassWithTypehints(object):
         :param x: foo
         """
         return 42
+
+
+def function_with_typehint_comment_not_inline(x, *y, **kwargs):
+    # type: (Union[str, bytes], *str, **int) -> None
+    """
+    Function docstring.
+
+    :param x: foo
+    :param y: bar
+    :param kwargs: some kwargs
+    """
+
+
+class ClassWithTypehintsNotInline(object):
+    """
+    Class docstring.
+
+    :param x: foo
+    """
+
+    def __init__(self, x):
+        # type: (Callable[[int, bytes], int]) -> None
+        pass
+
+    def foo(self, x):
+        # type: (Callable[[int, bytes], int]) -> int
+        """
+        Method docstring.
+
+        :param x: foo
+        """
+        return x(1, b'')
+
+    @classmethod
+    def mk(cls, x):
+        # type: (Callable[[int, bytes], int]) -> ClassWithTypehintsNotInline
+        """
+        Method docstring.
+
+        :param x: foo
+        """
+        return cls(x)
 
 
 def undocumented_function(x: int) -> str:

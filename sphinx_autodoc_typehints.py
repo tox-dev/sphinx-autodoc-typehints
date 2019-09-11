@@ -1,4 +1,5 @@
 import inspect
+import sys
 import textwrap
 import typing
 from typing import get_type_hints, TypeVar, Any, AnyStr, Generic, Union
@@ -12,7 +13,8 @@ except ImportError:
     Protocol = None
 
 logger = logging.getLogger(__name__)
-pydata_annotations = {'Any', 'AnyStr', 'Callable', 'ClassVar', 'NoReturn', 'Optional', 'Union', 'Tuple'}
+pydata_annotations = {'Any', 'AnyStr', 'Callable', 'ClassVar', 'NoReturn', 'Optional', 'Tuple',
+                      'Union'}
 
 
 def format_annotation(annotation, fully_qualified=False):
@@ -223,13 +225,18 @@ def get_all_type_hints(obj, name):
 def backfill_type_hints(obj, name):
     rv = {}
 
-    try:
-        import typed_ast.ast3 as ast
-    except ImportError:
-        return rv
+    parse_kwargs = {}
+    if sys.version_info < (3, 8):
+        try:
+            import typed_ast.ast3 as ast
+        except ImportError:
+            return rv
+    else:
+        import ast
+        parse_kwargs = {'type_comments': True}
 
     def _one_child(module):
-        children = list(ast.iter_child_nodes(module))
+        children = module.body  # use the body to ignore type comments
 
         if len(children) != 1:
             logger.warning(
@@ -239,7 +246,7 @@ def backfill_type_hints(obj, name):
         return children[0]
 
     try:
-        obj_ast = ast.parse(textwrap.dedent(inspect.getsource(obj)))
+        obj_ast = ast.parse(textwrap.dedent(inspect.getsource(obj)), **parse_kwargs)
     except TypeError:
         return rv
 
@@ -264,30 +271,53 @@ def backfill_type_hints(obj, name):
     if comment_returns:
         rv['return'] = comment_returns
 
-    if comment_args_str not in ('()', '(...)'):
-        logger.warning(
-            'Only supporting `type: (...) -> rv`-style type hint comments, '
-            'skipping types for "%s"', name
-        )
-        return rv
-
     try:
         args = list(ast.iter_child_nodes(obj_ast.args))
     except AttributeError:
         logger.warning('No args found on "%s"', name)
         return rv
 
-    for arg in args:
-        comment = getattr(arg, 'type_comment', None)
-        if not comment:
+    comment_args = split_type_comment_args(comment_args_str)
+    is_inline = len(comment_args) == 1 and comment_args[0] == "..."
+    if not is_inline:
+        if args and args[0].arg in ("self", "cls") and len(comment_args) != len(args):
+            comment_args.insert(0, None)  # self/cls may be omitted in type comments, insert blank
+        if len(args) != len(comment_args):
+            logger.warning('Not enough type comments found on "%s"', name)
+            return rv
+
+    for at, arg in enumerate(args):
+        arg_key = getattr(arg, "arg", None)
+        if arg_key is None:
             continue
-
-        if not hasattr(arg, 'arg'):
-            continue
-
-        rv[arg.arg] = comment
-
+        if is_inline:  # the type information now is tied to the argument
+            value = getattr(arg, "type_comment", None)
+        else:  # type data from comment
+            value = comment_args[at]
+        if value is not None:
+            rv[arg_key] = value
     return rv
+
+
+def split_type_comment_args(comment):
+    def add(val):
+        result.append(val.strip().lstrip("*"))  # remove spaces, and var/kw arg marker
+
+    comment = comment.strip().lstrip("(").rstrip(")")
+    result = []
+    if not comment:
+        return result
+    brackets, start_arg_at, at = 0, 0, 0
+    for at, char in enumerate(comment):
+        if char in ("[", "("):
+            brackets += 1
+        elif char in ("]", ")"):
+            brackets -= 1
+        elif char == "," and brackets == 0:
+            add(comment[start_arg_at:at])
+            start_arg_at = at + 1
+    add(comment[start_arg_at: at + 1])
+    return result
 
 
 def process_docstring(app, what, name, obj, options, lines):
@@ -302,51 +332,52 @@ def process_docstring(app, what, name, obj, options, lines):
         type_hints = get_all_type_hints(obj, name)
 
         for argname, annotation in type_hints.items():
+            if argname == 'return':
+                continue  # this is handled separately later
             if argname.endswith('_'):
                 argname = '{}\\_'.format(argname[:-1])
 
             formatted_annotation = format_annotation(
                 annotation, fully_qualified=app.config.typehints_fully_qualified)
 
-            if argname == 'return':
-                if what in ('class', 'exception'):
-                    # Don't add return type None from __init__()
-                    continue
+            searchfor = ':param {}:'.format(argname)
+            insert_index = None
 
+            for i, line in enumerate(lines):
+                if line.startswith(searchfor):
+                    insert_index = i
+                    break
+
+            if insert_index is None and app.config.always_document_param_types:
+                lines.append(searchfor)
                 insert_index = len(lines)
-                for i, line in enumerate(lines):
-                    if line.startswith(':rtype:'):
-                        insert_index = None
-                        break
-                    elif line.startswith(':return:') or line.startswith(':returns:'):
-                        insert_index = i
 
-                if insert_index is not None:
-                    if insert_index == len(lines):
-                        # Ensure that :rtype: doesn't get joined with a paragraph of text, which
-                        # prevents it being interpreted.
-                        lines.append('')
-                        insert_index += 1
+            if insert_index is not None:
+                lines.insert(
+                    insert_index,
+                    ':type {}: {}'.format(argname, formatted_annotation)
+                )
 
-                    lines.insert(insert_index, ':rtype: {}'.format(formatted_annotation))
-            else:
-                searchfor = ':param {}:'.format(argname)
-                insert_index = None
+        if 'return' in type_hints and what not in ('class', 'exception'):
+            formatted_annotation = format_annotation(
+                type_hints['return'], fully_qualified=app.config.typehints_fully_qualified)
 
-                for i, line in enumerate(lines):
-                    if line.startswith(searchfor):
-                        insert_index = i
-                        break
+            insert_index = len(lines)
+            for i, line in enumerate(lines):
+                if line.startswith(':rtype:'):
+                    insert_index = None
+                    break
+                elif line.startswith(':return:') or line.startswith(':returns:'):
+                    insert_index = i
 
-                if insert_index is None and app.config.always_document_param_types:
-                    lines.append(searchfor)
-                    insert_index = len(lines)
+            if insert_index is not None:
+                if insert_index == len(lines):
+                    # Ensure that :rtype: doesn't get joined with a paragraph of text, which
+                    # prevents it being interpreted.
+                    lines.append('')
+                    insert_index += 1
 
-                if insert_index is not None:
-                    lines.insert(
-                        insert_index,
-                        ':type {}: {}'.format(argname, formatted_annotation)
-                    )
+                lines.insert(insert_index, ':rtype: {}'.format(formatted_annotation))
 
 
 def builder_ready(app):
