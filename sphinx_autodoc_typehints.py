@@ -309,51 +309,52 @@ def process_docstring(app, what, name, obj, options, lines):
         type_hints = get_all_type_hints(obj, name)
 
         for argname, annotation in type_hints.items():
+            if argname == 'return':
+                continue  # this is handled separately later
             if argname.endswith('_'):
                 argname = '{}\\_'.format(argname[:-1])
 
             formatted_annotation = format_annotation(
                 annotation, fully_qualified=app.config.typehints_fully_qualified)
 
-            if argname == 'return':
-                if what in ('class', 'exception'):
-                    # Don't add return type None from __init__()
-                    continue
+            searchfor = ':param {}:'.format(argname)
+            insert_index = None
 
+            for i, line in enumerate(lines):
+                if line.startswith(searchfor):
+                    insert_index = i
+                    break
+
+            if insert_index is None and app.config.always_document_param_types:
+                lines.append(searchfor)
                 insert_index = len(lines)
-                for i, line in enumerate(lines):
-                    if line.startswith(':rtype:'):
-                        insert_index = None
-                        break
-                    elif line.startswith(':return:') or line.startswith(':returns:'):
-                        insert_index = i
 
-                if insert_index is not None:
-                    if insert_index == len(lines):
-                        # Ensure that :rtype: doesn't get joined with a paragraph of text, which
-                        # prevents it being interpreted.
-                        lines.append('')
-                        insert_index += 1
+            if insert_index is not None:
+                lines.insert(
+                    insert_index,
+                    ':type {}: {}'.format(argname, formatted_annotation)
+                )
 
-                    lines.insert(insert_index, ':rtype: {}'.format(formatted_annotation))
-            else:
-                searchfor = ':param {}:'.format(argname)
-                insert_index = None
+        if 'return' in type_hints and what not in ('class', 'exception'):
+            formatted_annotation = format_annotation(
+                type_hints['return'], fully_qualified=app.config.typehints_fully_qualified)
 
-                for i, line in enumerate(lines):
-                    if line.startswith(searchfor):
-                        insert_index = i
-                        break
+            insert_index = len(lines)
+            for i, line in enumerate(lines):
+                if line.startswith(':rtype:'):
+                    insert_index = None
+                    break
+                elif line.startswith(':return:') or line.startswith(':returns:'):
+                    insert_index = i
 
-                if insert_index is None and app.config.always_document_param_types:
-                    lines.append(searchfor)
-                    insert_index = len(lines)
+            if insert_index is not None:
+                if insert_index == len(lines):
+                    # Ensure that :rtype: doesn't get joined with a paragraph of text, which
+                    # prevents it being interpreted.
+                    lines.append('')
+                    insert_index += 1
 
-                if insert_index is not None:
-                    lines.insert(
-                        insert_index,
-                        ':type {}: {}'.format(argname, formatted_annotation)
-                    )
+                lines.insert(insert_index, ':rtype: {}'.format(formatted_annotation))
 
 
 def builder_ready(app):
