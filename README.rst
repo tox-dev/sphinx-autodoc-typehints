@@ -110,10 +110,18 @@ installed. Then you can add type hint comments in the following manner:
 
 .. code-block:: python
 
+    def myfunction(arg1, arg2):
+        # type: (int, str) -> int
+        return 42
+
+or alternatively:
+
+.. code-block:: python
+
     def myfunction(
         arg1,  # type: int
         arg2  # type: str
-    )
+    ):
         # type: (...) -> int
         return 42
 

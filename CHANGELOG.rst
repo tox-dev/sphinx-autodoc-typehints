@@ -5,6 +5,7 @@ UNRELEASED
   PR #87
 * Fixed unintentional mangling of annotation type names
 * Added proper ``:py:data`` targets for ``NoReturn``, ``ClassVar`` and ``Tuple``
+* Added support for inline type comments (like ``(int, str) -> None``) (PR by Bernát Gábor)
 * Use the native AST parser for type comment support on Python 3.8+
 
 
