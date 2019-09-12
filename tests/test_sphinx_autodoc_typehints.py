@@ -188,9 +188,10 @@ def test_role_categories(inv, annotation, result):
     m = re.match('^:py:(?P<role>class|data|func):`~(?P<name>[^`]+)`', result)
     assert m, 'No match'
     name = m.group('name')
-    if name in {'typing.Pattern', 'typing.Match'} and sys.version_info < (3, 6):
-        name = name.replace('typing', 'typing.re')
     role = next((o.role for o in inv.objects if o.name == name), None)
+    if name in {'typing.Pattern', 'typing.Match'} and sys.version_info < (3, 6):
+        assert role is None, 'No entry in Python 3.5’s objects.inv'
+        return
     assert role, 'Name {} not found'.format(name)
     assert m.group('role') == 'func' if role == 'function' else role
 
