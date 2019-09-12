@@ -23,7 +23,6 @@ def remove_sphinx_projects(sphinx_test_tempdir):
             pass
 
 
-
 @pytest.fixture
 def rootdir():
     return path(os.path.dirname(__file__) or '.').abspath() / 'roots'

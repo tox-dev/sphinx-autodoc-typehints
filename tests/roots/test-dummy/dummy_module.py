@@ -137,13 +137,12 @@ def function_with_escaped_default(x: str = '\b'):
     """
 
 
-def function_with_unresolvable_annotation(x: 'a.b.c'):
+def function_with_unresolvable_annotation(x: 'a.b.c'):  # noqa: F821
     """
     Function docstring.
 
     :param x: foo
     """
-
 
 
 def function_with_typehint_comment(
