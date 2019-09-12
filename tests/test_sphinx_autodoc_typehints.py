@@ -182,15 +182,13 @@ def test_format_annotation_fully_qualified(annotation, expected_result):
 
 
 @pytest.mark.parametrize('annotation, result', [
-    a for a in annotations
-    if a[0] is not type(None)  # noqa
+    a for a in annotations if 'typing' in a[1]
 ])
 def test_role_categories(inv, annotation, result):
-    m = re.match('^:py:(?P<role>class|data|func):`(?P<name>[^`]+)`', result)
+    m = re.match('^:py:(?P<role>class|data|func):`~(?P<name>[^`]+)`', result)
+    assert m, 'No match'
     name = m.group('name')
-    if not name.startswith('typing.'):
-        return
-    if name in {'typing.Pattern', 'typing.Match'} and '3.5' in inv._url:
+    if name in {'typing.Pattern', 'typing.Match'} and sys.version_info < (3, 6):
         name = name.replace('typing', 'typing.re')
     role = next((o.role for o in inv.objects if o.name == name), None)
     assert role, 'Name {} not found'.format(name)
