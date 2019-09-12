@@ -11,7 +11,7 @@ pytest_plugins = 'sphinx.testing.fixtures'
 collect_ignore = ['roots']
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def inv(pytestconfig):
     inv_dict = pytestconfig.cache.get('python/objects.inv', None)
     if inv_dict is not None:
