@@ -347,6 +347,7 @@ def process_docstring(app, what, name, obj, options, lines):
             obj = getattr(obj, '__init__')
 
         obj = inspect.unwrap(obj)
+        sig = inspect.signature(obj)
         type_hints = get_all_type_hints(obj, name)
 
         for argname, annotation in type_hints.items():
@@ -357,6 +358,9 @@ def process_docstring(app, what, name, obj, options, lines):
 
             formatted_annotation = format_annotation(
                 annotation, fully_qualified=app.config.typehints_fully_qualified)
+            default = sig.parameters[argname].default
+            if default is not inspect.Parameter.empty:
+                formatted_annotation += " (default: ``{!r}``)".format(default)
 
             searchfor = ':param {}:'.format(argname)
             insert_index = None
