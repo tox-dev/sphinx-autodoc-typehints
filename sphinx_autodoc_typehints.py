@@ -276,6 +276,7 @@ def backfill_type_hints(obj, name):
     if not is_inline:
         if args and args[0].arg in ("self", "cls") and len(comment_args) != len(args):
             comment_args.insert(0, None)  # self/cls may be omitted in type comments, insert blank
+
         if len(args) != len(comment_args):
             logger.warning('Not enough type comments found on "%s"', name)
             return rv
@@ -284,12 +285,15 @@ def backfill_type_hints(obj, name):
         arg_key = getattr(arg, "arg", None)
         if arg_key is None:
             continue
+
         if is_inline:  # the type information now is tied to the argument
             value = getattr(arg, "type_comment", None)
         else:  # type data from comment
             value = comment_args[at]
+
         if value is not None:
             rv[arg_key] = value
+
     return rv
 
 
@@ -299,12 +303,15 @@ def load_args(obj_ast):
     pos_only = getattr(func_args, 'posonlyargs', None)
     if pos_only:
         args.extend(pos_only)
+
     args.extend(func_args.args)
     if func_args.vararg:
         args.append(func_args.vararg)
+
     args.extend(func_args.kwonlyargs)
     if func_args.kwarg:
         args.append(func_args.kwarg)
+
     return args
 
 
@@ -316,6 +323,7 @@ def split_type_comment_args(comment):
     result = []
     if not comment:
         return result
+
     brackets, start_arg_at, at = 0, 0, 0
     for at, char in enumerate(comment):
         if char in ("[", "("):
@@ -325,6 +333,7 @@ def split_type_comment_args(comment):
         elif char == "," and brackets == 0:
             add(comment[start_arg_at:at])
             start_arg_at = at + 1
+
     add(comment[start_arg_at: at + 1])
     return result
 
