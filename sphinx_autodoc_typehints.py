@@ -353,12 +353,12 @@ def process_docstring(app, what, name, obj, options, lines):
         for argname, annotation in type_hints.items():
             if argname == 'return':
                 continue  # this is handled separately later
+            default = sig.parameters[argname].default
             if argname.endswith('_'):
                 argname = '{}\\_'.format(argname[:-1])
 
             formatted_annotation = format_annotation(
                 annotation, fully_qualified=app.config.typehints_fully_qualified)
-            default = sig.parameters[argname].default
             if default is not inspect.Parameter.empty:
                 formatted_annotation += " (default: ``{!r}``)".format(default)
 
