@@ -1,12 +1,26 @@
 import os
+import sys
 import pathlib
 import shutil
 
 import pytest
 from sphinx.testing.path import path
+from sphobjinv import Inventory
 
 pytest_plugins = 'sphinx.testing.fixtures'
 collect_ignore = ['roots']
+
+
+@pytest.fixture(scope='session')
+def inv(pytestconfig):
+    inv_dict = pytestconfig.cache.get('python/objects.inv', None)
+    if inv_dict is not None:
+        return Inventory(inv_dict)
+    print("Downloading objects.inv")
+    url = 'https://docs.python.org/{v.major}.{v.minor}/objects.inv'.format(v=sys.version_info)
+    inv = Inventory(url=url)
+    pytestconfig.cache.set('python/objects.inv', inv.json_dict())
+    return inv
 
 
 @pytest.fixture(autouse=True)

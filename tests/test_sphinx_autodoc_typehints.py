@@ -1,5 +1,6 @@
 import pathlib
 import pytest
+import re
 import sys
 import textwrap
 from typing import (
@@ -51,7 +52,7 @@ class Slotted:
     __slots__ = ()
 
 
-@pytest.mark.parametrize('annotation, expected_result', [
+annotations = [
     (str,                           ':py:class:`str`'),
     (int,                           ':py:class:`int`'),
     (type(None),                    '``None``'),
@@ -109,13 +110,9 @@ class Slotted:
     (E,                             ':py:class:`~%s.E`\\[\\~T]' % __name__),
     (E[int],                        ':py:class:`~%s.E`\\[:py:class:`int`]' % __name__),
     (W,                             ':py:func:`~typing.NewType`\\(:py:data:`~W`, :py:class:`str`)')
-])
-def test_format_annotation(annotation, expected_result):
-    result = format_annotation(annotation)
-    assert result == expected_result
+]
 
-
-@pytest.mark.parametrize('annotation, expected_result', [
+annotations_qualified = [
     (str,                           ':py:class:`str`'),
     (int,                           ':py:class:`int`'),
     (type(None),                    '``None``'),
@@ -169,10 +166,34 @@ def test_format_annotation(annotation, expected_result):
     (E,                             ':py:class:`%s.E`\\[\\~T]' % __name__),
     (E[int],                        ':py:class:`%s.E`\\[:py:class:`int`]' % __name__),
     (W,                             ':py:func:`typing.NewType`\\(:py:data:`~W`, :py:class:`str`)')
-])
+]
+
+
+@pytest.mark.parametrize('annotation, expected_result', annotations)
+def test_format_annotation(annotation, expected_result):
+    result = format_annotation(annotation)
+    assert result == expected_result
+
+
+@pytest.mark.parametrize('annotation, expected_result', annotations_qualified)
 def test_format_annotation_fully_qualified(annotation, expected_result):
     result = format_annotation(annotation, fully_qualified=True)
     assert result == expected_result
+
+
+@pytest.mark.parametrize('annotation, result', [
+    a for a in annotations if 'typing' in a[1]
+])
+def test_role_categories(inv, annotation, result):
+    m = re.match('^:py:(?P<role>class|data|func):`~(?P<name>[^`]+)`', result)
+    assert m, 'No match'
+    name = m.group('name')
+    role = next((o.role for o in inv.objects if o.name == name), None)
+    if name in {'typing.Pattern', 'typing.Match'} and sys.version_info < (3, 6):
+        assert role is None, 'No entry in Python 3.5’s objects.inv'
+        return
+    assert role, 'Name {} not found'.format(name)
+    assert m.group('role') == 'func' if role == 'function' else role
 
 
 @pytest.mark.parametrize('type_param, expected_result', [
