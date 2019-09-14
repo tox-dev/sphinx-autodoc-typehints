@@ -1,3 +1,9 @@
+UNRELEASED
+==========
+
+* Fixed metaclasses as annotations causing ``TypeError``
+
+
 1.8.0
 =====
 

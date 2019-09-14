@@ -118,13 +118,17 @@ def format_annotation(annotation, fully_qualified=False):
             annotation_cls = annotation.__origin__
 
         extra = ''
-        mro = annotation_cls.mro()
-        if Generic in mro or (Protocol and Protocol in mro):
-            params = (getattr(annotation, '__parameters__', None) or
-                      getattr(annotation, '__args__', None))
-            if params:
-                extra = '\\[{}]'.format(', '.join(
-                    format_annotation(param, fully_qualified) for param in params))
+        try:
+            mro = annotation_cls.mro()
+        except TypeError:
+            pass
+        else:
+            if Generic in mro or (Protocol and Protocol in mro):
+                params = (getattr(annotation, '__parameters__', None) or
+                          getattr(annotation, '__args__', None))
+                if params:
+                    extra = '\\[{}]'.format(', '.join(
+                        format_annotation(param, fully_qualified) for param in params))
 
         return ':py:class:`{qualify}{module}.{name}`{extra}'.format(
             qualify="" if fully_qualified else "~",

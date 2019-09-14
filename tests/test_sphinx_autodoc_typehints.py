@@ -52,10 +52,15 @@ class Slotted:
     __slots__ = ()
 
 
+class Metaclass(type):
+    pass
+
+
 @pytest.mark.parametrize('annotation, expected_result', [
     (str,                           ':py:class:`str`'),
     (int,                           ':py:class:`int`'),
     (type(None),                    '``None``'),
+    (type,                          ':py:class:`type`'),
     pytest.param(NoReturn,          ':py:data:`~typing.NoReturn`',
                  marks=[pytest.mark.skipif(NoReturn is None,
                                            reason='typing.NoReturn is not available')]),
@@ -102,6 +107,7 @@ class Slotted:
     (Callable[[T], T],              ':py:data:`~typing.Callable`\\[\\[\\~T], \\~T]'),
     (Pattern,                       ':py:class:`~typing.Pattern`\\[:py:data:`~typing.AnyStr`]'),
     (Pattern[str],                  ':py:class:`~typing.Pattern`\\[:py:class:`str`]'),
+    (Metaclass,                     ':py:class:`~%s.Metaclass`' % __name__),
     (A,                             ':py:class:`~%s.A`' % __name__),
     (B,                             ':py:class:`~%s.B`\\[\\~T]' % __name__),
     (B[int],                        ':py:class:`~%s.B`\\[:py:class:`int`]' % __name__),
