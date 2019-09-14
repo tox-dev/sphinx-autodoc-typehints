@@ -52,7 +52,7 @@ class Slotted:
     __slots__ = ()
 
 
-annotations = [
+@pytest.mark.parametrize('annotation, expected_result', [
     (str,                           ':py:class:`str`'),
     (int,                           ':py:class:`int`'),
     (type(None),                    '``None``'),
@@ -110,90 +110,30 @@ annotations = [
     (E,                             ':py:class:`~%s.E`\\[\\~T]' % __name__),
     (E[int],                        ':py:class:`~%s.E`\\[:py:class:`int`]' % __name__),
     (W,                             ':py:func:`~typing.NewType`\\(:py:data:`~W`, :py:class:`str`)')
-]
-
-annotations_qualified = [
-    (str,                           ':py:class:`str`'),
-    (int,                           ':py:class:`int`'),
-    (type(None),                    '``None``'),
-    pytest.param(NoReturn,          ':py:data:`typing.NoReturn`',
-                 marks=[pytest.mark.skipif(NoReturn is None,
-                                           reason='typing.NoReturn is not available')]),
-    pytest.param(ClassVar[str],      ':py:data:`typing.ClassVar`\\[:py:class:`str`]',
-                 marks=[pytest.mark.skipif(ClassVar is None,
-                                           reason='typing.ClassVar is not available')]),
-    (Any,                           ':py:data:`typing.Any`'),
-    (AnyStr,                        ':py:data:`typing.AnyStr`'),
-    (Generic[T],                    ':py:class:`typing.Generic`\\[\\~T]'),
-    (Mapping,                       ':py:class:`typing.Mapping`\\[\\~KT, \\+VT_co]'),
-    (Mapping[T, int],               ':py:class:`typing.Mapping`\\[\\~T, :py:class:`int`]'),
-    (Mapping[str, V],               ':py:class:`typing.Mapping`\\[:py:class:`str`, \\-V]'),
-    (Mapping[T, U],                 ':py:class:`typing.Mapping`\\[\\~T, \\+U]'),
-    (Mapping[str, bool],            ':py:class:`typing.Mapping`\\[:py:class:`str`, '
-                                    ':py:class:`bool`]'),
-    (Dict,                          ':py:class:`typing.Dict`\\[\\~KT, \\~VT]'),
-    (Dict[T, int],                  ':py:class:`typing.Dict`\\[\\~T, :py:class:`int`]'),
-    (Dict[str, V],                  ':py:class:`typing.Dict`\\[:py:class:`str`, \\-V]'),
-    (Dict[T, U],                    ':py:class:`typing.Dict`\\[\\~T, \\+U]'),
-    (Dict[str, bool],               ':py:class:`typing.Dict`\\[:py:class:`str`, '
-                                    ':py:class:`bool`]'),
-    (Tuple,                         ':py:data:`typing.Tuple`'),
-    (Tuple[str, bool],              ':py:data:`typing.Tuple`\\[:py:class:`str`, '
-                                    ':py:class:`bool`]'),
-    (Tuple[int, int, int],          ':py:data:`typing.Tuple`\\[:py:class:`int`, '
-                                    ':py:class:`int`, :py:class:`int`]'),
-    (Tuple[str, ...],               ':py:data:`typing.Tuple`\\[:py:class:`str`, ...]'),
-    (Union,                         ':py:data:`typing.Union`'),
-    (Union[str, bool],              ':py:data:`typing.Union`\\[:py:class:`str`, '
-                                    ':py:class:`bool`]'),
-    (Optional[str],                 ':py:data:`typing.Optional`\\[:py:class:`str`]'),
-    (Callable,                      ':py:data:`typing.Callable`'),
-    (Callable[..., int],            ':py:data:`typing.Callable`\\[..., :py:class:`int`]'),
-    (Callable[[int], int],          ':py:data:`typing.Callable`\\[\\[:py:class:`int`], '
-                                    ':py:class:`int`]'),
-    (Callable[[int, str], bool],    ':py:data:`typing.Callable`\\[\\[:py:class:`int`, '
-                                    ':py:class:`str`], :py:class:`bool`]'),
-    (Callable[[int, str], None],    ':py:data:`typing.Callable`\\[\\[:py:class:`int`, '
-                                    ':py:class:`str`], ``None``]'),
-    (Callable[[T], T],              ':py:data:`typing.Callable`\\[\\[\\~T], \\~T]'),
-    (Pattern,                       ':py:class:`typing.Pattern`\\[:py:data:`typing.AnyStr`]'),
-    (Pattern[str],                  ':py:class:`typing.Pattern`\\[:py:class:`str`]'),
-    (A,                             ':py:class:`%s.A`' % __name__),
-    (B,                             ':py:class:`%s.B`\\[\\~T]' % __name__),
-    (B[int],                        ':py:class:`%s.B`\\[:py:class:`int`]' % __name__),
-    (C,                             ':py:class:`%s.C`' % __name__),
-    (D,                             ':py:class:`%s.D`' % __name__),
-    (E,                             ':py:class:`%s.E`\\[\\~T]' % __name__),
-    (E[int],                        ':py:class:`%s.E`\\[:py:class:`int`]' % __name__),
-    (W,                             ':py:func:`typing.NewType`\\(:py:data:`~W`, :py:class:`str`)')
-]
-
-
-@pytest.mark.parametrize('annotation, expected_result', annotations)
-def test_format_annotation(annotation, expected_result):
+])
+def test_format_annotation(inv, annotation, expected_result):
     result = format_annotation(annotation)
     assert result == expected_result
 
+    # Test with the "fully_qualified" flag turned on
+    if 'typing' in expected_result or __name__ in expected_result:
+        expected_result = expected_result.replace('~typing', 'typing')
+        expected_result = expected_result.replace('~' + __name__, __name__)
+        assert format_annotation(annotation, fully_qualified=True) == expected_result
 
-@pytest.mark.parametrize('annotation, expected_result', annotations_qualified)
-def test_format_annotation_fully_qualified(annotation, expected_result):
-    result = format_annotation(annotation, fully_qualified=True)
-    assert result == expected_result
+    # Test for the correct role (class vs data) using the official Sphinx inventory
+    if 'typing' in expected_result:
+        m = re.match('^:py:(?P<role>class|data|func):`~(?P<name>[^`]+)`', result)
+        assert m, 'No match'
+        name = m.group('name')
+        role = next((o.role for o in inv.objects if o.name == name), None)
+        if name in {'typing.Pattern', 'typing.Match', 'typing.NoReturn'}:
+            if sys.version_info < (3, 6):
+                assert role is None, 'No entry in Python 3.5’s objects.inv'
+                return
 
-
-@pytest.mark.parametrize('annotation, result', [
-    a for a in annotations if 'typing' in a[1]
-])
-def test_role_categories(inv, annotation, result):
-    m = re.match('^:py:(?P<role>class|data|func):`~(?P<name>[^`]+)`', result)
-    assert m, 'No match'
-    name = m.group('name')
-    role = next((o.role for o in inv.objects if o.name == name), None)
-    if name in {'typing.Pattern', 'typing.Match'} and sys.version_info < (3, 6):
-        assert role is None, 'No entry in Python 3.5’s objects.inv'
-        return
-    assert role, 'Name {} not found'.format(name)
-    assert m.group('role') == 'func' if role == 'function' else role
+        assert role is not None, 'Name {} not found'.format(name)
+        assert m.group('role') == 'func' if role == 'function' else role
 
 
 @pytest.mark.parametrize('type_param, expected_result', [
