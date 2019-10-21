@@ -392,7 +392,7 @@ def process_docstring(app, what, name, obj, options, lines):
                 elif line.startswith(':return:') or line.startswith(':returns:'):
                     insert_index = i
 
-            if insert_index is not None:
+            if insert_index is not None and app.config.typehints_document_rtype:
                 if insert_index == len(lines):
                     # Ensure that :rtype: doesn't get joined with a paragraph of text, which
                     # prevents it being interpreted.
@@ -411,6 +411,7 @@ def setup(app):
     app.add_config_value('set_type_checking_flag', False, 'html')
     app.add_config_value('always_document_param_types', False, 'html')
     app.add_config_value('typehints_fully_qualified', False, 'env')
+    app.add_config_value('typehints_document_rtype', True, 'env')
     app.connect('builder-inited', builder_ready)
     app.connect('autodoc-process-signature', process_signature)
     app.connect('autodoc-process-docstring', process_docstring)
