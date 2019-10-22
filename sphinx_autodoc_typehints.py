@@ -25,7 +25,7 @@ def format_annotation(annotation, fully_qualified=False):
             return ':py:class:`{}`'.format(annotation.__qualname__)
 
     annotation_cls = annotation if inspect.isclass(annotation) else type(annotation)
-    if annotation_cls.__module__ == 'typing':
+    if annotation_cls.__module__ in {'typing', 'typing_extensions'}:
         class_name = str(annotation).split('[')[0].split('.')[-1]
         params = None
         module = 'typing'
