@@ -1,12 +1,13 @@
 import pathlib
-import pytest
 import re
 import sys
 import textwrap
+from collections import defaultdict
 from typing import (
     Any, AnyStr, Callable, Dict, Generic, Mapping, NewType, Optional, Pattern,
     Tuple, TypeVar, Union, Type)
 
+import pytest
 from typing_extensions import Protocol
 
 from sphinx_autodoc_typehints import format_annotation, process_docstring
@@ -20,6 +21,11 @@ try:
     from typing import NoReturn  # not available prior to Python 3.6.5
 except ImportError:
     NoReturn = None
+
+try:
+    from typing import Literal
+except ImportError:
+    Literal = defaultdict(lambda: None)
 
 T = TypeVar('T')
 U = TypeVar('U', covariant=True)
@@ -107,6 +113,9 @@ class Metaclass(type):
     (Callable[[T], T],              ':py:data:`~typing.Callable`\\[\\[\\~T], \\~T]'),
     (Pattern,                       ':py:class:`~typing.Pattern`\\[:py:data:`~typing.AnyStr`]'),
     (Pattern[str],                  ':py:class:`~typing.Pattern`\\[:py:class:`str`]'),
+    pytest.param(Literal['a', 1],   ":py:class:`~typing.Literal`\\['a', 1]",
+                 marks=[pytest.mark.skipif(isinstance(Literal, defaultdict),
+                                           reason='Requires Python 3.8+')]),
     (Metaclass,                     ':py:class:`~%s.Metaclass`' % __name__),
     (A,                             ':py:class:`~%s.A`' % __name__),
     (B,                             ':py:class:`~%s.B`\\[\\~T]' % __name__),

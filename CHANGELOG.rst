@@ -2,6 +2,7 @@ UNRELEASED
 ==========
 
 * Fixed metaclasses as annotations causing ``TypeError``
+* Fixed rendering of ``typing.Literal``
 
 
 1.8.0

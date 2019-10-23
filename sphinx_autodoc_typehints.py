@@ -81,6 +81,8 @@ def format_annotation(annotation, fully_qualified=False):
                             for param in arg_annotations)),
                     result_annotation
                 ]
+        elif class_name == 'Literal':
+            extra = '\\[{}]'.format(', '.join(repr(arg) for arg in annotation.__args__))
         elif str(annotation).startswith('typing.ClassVar[') and hasattr(annotation, '__type__'):
             # < py3.7
             params = (annotation.__type__,)
