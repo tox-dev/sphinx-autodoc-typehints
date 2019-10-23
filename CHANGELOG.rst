@@ -4,6 +4,7 @@ UNRELEASED
 * Added support for typing_extensions_
 * Fixed metaclasses as annotations causing ``TypeError``
 * Fixed rendering of ``typing.Literal``
+* Fixed OSError when generating docs for SQLAlchemy mapped classes
 
 .. _typing_extensions: https://pypi.org/project/typing-extensions/
 

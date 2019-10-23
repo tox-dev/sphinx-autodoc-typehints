@@ -251,7 +251,7 @@ def backfill_type_hints(obj, name):
 
     try:
         obj_ast = ast.parse(textwrap.dedent(inspect.getsource(obj)), **parse_kwargs)
-    except TypeError:
+    except (OSError, TypeError):
         return {}
 
     obj_ast = _one_child(obj_ast)
