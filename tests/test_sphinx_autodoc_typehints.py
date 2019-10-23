@@ -113,7 +113,7 @@ class Metaclass(type):
     (Callable[[T], T],              ':py:data:`~typing.Callable`\\[\\[\\~T], \\~T]'),
     (Pattern,                       ':py:class:`~typing.Pattern`\\[:py:data:`~typing.AnyStr`]'),
     (Pattern[str],                  ':py:class:`~typing.Pattern`\\[:py:class:`str`]'),
-    pytest.param(Literal['a', 1],   ":py:class:`~typing.Literal`\\['a', 1]",
+    pytest.param(Literal['a', 1],   ":py:data:`~typing.Literal`\\['a', 1]",
                  marks=[pytest.mark.skipif(isinstance(Literal, defaultdict),
                                            reason='Requires Python 3.8+')]),
     (Metaclass,                     ':py:class:`~%s.Metaclass`' % __name__),
