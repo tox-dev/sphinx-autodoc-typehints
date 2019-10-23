@@ -2,7 +2,7 @@ import inspect
 import sys
 import textwrap
 import typing
-from typing import get_type_hints, TypeVar, Any, AnyStr, Generic, Union
+from typing import get_type_hints, TypeVar, Generic
 
 from sphinx.util import logging
 from sphinx.util.inspect import Signature
@@ -41,14 +41,13 @@ def format_annotation(annotation, fully_qualified=False):
             except TypeError:
                 pass  # annotation_cls was either the "type" object or typing.Type
 
-        if annotation is Any:
+        if class_name == 'Any':
             return ':py:data:`{}typing.Any`'.format("" if fully_qualified else "~")
-        elif annotation is AnyStr:
+        elif class_name == '~AnyStr':
             return ':py:data:`{}typing.AnyStr`'.format("" if fully_qualified else "~")
         elif isinstance(annotation, TypeVar):
             return '\\%r' % annotation
-        elif (annotation is Union or getattr(annotation, '__origin__', None) is Union or
-              hasattr(annotation, '__union_params__')):
+        elif class_name == 'Union':
             if hasattr(annotation, '__union_params__'):
                 params = annotation.__union_params__
             elif hasattr(annotation, '__args__'):
@@ -58,11 +57,11 @@ def format_annotation(annotation, fully_qualified=False):
                                                 params[1].__qualname__ == 'NoneType'):
                 class_name = 'Optional'
                 params = (params[0],)
-        elif annotation_cls.__qualname__ == 'Tuple' and hasattr(annotation, '__tuple_params__'):
+        elif class_name == 'Tuple' and hasattr(annotation, '__tuple_params__'):
             params = annotation.__tuple_params__
             if annotation.__tuple_use_ellipsis__:
                 params += (Ellipsis,)
-        elif annotation_cls.__qualname__ == 'Callable':
+        elif class_name == 'Callable':
             arg_annotations = result_annotation = None
             if hasattr(annotation, '__result__'):
                 arg_annotations = annotation.__args__
@@ -83,7 +82,7 @@ def format_annotation(annotation, fully_qualified=False):
                 ]
         elif class_name == 'Literal':
             extra = '\\[{}]'.format(', '.join(repr(arg) for arg in annotation.__args__))
-        elif str(annotation).startswith('typing.ClassVar[') and hasattr(annotation, '__type__'):
+        elif class_name == 'ClassVar' and hasattr(annotation, '__type__'):
             # < py3.7
             params = (annotation.__type__,)
         elif hasattr(annotation, 'type_var'):
