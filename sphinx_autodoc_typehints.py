@@ -25,7 +25,7 @@ def format_annotation(annotation, fully_qualified=False):
             return ':py:class:`{}`'.format(annotation.__qualname__)
 
     annotation_cls = annotation if inspect.isclass(annotation) else type(annotation)
-    if annotation_cls.__module__ == 'typing':
+    if annotation_cls.__module__ in ('typing', 'typing_extensions'):
         class_name = str(annotation).split('[')[0].split('.')[-1]
         params = None
         module = 'typing'
@@ -81,7 +81,8 @@ def format_annotation(annotation, fully_qualified=False):
                     result_annotation
                 ]
         elif class_name == 'Literal':
-            extra = '\\[{}]'.format(', '.join(repr(arg) for arg in annotation.__args__))
+            annotation_args = getattr(annotation, '__args__', ()) or annotation.__values__
+            extra = '\\[{}]'.format(', '.join(repr(arg) for arg in annotation_args))
         elif class_name == 'ClassVar' and hasattr(annotation, '__type__'):
             # < py3.7
             params = (annotation.__type__,)

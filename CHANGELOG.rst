@@ -1,8 +1,11 @@
 UNRELEASED
 ==========
 
+* Added support for typing_extensions_
 * Fixed metaclasses as annotations causing ``TypeError``
 * Fixed rendering of ``typing.Literal``
+
+.. _typing_extensions: https://pypi.org/project/typing-extensions/
 
 
 1.8.0

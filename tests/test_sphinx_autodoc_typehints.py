@@ -2,13 +2,14 @@ import pathlib
 import re
 import sys
 import textwrap
+import typing
 from collections import defaultdict
 from typing import (
     Any, AnyStr, Callable, Dict, Generic, Mapping, NewType, Optional, Pattern,
     Tuple, TypeVar, Union, Type)
 
 import pytest
-from typing_extensions import Protocol
+import typing_extensions
 
 from sphinx_autodoc_typehints import format_annotation, process_docstring
 
@@ -46,11 +47,11 @@ class C(B[str]):
     pass
 
 
-class D(Protocol):
+class D(typing_extensions.Protocol):
     pass
 
 
-class E(Protocol[T]):
+class E(typing_extensions.Protocol[T]):
     pass
 
 
@@ -153,13 +154,13 @@ def test_format_annotation(inv, annotation, expected_result):
 
 @pytest.mark.parametrize('library', [typing, typing_extensions])
 @pytest.mark.parametrize('annotation, params, expected_result', [
-    ('Literal', ('a', 1), ":py:class:`~typing.Literal`\\['a', 1]")
+    ('Literal', ('a', 1), ":py:data:`~typing.Literal`\\['a', 1]")
 ])
 def test_format_annotation_both_libs(inv, library, annotation, params, expected_result):
     try:
         annotation_cls = getattr(library, annotation)
     except AttributeError:
-        pytest.skip('{} not available in the {} module'.format(annotation, library.__module__))
+        pytest.skip('{} not available in the {} module'.format(annotation, library.__name__))
 
     result = format_annotation(annotation_cls[params])
     assert result == expected_result
