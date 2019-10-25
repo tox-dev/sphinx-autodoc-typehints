@@ -63,6 +63,8 @@ The following configuration options are accepted:
 * ``always_document_param_types`` (default: ``False``): If ``False``, do not add type info for
   undocumented parameters.  If ``True``, add stub documentation for undocumented parameters to
   be able to add type info.
+* ``typehints_document_rtype`` (default: ``True``): If ``False``, never add an ``:rtype:`` directive.
+  If ``True``, add the ``:rtype:`` directive if no existing ``:rtype:`` is found.
 
 
 How it works
