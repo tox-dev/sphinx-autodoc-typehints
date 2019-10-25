@@ -1,5 +1,5 @@
-UNRELEASED
-==========
+1.9.0
+=====
 
 * Added support for typing_extensions_
 * Added the ``typehints_document_rtype`` option (PR by Simon-Martin Schröder)
