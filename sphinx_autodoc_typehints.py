@@ -95,7 +95,7 @@ def format_annotation(annotation, fully_qualified=False):
         elif hasattr(annotation, '__parameters__'):
             params = annotation.__parameters__
 
-        if params:
+        if params and annotation is not getattr(sys.modules[module], class_name):
             extra = '\\[{}]'.format(', '.join(
                 format_annotation(param, fully_qualified) for param in params))
 

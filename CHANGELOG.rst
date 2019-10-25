@@ -5,6 +5,8 @@ UNRELEASED
 * Fixed metaclasses as annotations causing ``TypeError``
 * Fixed rendering of ``typing.Literal``
 * Fixed OSError when generating docs for SQLAlchemy mapped classes
+* Fixed unparametrized generic classes being rendered with their type parameters
+  (e.g. ``Dict[~KT, ~VT]``)
 
 .. _typing_extensions: https://pypi.org/project/typing-extensions/
 

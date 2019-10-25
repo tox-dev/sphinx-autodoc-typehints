@@ -68,6 +68,8 @@ class Metaclass(type):
     (int,                           ':py:class:`int`'),
     (type(None),                    '``None``'),
     (type,                          ':py:class:`type`'),
+    (Type,                          ':py:class:`~typing.Type`'),
+    (Type[A],                       ':py:class:`~typing.Type`\\[:py:class:`~%s.A`]' % __name__),
     pytest.param(NoReturn,          ':py:data:`~typing.NoReturn`',
                  marks=[pytest.mark.skipif(NoReturn is None,
                                            reason='typing.NoReturn is not available')]),
@@ -77,13 +79,13 @@ class Metaclass(type):
     (Any,                           ':py:data:`~typing.Any`'),
     (AnyStr,                        ':py:data:`~typing.AnyStr`'),
     (Generic[T],                    ':py:class:`~typing.Generic`\\[\\~T]'),
-    (Mapping,                       ':py:class:`~typing.Mapping`\\[\\~KT, \\+VT_co]'),
+    (Mapping,                       ':py:class:`~typing.Mapping`'),
     (Mapping[T, int],               ':py:class:`~typing.Mapping`\\[\\~T, :py:class:`int`]'),
     (Mapping[str, V],               ':py:class:`~typing.Mapping`\\[:py:class:`str`, \\-V]'),
     (Mapping[T, U],                 ':py:class:`~typing.Mapping`\\[\\~T, \\+U]'),
     (Mapping[str, bool],            ':py:class:`~typing.Mapping`\\[:py:class:`str`, '
                                     ':py:class:`bool`]'),
-    (Dict,                          ':py:class:`~typing.Dict`\\[\\~KT, \\~VT]'),
+    (Dict,                          ':py:class:`~typing.Dict`'),
     (Dict[T, int],                  ':py:class:`~typing.Dict`\\[\\~T, :py:class:`int`]'),
     (Dict[str, V],                  ':py:class:`~typing.Dict`\\[:py:class:`str`, \\-V]'),
     (Dict[T, U],                    ':py:class:`~typing.Dict`\\[\\~T, \\+U]'),
@@ -112,7 +114,7 @@ class Metaclass(type):
     (Callable[[int, str], None],    ':py:data:`~typing.Callable`\\[\\[:py:class:`int`, '
                                     ':py:class:`str`], ``None``]'),
     (Callable[[T], T],              ':py:data:`~typing.Callable`\\[\\[\\~T], \\~T]'),
-    (Pattern,                       ':py:class:`~typing.Pattern`\\[:py:data:`~typing.AnyStr`]'),
+    (Pattern,                       ':py:class:`~typing.Pattern`'),
     (Pattern[str],                  ':py:class:`~typing.Pattern`\\[:py:class:`str`]'),
     pytest.param(Literal['a', 1],   ":py:data:`~typing.Literal`\\['a', 1]",
                  marks=[pytest.mark.skipif(isinstance(Literal, defaultdict),
@@ -152,9 +154,12 @@ def test_format_annotation(inv, annotation, expected_result):
         assert m.group('role') == ('func' if role == 'function' else role)
 
 
-@pytest.mark.parametrize('library', [typing, typing_extensions])
+@pytest.mark.parametrize('library', [typing, typing_extensions],
+                         ids=['typing', 'typing_extensions'])
 @pytest.mark.parametrize('annotation, params, expected_result', [
-    ('Literal', ('a', 1), ":py:data:`~typing.Literal`\\['a', 1]")
+    ('Literal', ('a', 1), ":py:data:`~typing.Literal`\\['a', 1]"),
+    ('Type', None, ':py:class:`~typing.Type`'),
+    ('Type', (A,), ':py:class:`~typing.Type`\\[:py:class:`~%s.A`]' % __name__)
 ])
 def test_format_annotation_both_libs(inv, library, annotation, params, expected_result):
     try:
@@ -162,18 +167,9 @@ def test_format_annotation_both_libs(inv, library, annotation, params, expected_
     except AttributeError:
         pytest.skip('{} not available in the {} module'.format(annotation, library.__name__))
 
-    result = format_annotation(annotation_cls[params])
+    ann = annotation_cls if params is None else annotation_cls[params]
+    result = format_annotation(ann)
     assert result == expected_result
-
-
-@pytest.mark.parametrize('type_param, expected_result', [
-    (None, ':py:class:`~typing.Type`\\[\\+CT'),
-    (A, ':py:class:`~typing.Type`\\[:py:class:`~%s.A`]' % __name__)
-])
-def test_format_annotation_type(type_param, expected_result):
-    annotation = Type[type_param] if type_param else Type
-    result = format_annotation(annotation)
-    assert result.startswith(expected_result)
 
 
 def test_process_docstring_slot_wrapper():
