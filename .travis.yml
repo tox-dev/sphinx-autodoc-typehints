@@ -15,10 +15,15 @@ jobs:
 
     - stage: test
       env: TOXENV=py35
-      python: "3.5"
+      python: "3.5.2"
       after_success: &after_success
         - pip install coveralls
         - coveralls
+
+    - stage: test
+      env: TOXENV=py35
+      python: "3.5"
+      after_success: *after_success
 
     - stage: test
       env: TOXENV=py36
