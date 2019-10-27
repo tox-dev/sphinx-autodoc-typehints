@@ -215,14 +215,17 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
     warnings = warning.getvalue().strip()
     assert 'Cannot resolve forward reference in type annotations of ' in warnings, warnings
 
+    format_args = {}
     if always_document_param_types:
-        undoc_params = '''
-
-           Parameters:
-              **x** ("int") --'''
-
+        format_args['undoc_params'] = '\n\n   Parameters:\n      **x** ("int") --'
     else:
-        undoc_params = ""
+        format_args['undoc_params'] = ""
+
+    if sys.version_info < (3, 6):
+        format_args['dataclass_docstring'] = ('Initialize self.  See help(type(self)) for '
+                                              'accurate signature.')
+    else:
+        format_args['dataclass_docstring'] = 'Return type:\n         "None"'
 
     text_path = pathlib.Path(app.srcdir) / '_build' / 'text' / 'index.txt'
     with text_path.open('r') as f:
@@ -475,16 +478,15 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
            Class docstring.
 
            __init__()
-        '''.format(undoc_params=undoc_params)).replace('–', '--')
 
-        if sys.version_info < (3, 6):
-            expected_contents += '''
-      Initialize self.  See help(type(self)) for accurate signature.
-'''
-        else:
-            expected_contents += '''
-      Return type:
-         "None"
-'''
+              {dataclass_docstring}
 
+        @dummy_module.Decorator(func)
+
+           Initializer docstring.
+
+           Parameters:
+              **func** ("Callable"[["int", "str"], "str"]) -- function
+        ''')
+        expected_contents = expected_contents.format(**format_args).replace('–', '--')
         assert text_contents == expected_contents

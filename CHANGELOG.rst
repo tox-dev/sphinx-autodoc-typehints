@@ -3,6 +3,7 @@ UNRELEASED
 
 * Rewrote the annotation formatting logic (fixes Python 3.5.2 compatibility regressions and an
   ``AttributeError`` regression introduced in v1.9.0)
+* Fixed decorator classes not being processed as classes
 
 
 1.9.0

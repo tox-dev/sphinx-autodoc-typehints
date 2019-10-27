@@ -32,3 +32,5 @@ Dummy Module
 .. autoclass:: dummy_module.DataClass
     :undoc-members:
     :special-members: __init__
+
+.. autodecorator:: dummy_module.Decorator

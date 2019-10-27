@@ -237,3 +237,14 @@ def undocumented_function(x: int) -> str:
 @dataclass
 class DataClass:
     """Class docstring."""
+
+
+class Decorator:
+    """
+    Initializer docstring.
+
+    :param func: function
+    """
+
+    def __init__(self, func: Callable[[int, str], str]):
+        pass

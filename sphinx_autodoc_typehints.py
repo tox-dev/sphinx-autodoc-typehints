@@ -147,7 +147,8 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
     if not callable(obj):
         return
 
-    if what in ('class', 'exception'):
+    original_obj = obj
+    if inspect.isclass(obj):
         obj = getattr(obj, '__init__', getattr(obj, '__new__', None))
 
     if not getattr(obj, '__annotations__', None):
@@ -167,7 +168,7 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
         return
 
     if parameters:
-        if what in ('class', 'exception'):
+        if inspect.isclass(original_obj):
             del parameters[0]
         elif what == 'method':
             outer = inspect.getmodule(obj)
@@ -346,11 +347,12 @@ def split_type_comment_args(comment):
 
 
 def process_docstring(app, what, name, obj, options, lines):
+    original_obj = obj
     if isinstance(obj, property):
         obj = obj.fget
 
     if callable(obj):
-        if what in ('class', 'exception'):
+        if inspect.isclass(obj):
             obj = getattr(obj, '__init__')
 
         obj = inspect.unwrap(obj)
@@ -383,7 +385,7 @@ def process_docstring(app, what, name, obj, options, lines):
                     ':type {}: {}'.format(argname, formatted_annotation)
                 )
 
-        if 'return' in type_hints and what not in ('class', 'exception'):
+        if 'return' in type_hints and not inspect.isclass(original_obj):
             formatted_annotation = format_annotation(
                 type_hints['return'], fully_qualified=app.config.typehints_fully_qualified)
 
