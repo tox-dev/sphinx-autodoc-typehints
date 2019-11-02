@@ -26,10 +26,14 @@ def format_annotation(annotation, fully_qualified=False):
 
     annotation_cls = annotation if inspect.isclass(annotation) else type(annotation)
     if annotation_cls.__module__ in ('typing', 'typing_extensions'):
-        class_name = str(annotation).split('[')[0].split('.')[-1]
         params = None
         module = 'typing'
         extra = ''
+
+        if inspect.isclass(annotation):
+            class_name = annotation.__name__
+        else:
+            class_name = str(annotation).split('[')[0].split('.')[-1]
 
         origin = getattr(annotation, '__origin__', None)
         if inspect.isclass(origin):

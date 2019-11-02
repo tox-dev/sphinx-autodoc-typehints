@@ -6,7 +6,7 @@ import typing
 from collections import defaultdict
 from typing import (
     Any, AnyStr, Callable, Dict, Generic, Mapping, NewType, Optional, Pattern, Tuple, TypeVar,
-    Union, Type, IO)
+    Union, Type)
 
 import pytest
 import typing_extensions
@@ -27,6 +27,11 @@ try:
     from typing import Literal
 except ImportError:
     Literal = defaultdict(lambda: None)
+
+try:
+    from typing import IO
+except ImportError:
+    from typing.io import IO
 
 T = TypeVar('T')
 U = TypeVar('U', covariant=True)
@@ -146,7 +151,7 @@ def test_format_annotation(inv, annotation, expected_result):
         assert m, 'No match'
         name = m.group('name')
         role = next((o.role for o in inv.objects if o.name == name), None)
-        if name in {'typing.Pattern', 'typing.Match', 'typing.NoReturn'}:
+        if name in {'typing.Pattern', 'typing.Match', 'typing.NoReturn', 'typing.IO'}:
             if sys.version_info < (3, 6):
                 assert role is None, 'No entry in Python 3.5’s objects.inv'
                 return
