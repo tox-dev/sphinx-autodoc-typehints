@@ -5,8 +5,8 @@ import textwrap
 import typing
 from collections import defaultdict
 from typing import (
-    Any, AnyStr, Callable, Dict, Generic, Mapping, NewType, Optional, Pattern,
-    Tuple, TypeVar, Union, Type)
+    Any, AnyStr, Callable, Dict, Generic, Mapping, NewType, Optional, Pattern, Tuple, TypeVar,
+    Union, Type, IO)
 
 import pytest
 import typing_extensions
@@ -119,6 +119,7 @@ class Metaclass(type):
     pytest.param(Literal['a', 1],   ":py:data:`~typing.Literal`\\['a', 1]",
                  marks=[pytest.mark.skipif(isinstance(Literal, defaultdict),
                                            reason='Requires Python 3.8+')]),
+    (IO,                            ':py:class:`~typing.IO`'),
     (Metaclass,                     ':py:class:`~%s.Metaclass`' % __name__),
     (A,                             ':py:class:`~%s.A`' % __name__),
     (B,                             ':py:class:`~%s.B`\\[\\~T]' % __name__),
