@@ -3,30 +3,16 @@ import re
 import sys
 import textwrap
 import typing
-from collections import defaultdict
 from typing import (
-    Any, AnyStr, Callable, Dict, Generic, Mapping, NewType, Optional, Pattern, Tuple, TypeVar,
-    Union, Type)
+    Any, AnyStr, Callable, Dict, Generic, Mapping, NewType, Optional, Pattern, Match, Tuple,
+    TypeVar, Union, Type)
 
 import pytest
 import typing_extensions
 
-from sphinx_autodoc_typehints import format_annotation, process_docstring
-
-try:
-    from typing import ClassVar  # not available prior to Python 3.5.3
-except ImportError:
-    ClassVar = None
-
-try:
-    from typing import NoReturn  # not available prior to Python 3.6.5
-except ImportError:
-    NoReturn = None
-
-try:
-    from typing import Literal
-except ImportError:
-    Literal = defaultdict(lambda: None)
+from sphinx_autodoc_typehints import (
+    format_annotation, process_docstring, get_annotation_module, get_annotation_class_name,
+    get_annotation_args)
 
 try:
     from typing import IO
@@ -68,6 +54,42 @@ class Metaclass(type):
     pass
 
 
+@pytest.mark.parametrize('annotation, module, class_name, args', [
+    pytest.param(str, 'builtins', 'str', (), id='str'),
+    pytest.param(None, 'builtins', 'None', (), id='None'),
+    pytest.param(Any, 'typing', 'Any', (), id='Any'),
+    pytest.param(AnyStr, 'typing', 'AnyStr', (), id='AnyStr'),
+    pytest.param(Dict, 'typing', 'Dict', (), id='Dict'),
+    pytest.param(Dict[str, int], 'typing', 'Dict', (str, int), id='Dict_parametrized'),
+    pytest.param(Dict[T, int], 'typing', 'Dict', (T, int), id='Dict_typevar'),
+    pytest.param(Tuple, 'typing', 'Tuple', (), id='Tuple'),
+    pytest.param(Tuple[str, int], 'typing', 'Tuple', (str, int), id='Tuple_parametrized'),
+    pytest.param(Union[str, int], 'typing', 'Union', (str, int), id='Union'),
+    pytest.param(Callable, 'typing', 'Callable', (), id='Callable'),
+    pytest.param(Callable[..., str], 'typing', 'Callable', (..., str), id='Callable_returntype'),
+    pytest.param(Callable[[int, str], str], 'typing', 'Callable', (int, str, str),
+                 id='Callable_all_types'),
+    pytest.param(Pattern, 'typing', 'Pattern', (), id='Pattern'),
+    pytest.param(Pattern[str], 'typing', 'Pattern', (str,), id='Pattern_parametrized'),
+    pytest.param(Match, 'typing', 'Match', (), id='Match'),
+    pytest.param(Match[str], 'typing', 'Match', (str,), id='Match_parametrized'),
+    pytest.param(IO, 'typing', 'IO', (), id='IO'),
+    pytest.param(W, 'typing', 'NewType', (str,), id='W'),
+    pytest.param(Metaclass, __name__, 'Metaclass', (), id='Metaclass'),
+    pytest.param(Slotted, __name__, 'Slotted', (), id='Slotted'),
+    pytest.param(A, __name__, 'A', (), id='A'),
+    pytest.param(B, __name__, 'B', (), id='B'),
+    pytest.param(C, __name__, 'C', (), id='C'),
+    pytest.param(D, __name__, 'D', (), id='D'),
+    pytest.param(E, __name__, 'E', (), id='E'),
+    pytest.param(E[int], __name__, 'E', (int,), id='E_parametrized'),
+])
+def test_parse_annotation(annotation, module, class_name, args):
+    assert get_annotation_module(annotation) == module
+    assert get_annotation_class_name(annotation) == class_name
+    assert get_annotation_args(annotation, module, class_name) == args
+
+
 @pytest.mark.parametrize('annotation, expected_result', [
     (str,                           ':py:class:`str`'),
     (int,                           ':py:class:`int`'),
@@ -75,12 +97,6 @@ class Metaclass(type):
     (type,                          ':py:class:`type`'),
     (Type,                          ':py:class:`~typing.Type`'),
     (Type[A],                       ':py:class:`~typing.Type`\\[:py:class:`~%s.A`]' % __name__),
-    pytest.param(NoReturn,          ':py:data:`~typing.NoReturn`',
-                 marks=[pytest.mark.skipif(NoReturn is None,
-                                           reason='typing.NoReturn is not available')]),
-    pytest.param(ClassVar[str],      ':py:data:`~typing.ClassVar`\\[:py:class:`str`]',
-                 marks=[pytest.mark.skipif(ClassVar is None,
-                                           reason='typing.ClassVar is not available')]),
     (Any,                           ':py:data:`~typing.Any`'),
     (AnyStr,                        ':py:data:`~typing.AnyStr`'),
     (Generic[T],                    ':py:class:`~typing.Generic`\\[\\~T]'),
@@ -121,17 +137,14 @@ class Metaclass(type):
     (Callable[[T], T],              ':py:data:`~typing.Callable`\\[\\[\\~T], \\~T]'),
     (Pattern,                       ':py:class:`~typing.Pattern`'),
     (Pattern[str],                  ':py:class:`~typing.Pattern`\\[:py:class:`str`]'),
-    pytest.param(Literal['a', 1],   ":py:data:`~typing.Literal`\\['a', 1]",
-                 marks=[pytest.mark.skipif(isinstance(Literal, defaultdict),
-                                           reason='Requires Python 3.8+')]),
     (IO,                            ':py:class:`~typing.IO`'),
     (Metaclass,                     ':py:class:`~%s.Metaclass`' % __name__),
     (A,                             ':py:class:`~%s.A`' % __name__),
-    (B,                             ':py:class:`~%s.B`\\[\\~T]' % __name__),
+    (B,                             ':py:class:`~%s.B`' % __name__),
     (B[int],                        ':py:class:`~%s.B`\\[:py:class:`int`]' % __name__),
     (C,                             ':py:class:`~%s.C`' % __name__),
     (D,                             ':py:class:`~%s.D`' % __name__),
-    (E,                             ':py:class:`~%s.E`\\[\\~T]' % __name__),
+    (E,                             ':py:class:`~%s.E`' % __name__),
     (E[int],                        ':py:class:`~%s.E`\\[:py:class:`int`]' % __name__),
     (W,                             ':py:func:`~typing.NewType`\\(:py:data:`~W`, :py:class:`str`)')
 ])
@@ -150,19 +163,19 @@ def test_format_annotation(inv, annotation, expected_result):
         m = re.match('^:py:(?P<role>class|data|func):`~(?P<name>[^`]+)`', result)
         assert m, 'No match'
         name = m.group('name')
-        role = next((o.role for o in inv.objects if o.name == name), None)
-        if name in {'typing.Pattern', 'typing.Match', 'typing.NoReturn', 'typing.IO'}:
-            if sys.version_info < (3, 6):
-                assert role is None, 'No entry in Python 3.5’s objects.inv'
-                return
+        expected_role = next((o.role for o in inv.objects if o.name == name), None)
+        if expected_role:
+            if expected_role == 'function':
+                expected_role = 'func'
 
-        assert role is not None, 'Name {} not found'.format(name)
-        assert m.group('role') == ('func' if role == 'function' else role)
+            assert m.group('role') == expected_role
 
 
 @pytest.mark.parametrize('library', [typing, typing_extensions],
                          ids=['typing', 'typing_extensions'])
 @pytest.mark.parametrize('annotation, params, expected_result', [
+    ('ClassVar', int, ":py:data:`~typing.ClassVar`\\[:py:class:`int`]"),
+    ('NoReturn', None, ":py:data:`~typing.NoReturn`"),
     ('Literal', ('a', 1), ":py:data:`~typing.Literal`\\['a', 1]"),
     ('Type', None, ':py:class:`~typing.Type`'),
     ('Type', (A,), ':py:class:`~typing.Type`\\[:py:class:`~%s.A`]' % __name__)

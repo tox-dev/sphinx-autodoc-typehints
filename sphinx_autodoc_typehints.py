@@ -2,148 +2,145 @@ import inspect
 import sys
 import textwrap
 import typing
-from typing import get_type_hints, TypeVar, Generic
+from typing import get_type_hints, TypeVar, Any, AnyStr, Tuple
 
 from sphinx.util import logging
 from sphinx.util.inspect import Signature
-
-try:
-    from typing_extensions import Protocol
-except ImportError:
-    Protocol = None
 
 logger = logging.getLogger(__name__)
 pydata_annotations = {'Any', 'AnyStr', 'Callable', 'ClassVar', 'Literal', 'NoReturn', 'Optional',
                       'Tuple', 'Union'}
 
 
-def format_annotation(annotation, fully_qualified=False):
-    if inspect.isclass(annotation) and annotation.__module__ == 'builtins':
-        if annotation.__qualname__ == 'NoneType':
-            return '``None``'
+def get_annotation_module(annotation) -> str:
+    # Special cases
+    if annotation is None:
+        return 'builtins'
+
+    if hasattr(annotation, '__module__'):
+        return annotation.__module__
+
+    if hasattr(annotation, '__origin__'):
+        return annotation.__origin__.__module__
+
+    raise ValueError('Cannot determine the module of {}'.format(annotation))
+
+
+def get_annotation_class_name(annotation) -> str:
+    # Special cases
+    if annotation is None:
+        return 'None'
+    elif annotation is Any:
+        return 'Any'
+    elif inspect.isfunction(annotation) and hasattr(annotation, '__supertype__'):
+        return 'NewType'
+
+    if getattr(annotation, '__name__', None):
+        return annotation.__name__
+    elif getattr(annotation, '_name', None):  # Required for generic aliases on Python 3.7+
+        return annotation._name
+    elif getattr(annotation, 'name', None):  # Required for at least Pattern
+        return annotation.name
+
+    origin = getattr(annotation, '__origin__', None)
+    if origin:
+        if getattr(origin, '__name__', None):  # Required for Protocol subclasses
+            return origin.__name__
+        elif getattr(origin, '_name', None):  # Required for Union on Python 3.7+
+            return origin._name
         else:
-            return ':py:class:`{}`'.format(annotation.__qualname__)
+            return origin.__class__.__name__.lstrip('_')  # Required for Union on Python < 3.7
 
-    annotation_cls = annotation if inspect.isclass(annotation) else type(annotation)
-    if annotation_cls.__module__ in ('typing', 'typing_extensions'):
-        params = None
-        module = 'typing'
-        extra = ''
+    annotation_cls = annotation if inspect.isclass(annotation) else annotation.__class__
+    return annotation_cls.__name__.lstrip('_')
 
-        if inspect.isclass(annotation):
-            class_name = annotation.__name__
-        else:
-            class_name = str(annotation).split('[')[0].split('.')[-1]
 
-        origin = getattr(annotation, '__origin__', None)
-        if inspect.isclass(origin):
-            annotation_cls = annotation.__origin__
-            try:
-                mro = annotation_cls.mro()
-                if Generic in mro or (Protocol and Protocol in mro):
-                    module = annotation_cls.__module__
-            except TypeError:
-                pass  # annotation_cls was either the "type" object or typing.Type
+def get_annotation_args(annotation, module: str, class_name: str) -> Tuple:
+    try:
+        original = getattr(sys.modules[module], class_name)
+    except AttributeError:
+        pass
+    else:
+        if annotation is original:
+            return ()  # This is the original, unparametrized type
 
-        if class_name == 'Any':
-            return ':py:data:`{}typing.Any`'.format("" if fully_qualified else "~")
-        elif class_name == '~AnyStr':
-            return ':py:data:`{}typing.AnyStr`'.format("" if fully_qualified else "~")
-        elif isinstance(annotation, TypeVar):
-            return '\\%r' % annotation
-        elif class_name == 'Union':
-            if hasattr(annotation, '__union_params__'):
-                params = annotation.__union_params__
-            elif hasattr(annotation, '__args__'):
-                params = annotation.__args__
+    # Special cases
+    if class_name in ('Pattern', 'Match') and hasattr(annotation, 'type_var'):  # Python < 3.7
+        return annotation.type_var,
+    elif class_name == 'Callable' and hasattr(annotation, '__result__'):  # Python < 3.5.3
+        argtypes = (Ellipsis,) if annotation.__args__ is Ellipsis else annotation.__args__
+        return argtypes + (annotation.__result__,)
+    elif class_name == 'Union' and hasattr(annotation, '__union_params__'):  # Union on Python 3.5
+        return annotation.__union_params__
+    elif class_name == 'Tuple' and hasattr(annotation, '__tuple_params__'):  # Tuple on Python 3.5
+        params = annotation.__tuple_params__
+        if getattr(annotation, '__tuple_use_ellipsis__', False):
+            params += (Ellipsis,)
 
-            if params and len(params) == 2 and (hasattr(params[1], '__qualname__') and
-                                                params[1].__qualname__ == 'NoneType'):
-                class_name = 'Optional'
-                params = (params[0],)
-        elif class_name == 'Tuple' and hasattr(annotation, '__tuple_params__'):
-            params = annotation.__tuple_params__
-            if annotation.__tuple_use_ellipsis__:
-                params += (Ellipsis,)
-        elif class_name == 'Callable':
-            arg_annotations = result_annotation = None
-            if hasattr(annotation, '__result__'):
-                arg_annotations = annotation.__args__
-                result_annotation = annotation.__result__
-            elif getattr(annotation, '__args__', None):
-                arg_annotations = annotation.__args__[:-1]
-                result_annotation = annotation.__args__[-1]
+        return params
+    elif class_name == 'ClassVar' and hasattr(annotation, '__type__'):  # ClassVar on Python < 3.7
+        return annotation.__type__,
+    elif class_name == 'NewType' and hasattr(annotation, '__supertype__'):
+        return annotation.__supertype__,
+    elif class_name == 'Literal' and hasattr(annotation, '__values__'):
+        return annotation.__values__
+    elif class_name == 'Generic':
+        return annotation.__parameters__
 
-            if arg_annotations in (Ellipsis, (Ellipsis,)):
-                params = [Ellipsis, result_annotation]
-            elif arg_annotations is not None:
-                params = [
-                    '\\[{}]'.format(
-                        ', '.join(
-                            format_annotation(param, fully_qualified)
-                            for param in arg_annotations)),
-                    result_annotation
-                ]
-        elif class_name == 'Literal':
-            annotation_args = getattr(annotation, '__args__', ()) or annotation.__values__
-            extra = '\\[{}]'.format(', '.join(repr(arg) for arg in annotation_args))
-        elif class_name == 'ClassVar' and hasattr(annotation, '__type__'):
-            # < py3.7
-            params = (annotation.__type__,)
-        elif hasattr(annotation, 'type_var'):
-            # Type alias
-            class_name = annotation.name
-            params = (annotation.type_var,)
-        elif getattr(annotation, '__args__', None) is not None:
-            params = annotation.__args__
-        elif hasattr(annotation, '__parameters__'):
-            params = annotation.__parameters__
+    return getattr(annotation, '__args__', ())
 
-        if params and annotation is not getattr(sys.modules[module], class_name):
-            extra = '\\[{}]'.format(', '.join(
-                format_annotation(param, fully_qualified) for param in params))
 
-        return '{prefix}`{qualify}{module}.{name}`{extra}'.format(
-            prefix=':py:data:' if class_name in pydata_annotations else ':py:class:',
-            qualify="" if fully_qualified else "~",
-            module=module,
-            name=class_name,
-            extra=extra
-        )
+def format_annotation(annotation, fully_qualified: bool = False) -> str:
+    # Special cases
+    if annotation is None or annotation is type(None):  # noqa: E721
+        return '``None``'
     elif annotation is Ellipsis:
         return '...'
-    elif (inspect.isfunction(annotation) and annotation.__module__ == 'typing' and
-          hasattr(annotation, '__name__') and hasattr(annotation, '__supertype__')):
-        return ':py:func:`{qualify}typing.NewType`\\(:py:data:`~{name}`, {extra})'.format(
-            qualify="" if fully_qualified else "~",
-            name=annotation.__name__,
-            extra=format_annotation(annotation.__supertype__, fully_qualified),
-        )
-    elif inspect.isclass(annotation) or inspect.isclass(getattr(annotation, '__origin__', None)):
-        if not inspect.isclass(annotation):
-            annotation_cls = annotation.__origin__
 
-        extra = ''
-        try:
-            mro = annotation_cls.mro()
-        except TypeError:
-            pass
-        else:
-            if Generic in mro or (Protocol and Protocol in mro):
-                params = (getattr(annotation, '__parameters__', None) or
-                          getattr(annotation, '__args__', None))
-                if params:
-                    extra = '\\[{}]'.format(', '.join(
-                        format_annotation(param, fully_qualified) for param in params))
+    # Type variables are also handled specially
+    try:
+        if isinstance(annotation, TypeVar) and annotation is not AnyStr:
+            return '\\' + repr(annotation)
+    except TypeError:
+        pass
 
-        return ':py:class:`{qualify}{module}.{name}`{extra}'.format(
-            qualify="" if fully_qualified else "~",
-            module=annotation.__module__,
-            name=annotation_cls.__qualname__,
-            extra=extra
-        )
+    try:
+        module = get_annotation_module(annotation)
+        class_name = get_annotation_class_name(annotation)
+        args = get_annotation_args(annotation, module, class_name)
+    except ValueError:
+        return str(annotation)
 
-    return str(annotation)
+    # Redirect all typing_extensions types to the stdlib typing module
+    if module == 'typing_extensions':
+        module = 'typing'
+
+    full_name = (module + '.' + class_name) if module != 'builtins' else class_name
+    prefix = '' if fully_qualified or full_name == class_name else '~'
+    role = 'data' if class_name in pydata_annotations else 'class'
+    args_format = '\\[{}]'
+    formatted_args = ''
+
+    # Some types require special handling
+    if full_name == 'typing.NewType':
+        args_format = '\\(:py:data:`~{name}`, {{}})'.format(prefix=prefix,
+                                                            name=annotation.__name__)
+        role = 'func'
+    elif full_name == 'typing.Union' and len(args) == 2 and type(None) in args:
+        full_name = 'typing.Optional'
+        args = tuple(x for x in args if x is not type(None))  # noqa: E721
+    elif full_name == 'typing.Callable' and args and args[0] is not ...:
+        formatted_args = '\\[\\[' + ', '.join(format_annotation(arg) for arg in args[:-1]) + ']'
+        formatted_args += ', ' + format_annotation(args[-1]) + ']'
+    elif full_name == 'typing.Literal':
+        formatted_args = '\\[' + ', '.join(repr(arg) for arg in args) + ']'
+
+    if args and not formatted_args:
+        formatted_args = args_format.format(', '.join(format_annotation(arg, fully_qualified)
+                                                      for arg in args))
+
+    return ':py:{role}:`{prefix}{full_name}`{formatted_args}'.format(
+        role=role, prefix=prefix, full_name=full_name, formatted_args=formatted_args)
 
 
 def process_signature(app, what: str, name: str, obj, options, signature, return_annotation):
