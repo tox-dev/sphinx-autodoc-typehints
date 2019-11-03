@@ -1,5 +1,5 @@
-UNRELEASED
-==========
+1.10.0
+======
 
 * Rewrote the annotation formatting logic (fixes Python 3.5.2 compatibility regressions and an
   ``AttributeError`` regression introduced in v1.9.0)
