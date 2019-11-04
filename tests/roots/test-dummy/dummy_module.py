@@ -1,4 +1,5 @@
 import typing
+from mailbox import Mailbox
 from typing import Callable, Union
 
 try:
@@ -248,3 +249,11 @@ class Decorator:
 
     def __init__(self, func: Callable[[int, str], str]):
         pass
+
+
+def mocked_import(x: Mailbox):
+    """
+    A docstring.
+
+    :param x: function
+    """

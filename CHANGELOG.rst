@@ -1,3 +1,9 @@
+1.10.1
+======
+
+* Fixed ``KeyError`` when encountering mocked annotations (``autodoc_mock_imports``)
+
+
 1.10.0
 ======
 

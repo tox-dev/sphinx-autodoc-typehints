@@ -34,3 +34,5 @@ Dummy Module
     :special-members: __init__
 
 .. autodecorator:: dummy_module.Decorator
+
+.. autofunction:: dummy_module.mocked_import

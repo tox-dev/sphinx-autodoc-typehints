@@ -207,6 +207,7 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
         sys.path.insert(0, str(test_path))
 
     app.config.always_document_param_types = always_document_param_types
+    app.config.autodoc_mock_imports = ['mailbox']
     app.build()
 
     assert 'build succeeded' in status.getvalue()  # Build succeeded
@@ -487,6 +488,13 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
 
            Parameters:
               **func** ("Callable"[["int", "str"], "str"]) -- function
+
+        dummy_module.mocked_import(x)
+
+           A docstring.
+
+           Parameters:
+              **x** ("Mailbox") -- function
         ''')
         expected_contents = expected_contents.format(**format_args).replace('–', '--')
         assert text_contents == expected_contents
