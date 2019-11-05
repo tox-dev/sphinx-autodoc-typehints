@@ -1,3 +1,9 @@
+1.10.2
+======
+
+* Fixed inner classes missing their parent class name(s) when rendered
+
+
 1.10.1
 ======
 

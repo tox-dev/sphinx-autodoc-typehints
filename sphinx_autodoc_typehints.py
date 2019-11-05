@@ -32,11 +32,13 @@ def get_annotation_class_name(annotation) -> str:
         return 'None'
     elif annotation is Any:
         return 'Any'
+    elif annotation is AnyStr:
+        return 'AnyStr'
     elif inspect.isfunction(annotation) and hasattr(annotation, '__supertype__'):
         return 'NewType'
 
-    if getattr(annotation, '__name__', None):
-        return annotation.__name__
+    if getattr(annotation, '__qualname__', None):
+        return annotation.__qualname__
     elif getattr(annotation, '_name', None):  # Required for generic aliases on Python 3.7+
         return annotation._name
     elif getattr(annotation, 'name', None):  # Required for at least Pattern
@@ -44,15 +46,15 @@ def get_annotation_class_name(annotation) -> str:
 
     origin = getattr(annotation, '__origin__', None)
     if origin:
-        if getattr(origin, '__name__', None):  # Required for Protocol subclasses
-            return origin.__name__
+        if getattr(origin, '__qualname__', None):  # Required for Protocol subclasses
+            return origin.__qualname__
         elif getattr(origin, '_name', None):  # Required for Union on Python 3.7+
             return origin._name
         else:
-            return origin.__class__.__name__.lstrip('_')  # Required for Union on Python < 3.7
+            return origin.__class__.__qualname__.lstrip('_')  # Required for Union on Python < 3.7
 
     annotation_cls = annotation if inspect.isclass(annotation) else annotation.__class__
-    return annotation_cls.__name__.lstrip('_')
+    return annotation_cls.__qualname__.lstrip('_')
 
 
 def get_annotation_args(annotation, module: str, class_name: str) -> Tuple:

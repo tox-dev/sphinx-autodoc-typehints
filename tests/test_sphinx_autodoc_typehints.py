@@ -29,6 +29,9 @@ class A:
     def get_type(self):
         return type(self)
 
+    class Inner:
+        pass
+
 
 class B(Generic[T]):
     pass
@@ -83,6 +86,7 @@ class Metaclass(type):
     pytest.param(D, __name__, 'D', (), id='D'),
     pytest.param(E, __name__, 'E', (), id='E'),
     pytest.param(E[int], __name__, 'E', (int,), id='E_parametrized'),
+    pytest.param(A.Inner, __name__, 'A.Inner', (), id='Inner')
 ])
 def test_parse_annotation(annotation, module, class_name, args):
     assert get_annotation_module(annotation) == module
