@@ -26,7 +26,7 @@ def get_annotation_module(annotation) -> str:
     raise ValueError('Cannot determine the module of {}'.format(annotation))
 
 
-def get_annotation_class_name(annotation) -> str:
+def get_annotation_class_name(annotation, module: str) -> str:
     # Special cases
     if annotation is None:
         return 'None'
@@ -41,7 +41,8 @@ def get_annotation_class_name(annotation) -> str:
         return annotation.__qualname__
     elif getattr(annotation, '_name', None):  # Required for generic aliases on Python 3.7+
         return annotation._name
-    elif getattr(annotation, 'name', None):  # Required for at least Pattern
+    elif getattr(annotation, 'name', None) and module in ('typing', 'typing_extensions'):
+        # Required for at least Pattern and Match
         return annotation.name
 
     origin = getattr(annotation, '__origin__', None)
@@ -108,7 +109,7 @@ def format_annotation(annotation, fully_qualified: bool = False) -> str:
 
     try:
         module = get_annotation_module(annotation)
-        class_name = get_annotation_class_name(annotation)
+        class_name = get_annotation_class_name(annotation, module)
         args = get_annotation_args(annotation, module, class_name)
     except ValueError:
         return str(annotation)

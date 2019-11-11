@@ -1,3 +1,10 @@
+1.10.3
+======
+
+* Fixed ``TypeError`` (or wrong rendered class name) when an annotation is a generic class that has
+  a ``name`` property
+
+
 1.10.2
 ======
 

@@ -34,7 +34,8 @@ class A:
 
 
 class B(Generic[T]):
-    pass
+    # This is set to make sure the correct class name ("B") is picked up
+    name = 'Foo'
 
 
 class C(B[str]):
@@ -90,7 +91,7 @@ class Metaclass(type):
 ])
 def test_parse_annotation(annotation, module, class_name, args):
     assert get_annotation_module(annotation) == module
-    assert get_annotation_class_name(annotation) == class_name
+    assert get_annotation_class_name(annotation, module) == class_name
     assert get_annotation_args(annotation, module, class_name) == args
 
 
