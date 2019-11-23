@@ -73,6 +73,8 @@ def get_annotation_args(annotation, module: str, class_name: str) -> Tuple:
     elif class_name == 'Callable' and hasattr(annotation, '__result__'):  # Python < 3.5.3
         argtypes = (Ellipsis,) if annotation.__args__ is Ellipsis else annotation.__args__
         return argtypes + (annotation.__result__,)
+    elif class_name == 'Union' and hasattr(annotation, '__args__'):  # Union on Python 3.7
+        return annotation.__args__
     elif class_name == 'Union' and hasattr(annotation, '__union_params__'):  # Union on Python 3.5
         return annotation.__union_params__
     elif class_name == 'Tuple' and hasattr(annotation, '__tuple_params__'):  # Tuple on Python 3.5
