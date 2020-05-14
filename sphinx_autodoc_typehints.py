@@ -144,7 +144,6 @@ def format_annotation(annotation,
     formatted_args = ''
 
     # Some types require special handling
-    print(args)
     if full_name == 'typing.NewType':
         args_format = '\\(:py:data:`~{name}`, {{}})'.format(
             name=annotation.__name__)
