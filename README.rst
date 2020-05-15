@@ -69,7 +69,9 @@ The following configuration options are accepted:
   are simplified as being of type Union[..., None] in the resulting documention
   (e.g. Optional[Union[A, B]] -> Union[A, B, None]).
   If ``False``, the "Optional"-type is kept.
-  If an optional parameter has only a single type (e.g Optional[A]), the "Optional"-keyword is alway preserved.
+  Note: If ``False``, **any** Union containing ``None`` will be displayed as Optional!
+  Note: If an optional parameter has only a single type (e.g Optional[A] or Union[A, None]),
+  it will **always** be displayed as Optional!
 
 How it works
 ------------
