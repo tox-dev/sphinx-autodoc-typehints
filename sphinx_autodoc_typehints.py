@@ -155,7 +155,7 @@ def format_annotation(annotation,
         elif not simplify_optional_unions and len(args) > 2:
             full_name = 'typing.Optional'
             args_format = '\\[:py:data:`~typing.Union`\\[{}]]'
-            args = tuple(x for x in args if x is not None)  # noqa: E721
+            args = tuple(x for x in args if x is not None.__class__)
     elif full_name == 'typing.Callable' and args and args[0] is not ...:
         formatted_args = '\\[\\[' + ', '.join(
             format_annotation(
