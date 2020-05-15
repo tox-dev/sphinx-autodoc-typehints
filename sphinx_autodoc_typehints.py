@@ -140,15 +140,19 @@ def format_annotation(annotation,
             args_format = '\\[:py:data:`~typing.Union`\\[{}]]'
             args = tuple(x for x in args if x is not type(None))  # noqa: E721
     elif full_name == 'typing.Callable' and args and args[0] is not ...:
-        formatted_args = '\\[\\[' + ', '.join(format_annotation(arg,
-        simplify_optional_unions=simplify_optional_unions) for arg in args[:-1]) + ']'
-        formatted_args += ', ' + format_annotation(args[-1], simplify_optional_unions=simplify_optional_unions) + ']'
+        formatted_args = '\\[\\[' + ', '.join(
+            format_annotation(
+                arg, simplify_optional_unions=simplify_optional_unions)
+            for arg in args[:-1]) + ']'
+        formatted_args += ', ' + format_annotation(
+            args[-1], simplify_optional_unions=simplify_optional_unions) + ']'
     elif full_name == 'typing.Literal':
         formatted_args = '\\[' + ', '.join(repr(arg) for arg in args) + ']'
 
     if args and not formatted_args:
-        formatted_args = args_format.format(', '.join(format_annotation(arg, fully_qualified, simplify_optional_unions)
-                                                      for arg in args))
+        formatted_args = args_format.format(', '.join(
+            format_annotation(arg, fully_qualified, simplify_optional_unions)
+            for arg in args))
 
     return ':py:{role}:`{prefix}{full_name}`{formatted_args}'.format(
         role=role, prefix=prefix, full_name=full_name, formatted_args=formatted_args)
@@ -376,9 +380,9 @@ def process_docstring(app, what, name, obj, options, lines):
                 argname = '{}\\_'.format(argname[:-1])
 
             formatted_annotation = format_annotation(
-                annotation, fully_qualified=app.config.typehints_fully_qualified,
-                    simplify_optional_unions=app.config.simplify_optional_unions
-                    )
+                annotation,
+                fully_qualified=app.config.typehints_fully_qualified,
+                simplify_optional_unions=app.config.simplify_optional_unions)
 
             searchfor = ':param {}:'.format(argname)
             insert_index = None
