@@ -126,11 +126,15 @@ def test_parse_annotation(annotation, module, class_name, args):
     (Union,                         ':py:data:`~typing.Union`'),
     (Union[str, bool],              ':py:data:`~typing.Union`\\[:py:class:`str`, '
                                     ':py:class:`bool`]'),
+    (Union[str, bool, None],        ':py:data:`~typing.Union`\\[:py:class:`str`, '
+                                    ':py:class:`bool`, ``None``]'),
     pytest.param(Union[str, Any],   ':py:data:`~typing.Union`\\[:py:class:`str`, '
                                     ':py:data:`~typing.Any`]',
                  marks=pytest.mark.skipif((3, 5, 0) <= sys.version_info[:3] <= (3, 5, 2),
                                           reason='Union erases the str on 3.5.0 -> 3.5.2')),
     (Optional[str],                 ':py:data:`~typing.Optional`\\[:py:class:`str`]'),
+    (Optional[Union[str, bool]],    ':py:data:`~typing.Union`\\[:py:class:`str`, '
+                                    ':py:class:`bool`, ``None``]'),
     (Callable,                      ':py:data:`~typing.Callable`'),
     (Callable[..., int],            ':py:data:`~typing.Callable`\\[..., :py:class:`int`]'),
     (Callable[[int], int],          ':py:data:`~typing.Callable`\\[\\[:py:class:`int`], '
@@ -156,6 +160,27 @@ def test_parse_annotation(annotation, module, class_name, args):
 def test_format_annotation(inv, annotation, expected_result):
     result = format_annotation(annotation)
     assert result == expected_result
+
+    # Test with the "simplify_optional_unions" flag turned off:
+    if re.match(r'^:py:data:`~typing\.Union`\\\[.*``None``.*\]', expected_result):
+        # strip None - argument and copy string to avoid conflicts with
+        # subsequent tests
+        expected_result_not_simplified = expected_result.replace(', ``None``', '')
+        # encapsulate Union in typing.Optional
+        expected_result_not_simplified = ':py:data:`~typing.Optional`\\[' + \
+            expected_result_not_simplified
+        expected_result_not_simplified += ']'
+        assert format_annotation(annotation, simplify_optional_unions=False) == \
+            expected_result_not_simplified
+
+        # Test with the "fully_qualified" flag turned on
+        if 'typing' in expected_result_not_simplified:
+            expected_result_not_simplified = expected_result_not_simplified.replace('~typing',
+                                                                                    'typing')
+            assert format_annotation(annotation,
+                                     fully_qualified=True,
+                                     simplify_optional_unions=False) == \
+                expected_result_not_simplified
 
     # Test with the "fully_qualified" flag turned on
     if 'typing' in expected_result or __name__ in expected_result:
