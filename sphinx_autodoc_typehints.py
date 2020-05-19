@@ -424,6 +424,27 @@ def process_docstring(app, what, name, obj, options, lines):
 
     if callable(obj):
         if inspect.isclass(obj):
+            # Use type hints from instance and class variables for attributes
+            outer_obj = inspect.unwrap(obj)
+            type_hints = get_all_type_hints(outer_obj, name)
+            for argname, annotation in type_hints.items():
+                formatted_annotation = format_annotation(
+                    annotation, fully_qualified=app.config.typehints_fully_qualified)
+
+                searchfor_attr = '.. attribute:: {}'.format(argname)
+                searchfor_ivar = ':ivar {}:'.format(argname)
+                for i, line in enumerate(lines):
+                    if line.startswith(searchfor_attr):
+                        i += 1
+                        while i < len(lines):
+                            if lines[i].startswith(':') or lines[i].startswith('.. '):
+                                break
+                            i += 1
+                        lines.insert(i, '   :type: {}'.format(formatted_annotation))
+                        break
+                    if line.startswith(searchfor_ivar):
+                        lines.insert(i, ':vartype {}: {}'.format(argname, formatted_annotation))
+                        break
             obj = getattr(obj, '__init__')
 
         obj = inspect.unwrap(obj)

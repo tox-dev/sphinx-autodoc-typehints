@@ -1,7 +1,7 @@
 import typing
 from dataclasses import dataclass
 from mailbox import Mailbox
-from typing import Callable, Union
+from typing import Callable, ClassVar, Union
 
 
 def get_local_function():
@@ -19,7 +19,25 @@ class Class:
     :param x: foo
     :param y: bar
     :param z: baz
+
+    .. attribute:: x
+
+       Multiline
+
+       Description
+
+    .. attribute:: y
+       
+       bar
+
+    .. attribute:: z
+
+       baz
     """
+
+    x: bool
+    y: int
+    z: ClassVar[str]
 
     def __init__(self, x: bool, y: int, z: typing.Optional[str] = None) -> None:
         pass
@@ -83,7 +101,11 @@ class Class:
     class InnerClass:
         """
         Inner class.
+
+        :ivar x: foo
         """
+
+        x: bool
 
         def inner_method(self, x: bool) -> str:
             """
@@ -106,8 +128,14 @@ class DummyException(Exception):
     """
     Exception docstring
 
+    .. attribute:: message
+
+       Message description
+
     :param message: blah
     """
+
+    message: str
 
     def __init__(self, message: str) -> None:
         super().__init__(message)
