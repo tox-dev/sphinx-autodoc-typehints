@@ -27,7 +27,7 @@ class Class:
        Description
 
     .. attribute:: y
-       
+
        bar
 
     .. attribute:: z
