@@ -110,6 +110,10 @@ def format_annotation(annotation, fully_qualified: bool = False) -> str:
     try:
         module = get_annotation_module(annotation)
         class_name = get_annotation_class_name(annotation, module)
+        if not isinstance(class_name, str):
+            print('annotation %r module %r class_name %r %r' % (
+                annotation, module, class_name, type(class_name)))
+            class_name = str(class_name)
         args = get_annotation_args(annotation, module, class_name)
     except ValueError:
         return str(annotation)
