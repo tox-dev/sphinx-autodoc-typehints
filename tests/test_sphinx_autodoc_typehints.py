@@ -143,6 +143,7 @@ def test_parse_annotation(annotation, module, class_name, args):
     (Pattern,                       ':py:class:`~typing.Pattern`'),
     (Pattern[str],                  ':py:class:`~typing.Pattern`\\[:py:class:`str`]'),
     (IO,                            ':py:class:`~typing.IO`'),
+    (IO[str],                       ':py:class:`~typing.IO`\\[:py:class:`str`]'),
     (Metaclass,                     ':py:class:`~%s.Metaclass`' % __name__),
     (A,                             ':py:class:`~%s.A`' % __name__),
     (B,                             ':py:class:`~%s.B`' % __name__),
@@ -483,7 +484,7 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
 
            Class docstring.
 
-           __init__() -> None
+           __init__()
 
               {dataclass_docstring}
 

@@ -2,6 +2,8 @@ UNRELEASED
 ==========
 
 * Dropped support for Sphinx < 3.0
+* Fixed ``TypeError`` when formatting a parametrized ``typing.IO`` annotation
+
 
 1.10.3
 ======
