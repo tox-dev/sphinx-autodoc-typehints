@@ -5,7 +5,8 @@ import typing
 from typing import get_type_hints, TypeVar, Any, AnyStr, Tuple
 
 from sphinx.util import logging
-from sphinx.util.inspect import Signature
+from sphinx.util.inspect import signature as Signature
+from sphinx.util.inspect import stringify_signature
 
 logger = logging.getLogger(__name__)
 pydata_annotations = {'Any', 'AnyStr', 'Callable', 'ClassVar', 'Literal', 'NoReturn', 'Optional',
@@ -161,7 +162,7 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
     signature = Signature(obj)
     parameters = [
         param.replace(annotation=inspect.Parameter.empty)
-        for param in signature.signature.parameters.values()
+        for param in signature.parameters.values()
     ]
 
     if '<locals>' in obj.__qualname__:
@@ -190,11 +191,11 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
             if not isinstance(method_object, (classmethod, staticmethod)):
                 del parameters[0]
 
-    signature.signature = signature.signature.replace(
+    signature = signature.replace(
         parameters=parameters,
         return_annotation=inspect.Signature.empty)
 
-    return signature.format_args().replace('\\', '\\\\'), None
+    return stringify_signature(signature).replace('\\', '\\\\'), None
 
 
 def get_all_type_hints(obj, name):
