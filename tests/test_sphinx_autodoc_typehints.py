@@ -385,7 +385,7 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
            Return type:
               bytes
 
-        dummy_module.function_with_escaped_default(x='\\x08')
+        dummy_module.function_with_escaped_default(x='\\\\x08')
 
            Function docstring.
 
@@ -466,11 +466,11 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
               Method docstring.
 
               Parameters:
-                 **x** (*Callable**[**[**int**, **bytes**]**, **int**]*) --
+                 **x** ("Optional"["Callable"[["int", "bytes"], "int"]]) --
                  foo
 
               Return type:
-                 ClassWithTypehintsNotInline
+                 "ClassWithTypehintsNotInline"
 
         dummy_module.undocumented_function(x)
 
@@ -483,7 +483,7 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
 
            Class docstring.
 
-           __init__()
+           __init__() -> None
 
               {dataclass_docstring}
 
