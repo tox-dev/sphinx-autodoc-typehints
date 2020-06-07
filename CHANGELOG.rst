@@ -1,3 +1,8 @@
+UNRELEASED
+==========
+
+* Dropped support for Sphinx < 3.0
+
 1.10.3
 ======
 
