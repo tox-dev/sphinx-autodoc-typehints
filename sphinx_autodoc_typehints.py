@@ -372,16 +372,17 @@ def process_docstring(app, what, name, obj, options, lines):
             formatted_annotation = format_annotation(
                 annotation, fully_qualified=app.config.typehints_fully_qualified)
 
-            searchfor = ':param {}:'.format(argname)
+            searchfor = [':{} {}:'.format(field, argname)
+                         for field in ('param', 'parameter', 'arg', 'argument')]
             insert_index = None
 
             for i, line in enumerate(lines):
-                if line.startswith(searchfor):
+                if any(line.startswith(search_string) for search_string in searchfor):
                     insert_index = i
                     break
 
             if insert_index is None and app.config.always_document_param_types:
-                lines.append(searchfor)
+                lines.append(':param {}:'.format(argname))
                 insert_index = len(lines)
 
             if insert_index is not None:

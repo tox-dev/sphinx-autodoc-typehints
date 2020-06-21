@@ -142,7 +142,7 @@ def function_with_unresolvable_annotation(x: 'a.b.c'):  # noqa: F821
     """
     Function docstring.
 
-    :param x: foo
+    :arg x: foo
     """
 
 
@@ -154,7 +154,7 @@ def function_with_typehint_comment(
     """
     Function docstring.
 
-    :param x: foo
+    :parameter x: foo
     :param y: bar
     """
 
@@ -181,7 +181,7 @@ class ClassWithTypehints(object):
         """
         Method docstring.
 
-        :param x: foo
+        :arg x: foo
         """
         return 42
 
@@ -191,10 +191,10 @@ def function_with_typehint_comment_not_inline(x=None, *y, z, **kwargs):
     """
     Function docstring.
 
-    :param x: foo
-    :param y: bar
-    :param z: baz
-    :param kwargs: some kwargs
+    :arg x: foo
+    :argument y: bar
+    :parameter z: baz
+    :parameter kwargs: some kwargs
     """
 
 
