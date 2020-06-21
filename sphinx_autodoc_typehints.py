@@ -128,8 +128,7 @@ def format_annotation(annotation, fully_qualified: bool = False) -> str:
 
     # Some types require special handling
     if full_name == 'typing.NewType':
-        args_format = '\\(:py:data:`~{name}`, {{}})'.format(prefix=prefix,
-                                                            name=annotation.__name__)
+        args_format = '\\(:py:data:`~{name}`, {{}})'.format(name=annotation.__name__)
         role = 'func'
     elif full_name == 'typing.Union' and len(args) == 2 and type(None) in args:
         full_name = 'typing.Optional'
