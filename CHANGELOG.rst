@@ -1,5 +1,5 @@
-UNRELEASED
-==========
+1.11.0
+======
 
 * Dropped support for Sphinx < 3.0
 * Added support for alternative parameter names (``arg``, ``argument``, ``parameter``)
