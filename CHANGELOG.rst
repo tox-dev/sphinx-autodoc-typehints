@@ -3,6 +3,7 @@ UNRELEASED
 
 * Dropped support for Sphinx < 3.0
 * Added support for alternative parameter names (``arg``, ``argument``, ``parameter``)
+* Fixed import path for Signature (PR by Matthew Treinish)
 * Fixed ``TypeError`` when formatting a parametrized ``typing.IO`` annotation
 * Fixed data class displaying a return type in its ``__init__()`` method
 
