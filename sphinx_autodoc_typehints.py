@@ -391,6 +391,10 @@ def process_docstring(app, what, name, obj, options, lines):
                 )
 
         if 'return' in type_hints and not inspect.isclass(original_obj):
+            # This avoids adding a return type for data class __init__ methods
+            if what == 'method' and name.endswith('.__init__'):
+                return
+
             formatted_annotation = format_annotation(
                 type_hints['return'], fully_qualified=app.config.typehints_fully_qualified)
 

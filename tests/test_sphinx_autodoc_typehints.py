@@ -228,12 +228,6 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
     else:
         format_args['undoc_params'] = ""
 
-    if sys.version_info < (3, 6):
-        format_args['dataclass_docstring'] = ('Initialize self.  See help(type(self)) for '
-                                              'accurate signature.')
-    else:
-        format_args['dataclass_docstring'] = 'Return type:\n         "None"'
-
     text_path = pathlib.Path(app.srcdir) / '_build' / 'text' / 'index.txt'
     with text_path.open('r') as f:
         text_contents = f.read().replace('–', '--')
@@ -486,7 +480,7 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
 
            __init__()
 
-              {dataclass_docstring}
+              Initialize self.  See help(type(self)) for accurate signature.
 
         @dummy_module.Decorator(func)
 
