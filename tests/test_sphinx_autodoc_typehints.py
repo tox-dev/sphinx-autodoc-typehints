@@ -147,6 +147,7 @@ def test_parse_annotation(annotation, module, class_name, args):
     (Pattern,                       ':py:class:`~typing.Pattern`'),
     (Pattern[str],                  ':py:class:`~typing.Pattern`\\[:py:class:`str`]'),
     (IO,                            ':py:class:`~typing.IO`'),
+    (IO[str],                       ':py:class:`~typing.IO`\\[:py:class:`str`]'),
     (Metaclass,                     ':py:class:`~%s.Metaclass`' % __name__),
     (A,                             ':py:class:`~%s.A`' % __name__),
     (B,                             ':py:class:`~%s.B`' % __name__),
@@ -251,12 +252,6 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
         format_args['undoc_params'] = '\n\n   Parameters:\n      **x** ("int") --'
     else:
         format_args['undoc_params'] = ""
-
-    if sys.version_info < (3, 6):
-        format_args['dataclass_docstring'] = ('Initialize self.  See help(type(self)) for '
-                                              'accurate signature.')
-    else:
-        format_args['dataclass_docstring'] = 'Return type:\n         "None"'
 
     text_path = pathlib.Path(app.srcdir) / '_build' / 'text' / 'index.txt'
     with text_path.open('r') as f:
@@ -410,7 +405,7 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
            Return type:
               bytes
 
-        dummy_module.function_with_escaped_default(x='\\x08')
+        dummy_module.function_with_escaped_default(x='\\\\x08')
 
            Function docstring.
 
@@ -491,11 +486,11 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
               Method docstring.
 
               Parameters:
-                 **x** (*Callable**[**[**int**, **bytes**]**, **int**]*) --
+                 **x** ("Optional"["Callable"[["int", "bytes"], "int"]]) --
                  foo
 
               Return type:
-                 ClassWithTypehintsNotInline
+                 "ClassWithTypehintsNotInline"
 
         dummy_module.undocumented_function(x)
 
@@ -510,7 +505,7 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
 
            __init__()
 
-              {dataclass_docstring}
+              Initialize self.  See help(type(self)) for accurate signature.
 
         @dummy_module.Decorator(func)
 

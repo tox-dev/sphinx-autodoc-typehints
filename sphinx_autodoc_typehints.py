@@ -5,7 +5,8 @@ import typing
 from typing import get_type_hints, TypeVar, Any, AnyStr, Tuple
 
 from sphinx.util import logging
-from sphinx.util.inspect import Signature
+from sphinx.util.inspect import signature as Signature
+from sphinx.util.inspect import stringify_signature
 
 logger = logging.getLogger(__name__)
 pydata_annotations = {'Any', 'AnyStr', 'Callable', 'ClassVar', 'Literal', 'NoReturn', 'Optional',
@@ -41,7 +42,8 @@ def get_annotation_class_name(annotation, module: str) -> str:
         return annotation.__qualname__
     elif getattr(annotation, '_name', None):  # Required for generic aliases on Python 3.7+
         return annotation._name
-    elif getattr(annotation, 'name', None) and module in ('typing', 'typing_extensions'):
+    elif (module in ('typing', 'typing_extensions')
+            and isinstance(getattr(annotation, 'name', None), str)):
         # Required for at least Pattern and Match
         return annotation.name
 
@@ -128,8 +130,7 @@ def format_annotation(annotation,
 
     # Some types require special handling
     if full_name == 'typing.NewType':
-        args_format = '\\(:py:data:`~{name}`, {{}})'.format(prefix=prefix,
-                                                            name=annotation.__name__)
+        args_format = '\\(:py:data:`~{name}`, {{}})'.format(name=annotation.__name__)
         role = 'func'
     elif full_name == 'typing.Union' and type(None) in args:
         if len(args) == 2:
@@ -173,17 +174,18 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
     signature = Signature(obj)
     parameters = [
         param.replace(annotation=inspect.Parameter.empty)
-        for param in signature.signature.parameters.values()
+        for param in signature.parameters.values()
     ]
 
-    if '<locals>' in obj.__qualname__:
+    # The generated dataclass __init__() is weird and needs the second condition
+    if '<locals>' in obj.__qualname__ and not (what == 'method' and name.endswith('.__init__')):
         logger.warning(
             'Cannot treat a function defined as a local function: "%s"  (use @functools.wraps)',
             name)
         return
 
     if parameters:
-        if inspect.isclass(original_obj):
+        if inspect.isclass(original_obj) or (what == 'method' and name.endswith('.__init__')):
             del parameters[0]
         elif what == 'method':
             outer = inspect.getmodule(obj)
@@ -202,11 +204,11 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
             if not isinstance(method_object, (classmethod, staticmethod)):
                 del parameters[0]
 
-    signature.signature = signature.signature.replace(
+    signature = signature.replace(
         parameters=parameters,
         return_annotation=inspect.Signature.empty)
 
-    return signature.format_args().replace('\\', '\\\\'), None
+    return stringify_signature(signature).replace('\\', '\\\\'), None
 
 
 def get_all_type_hints(obj, name):
@@ -384,16 +386,17 @@ def process_docstring(app, what, name, obj, options, lines):
                 fully_qualified=app.config.typehints_fully_qualified,
                 simplify_optional_unions=app.config.simplify_optional_unions)
 
-            searchfor = ':param {}:'.format(argname)
+            searchfor = [':{} {}:'.format(field, argname)
+                         for field in ('param', 'parameter', 'arg', 'argument')]
             insert_index = None
 
             for i, line in enumerate(lines):
-                if line.startswith(searchfor):
+                if any(line.startswith(search_string) for search_string in searchfor):
                     insert_index = i
                     break
 
             if insert_index is None and app.config.always_document_param_types:
-                lines.append(searchfor)
+                lines.append(':param {}:'.format(argname))
                 insert_index = len(lines)
 
             if insert_index is not None:
@@ -403,6 +406,10 @@ def process_docstring(app, what, name, obj, options, lines):
                 )
 
         if 'return' in type_hints and not inspect.isclass(original_obj):
+            # This avoids adding a return type for data class __init__ methods
+            if what == 'method' and name.endswith('.__init__'):
+                return
+
             formatted_annotation = format_annotation(
                 type_hints['return'], fully_qualified=app.config.typehints_fully_qualified,
                 simplify_optional_unions=app.config.simplify_optional_unions
