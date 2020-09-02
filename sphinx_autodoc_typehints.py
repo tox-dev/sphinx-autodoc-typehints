@@ -165,8 +165,20 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
         for param in signature.parameters.values()
     ]
 
-    # The generated dataclass __init__() is weird and needs the second condition
-    if '<locals>' in obj.__qualname__ and not (what == 'method' and name.endswith('.__init__')):
+    # The generated dataclass __init__() and class are weird and need extra checks
+    # This helper function operates on the generated class and methods
+    # of a dataclass, not an instantiated dataclass object. As such,
+    # it cannot be replaced by a call to `dataclasses.is_dataclass()`.
+    def _is_dataclass(name: str, what: str, qualname: str) -> bool:
+        if what == 'method' and name.endswith('.__init__'):
+            # generated __init__()
+            return True
+        if what == 'class' and qualname.endswith('.__init__'):
+            # generated class
+            return True
+        return False
+
+    if '<locals>' in obj.__qualname__ and not _is_dataclass(name, what, obj.__qualname__):
         logger.warning(
             'Cannot treat a function defined as a local function: "%s"  (use @functools.wraps)',
             name)
