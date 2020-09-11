@@ -98,7 +98,7 @@ def test_parse_annotation(annotation, module, class_name, args):
 @pytest.mark.parametrize('annotation, expected_result', [
     (str,                           ':py:class:`str`'),
     (int,                           ':py:class:`int`'),
-    (type(None),                    '``None``'),
+    (type(None),                    ':py:obj:`None`'),
     (type,                          ':py:class:`type`'),
     (Type,                          ':py:class:`~typing.Type`'),
     (Type[A],                       ':py:class:`~typing.Type`\\[:py:class:`~%s.A`]' % __name__),
@@ -138,7 +138,7 @@ def test_parse_annotation(annotation, module, class_name, args):
     (Callable[[int, str], bool],    ':py:data:`~typing.Callable`\\[\\[:py:class:`int`, '
                                     ':py:class:`str`], :py:class:`bool`]'),
     (Callable[[int, str], None],    ':py:data:`~typing.Callable`\\[\\[:py:class:`int`, '
-                                    ':py:class:`str`], ``None``]'),
+                                    ':py:class:`str`], :py:obj:`None`]'),
     (Callable[[T], T],              ':py:data:`~typing.Callable`\\[\\[\\~T], \\~T]'),
     (Pattern,                       ':py:class:`~typing.Pattern`'),
     (Pattern[str],                  ':py:class:`~typing.Pattern`\\[:py:class:`str`]'),

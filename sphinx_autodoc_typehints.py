@@ -98,7 +98,7 @@ def get_annotation_args(annotation, module: str, class_name: str) -> Tuple:
 def format_annotation(annotation, fully_qualified: bool = False) -> str:
     # Special cases
     if annotation is None or annotation is type(None):  # noqa: E721
-        return '``None``'
+        return ':py:obj:`None`'
     elif annotation is Ellipsis:
         return '...'
 
