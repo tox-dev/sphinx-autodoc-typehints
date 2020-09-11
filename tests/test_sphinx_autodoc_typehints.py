@@ -250,7 +250,7 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
 
               Inner class.
 
-              _InnerClass__dunder_inner_method(x)
+              __dunder_inner_method(x)
 
                  Dunder inner method.
 
@@ -270,7 +270,7 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
                  Return type:
                     "str"
 
-           _Class__dunder_method(x)
+           __dunder_method(x)
 
               Dunder method docstring.
 
