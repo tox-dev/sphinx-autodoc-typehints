@@ -239,6 +239,8 @@ def undocumented_function(x: int) -> str:
 class DataClass:
     """Class docstring."""
 
+    x: int
+
 
 class Decorator:
     """
