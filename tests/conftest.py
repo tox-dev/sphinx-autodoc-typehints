@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import pathlib
 import shutil
@@ -42,3 +43,12 @@ def remove_sphinx_projects(sphinx_test_tempdir):
 @pytest.fixture
 def rootdir():
     return path(os.path.dirname(__file__) or '.').abspath() / 'roots'
+
+
+def pytest_ignore_collect(path, config):
+    version_re = re.compile(r'_py(\d)(\d)\.py$')
+    match = version_re.search(path.basename)
+    if match:
+        version = tuple(int(x) for x in match.groups())
+        if sys.version_info < version:
+            return True

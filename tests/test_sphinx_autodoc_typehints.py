@@ -224,13 +224,9 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
 
     format_args = {}
     if always_document_param_types:
-        for indentation_level in range(3):
-            format_args['undoc_params_{}'.format(indentation_level)] = textwrap.indent(
-                '\n\n   Parameters:\n      **x** ("int") --', '   ' * indentation_level
-            )
+        format_args['undoc_params'] = '\n\n   Parameters:\n      **x** ("int") --'
     else:
-        for indentation_level in range(3):
-            format_args['undoc_params_{}'.format(indentation_level)] = ''
+        format_args['undoc_params'] = ''
 
     text_path = pathlib.Path(app.srcdir) / '_build' / 'text' / 'index.txt'
     with text_path.open('r') as f:
@@ -473,18 +469,10 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
 
         dummy_module.undocumented_function(x)
 
-           Hi{undoc_params_0}
+           Hi{undoc_params}
 
            Return type:
               "str"
-
-        class dummy_module.DataClass(x)
-
-           Class docstring.{undoc_params_0}
-
-           __init__(x)
-
-              Initialize self.  See help(type(self)) for accurate signature.{undoc_params_1}
 
         @dummy_module.Decorator(func)
 
