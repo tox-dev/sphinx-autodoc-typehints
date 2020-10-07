@@ -226,7 +226,7 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
     if always_document_param_types:
         format_args['undoc_params'] = '\n\n   Parameters:\n      **x** ("int") --'
     else:
-        format_args['undoc_params'] = ""
+        format_args['undoc_params'] = ''
 
     text_path = pathlib.Path(app.srcdir) / '_build' / 'text' / 'index.txt'
     with text_path.open('r') as f:
@@ -473,14 +473,6 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
 
            Return type:
               "str"
-
-        class dummy_module.DataClass
-
-           Class docstring.
-
-           __init__()
-
-              Initialize self.  See help(type(self)) for accurate signature.
 
         @dummy_module.Decorator(func)
 

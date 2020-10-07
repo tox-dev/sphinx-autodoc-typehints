@@ -235,11 +235,6 @@ def undocumented_function(x: int) -> str:
     return str(x)
 
 
-@dataclass
-class DataClass:
-    """Class docstring."""
-
-
 class Decorator:
     """
     Initializer docstring.
