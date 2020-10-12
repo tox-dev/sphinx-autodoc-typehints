@@ -1,5 +1,5 @@
-UNRELEASED
-==========
+1.11.1
+======
 
 * Changed formatting of ``None`` to point to the Python stdlib docs (PR by Dominic Davis-Foster)
 * Updated special dataclass handling (PR by Lihu Ben-Ezri-Ravin)
