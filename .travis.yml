@@ -12,9 +12,21 @@ jobs:
   include:
     - stage: static analysis
       env: TOXENV=flake8
+      arch: amd64
+    - stage: static analysis
+      env: TOXENV=flake8
+      arch: ppc64le
 
     - stage: test
       env: TOXENV=py35
+      arch: amd64
+      python: "3.5.2"
+      after_success: &after_success
+        - pip install coveralls
+        - coveralls
+    - stage: test
+      env: TOXENV=py35
+      arch: ppc64le
       python: "3.5.2"
       after_success: &after_success
         - pip install coveralls
@@ -22,26 +34,56 @@ jobs:
 
     - stage: test
       env: TOXENV=py35
+      arch: amd64
+      python: "3.5"
+      after_success: *after_success
+    - stage: test
+      env: TOXENV=py35
+      arch: ppc64le
       python: "3.5"
       after_success: *after_success
 
     - stage: test
       env: TOXENV=py36
+      arch: amd64
+      python: "3.6"
+      after_success: *after_success
+    - stage: test
+      env: TOXENV=py36
+      arch: ppc64le
       python: "3.6"
       after_success: *after_success
 
     - stage: test
       env: TOXENV=py37
+      arch: amd64
+      python: "3.7"
+      after_success: *after_success
+    - stage: test
+      env: TOXENV=py37
+      arch: ppc64le
       python: "3.7"
       after_success: *after_success
 
     - stage: test
       env: TOXENV=py38
+      arch: amd64
+      python: "3.8"
+      after_success: *after_success
+    - stage: test
+      env: TOXENV=py38
+      arch: ppc64le
       python: "3.8"
       after_success: *after_success
 
     - stage: test
       env: TOXENV=py39
+      arch: amd64
+      python: "3.9-dev"
+      after_success: *after_success
+    - stage: test
+      env: TOXENV=py39
+      arch: ppc64le
       python: "3.9-dev"
       after_success: *after_success
 
