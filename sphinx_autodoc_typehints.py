@@ -95,7 +95,9 @@ def get_annotation_args(annotation, module: str, class_name: str) -> Tuple:
     return getattr(annotation, '__args__', ())
 
 
-def format_annotation(annotation, fully_qualified: bool = False) -> str:
+def format_annotation(annotation,
+                      fully_qualified: bool = False,
+                      simplify_optional_unions: bool = True) -> str:
     # Special cases
     if annotation is None or annotation is type(None):  # noqa: E721
         return ':py:obj:`None`'
@@ -130,18 +132,28 @@ def format_annotation(annotation, fully_qualified: bool = False) -> str:
     if full_name == 'typing.NewType':
         args_format = '\\(:py:data:`~{name}`, {{}})'.format(name=annotation.__name__)
         role = 'func'
-    elif full_name == 'typing.Union' and len(args) == 2 and type(None) in args:
-        full_name = 'typing.Optional'
-        args = tuple(x for x in args if x is not type(None))  # noqa: E721
+    elif full_name == 'typing.Union' and type(None) in args:
+        if len(args) == 2:
+            full_name = 'typing.Optional'
+            args = tuple(x for x in args if x is not type(None))  # noqa: E721
+        elif not simplify_optional_unions:
+            full_name = 'typing.Optional'
+            args_format = '\\[:py:data:`{prefix}typing.Union`\\[{{}}]]'.format(prefix=prefix)
+            args = tuple(x for x in args if x is not type(None))  # noqa: E721
     elif full_name == 'typing.Callable' and args and args[0] is not ...:
-        formatted_args = '\\[\\[' + ', '.join(format_annotation(arg) for arg in args[:-1]) + ']'
-        formatted_args += ', ' + format_annotation(args[-1]) + ']'
+        formatted_args = '\\[\\[' + ', '.join(
+            format_annotation(
+                arg, simplify_optional_unions=simplify_optional_unions)
+            for arg in args[:-1]) + ']'
+        formatted_args += ', ' + format_annotation(
+            args[-1], simplify_optional_unions=simplify_optional_unions) + ']'
     elif full_name == 'typing.Literal':
         formatted_args = '\\[' + ', '.join(repr(arg) for arg in args) + ']'
 
     if args and not formatted_args:
-        formatted_args = args_format.format(', '.join(format_annotation(arg, fully_qualified)
-                                                      for arg in args))
+        formatted_args = args_format.format(', '.join(
+            format_annotation(arg, fully_qualified, simplify_optional_unions)
+            for arg in args))
 
     return ':py:{role}:`{prefix}{full_name}`{formatted_args}'.format(
         role=role, prefix=prefix, full_name=full_name, formatted_args=formatted_args)
@@ -382,7 +394,9 @@ def process_docstring(app, what, name, obj, options, lines):
                 argname = '{}\\_'.format(argname[:-1])
 
             formatted_annotation = format_annotation(
-                annotation, fully_qualified=app.config.typehints_fully_qualified)
+                annotation,
+                fully_qualified=app.config.typehints_fully_qualified,
+                simplify_optional_unions=app.config.simplify_optional_unions)
 
             searchfor = [':{} {}:'.format(field, argname)
                          for field in ('param', 'parameter', 'arg', 'argument')]
@@ -409,7 +423,9 @@ def process_docstring(app, what, name, obj, options, lines):
                 return
 
             formatted_annotation = format_annotation(
-                type_hints['return'], fully_qualified=app.config.typehints_fully_qualified)
+                type_hints['return'], fully_qualified=app.config.typehints_fully_qualified,
+                simplify_optional_unions=app.config.simplify_optional_unions
+                )
 
             insert_index = len(lines)
             for i, line in enumerate(lines):
@@ -439,6 +455,7 @@ def setup(app):
     app.add_config_value('always_document_param_types', False, 'html')
     app.add_config_value('typehints_fully_qualified', False, 'env')
     app.add_config_value('typehints_document_rtype', True, 'env')
+    app.add_config_value('simplify_optional_unions', True, 'env')
     app.connect('builder-inited', builder_ready)
     app.connect('autodoc-process-signature', process_signature)
     app.connect('autodoc-process-docstring', process_docstring)

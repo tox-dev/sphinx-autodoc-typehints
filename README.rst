@@ -65,7 +65,13 @@ The following configuration options are accepted:
   be able to add type info.
 * ``typehints_document_rtype`` (default: ``True``): If ``False``, never add an ``:rtype:`` directive.
   If ``True``, add the ``:rtype:`` directive if no existing ``:rtype:`` is found.
-
+* ``simplify_optional_unions`` (default: ``True``): If ``True``, optional parameters of type "Union[...]"
+  are simplified as being of type Union[..., None] in the resulting documention
+  (e.g. Optional[Union[A, B]] -> Union[A, B, None]).
+  If ``False``, the "Optional"-type is kept.
+  Note: If ``False``, **any** Union containing ``None`` will be displayed as Optional!
+  Note: If an optional parameter has only a single type (e.g Optional[A] or Union[A, None]),
+  it will **always** be displayed as Optional!
 
 How it works
 ------------
