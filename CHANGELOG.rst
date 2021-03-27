@@ -1,3 +1,7 @@
+**UNRELEASED**
+
+- Dropped Python 3.5 support
+
 **1.11.1**
 
 - Changed formatting of ``None`` to point to the Python stdlib docs (PR by Dominic Davis-Foster)

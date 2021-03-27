@@ -248,10 +248,14 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
     assert 'Cannot resolve forward reference in type annotations of ' in warnings, warnings
 
     format_args = {}
-    if always_document_param_types:
-        format_args['undoc_params'] = '\n\n   Parameters:\n      **x** ("int") --'
-    else:
-        format_args['undoc_params'] = ''
+    for indentation_level in range(2):
+        key = f'undoc_params_{indentation_level}'
+        if always_document_param_types:
+            format_args[key] = textwrap.indent(
+                '\n\n   Parameters:\n      **x** ("int") --', '   ' * indentation_level
+            )
+        else:
+            format_args[key] = ''
 
     text_path = pathlib.Path(app.srcdir) / '_build' / 'text' / 'index.txt'
     with text_path.open('r') as f:
@@ -494,10 +498,18 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
 
         dummy_module.undocumented_function(x)
 
-           Hi{undoc_params}
+           Hi{undoc_params_0}
 
            Return type:
               "str"
+
+        class dummy_module.DataClass(x)
+
+           Class docstring.{undoc_params_0}
+
+           __init__(x)
+
+              Initialize self.  See help(type(self)) for accurate signature.{undoc_params_1}
 
         @dummy_module.Decorator(func)
 

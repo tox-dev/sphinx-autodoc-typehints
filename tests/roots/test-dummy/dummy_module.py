@@ -1,12 +1,7 @@
 import typing
+from dataclasses import dataclass
 from mailbox import Mailbox
 from typing import Callable, Union
-
-try:
-    from dataclasses import dataclass
-except ImportError:
-    def dataclass(cls):
-        return cls
 
 
 def get_local_function():
@@ -233,6 +228,13 @@ def undocumented_function(x: int) -> str:
     """Hi"""
 
     return str(x)
+
+
+@dataclass
+class DataClass:
+    """Class docstring."""
+
+    x: int
 
 
 class Decorator:
