@@ -143,6 +143,14 @@ def format_annotation(annotation,
             for arg in args[:-1]) + ']'
         formatted_args += ', ' + format_annotation(
             args[-1], simplify_optional_unions=simplify_optional_unions) + ']'
+    elif full_name == 'collections.abc.Callable' and args and args[0] is not ...:
+        assert len(args) == 2
+        formatted_args = '\\[\\[' + ', '.join(
+            format_annotation(
+                arg, simplify_optional_unions=simplify_optional_unions)
+            for arg in args[0]) + ']'
+        formatted_args += ', ' + format_annotation(
+            args[-1], simplify_optional_unions=simplify_optional_unions) + ']'
     elif full_name == 'typing.Literal':
         formatted_args = '\\[' + ', '.join(repr(arg) for arg in args) + ']'
 
