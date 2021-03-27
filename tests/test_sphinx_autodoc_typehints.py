@@ -127,14 +127,14 @@ def test_parse_annotation(annotation, module, class_name, args):
     (Union[str, bool],              ':py:data:`~typing.Union`\\[:py:class:`str`, '
                                     ':py:class:`bool`]'),
     (Union[str, bool, None],        ':py:data:`~typing.Union`\\[:py:class:`str`, '
-                                    ':py:class:`bool`, ``None``]'),
+                                    ':py:class:`bool`, :py:obj:`None`]'),
     pytest.param(Union[str, Any],   ':py:data:`~typing.Union`\\[:py:class:`str`, '
                                     ':py:data:`~typing.Any`]',
                  marks=pytest.mark.skipif((3, 5, 0) <= sys.version_info[:3] <= (3, 5, 2),
                                           reason='Union erases the str on 3.5.0 -> 3.5.2')),
     (Optional[str],                 ':py:data:`~typing.Optional`\\[:py:class:`str`]'),
     (Optional[Union[str, bool]],    ':py:data:`~typing.Union`\\[:py:class:`str`, '
-                                    ':py:class:`bool`, ``None``]'),
+                                    ':py:class:`bool`, :py:obj:`None`]'),
     (Callable,                      ':py:data:`~typing.Callable`'),
     (Callable[..., int],            ':py:data:`~typing.Callable`\\[..., :py:class:`int`]'),
     (Callable[[int], int],          ':py:data:`~typing.Callable`\\[\\[:py:class:`int`], '
