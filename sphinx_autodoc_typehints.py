@@ -118,7 +118,7 @@ def format_annotation(annotation,
 
     full_name = (module + '.' + class_name) if module != 'builtins' else class_name
     prefix = '' if fully_qualified or full_name == class_name else '~'
-    role = 'data' if class_name in pydata_annotations else 'class'
+    role = 'data' if class_name in pydata_annotations and module != 'collections.abc' else 'class'
     args_format = '\\[{}]'
     formatted_args = ''
 
