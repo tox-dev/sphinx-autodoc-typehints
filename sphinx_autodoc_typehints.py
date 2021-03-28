@@ -72,17 +72,6 @@ def get_annotation_args(annotation, module: str, class_name: str) -> Tuple:
     # Special cases
     if class_name in ('Pattern', 'Match') and hasattr(annotation, 'type_var'):  # Python < 3.7
         return annotation.type_var,
-    elif class_name == 'Callable' and hasattr(annotation, '__result__'):  # Python < 3.5.3
-        argtypes = (Ellipsis,) if annotation.__args__ is Ellipsis else annotation.__args__
-        return argtypes + (annotation.__result__,)
-    elif class_name == 'Union' and hasattr(annotation, '__union_params__'):  # Union on Python 3.5
-        return annotation.__union_params__
-    elif class_name == 'Tuple' and hasattr(annotation, '__tuple_params__'):  # Tuple on Python 3.5
-        params = annotation.__tuple_params__
-        if getattr(annotation, '__tuple_use_ellipsis__', False):
-            params += (Ellipsis,)
-
-        return params
     elif class_name == 'ClassVar' and hasattr(annotation, '__type__'):  # ClassVar on Python < 3.7
         return annotation.__type__,
     elif class_name == 'NewType' and hasattr(annotation, '__supertype__'):
