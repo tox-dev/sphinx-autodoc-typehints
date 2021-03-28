@@ -4,8 +4,8 @@ import sys
 import textwrap
 import typing
 from typing import (
-    Any, AnyStr, Callable, Dict, Generic, Mapping, Match, NewType, Optional, Pattern, Tuple, Type,
-    TypeVar, Union)
+    IO, Any, AnyStr, Callable, Dict, Generic, Mapping, Match, NewType, Optional, Pattern, Tuple,
+    Type, TypeVar, Union)
 
 import pytest
 import typing_extensions
@@ -13,11 +13,6 @@ import typing_extensions
 from sphinx_autodoc_typehints import (
     format_annotation, get_annotation_args, get_annotation_class_name, get_annotation_module,
     process_docstring)
-
-try:
-    from typing import IO
-except ImportError:
-    from typing.io import IO
 
 T = TypeVar('T')
 U = TypeVar('U', covariant=True)
