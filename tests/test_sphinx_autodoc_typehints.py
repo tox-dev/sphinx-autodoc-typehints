@@ -523,13 +523,6 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
 
         dummy_module.undocumented_function(x)
 
-           Hi{undoc_params}
-
-           Return type:
-              "str"
-
-        dummy_module.undocumented_function(x)
-
            Hi{undoc_params_0}
 
            Return type:
