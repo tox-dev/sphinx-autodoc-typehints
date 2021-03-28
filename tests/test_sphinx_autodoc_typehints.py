@@ -512,7 +512,7 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
 
         dummy_module.function_with_collections_abc_Callable_ellipsis_args(func, *args, **kwargs)
 
-	   Docstring with collections.abc.Callable and ellipsis in arg list.
+           Docstring with collections.abc.Callable and ellipsis in arg list.
 
            Parameters:
               **func** ("Callable"[["..."], "str"]) --
