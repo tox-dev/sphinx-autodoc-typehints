@@ -4,15 +4,15 @@ import sys
 import textwrap
 import typing
 from typing import (
-    Any, AnyStr, Callable, Dict, Generic, Mapping, NewType, Optional, Pattern, Match, Tuple,
-    TypeVar, Union, Type)
+    Any, AnyStr, Callable, Dict, Generic, Mapping, Match, NewType, Optional, Pattern, Tuple, Type,
+    TypeVar, Union)
 
 import pytest
 import typing_extensions
 
 from sphinx_autodoc_typehints import (
-    format_annotation, process_docstring, get_annotation_module, get_annotation_class_name,
-    get_annotation_args)
+    format_annotation, get_annotation_args, get_annotation_class_name, get_annotation_module,
+    process_docstring)
 
 try:
     from typing import IO

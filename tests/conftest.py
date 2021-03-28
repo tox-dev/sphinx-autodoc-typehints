@@ -1,8 +1,8 @@
 import os
-import re
-import sys
 import pathlib
+import re
 import shutil
+import sys
 
 import pytest
 from sphinx.testing.path import path

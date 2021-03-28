@@ -2,7 +2,7 @@ import inspect
 import sys
 import textwrap
 import typing
-from typing import get_type_hints, TypeVar, Any, AnyStr, Tuple
+from typing import Any, AnyStr, Tuple, TypeVar, get_type_hints
 
 from sphinx.util import logging
 from sphinx.util.inspect import signature as Signature
@@ -425,7 +425,7 @@ def process_docstring(app, what, name, obj, options, lines):
             formatted_annotation = format_annotation(
                 type_hints['return'], fully_qualified=app.config.typehints_fully_qualified,
                 simplify_optional_unions=app.config.simplify_optional_unions
-                )
+            )
 
             insert_index = len(lines)
             for i, line in enumerate(lines):
