@@ -87,7 +87,6 @@ def get_annotation_args(annotation, module: str, class_name: str) -> Tuple:
 def format_annotation(annotation,
                       fully_qualified: bool = False,
                       simplify_optional_unions: bool = True) -> str:
-    print(f'formatting annotation: {annotation!r} ({type(annotation)})')
     # Special cases
     if annotation is None or annotation is type(None):  # noqa: E721
         return ':py:obj:`None`'
@@ -166,8 +165,6 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
         param.replace(annotation=inspect.Parameter.empty)
         for param in signature.parameters.values()
     ]
-    if name == 'dummy_module.function_with_unresolvable_annotation':
-        print(f'  parameters: {parameters}')
 
     # The generated dataclass __init__() and class are weird and need extra checks
     # This helper function operates on the generated class and methods
@@ -189,8 +186,6 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
         return
 
     if parameters:
-        if name == 'dummy_module.function_with_unresolvable_annotation':
-            print('  formatting parameters')
         if inspect.isclass(original_obj) or (what == 'method' and name.endswith('.__init__')):
             del parameters[0]
         elif what == 'method':
@@ -214,8 +209,6 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
         parameters=parameters,
         return_annotation=inspect.Signature.empty)
 
-    if name == 'dummy_module.function_with_unresolvable_annotation':
-        print('  stringifying signature')
     return stringify_signature(signature).replace('\\', '\\\\'), None
 
 
