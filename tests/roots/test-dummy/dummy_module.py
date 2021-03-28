@@ -251,6 +251,7 @@ def function_with_collections_abc_Callable(func: Callable[[str], str], x: str
     Docstring with collections.abc.Callable.
 
     :param func: foo
+    :param x: bar
     """
 
     return func(x)
