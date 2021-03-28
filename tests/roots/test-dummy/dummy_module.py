@@ -1,7 +1,16 @@
 import typing
-from dataclasses import dataclass
 from mailbox import Mailbox
 from typing import Callable, Union
+
+import sys
+if sys.version_info.major == 3 and sys.version_info.minor >= 9:
+    from collections.abc import Callable
+
+try:
+    from dataclasses import dataclass
+except ImportError:
+    def dataclass(cls):
+        return cls
 
 
 def get_local_function():
@@ -232,6 +241,28 @@ class ClassWithTypehintsNotInline(object):
         :param x: foo
         """
         return cls(x)
+
+
+def function_with_collections_abc_Callable(func: Callable[[str], str], x: str
+                                           ) -> str:
+    """
+    Docstring with collections.abc.Callable.
+
+    :param func: foo
+    """
+
+    return func(x)
+
+
+def function_with_collections_abc_Callable_ellipsis_args(func: Callable[..., str],
+                                                         *args, **kwargs) -> str:
+    """
+    Docstring with collections.abc.Callable and ellipsis in arg list.
+
+    :param func: foo
+    """
+
+    return func(*args, **kwargs)
 
 
 def undocumented_function(x: int) -> str:

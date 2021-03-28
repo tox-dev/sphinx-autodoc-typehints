@@ -499,6 +499,35 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
               Return type:
                  "ClassWithTypehintsNotInline"
 
+        dummy_module.function_with_collections_abc_Callable(func, x)
+
+           Docstring with collections.abc.Callable.
+
+           Parameters:
+              **func** ("Callable"[["str"], "str"]) --
+              foo
+
+           Return type:
+              "str"
+
+        dummy_module.function_with_collections_abc_Callable_ellipsis_args(func, *args, **kwargs)
+
+	   Docstring with collections.abc.Callable and ellipsis in arg list.
+
+           Parameters:
+              **func** ("Callable"[["..."], "str"]) --
+              foo
+
+           Return type:
+              "str"
+
+        dummy_module.undocumented_function(x)
+
+           Hi{undoc_params}
+
+           Return type:
+              "str"
+
         dummy_module.undocumented_function(x)
 
            Hi{undoc_params_0}

@@ -27,6 +27,10 @@ Dummy Module
 .. autoclass:: dummy_module.ClassWithTypehintsNotInline
    :members:
 
+.. autofunction:: dummy_module.function_with_collections_abc_Callable
+
+.. autofunction:: dummy_module.function_with_collections_abc_Callable_ellipsis_args
+
 .. autofunction:: dummy_module.undocumented_function
 
 .. autoclass:: dummy_module.DataClass
