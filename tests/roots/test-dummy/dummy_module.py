@@ -180,6 +180,16 @@ class ClassWithTypehints(object):
         """
         return 42
 
+    def method_without_typehint(self, x):
+        """
+        Method docstring.
+        """
+        # test that multiline str can be correctly indented
+        multiline_str = """
+test
+"""
+        return multiline_str
+
 
 def function_with_typehint_comment_not_inline(x=None, *y, z, **kwargs):
     # type: (Union[str, bytes], *str, bytes, **int) -> None

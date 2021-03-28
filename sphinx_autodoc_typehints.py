@@ -148,6 +148,45 @@ def format_annotation(annotation,
         role=role, prefix=prefix, full_name=full_name, formatted_args=formatted_args)
 
 
+# reference: https://github.com/pytorch/pytorch/pull/46548/files
+def normalize_source_lines(sourcelines: str) -> str:
+    """
+    This helper function accepts a list of source lines. It finds the
+    indentation level of the function definition (`def`), then it indents
+    all lines in the function body to a point at or greater than that
+    level. This allows for comments and continued string literals that
+    are at a lower indentation than the rest of the code.
+    Arguments:
+        sourcelines: source code
+    Returns:
+        source lines that have been correctly aligned
+    """
+    sourcelines = sourcelines.split("\n")
+
+    def remove_prefix(text, prefix):
+        return text[text.startswith(prefix) and len(prefix):]
+
+    # Find the line and line number containing the function definition
+    for i, l in enumerate(sourcelines):
+        if l.lstrip().startswith("def"):
+            idx = i
+            break
+    else:
+        return "\n".join(sourcelines)
+    fn_def = sourcelines[idx]
+
+    # Get a string representing the amount of leading whitespace
+    whitespace = fn_def.split("def")[0]
+
+    # Add this leading whitespace to all lines before and after the `def`
+    aligned_prefix = [whitespace + remove_prefix(s, whitespace) for s in sourcelines[:idx]]
+    aligned_suffix = [whitespace + remove_prefix(s, whitespace) for s in sourcelines[idx + 1:]]
+
+    # Put it together again
+    aligned_prefix.append(fn_def)
+    return "\n".join(aligned_prefix + aligned_suffix)
+
+
 def process_signature(app, what: str, name: str, obj, options, signature, return_annotation):
     if not callable(obj):
         return
@@ -270,7 +309,8 @@ def backfill_type_hints(obj, name):
         return children[0]
 
     try:
-        obj_ast = ast.parse(textwrap.dedent(inspect.getsource(obj)), **parse_kwargs)
+        obj_ast = ast.parse(textwrap.dedent(
+            normalize_source_lines(inspect.getsource(obj))), **parse_kwargs)
     except (OSError, TypeError):
         return {}
 
