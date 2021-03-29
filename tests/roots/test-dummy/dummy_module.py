@@ -1,12 +1,12 @@
 import sys
 import typing
 from mailbox import Mailbox
-from typing import Union
+from typing import Any, Callable, Union
 
 if sys.version_info.major == 3 and sys.version_info.minor >= 9:
-    from collections.abc import Callable
+    from collections.abc import Callable as ABCCallable
 else:
-    from typing import Callable
+    from typing import Callable as ABCCallable
 
 try:
     from dataclasses import dataclass
@@ -245,8 +245,8 @@ class ClassWithTypehintsNotInline(object):
         return cls(x)
 
 
-def function_with_collections_abc_Callable(func: Callable[[str], str], x: str
-                                           ) -> str:
+def function_with_collections_abc_Callable(func: ABCCallable[[str], str],
+                                           x: str) -> str:
     """
     Docstring with collections.abc.Callable.
 
@@ -257,7 +257,7 @@ def function_with_collections_abc_Callable(func: Callable[[str], str], x: str
     return func(x)
 
 
-def function_with_collections_abc_Callable_ellipsis_args(func: Callable[..., str],
+def function_with_collections_abc_Callable_ellipsis_args(func: ABCCallable[..., str],
                                                          *args, **kwargs) -> str:
     """
     Docstring with collections.abc.Callable and ellipsis in arg list.
@@ -266,6 +266,18 @@ def function_with_collections_abc_Callable_ellipsis_args(func: Callable[..., str
     """
 
     return func(*args, **kwargs)
+
+
+def function_with_typing_Callable_Any(func: Callable[[Any], str],
+                                      x: Any) -> str:
+    """
+    Docstring with typing.Callable and Any.
+
+    :param func: foo
+    :param x: bar
+    """
+
+    return func(x)
 
 
 def undocumented_function(x: int) -> str:

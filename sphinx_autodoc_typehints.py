@@ -138,11 +138,7 @@ def format_annotation(annotation,
             args = tuple(x for x in args if x is not type(None))  # noqa: E721
     elif full_name in ['typing.Callable', 'collections.abc.Callable'] \
             and args and args[0] is not ...:
-        try:
-            iter(args[0])
-            arglist = args[0]
-        except TypeError:
-            arglist = args[:-1]
+        arglist = args[0] if isinstance(args[0], list) else args[:-1]
         formatted_args = '\\[\\[' + ', '.join(
             format_annotation(
                 arg, simplify_optional_unions=simplify_optional_unions)

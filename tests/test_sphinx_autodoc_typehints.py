@@ -521,6 +521,18 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
            Return type:
               "str"
 
+        dummy_module.function_with_typing_Callable_Any(func, x)
+
+           Docstring with typing.Callable and Any.
+
+           Parameters:
+              * **func** ("Callable"[["Any"], "str"]) -- foo
+
+              * **x** ("Any") -- bar
+
+           Return type:
+              "str"
+
         dummy_module.undocumented_function(x)
 
            Hi{undoc_params_0}

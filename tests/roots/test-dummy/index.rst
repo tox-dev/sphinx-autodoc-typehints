@@ -31,6 +31,8 @@ Dummy Module
 
 .. autofunction:: dummy_module.function_with_collections_abc_Callable_ellipsis_args
 
+.. autofunction:: dummy_module.function_with_typing_Callable_Any
+
 .. autofunction:: dummy_module.undocumented_function
 
 .. autoclass:: dummy_module.DataClass
