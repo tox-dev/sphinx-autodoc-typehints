@@ -227,6 +227,14 @@ def test_process_docstring_slot_wrapper():
     assert not lines
 
 
+def test_process_docstring_syntax_error():
+    # Regression test for https://github.com/agronholm/sphinx-autodoc-typehints/issues/148
+    func = (  # Note: line break here is what previously led to SyntaxError in process_docstring.
+        lambda x: x)
+    lines = []
+    process_docstring(None, "func", "Lambda", func, None, lines)
+
+
 @pytest.mark.parametrize('always_document_param_types', [True, False])
 @pytest.mark.sphinx('text', testroot='dummy')
 def test_sphinx_output(app, status, warning, always_document_param_types):
