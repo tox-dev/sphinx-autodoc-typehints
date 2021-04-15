@@ -1,4 +1,4 @@
-**UNRELEASED**
+**1.12.0**
 
 - Dropped Python 3.5 support
 - Added the simplify_optional_unions config option (PR by tillhainbach)
