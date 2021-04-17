@@ -2,7 +2,8 @@ import inspect
 import sys
 import textwrap
 import typing
-from typing import Any, AnyStr, NewType, Tuple, TypeVar, get_type_hints
+from functools import partial
+from typing import Any, AnyStr, Callable, NewType, Tuple, TypeVar, get_type_hints
 
 from sphinx.util import logging
 from sphinx.util.inspect import signature as Signature
@@ -89,9 +90,16 @@ def get_annotation_args(annotation, module: str, class_name: str) -> Tuple:
     return getattr(annotation, '__args__', ())
 
 
-def format_annotation(annotation,
+def format_annotation(annotation: Any,
                       fully_qualified: bool = False,
-                      simplify_optional_unions: bool = True) -> str:
+                      simplify_optional_unions: bool = True,
+                      typehints_formatter: Callable = lambda _annotation, **_opts: None) -> str:
+    # all options except for the formatter:
+    opts = dict(fully_qualified=fully_qualified, simplify_optional_unions=simplify_optional_unions)
+    formatted = typehints_formatter(annotation, **opts)
+    if formatted is not None:
+        return formatted
+
     # Special cases
     if annotation is None or annotation is type(None):  # noqa: E721
         return ':py:obj:`None`'
@@ -137,18 +145,18 @@ def format_annotation(annotation,
             args_format = '\\[:py:data:`{prefix}typing.Union`\\[{{}}]]'.format(prefix=prefix)
             args = tuple(x for x in args if x is not type(None))  # noqa: E721
     elif full_name == 'typing.Callable' and args and args[0] is not ...:
+        opts_shortened = dict(opts, typehints_formatter=typehints_formatter)
+        del opts_shortened['fully_qualified']
         formatted_args = '\\[\\[' + ', '.join(
-            format_annotation(
-                arg, simplify_optional_unions=simplify_optional_unions)
+            format_annotation(arg, **opts_shortened)
             for arg in args[:-1]) + ']'
-        formatted_args += ', ' + format_annotation(
-            args[-1], simplify_optional_unions=simplify_optional_unions) + ']'
+        formatted_args += ', ' + format_annotation(args[-1], **opts_shortened) + ']'
     elif full_name == 'typing.Literal':
         formatted_args = '\\[' + ', '.join(repr(arg) for arg in args) + ']'
 
     if args and not formatted_args:
         formatted_args = args_format.format(', '.join(
-            format_annotation(arg, fully_qualified, simplify_optional_unions)
+            format_annotation(arg, **opts, typehints_formatter=typehints_formatter)
             for arg in args))
 
     return ':py:{role}:`{prefix}{full_name}`{formatted_args}'.format(
@@ -423,11 +431,21 @@ def process_docstring(app, what, name, obj, options, lines):
         obj = obj.fget
 
     if callable(obj):
+
         if inspect.isclass(obj):
             obj = getattr(obj, '__init__')
 
         obj = inspect.unwrap(obj)
         type_hints = get_all_type_hints(obj, name)
+        if not type_hints:
+            return
+
+        fmt = partial(
+            format_annotation,
+            fully_qualified=app.config.typehints_fully_qualified,
+            simplify_optional_unions=app.config.simplify_optional_unions,
+            typehints_formatter=app.config.typehints_formatter,
+        )
 
         for argname, annotation in type_hints.items():
             if argname == 'return':
@@ -435,10 +453,7 @@ def process_docstring(app, what, name, obj, options, lines):
             if argname.endswith('_'):
                 argname = '{}\\_'.format(argname[:-1])
 
-            formatted_annotation = format_annotation(
-                annotation,
-                fully_qualified=app.config.typehints_fully_qualified,
-                simplify_optional_unions=app.config.simplify_optional_unions)
+            formatted_annotation = fmt(annotation)
 
             searchfor = [':{} {}:'.format(field, argname)
                          for field in ('param', 'parameter', 'arg', 'argument')]
@@ -464,10 +479,7 @@ def process_docstring(app, what, name, obj, options, lines):
             if what == 'method' and name.endswith('.__init__'):
                 return
 
-            formatted_annotation = format_annotation(
-                type_hints['return'], fully_qualified=app.config.typehints_fully_qualified,
-                simplify_optional_unions=app.config.simplify_optional_unions
-            )
+            formatted_annotation = fmt(type_hints['return'])
 
             insert_index = len(lines)
             for i, line in enumerate(lines):
@@ -498,6 +510,7 @@ def setup(app):
     app.add_config_value('typehints_fully_qualified', False, 'env')
     app.add_config_value('typehints_document_rtype', True, 'env')
     app.add_config_value('simplify_optional_unions', True, 'env')
+    app.add_config_value('typehints_formatter', lambda _annotation, **_opts: None, 'env')
     app.connect('builder-inited', builder_ready)
     app.connect('autodoc-process-signature', process_signature)
     app.connect('autodoc-process-docstring', process_docstring)
