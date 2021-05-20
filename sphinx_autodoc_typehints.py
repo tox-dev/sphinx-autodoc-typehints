@@ -231,16 +231,16 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
             return True
         return False
 
-    if '<locals>' in obj.__qualname__ and not _is_dataclass(name, what, obj.__qualname__):
-        logger.warning(
-            'Cannot treat a function defined as a local function: "%s"  (use @functools.wraps)',
-            name)
-        return
-
     if parameters:
         if inspect.isclass(original_obj) or (what == 'method' and name.endswith('.__init__')):
             del parameters[0]
         elif what == 'method':
+            if '<locals>' in obj.__qualname__ and not _is_dataclass(name, what, obj.__qualname__):
+                logger.warning(
+                    'Cannot treat a function defined as a local function: "%s"  (use @functools.wraps)',
+                    name)
+                return
+
             outer = inspect.getmodule(obj)
             for clsname in obj.__qualname__.split('.')[:-1]:
                 outer = getattr(outer, clsname)
