@@ -12,7 +12,7 @@ import typing_extensions
 
 from sphinx_autodoc_typehints import (
     format_annotation, get_annotation_args, get_annotation_class_name, get_annotation_module,
-    process_docstring, normalize_source_lines)
+    normalize_source_lines, process_docstring)
 
 T = TypeVar('T')
 U = TypeVar('U', covariant=True)
