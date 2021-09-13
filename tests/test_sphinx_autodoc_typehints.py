@@ -12,7 +12,7 @@ import typing_extensions
 
 from sphinx_autodoc_typehints import (
     format_annotation, get_annotation_args, get_annotation_class_name, get_annotation_module,
-    process_docstring)
+    process_docstring, normalize_source_lines)
 
 T = TypeVar('T')
 U = TypeVar('U', covariant=True)
@@ -526,3 +526,19 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
         ''')
         expected_contents = expected_contents.format(**format_args).replace('–', '--')
         assert text_contents == expected_contents
+
+
+def test_normalize_source_lines_async_def():
+    source = textwrap.dedent("""
+    async def async_function():
+        class InnerClass:
+            def __init__(self): pass
+    """)
+
+    expected = textwrap.dedent("""
+    async def async_function():
+        class InnerClass:
+            def __init__(self): pass
+    """)
+
+    assert normalize_source_lines(source) == expected

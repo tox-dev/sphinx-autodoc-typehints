@@ -170,13 +170,19 @@ def normalize_source_lines(sourcelines: str) -> str:
     for i, l in enumerate(sourcelines):
         if l.lstrip().startswith("def"):
             idx = i
+            whitespace_separator = "def"
             break
+        elif l.lstrip().startswith("async def"):
+            idx = i
+            whitespace_separator = "async def"
+            break
+
     else:
         return "\n".join(sourcelines)
     fn_def = sourcelines[idx]
 
     # Get a string representing the amount of leading whitespace
-    whitespace = fn_def.split("def")[0]
+    whitespace = fn_def.split(whitespace_separator)[0]
 
     # Add this leading whitespace to all lines before and after the `def`
     aligned_prefix = [whitespace + remove_prefix(s, whitespace) for s in sourcelines[:idx]]
