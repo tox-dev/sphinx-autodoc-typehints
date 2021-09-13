@@ -19,9 +19,9 @@ jobs:
         path: ~/.cache/pip
         key: pip-lint
     - name: Install dependencies
-      run: pip install flake8 isort
+      run: pip install pyproject-flake8 isort
     - name: Run flake8
-      run: flake8 sphinx_autodoc_typehints.py tests
+      run: pflake8 sphinx_autodoc_typehints.py tests
     - name: Run isort
       run: isort -c sphinx_autodoc_typehints.py tests
 
