@@ -1,4 +1,5 @@
 import inspect
+import re
 import sys
 import textwrap
 import typing
@@ -261,7 +262,20 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
         parameters=parameters,
         return_annotation=inspect.Signature.empty)
 
-    return stringify_signature(signature).replace('\\', '\\\\'), None
+    signature = stringify_signature(signature).replace('\\', '\\\\')
+
+    # Removes the default values from the signature; e.g `def foo(a: int = 10)` 
+    # becomes `def foo(a: int)`.
+    if not app.config.keep_default_values and signature:
+        search = re.findall(r"(\w*)=", signature)
+        if search:
+            signature = "({})".format(", ".join([s for s in search]))
+
+    # Removes the class values; e.g. 'Class(val, val, val):' becomes 'Class:'.
+    if app.config.hide_class_values and what == "class":
+        signature = ""
+
+    return signature, None
 
 
 def get_all_type_hints(obj, name):
@@ -498,6 +512,8 @@ def setup(app):
     app.add_config_value('typehints_fully_qualified', False, 'env')
     app.add_config_value('typehints_document_rtype', True, 'env')
     app.add_config_value('simplify_optional_unions', True, 'env')
+    app.add_config_value('keep_default_values', True, 'env')
+    app.add_config_value('hide_class_values', False, 'env')
     app.connect('builder-inited', builder_ready)
     app.connect('autodoc-process-signature', process_signature)
     app.connect('autodoc-process-docstring', process_docstring)

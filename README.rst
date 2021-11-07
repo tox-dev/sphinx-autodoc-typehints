@@ -72,6 +72,10 @@ The following configuration options are accepted:
   Note: If ``False``, **any** Union containing ``None`` will be displayed as Optional!
   Note: If an optional parameter has only a single type (e.g Optional[A] or Union[A, None]),
   it will **always** be displayed as Optional!
+* ``keep_default_values`` (default: ``True``): Default values are kept in the documentation. 
+  If set to ``False`` default values are not shown.
+* ``hide_class_values`` (default ``False``): If set to ``True`` ``__init__`` values are hidden in
+  the class directive. ``Class(value):`` becomes ``Class:``.
 
 How it works
 ------------
