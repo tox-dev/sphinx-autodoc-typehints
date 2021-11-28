@@ -267,9 +267,14 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
     # Removes the default values from the signature; e.g `def foo(a: int = 10)` 
     # becomes `def foo(a: int)`.
     if not app.config.keep_default_values and signature:
-        search = re.findall(r"(\w*)=", signature)
-        if search:
-            signature = "({})".format(", ".join([s for s in search]))
+        items = []
+        line = signature[1:-1]
+        for item in line.split(','):
+            item = item.strip()
+            if "=" in item:
+                item = item.split('=')[0].strip()
+            items.append(item)
+        signature = "({})".format(", ".join([item for item in items if item]))
 
     # Removes the class values; e.g. 'Class(val, val, val):' becomes 'Class:'.
     if app.config.hide_class_values and what == "class":
