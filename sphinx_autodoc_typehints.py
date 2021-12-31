@@ -2,7 +2,7 @@ import inspect
 import sys
 import textwrap
 import typing
-from typing import Any, AnyStr, Tuple, TypeVar, get_type_hints
+from typing import Any, AnyStr, NewType, Tuple, TypeVar, get_type_hints
 
 from sphinx.util import logging
 from sphinx.util.inspect import signature as Signature
@@ -17,6 +17,9 @@ def get_annotation_module(annotation) -> str:
     # Special cases
     if annotation is None:
         return 'builtins'
+
+    if sys.version_info >= (3, 10) and isinstance(annotation, NewType):
+        return 'typing'
 
     if hasattr(annotation, '__module__'):
         return annotation.__module__
@@ -35,7 +38,9 @@ def get_annotation_class_name(annotation, module: str) -> str:
         return 'Any'
     elif annotation is AnyStr:
         return 'AnyStr'
-    elif inspect.isfunction(annotation) and hasattr(annotation, '__supertype__'):
+    elif (sys.version_info < (3, 10) and inspect.isfunction(annotation)
+          and hasattr(annotation, '__supertype__')) or \
+         (sys.version_info >= (3, 10) and isinstance(annotation, NewType)):
         return 'NewType'
 
     if getattr(annotation, '__qualname__', None):
@@ -120,7 +125,9 @@ def format_annotation(annotation,
     # Some types require special handling
     if full_name == 'typing.NewType':
         args_format = '\\(:py:data:`~{name}`, {{}})'.format(name=annotation.__name__)
-        role = 'func'
+        role = 'class' if sys.version_info >= (3, 10) else 'func'
+    elif full_name == 'typing.Optional':
+        args = tuple(x for x in args if x is not type(None))  # noqa: E721
     elif full_name == 'typing.Union' and type(None) in args:
         if len(args) == 2:
             full_name = 'typing.Optional'

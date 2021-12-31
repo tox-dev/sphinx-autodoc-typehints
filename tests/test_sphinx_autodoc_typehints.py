@@ -53,6 +53,9 @@ class Metaclass(type):
     pass
 
 
+PY310_PLUS = sys.version_info >= (3, 10)
+
+
 @pytest.mark.parametrize('annotation, module, class_name, args', [
     pytest.param(str, 'builtins', 'str', (), id='str'),
     pytest.param(None, 'builtins', 'None', (), id='None'),
@@ -151,7 +154,8 @@ def test_parse_annotation(annotation, module, class_name, args):
     (D,                             ':py:class:`~%s.D`' % __name__),
     (E,                             ':py:class:`~%s.E`' % __name__),
     (E[int],                        ':py:class:`~%s.E`\\[:py:class:`int`]' % __name__),
-    (W,                             ':py:func:`~typing.NewType`\\(:py:data:`~W`, :py:class:`str`)')
+    (W,                             f':py:{"class" if PY310_PLUS else "func"}:'
+                                    f'`~typing.NewType`\\(:py:data:`~W`, :py:class:`str`)')
 ])
 def test_format_annotation(inv, annotation, expected_result):
     result = format_annotation(annotation)
@@ -352,7 +356,7 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
               Return type:
                  "str"
 
-           property a_property
+           property a_property: str
 
               Property docstring
 
@@ -506,9 +510,7 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
 
            Class docstring.{undoc_params_0}
 
-           __init__(x)
-
-              Initialize self.  See help(type(self)) for accurate signature.{undoc_params_1}
+           __init__(x){undoc_params_1}
 
         @dummy_module.Decorator(func)
 
