@@ -1,24 +1,45 @@
+from __future__ import annotations
+
 import pathlib
 import re
 import sys
 import textwrap
 import typing
 from typing import (
-    IO, Any, AnyStr, Callable, Dict, Generic, Mapping, Match, NewType, Optional, Pattern, Tuple,
-    Type, TypeVar, Union)
+    IO,
+    Any,
+    AnyStr,
+    Callable,
+    Dict,
+    Generic,
+    Mapping,
+    Match,
+    NewType,
+    Optional,
+    Pattern,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 from unittest.mock import patch
 
 import pytest
 import typing_extensions
 
 from sphinx_autodoc_typehints import (
-    format_annotation, get_annotation_args, get_annotation_class_name, get_annotation_module,
-    normalize_source_lines, process_docstring)
+    format_annotation,
+    get_annotation_args,
+    get_annotation_class_name,
+    get_annotation_module,
+    normalize_source_lines,
+    process_docstring,
+)
 
-T = TypeVar('T')
-U = TypeVar('U', covariant=True)
-V = TypeVar('V', contravariant=True)
-W = NewType('W', str)
+T = TypeVar("T")
+U = TypeVar("U", covariant=True)
+V = TypeVar("V", contravariant=True)
+W = NewType("W", str)
 
 
 class A:
@@ -31,7 +52,7 @@ class A:
 
 class B(Generic[T]):
     # This is set to make sure the correct class name ("B") is picked up
-    name = 'Foo'
+    name = "Foo"
 
 
 class C(B[str]):
@@ -57,165 +78,170 @@ class Metaclass(type):
 PY310_PLUS = sys.version_info >= (3, 10)
 
 
-@pytest.mark.parametrize('annotation, module, class_name, args', [
-    pytest.param(str, 'builtins', 'str', (), id='str'),
-    pytest.param(None, 'builtins', 'None', (), id='None'),
-    pytest.param(Any, 'typing', 'Any', (), id='Any'),
-    pytest.param(AnyStr, 'typing', 'AnyStr', (), id='AnyStr'),
-    pytest.param(Dict, 'typing', 'Dict', (), id='Dict'),
-    pytest.param(Dict[str, int], 'typing', 'Dict', (str, int), id='Dict_parametrized'),
-    pytest.param(Dict[T, int], 'typing', 'Dict', (T, int), id='Dict_typevar'),
-    pytest.param(Tuple, 'typing', 'Tuple', (), id='Tuple'),
-    pytest.param(Tuple[str, int], 'typing', 'Tuple', (str, int), id='Tuple_parametrized'),
-    pytest.param(Union[str, int], 'typing', 'Union', (str, int), id='Union'),
-    pytest.param(Callable, 'typing', 'Callable', (), id='Callable'),
-    pytest.param(Callable[..., str], 'typing', 'Callable', (..., str), id='Callable_returntype'),
-    pytest.param(Callable[[int, str], str], 'typing', 'Callable', (int, str, str),
-                 id='Callable_all_types'),
-    pytest.param(Pattern, 'typing', 'Pattern', (), id='Pattern'),
-    pytest.param(Pattern[str], 'typing', 'Pattern', (str,), id='Pattern_parametrized'),
-    pytest.param(Match, 'typing', 'Match', (), id='Match'),
-    pytest.param(Match[str], 'typing', 'Match', (str,), id='Match_parametrized'),
-    pytest.param(IO, 'typing', 'IO', (), id='IO'),
-    pytest.param(W, 'typing', 'NewType', (str,), id='W'),
-    pytest.param(Metaclass, __name__, 'Metaclass', (), id='Metaclass'),
-    pytest.param(Slotted, __name__, 'Slotted', (), id='Slotted'),
-    pytest.param(A, __name__, 'A', (), id='A'),
-    pytest.param(B, __name__, 'B', (), id='B'),
-    pytest.param(C, __name__, 'C', (), id='C'),
-    pytest.param(D, __name__, 'D', (), id='D'),
-    pytest.param(E, __name__, 'E', (), id='E'),
-    pytest.param(E[int], __name__, 'E', (int,), id='E_parametrized'),
-    pytest.param(A.Inner, __name__, 'A.Inner', (), id='Inner')
-])
+@pytest.mark.parametrize(
+    ("annotation", "module", "class_name", "args"),
+    [
+        pytest.param(str, "builtins", "str", (), id="str"),
+        pytest.param(None, "builtins", "None", (), id="None"),
+        pytest.param(Any, "typing", "Any", (), id="Any"),
+        pytest.param(AnyStr, "typing", "AnyStr", (), id="AnyStr"),
+        pytest.param(Dict, "typing", "Dict", (), id="Dict"),
+        pytest.param(Dict[str, int], "typing", "Dict", (str, int), id="Dict_parametrized"),
+        pytest.param(Dict[T, int], "typing", "Dict", (T, int), id="Dict_typevar"),
+        pytest.param(Tuple, "typing", "Tuple", (), id="Tuple"),
+        pytest.param(Tuple[str, int], "typing", "Tuple", (str, int), id="Tuple_parametrized"),
+        pytest.param(Union[str, int], "typing", "Union", (str, int), id="Union"),
+        pytest.param(Callable, "typing", "Callable", (), id="Callable"),
+        pytest.param(Callable[..., str], "typing", "Callable", (..., str), id="Callable_returntype"),
+        pytest.param(Callable[[int, str], str], "typing", "Callable", (int, str, str), id="Callable_all_types"),
+        pytest.param(Pattern, "typing", "Pattern", (), id="Pattern"),
+        pytest.param(Pattern[str], "typing", "Pattern", (str,), id="Pattern_parametrized"),
+        pytest.param(Match, "typing", "Match", (), id="Match"),
+        pytest.param(Match[str], "typing", "Match", (str,), id="Match_parametrized"),
+        pytest.param(IO, "typing", "IO", (), id="IO"),
+        pytest.param(W, "typing", "NewType", (str,), id="W"),
+        pytest.param(Metaclass, __name__, "Metaclass", (), id="Metaclass"),
+        pytest.param(Slotted, __name__, "Slotted", (), id="Slotted"),
+        pytest.param(A, __name__, "A", (), id="A"),
+        pytest.param(B, __name__, "B", (), id="B"),
+        pytest.param(C, __name__, "C", (), id="C"),
+        pytest.param(D, __name__, "D", (), id="D"),
+        pytest.param(E, __name__, "E", (), id="E"),
+        pytest.param(E[int], __name__, "E", (int,), id="E_parametrized"),
+        pytest.param(A.Inner, __name__, "A.Inner", (), id="Inner"),
+    ],
+)
 def test_parse_annotation(annotation, module, class_name, args):
     assert get_annotation_module(annotation) == module
     assert get_annotation_class_name(annotation, module) == class_name
     assert get_annotation_args(annotation, module, class_name) == args
 
 
-@pytest.mark.parametrize('annotation, expected_result', [
-    (str,                           ':py:class:`str`'),
-    (int,                           ':py:class:`int`'),
-    (type(None),                    ':py:obj:`None`'),
-    (type,                          ':py:class:`type`'),
-    (Type,                          ':py:class:`~typing.Type`'),
-    (Type[A],                       ':py:class:`~typing.Type`\\[:py:class:`~%s.A`]' % __name__),
-    (Any,                           ':py:data:`~typing.Any`'),
-    (AnyStr,                        ':py:data:`~typing.AnyStr`'),
-    (Generic[T],                    ':py:class:`~typing.Generic`\\[\\~T]'),
-    (Mapping,                       ':py:class:`~typing.Mapping`'),
-    (Mapping[T, int],               ':py:class:`~typing.Mapping`\\[\\~T, :py:class:`int`]'),
-    (Mapping[str, V],               ':py:class:`~typing.Mapping`\\[:py:class:`str`, \\-V]'),
-    (Mapping[T, U],                 ':py:class:`~typing.Mapping`\\[\\~T, \\+U]'),
-    (Mapping[str, bool],            ':py:class:`~typing.Mapping`\\[:py:class:`str`, '
-                                    ':py:class:`bool`]'),
-    (Dict,                          ':py:class:`~typing.Dict`'),
-    (Dict[T, int],                  ':py:class:`~typing.Dict`\\[\\~T, :py:class:`int`]'),
-    (Dict[str, V],                  ':py:class:`~typing.Dict`\\[:py:class:`str`, \\-V]'),
-    (Dict[T, U],                    ':py:class:`~typing.Dict`\\[\\~T, \\+U]'),
-    (Dict[str, bool],               ':py:class:`~typing.Dict`\\[:py:class:`str`, '
-                                    ':py:class:`bool`]'),
-    (Tuple,                         ':py:data:`~typing.Tuple`'),
-    (Tuple[str, bool],              ':py:data:`~typing.Tuple`\\[:py:class:`str`, '
-                                    ':py:class:`bool`]'),
-    (Tuple[int, int, int],          ':py:data:`~typing.Tuple`\\[:py:class:`int`, '
-                                    ':py:class:`int`, :py:class:`int`]'),
-    (Tuple[str, ...],               ':py:data:`~typing.Tuple`\\[:py:class:`str`, ...]'),
-    (Union,                         ':py:data:`~typing.Union`'),
-    (Union[str, bool],              ':py:data:`~typing.Union`\\[:py:class:`str`, '
-                                    ':py:class:`bool`]'),
-    (Union[str, bool, None],        ':py:data:`~typing.Union`\\[:py:class:`str`, '
-                                    ':py:class:`bool`, :py:obj:`None`]'),
-    pytest.param(Union[str, Any],   ':py:data:`~typing.Union`\\[:py:class:`str`, '
-                                    ':py:data:`~typing.Any`]',
-                 marks=pytest.mark.skipif((3, 5, 0) <= sys.version_info[:3] <= (3, 5, 2),
-                                          reason='Union erases the str on 3.5.0 -> 3.5.2')),
-    (Optional[str],                 ':py:data:`~typing.Optional`\\[:py:class:`str`]'),
-    (Optional[Union[str, bool]],    ':py:data:`~typing.Union`\\[:py:class:`str`, '
-                                    ':py:class:`bool`, :py:obj:`None`]'),
-    (Callable,                      ':py:data:`~typing.Callable`'),
-    (Callable[..., int],            ':py:data:`~typing.Callable`\\[..., :py:class:`int`]'),
-    (Callable[[int], int],          ':py:data:`~typing.Callable`\\[\\[:py:class:`int`], '
-                                    ':py:class:`int`]'),
-    (Callable[[int, str], bool],    ':py:data:`~typing.Callable`\\[\\[:py:class:`int`, '
-                                    ':py:class:`str`], :py:class:`bool`]'),
-    (Callable[[int, str], None],    ':py:data:`~typing.Callable`\\[\\[:py:class:`int`, '
-                                    ':py:class:`str`], :py:obj:`None`]'),
-    (Callable[[T], T],              ':py:data:`~typing.Callable`\\[\\[\\~T], \\~T]'),
-    (Pattern,                       ':py:class:`~typing.Pattern`'),
-    (Pattern[str],                  ':py:class:`~typing.Pattern`\\[:py:class:`str`]'),
-    (IO,                            ':py:class:`~typing.IO`'),
-    (IO[str],                       ':py:class:`~typing.IO`\\[:py:class:`str`]'),
-    (Metaclass,                     ':py:class:`~%s.Metaclass`' % __name__),
-    (A,                             ':py:class:`~%s.A`' % __name__),
-    (B,                             ':py:class:`~%s.B`' % __name__),
-    (B[int],                        ':py:class:`~%s.B`\\[:py:class:`int`]' % __name__),
-    (C,                             ':py:class:`~%s.C`' % __name__),
-    (D,                             ':py:class:`~%s.D`' % __name__),
-    (E,                             ':py:class:`~%s.E`' % __name__),
-    (E[int],                        ':py:class:`~%s.E`\\[:py:class:`int`]' % __name__),
-    (W,                             f':py:{"class" if PY310_PLUS else "func"}:'
-                                    f'`~typing.NewType`\\(:py:data:`~W`, :py:class:`str`)')
-])
+@pytest.mark.parametrize(
+    ("annotation", "expected_result"),
+    [
+        (str, ":py:class:`str`"),
+        (int, ":py:class:`int`"),
+        (type(None), ":py:obj:`None`"),
+        (type, ":py:class:`type`"),
+        (Type, ":py:class:`~typing.Type`"),
+        (Type[A], ":py:class:`~typing.Type`\\[:py:class:`~%s.A`]" % __name__),
+        (Any, ":py:data:`~typing.Any`"),
+        (AnyStr, ":py:data:`~typing.AnyStr`"),
+        (Generic[T], ":py:class:`~typing.Generic`\\[\\~T]"),
+        (Mapping, ":py:class:`~typing.Mapping`"),
+        (Mapping[T, int], ":py:class:`~typing.Mapping`\\[\\~T, :py:class:`int`]"),
+        (Mapping[str, V], ":py:class:`~typing.Mapping`\\[:py:class:`str`, \\-V]"),
+        (Mapping[T, U], ":py:class:`~typing.Mapping`\\[\\~T, \\+U]"),
+        (Mapping[str, bool], ":py:class:`~typing.Mapping`\\[:py:class:`str`, " ":py:class:`bool`]"),
+        (Dict, ":py:class:`~typing.Dict`"),
+        (Dict[T, int], ":py:class:`~typing.Dict`\\[\\~T, :py:class:`int`]"),
+        (Dict[str, V], ":py:class:`~typing.Dict`\\[:py:class:`str`, \\-V]"),
+        (Dict[T, U], ":py:class:`~typing.Dict`\\[\\~T, \\+U]"),
+        (Dict[str, bool], ":py:class:`~typing.Dict`\\[:py:class:`str`, " ":py:class:`bool`]"),
+        (Tuple, ":py:data:`~typing.Tuple`"),
+        (Tuple[str, bool], ":py:data:`~typing.Tuple`\\[:py:class:`str`, " ":py:class:`bool`]"),
+        (Tuple[int, int, int], ":py:data:`~typing.Tuple`\\[:py:class:`int`, " ":py:class:`int`, :py:class:`int`]"),
+        (Tuple[str, ...], ":py:data:`~typing.Tuple`\\[:py:class:`str`, ...]"),
+        (Union, ":py:data:`~typing.Union`"),
+        (Union[str, bool], ":py:data:`~typing.Union`\\[:py:class:`str`, " ":py:class:`bool`]"),
+        (Union[str, bool, None], ":py:data:`~typing.Union`\\[:py:class:`str`, " ":py:class:`bool`, :py:obj:`None`]"),
+        pytest.param(
+            Union[str, Any],
+            ":py:data:`~typing.Union`\\[:py:class:`str`, " ":py:data:`~typing.Any`]",
+            marks=pytest.mark.skipif(
+                (3, 5, 0) <= sys.version_info[:3] <= (3, 5, 2), reason="Union erases the str on 3.5.0 -> 3.5.2"
+            ),
+        ),
+        (Optional[str], ":py:data:`~typing.Optional`\\[:py:class:`str`]"),
+        (
+            Optional[Union[str, bool]],
+            ":py:data:`~typing.Union`\\[:py:class:`str`, " ":py:class:`bool`, :py:obj:`None`]",
+        ),
+        (Callable, ":py:data:`~typing.Callable`"),
+        (Callable[..., int], ":py:data:`~typing.Callable`\\[..., :py:class:`int`]"),
+        (Callable[[int], int], ":py:data:`~typing.Callable`\\[\\[:py:class:`int`], " ":py:class:`int`]"),
+        (
+            Callable[[int, str], bool],
+            ":py:data:`~typing.Callable`\\[\\[:py:class:`int`, " ":py:class:`str`], :py:class:`bool`]",
+        ),
+        (
+            Callable[[int, str], None],
+            ":py:data:`~typing.Callable`\\[\\[:py:class:`int`, " ":py:class:`str`], :py:obj:`None`]",
+        ),
+        (Callable[[T], T], ":py:data:`~typing.Callable`\\[\\[\\~T], \\~T]"),
+        (Pattern, ":py:class:`~typing.Pattern`"),
+        (Pattern[str], ":py:class:`~typing.Pattern`\\[:py:class:`str`]"),
+        (IO, ":py:class:`~typing.IO`"),
+        (IO[str], ":py:class:`~typing.IO`\\[:py:class:`str`]"),
+        (Metaclass, ":py:class:`~%s.Metaclass`" % __name__),
+        (A, ":py:class:`~%s.A`" % __name__),
+        (B, ":py:class:`~%s.B`" % __name__),
+        (B[int], ":py:class:`~%s.B`\\[:py:class:`int`]" % __name__),
+        (C, ":py:class:`~%s.C`" % __name__),
+        (D, ":py:class:`~%s.D`" % __name__),
+        (E, ":py:class:`~%s.E`" % __name__),
+        (E[int], ":py:class:`~%s.E`\\[:py:class:`int`]" % __name__),
+        (W, f':py:{"class" if PY310_PLUS else "func"}:' f"`~typing.NewType`\\(:py:data:`~W`, :py:class:`str`)"),
+    ],
+)
 def test_format_annotation(inv, annotation, expected_result):
     result = format_annotation(annotation)
     assert result == expected_result
 
     # Test with the "simplify_optional_unions" flag turned off:
-    if re.match(r'^:py:data:`~typing\.Union`\\\[.*``None``.*\]', expected_result):
+    if re.match(r"^:py:data:`~typing\.Union`\\\[.*``None``.*\]", expected_result):
         # strip None - argument and copy string to avoid conflicts with
         # subsequent tests
-        expected_result_not_simplified = expected_result.replace(', ``None``', '')
+        expected_result_not_simplified = expected_result.replace(", ``None``", "")
         # encapsulate Union in typing.Optional
-        expected_result_not_simplified = ':py:data:`~typing.Optional`\\[' + \
-            expected_result_not_simplified
-        expected_result_not_simplified += ']'
-        assert format_annotation(annotation, simplify_optional_unions=False) == \
-            expected_result_not_simplified
+        expected_result_not_simplified = ":py:data:`~typing.Optional`\\[" + expected_result_not_simplified
+        expected_result_not_simplified += "]"
+        assert format_annotation(annotation, simplify_optional_unions=False) == expected_result_not_simplified
 
         # Test with the "fully_qualified" flag turned on
-        if 'typing' in expected_result_not_simplified:
-            expected_result_not_simplified = expected_result_not_simplified.replace('~typing',
-                                                                                    'typing')
-            assert format_annotation(annotation,
-                                     fully_qualified=True,
-                                     simplify_optional_unions=False) == \
-                expected_result_not_simplified
+        if "typing" in expected_result_not_simplified:
+            expected_result_not_simplified = expected_result_not_simplified.replace("~typing", "typing")
+            assert (
+                format_annotation(annotation, fully_qualified=True, simplify_optional_unions=False)
+                == expected_result_not_simplified
+            )
 
     # Test with the "fully_qualified" flag turned on
-    if 'typing' in expected_result or __name__ in expected_result:
-        expected_result = expected_result.replace('~typing', 'typing')
-        expected_result = expected_result.replace('~' + __name__, __name__)
+    if "typing" in expected_result or __name__ in expected_result:
+        expected_result = expected_result.replace("~typing", "typing")
+        expected_result = expected_result.replace("~" + __name__, __name__)
         assert format_annotation(annotation, fully_qualified=True) == expected_result
 
     # Test for the correct role (class vs data) using the official Sphinx inventory
-    if 'typing' in expected_result:
-        m = re.match('^:py:(?P<role>class|data|func):`~(?P<name>[^`]+)`', result)
-        assert m, 'No match'
-        name = m.group('name')
+    if "typing" in expected_result:
+        m = re.match("^:py:(?P<role>class|data|func):`~(?P<name>[^`]+)`", result)
+        assert m, "No match"
+        name = m.group("name")
         expected_role = next((o.role for o in inv.objects if o.name == name), None)
         if expected_role:
-            if expected_role == 'function':
-                expected_role = 'func'
+            if expected_role == "function":
+                expected_role = "func"
 
-            assert m.group('role') == expected_role
+            assert m.group("role") == expected_role
 
 
-@pytest.mark.parametrize('library', [typing, typing_extensions],
-                         ids=['typing', 'typing_extensions'])
-@pytest.mark.parametrize('annotation, params, expected_result', [
-    ('ClassVar', int, ":py:data:`~typing.ClassVar`\\[:py:class:`int`]"),
-    ('NoReturn', None, ":py:data:`~typing.NoReturn`"),
-    ('Literal', ('a', 1), ":py:data:`~typing.Literal`\\['a', 1]"),
-    ('Type', None, ':py:class:`~typing.Type`'),
-    ('Type', (A,), ':py:class:`~typing.Type`\\[:py:class:`~%s.A`]' % __name__)
-])
-def test_format_annotation_both_libs(inv, library, annotation, params, expected_result):
+@pytest.mark.parametrize("library", [typing, typing_extensions], ids=["typing", "typing_extensions"])
+@pytest.mark.parametrize(
+    ("annotation", "params", "expected_result"),
+    [
+        ("ClassVar", int, ":py:data:`~typing.ClassVar`\\[:py:class:`int`]"),
+        ("NoReturn", None, ":py:data:`~typing.NoReturn`"),
+        ("Literal", ("a", 1), ":py:data:`~typing.Literal`\\['a', 1]"),
+        ("Type", None, ":py:class:`~typing.Type`"),
+        ("Type", (A,), ":py:class:`~typing.Type`\\[:py:class:`~%s.A`]" % __name__),
+    ],
+)
+def test_format_annotation_both_libs(library, annotation, params, expected_result):
     try:
         annotation_cls = getattr(library, annotation)
     except AttributeError:
-        pytest.skip('{} not available in the {} module'.format(annotation, library.__name__))
+        pytest.skip(f"{annotation} not available in the {library.__name__} module")
 
     ann = annotation_cls if params is None else annotation_cls[params]
     result = format_annotation(ann)
@@ -224,7 +250,7 @@ def test_format_annotation_both_libs(inv, library, annotation, params, expected_
 
 def test_process_docstring_slot_wrapper():
     lines = []
-    process_docstring(None, 'class', 'SlotWrapper', Slotted, None, lines)
+    process_docstring(None, "class", "SlotWrapper", Slotted, None, lines)
     assert not lines
 
 
@@ -239,51 +265,48 @@ def set_python_path():
 def maybe_fix_py310(expected_contents):
     if sys.version_info[:2] >= (3, 10):
         for old, new in [
-                ("*str** | **None*", '"Optional"["str"]'),
-                ("(*bool*)", '("bool")'),
-                ("(*int*)", '("int")'),
-                ("   str", '   "str"'),
-                ('"Optional"["str"]', '"Optional"["str"]'),
-                ('"Optional"["Callable"[["int", "bytes"], "int"]]',
-                 '"Optional"["Callable"[["int", "bytes"], "int"]]'),
+            ("*str** | **None*", '"Optional"["str"]'),
+            ("(*bool*)", '("bool")'),
+            ("(*int*)", '("int")'),
+            ("   str", '   "str"'),
+            ('"Optional"["str"]', '"Optional"["str"]'),
+            ('"Optional"["Callable"[["int", "bytes"], "int"]]', '"Optional"["Callable"[["int", "bytes"], "int"]]'),
         ]:
             expected_contents = expected_contents.replace(old, new)
     return expected_contents
 
 
-@pytest.mark.parametrize('always_document_param_types', [True, False],
-                         ids=['doc_param_type', 'no_doc_param_type'])
-@pytest.mark.sphinx('text', testroot='dummy')
-@patch('sphinx.writers.text.MAXWIDTH', 2000)
+@pytest.mark.parametrize("always_document_param_types", [True, False], ids=["doc_param_type", "no_doc_param_type"])
+@pytest.mark.sphinx("text", testroot="dummy")
+@patch("sphinx.writers.text.MAXWIDTH", 2000)
 def test_sphinx_output(app, status, warning, always_document_param_types):
     set_python_path()
 
     app.config.always_document_param_types = always_document_param_types
-    app.config.autodoc_mock_imports = ['mailbox']
+    app.config.autodoc_mock_imports = ["mailbox"]
     if sys.version_info < (3, 7):
-        app.config.autodoc_mock_imports.append('dummy_module_future_annotations')
+        app.config.autodoc_mock_imports.append("dummy_module_future_annotations")
     app.build()
 
-    assert 'build succeeded' in status.getvalue()  # Build succeeded
+    assert "build succeeded" in status.getvalue()  # Build succeeded
 
     # There should be a warning about an unresolved forward reference
     warnings = warning.getvalue().strip()
-    assert 'Cannot resolve forward reference in type annotations of ' in warnings, warnings
+    assert "Cannot resolve forward reference in type annotations of " in warnings, warnings
 
     format_args = {}
     for indentation_level in range(2):
-        key = f'undoc_params_{indentation_level}'
+        key = f"undoc_params_{indentation_level}"
         if always_document_param_types:
-            format_args[key] = textwrap.indent(
-                '\n\n   Parameters:\n      **x** ("int") --', '   ' * indentation_level
-            )
+            format_args[key] = textwrap.indent('\n\n   Parameters:\n      **x** ("int") --', "   " * indentation_level)
         else:
-            format_args[key] = ''
+            format_args[key] = ""
 
-    text_path = pathlib.Path(app.srcdir) / '_build' / 'text' / 'index.txt'
-    with text_path.open('r') as f:
-        text_contents = f.read().replace('–', '--')
-        expected_contents = textwrap.dedent('''\
+    text_path = pathlib.Path(app.srcdir) / "_build" / "text" / "index.txt"
+    with text_path.open("r") as f:
+        text_contents = f.read().replace("–", "--")
+        expected_contents = textwrap.dedent(
+            """\
         Dummy Module
         ************
 
@@ -548,27 +571,27 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
 
            Parameters:
               **x** ("Mailbox") -- function
-        ''')
-        expected_contents = expected_contents.format(**format_args).replace('–', '--')
+        """
+        )
+        expected_contents = expected_contents.format(**format_args).replace("–", "--")
         assert text_contents == maybe_fix_py310(expected_contents)
 
 
-@pytest.mark.skipif(sys.version_info < (3, 7),
-                    reason="Future annotations are not implemented in Python < 3.7")
-@pytest.mark.sphinx('text', testroot='dummy')
-@patch('sphinx.writers.text.MAXWIDTH', 2000)
-def test_sphinx_output_future_annotations(app, status, warning):
+@pytest.mark.sphinx("text", testroot="dummy")
+@patch("sphinx.writers.text.MAXWIDTH", 2000)
+def test_sphinx_output_future_annotations(app, status):
     set_python_path()
 
     app.config.master_doc = "future_annotations"
     app.build()
 
-    assert 'build succeeded' in status.getvalue()  # Build succeeded
+    assert "build succeeded" in status.getvalue()  # Build succeeded
 
-    text_path = pathlib.Path(app.srcdir) / '_build' / 'text' / 'future_annotations.txt'
-    with text_path.open('r') as f:
-        text_contents = f.read().replace('–', '--')
-        expected_contents = textwrap.dedent('''\
+    text_path = pathlib.Path(app.srcdir) / "_build" / "text" / "future_annotations.txt"
+    with text_path.open("r") as f:
+        text_contents = f.read().replace("–", "--")
+        expected_contents = textwrap.dedent(
+            """\
         Dummy Module
         ************
 
@@ -585,21 +608,26 @@ def test_sphinx_output_future_annotations(app, status, warning):
 
            Return type:
               str
-        ''')
+        """
+        )
         assert text_contents == maybe_fix_py310(expected_contents)
 
 
 def test_normalize_source_lines_async_def():
-    source = textwrap.dedent("""
+    source = textwrap.dedent(
+        """
     async def async_function():
         class InnerClass:
             def __init__(self): pass
-    """)
+    """
+    )
 
-    expected = textwrap.dedent("""
+    expected = textwrap.dedent(
+        """
     async def async_function():
         class InnerClass:
             def __init__(self): pass
-    """)
+    """
+    )
 
     assert normalize_source_lines(source) == expected

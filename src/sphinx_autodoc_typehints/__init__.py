@@ -5,64 +5,68 @@ import typing
 from typing import Any, AnyStr, NewType, Tuple, TypeVar, get_type_hints
 
 from sphinx.util import logging
-from sphinx.util.inspect import signature as Signature
+from sphinx.util.inspect import signature as sphinx_signature
 from sphinx.util.inspect import stringify_signature
 
+from .version import version as __version__
+
 logger = logging.getLogger(__name__)
-pydata_annotations = {'Any', 'AnyStr', 'Callable', 'ClassVar', 'Literal', 'NoReturn', 'Optional',
-                      'Tuple', 'Union'}
+pydata_annotations = {"Any", "AnyStr", "Callable", "ClassVar", "Literal", "NoReturn", "Optional", "Tuple", "Union"}
+
+__all__ = [
+    "__version__",
+]
 
 
 def get_annotation_module(annotation) -> str:
     # Special cases
     if annotation is None:
-        return 'builtins'
+        return "builtins"
 
     if sys.version_info >= (3, 10) and isinstance(annotation, NewType):
-        return 'typing'
+        return "typing"
 
-    if hasattr(annotation, '__module__'):
+    if hasattr(annotation, "__module__"):
         return annotation.__module__
 
-    if hasattr(annotation, '__origin__'):
+    if hasattr(annotation, "__origin__"):
         return annotation.__origin__.__module__
 
-    raise ValueError('Cannot determine the module of {}'.format(annotation))
+    raise ValueError(f"Cannot determine the module of {annotation}")
 
 
 def get_annotation_class_name(annotation, module: str) -> str:
     # Special cases
     if annotation is None:
-        return 'None'
+        return "None"
     elif annotation is Any:
-        return 'Any'
+        return "Any"
     elif annotation is AnyStr:
-        return 'AnyStr'
-    elif (sys.version_info < (3, 10) and inspect.isfunction(annotation)
-          and hasattr(annotation, '__supertype__')) or \
-         (sys.version_info >= (3, 10) and isinstance(annotation, NewType)):
-        return 'NewType'
+        return "AnyStr"
+    elif (sys.version_info < (3, 10) and inspect.isfunction(annotation) and hasattr(annotation, "__supertype__")) or (
+        sys.version_info >= (3, 10) and isinstance(annotation, NewType)
+    ):
+        return "NewType"
 
-    if getattr(annotation, '__qualname__', None):
+    if getattr(annotation, "__qualname__", None):
         return annotation.__qualname__
-    elif getattr(annotation, '_name', None):  # Required for generic aliases on Python 3.7+
+    elif getattr(annotation, "_name", None):  # Required for generic aliases on Python 3.7+
         return annotation._name
-    elif (module in ('typing', 'typing_extensions')
-            and isinstance(getattr(annotation, 'name', None), str)):
+    elif module in ("typing", "typing_extensions") and isinstance(getattr(annotation, "name", None), str):
         # Required for at least Pattern and Match
         return annotation.name
 
-    origin = getattr(annotation, '__origin__', None)
+    origin = getattr(annotation, "__origin__", None)
     if origin:
-        if getattr(origin, '__qualname__', None):  # Required for Protocol subclasses
+        if getattr(origin, "__qualname__", None):  # Required for Protocol subclasses
             return origin.__qualname__
-        elif getattr(origin, '_name', None):  # Required for Union on Python 3.7+
+        elif getattr(origin, "_name", None):  # Required for Union on Python 3.7+
             return origin._name
         else:
-            return origin.__class__.__qualname__.lstrip('_')  # Required for Union on Python < 3.7
+            return origin.__class__.__qualname__.lstrip("_")  # Required for Union on Python < 3.7
 
     annotation_cls = annotation if inspect.isclass(annotation) else annotation.__class__
-    return annotation_cls.__qualname__.lstrip('_')
+    return annotation_cls.__qualname__.lstrip("_")
 
 
 def get_annotation_args(annotation, module: str, class_name: str) -> Tuple:
@@ -72,36 +76,34 @@ def get_annotation_args(annotation, module: str, class_name: str) -> Tuple:
         pass
     else:
         if annotation is original:
-            return ()  # This is the original, unparametrized type
+            return ()  # This is the original, not parametrized type
 
     # Special cases
-    if class_name in ('Pattern', 'Match') and hasattr(annotation, 'type_var'):  # Python < 3.7
-        return annotation.type_var,
-    elif class_name == 'ClassVar' and hasattr(annotation, '__type__'):  # ClassVar on Python < 3.7
-        return annotation.__type__,
-    elif class_name == 'NewType' and hasattr(annotation, '__supertype__'):
-        return annotation.__supertype__,
-    elif class_name == 'Literal' and hasattr(annotation, '__values__'):
+    if class_name in ("Pattern", "Match") and hasattr(annotation, "type_var"):  # Python < 3.7
+        return (annotation.type_var,)
+    elif class_name == "ClassVar" and hasattr(annotation, "__type__"):  # ClassVar on Python < 3.7
+        return (annotation.__type__,)
+    elif class_name == "NewType" and hasattr(annotation, "__supertype__"):
+        return (annotation.__supertype__,)
+    elif class_name == "Literal" and hasattr(annotation, "__values__"):
         return annotation.__values__
-    elif class_name == 'Generic':
+    elif class_name == "Generic":
         return annotation.__parameters__
 
-    return getattr(annotation, '__args__', ())
+    return getattr(annotation, "__args__", ())
 
 
-def format_annotation(annotation,
-                      fully_qualified: bool = False,
-                      simplify_optional_unions: bool = True) -> str:
+def format_annotation(annotation, fully_qualified: bool = False, simplify_optional_unions: bool = True) -> str:
     # Special cases
     if annotation is None or annotation is type(None):  # noqa: E721
-        return ':py:obj:`None`'
+        return ":py:obj:`None`"
     elif annotation is Ellipsis:
-        return '...'
+        return "..."
 
     # Type variables are also handled specially
     try:
         if isinstance(annotation, TypeVar) and annotation is not AnyStr:
-            return '\\' + repr(annotation)
+            return "\\" + repr(annotation)
     except TypeError:
         pass
 
@@ -113,46 +115,41 @@ def format_annotation(annotation,
         return str(annotation).strip("'")
 
     # Redirect all typing_extensions types to the stdlib typing module
-    if module == 'typing_extensions':
-        module = 'typing'
+    if module == "typing_extensions":
+        module = "typing"
 
-    full_name = (module + '.' + class_name) if module != 'builtins' else class_name
-    prefix = '' if fully_qualified or full_name == class_name else '~'
-    role = 'data' if class_name in pydata_annotations else 'class'
-    args_format = '\\[{}]'
-    formatted_args = ''
+    full_name = f"{module}.{class_name}" if module != "builtins" else class_name
+    prefix = "" if fully_qualified or full_name == class_name else "~"
+    role = "data" if class_name in pydata_annotations else "class"
+    args_format = "\\[{}]"
+    formatted_args = ""
 
     # Some types require special handling
-    if full_name == 'typing.NewType':
-        args_format = '\\(:py:data:`~{name}`, {{}})'.format(name=annotation.__name__)
-        role = 'class' if sys.version_info >= (3, 10) else 'func'
-    elif full_name == 'typing.Optional':
+    if full_name == "typing.NewType":
+        args_format = f"\\(:py:data:`~{annotation.__name__}`, {{}})"
+        role = "class" if sys.version_info >= (3, 10) else "func"
+    elif full_name == "typing.Optional":
         args = tuple(x for x in args if x is not type(None))  # noqa: E721
-    elif full_name == 'typing.Union' and type(None) in args:
+    elif full_name == "typing.Union" and type(None) in args:
         if len(args) == 2:
-            full_name = 'typing.Optional'
+            full_name = "typing.Optional"
             args = tuple(x for x in args if x is not type(None))  # noqa: E721
         elif not simplify_optional_unions:
-            full_name = 'typing.Optional'
-            args_format = '\\[:py:data:`{prefix}typing.Union`\\[{{}}]]'.format(prefix=prefix)
+            full_name = "typing.Optional"
+            args_format = f"\\[:py:data:`{prefix}typing.Union`\\[{{}}]]"
             args = tuple(x for x in args if x is not type(None))  # noqa: E721
-    elif full_name == 'typing.Callable' and args and args[0] is not ...:
-        formatted_args = '\\[\\[' + ', '.join(
-            format_annotation(
-                arg, simplify_optional_unions=simplify_optional_unions)
-            for arg in args[:-1]) + ']'
-        formatted_args += ', ' + format_annotation(
-            args[-1], simplify_optional_unions=simplify_optional_unions) + ']'
-    elif full_name == 'typing.Literal':
-        formatted_args = '\\[' + ', '.join(repr(arg) for arg in args) + ']'
+    elif full_name == "typing.Callable" and args and args[0] is not ...:
+        fmt = ", ".join(format_annotation(arg, simplify_optional_unions=simplify_optional_unions) for arg in args[:-1])
+        formatted_args = f"\\[\\[{fmt}]"
+        formatted_args += f", {format_annotation(args[-1], simplify_optional_unions=simplify_optional_unions)}]"
+    elif full_name == "typing.Literal":
+        formatted_args = f"\\[{', '.join(repr(arg) for arg in args)}]"
 
     if args and not formatted_args:
-        formatted_args = args_format.format(', '.join(
-            format_annotation(arg, fully_qualified, simplify_optional_unions)
-            for arg in args))
+        fmt = ", ".join(format_annotation(arg, fully_qualified, simplify_optional_unions) for arg in args)
+        formatted_args = args_format.format(fmt)
 
-    return ':py:{role}:`{prefix}{full_name}`{formatted_args}'.format(
-        role=role, prefix=prefix, full_name=full_name, formatted_args=formatted_args)
+    return f":py:{role}:`{prefix}{full_name}`{formatted_args}"
 
 
 # reference: https://github.com/pytorch/pytorch/pull/46548/files
@@ -171,7 +168,7 @@ def normalize_source_lines(sourcelines: str) -> str:
     sourcelines = sourcelines.split("\n")
 
     def remove_prefix(text, prefix):
-        return text[text.startswith(prefix) and len(prefix):]
+        return text[text.startswith(prefix) and len(prefix) :]
 
     # Find the line and line number containing the function definition
     for i, l in enumerate(sourcelines):
@@ -193,56 +190,51 @@ def normalize_source_lines(sourcelines: str) -> str:
 
     # Add this leading whitespace to all lines before and after the `def`
     aligned_prefix = [whitespace + remove_prefix(s, whitespace) for s in sourcelines[:idx]]
-    aligned_suffix = [whitespace + remove_prefix(s, whitespace) for s in sourcelines[idx + 1:]]
+    aligned_suffix = [whitespace + remove_prefix(s, whitespace) for s in sourcelines[idx + 1 :]]
 
     # Put it together again
     aligned_prefix.append(fn_def)
     return "\n".join(aligned_prefix + aligned_suffix)
 
 
-def process_signature(app, what: str, name: str, obj, options, signature, return_annotation):
+def process_signature(app, what: str, name: str, obj, options, signature, return_annotation):  # noqa: U100
     if not callable(obj):
         return
 
     original_obj = obj
     if inspect.isclass(obj):
-        obj = getattr(obj, '__init__', getattr(obj, '__new__', None))
+        obj = getattr(obj, "__init__", getattr(obj, "__new__", None))
 
-    if not getattr(obj, '__annotations__', None):
+    if not getattr(obj, "__annotations__", None):
         return
 
     obj = inspect.unwrap(obj)
-    signature = Signature(obj)
-    parameters = [
-        param.replace(annotation=inspect.Parameter.empty)
-        for param in signature.parameters.values()
-    ]
+    signature = sphinx_signature(obj)
+    parameters = [param.replace(annotation=inspect.Parameter.empty) for param in signature.parameters.values()]
 
     # The generated dataclass __init__() and class are weird and need extra checks
     # This helper function operates on the generated class and methods
     # of a dataclass, not an instantiated dataclass object. As such,
     # it cannot be replaced by a call to `dataclasses.is_dataclass()`.
     def _is_dataclass(name: str, what: str, qualname: str) -> bool:
-        if what == 'method' and name.endswith('.__init__'):
+        if what == "method" and name.endswith(".__init__"):
             # generated __init__()
             return True
-        if what == 'class' and qualname.endswith('.__init__'):
+        if what == "class" and qualname.endswith(".__init__"):
             # generated class
             return True
         return False
 
-    if '<locals>' in obj.__qualname__ and not _is_dataclass(name, what, obj.__qualname__):
-        logger.warning(
-            'Cannot treat a function defined as a local function: "%s"  (use @functools.wraps)',
-            name)
+    if "<locals>" in obj.__qualname__ and not _is_dataclass(name, what, obj.__qualname__):
+        logger.warning('Cannot treat a function defined as a local function: "%s"  (use @functools.wraps)', name)
         return
 
     if parameters:
-        if inspect.isclass(original_obj) or (what == 'method' and name.endswith('.__init__')):
+        if inspect.isclass(original_obj) or (what == "method" and name.endswith(".__init__")):
             del parameters[0]
-        elif what == 'method':
+        elif what == "method":
             outer = inspect.getmodule(obj)
-            for clsname in obj.__qualname__.split('.')[:-1]:
+            for clsname in obj.__qualname__.split(".")[:-1]:
                 outer = getattr(outer, clsname)
 
             method_name = obj.__name__
@@ -250,18 +242,16 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
                 # If the method starts with double underscore (dunder)
                 # Python applies mangling so we need to prepend the class name.
                 # This doesn't happen if it always ends with double underscore.
-                class_name = obj.__qualname__.split('.')[-2]
-                method_name = "_{c}{m}".format(c=class_name, m=method_name)
+                class_name = obj.__qualname__.split(".")[-2]
+                method_name = f"_{class_name}{method_name}"
 
             method_object = outer.__dict__[method_name] if outer else obj
             if not isinstance(method_object, (classmethod, staticmethod)):
                 del parameters[0]
 
-    signature = signature.replace(
-        parameters=parameters,
-        return_annotation=inspect.Signature.empty)
+    signature = signature.replace(parameters=parameters, return_annotation=inspect.Signature.empty)
 
-    return stringify_signature(signature).replace('\\', '\\\\'), None
+    return stringify_signature(signature).replace("\\", "\\\\"), None
 
 
 def _future_annotations_imported(obj):
@@ -275,8 +265,8 @@ def _future_annotations_imported(obj):
 
     # Make sure that annotations is imported from __future__ - defined in cpython/Lib/__future__.py
     # annotations become strings at runtime
-    CO_FUTURE_ANNOTATIONS = 0x100000 if sys.version_info[0:2] == (3, 7) else 0x1000000
-    return _annotations.compiler_flag == CO_FUTURE_ANNOTATIONS
+    future_annotations = 0x100000 if sys.version_info[0:2] == (3, 7) else 0x1000000
+    return _annotations.compiler_flag == future_annotations
 
 
 def get_all_type_hints(obj, name):
@@ -292,13 +282,10 @@ def get_all_type_hints(obj, name):
         # TypeError("TypeError: unsupported operand type(s) for |: 'type' and 'NoneType'")
         # on 'str | None', therefore we accept TypeErrors with that error message
         # if 'annotations' is imported from '__future__'.
-        if (isinstance(exc, TypeError)
-            and _future_annotations_imported(obj)
-                and "unsupported operand type" in str(exc)):
+        if isinstance(exc, TypeError) and _future_annotations_imported(obj) and "unsupported operand type" in str(exc):
             rv = obj.__annotations__
     except NameError as exc:
-        logger.warning('Cannot resolve forward reference in type annotations of "%s": %s',
-                       name, exc)
+        logger.warning('Cannot resolve forward reference in type annotations of "%s": %s', name, exc)
         rv = obj.__annotations__
 
     if rv:
@@ -316,8 +303,7 @@ def get_all_type_hints(obj, name):
     except (AttributeError, TypeError):
         pass
     except NameError as exc:
-        logger.warning('Cannot resolve forward reference in type annotations of "%s": %s',
-                       name, exc)
+        logger.warning('Cannot resolve forward reference in type annotations of "%s": %s', name, exc)
         rv = obj.__annotations__
 
     return rv
@@ -332,21 +318,20 @@ def backfill_type_hints(obj, name):
             return {}
     else:
         import ast
-        parse_kwargs = {'type_comments': True}
+
+        parse_kwargs = {"type_comments": True}
 
     def _one_child(module):
         children = module.body  # use the body to ignore type comments
 
         if len(children) != 1:
-            logger.warning(
-                'Did not get exactly one node from AST for "%s", got %s', name, len(children))
+            logger.warning('Did not get exactly one node from AST for "%s", got %s', name, len(children))
             return
 
         return children[0]
 
     try:
-        obj_ast = ast.parse(textwrap.dedent(
-            normalize_source_lines(inspect.getsource(obj))), **parse_kwargs)
+        obj_ast = ast.parse(textwrap.dedent(normalize_source_lines(inspect.getsource(obj))), **parse_kwargs)
     except (OSError, TypeError):
         return {}
 
@@ -363,14 +348,14 @@ def backfill_type_hints(obj, name):
         return {}
 
     try:
-        comment_args_str, comment_returns = type_comment.split(' -> ')
+        comment_args_str, comment_returns = type_comment.split(" -> ")
     except ValueError:
         logger.warning('Unparseable type hint comment for "%s": Expected to contain ` -> `', name)
         return {}
 
     rv = {}
     if comment_returns:
-        rv['return'] = comment_returns
+        rv["return"] = comment_returns
 
     args = load_args(obj_ast)
     comment_args = split_type_comment_args(comment_args_str)
@@ -402,7 +387,7 @@ def backfill_type_hints(obj, name):
 def load_args(obj_ast):
     func_args = obj_ast.args
     args = []
-    pos_only = getattr(func_args, 'posonlyargs', None)
+    pos_only = getattr(func_args, "posonlyargs", None)
     if pos_only:
         args.extend(pos_only)
 
@@ -436,78 +421,76 @@ def split_type_comment_args(comment):
             add(comment[start_arg_at:at])
             start_arg_at = at + 1
 
-    add(comment[start_arg_at: at + 1])
+    add(comment[start_arg_at : at + 1])
     return result
 
 
-def process_docstring(app, what, name, obj, options, lines):
+def process_docstring(app, what, name, obj, options, lines):  # noqa: U100
     original_obj = obj
     if isinstance(obj, property):
         obj = obj.fget
 
     if callable(obj):
         if inspect.isclass(obj):
-            obj = getattr(obj, '__init__')
+            obj = obj.__init__
 
         obj = inspect.unwrap(obj)
         type_hints = get_all_type_hints(obj, name)
 
-        for argname, annotation in type_hints.items():
-            if argname == 'return':
+        for arg_name, annotation in type_hints.items():
+            if arg_name == "return":
                 continue  # this is handled separately later
-            if argname.endswith('_'):
-                argname = '{}\\_'.format(argname[:-1])
+            if arg_name.endswith("_"):
+                arg_name = f"{arg_name[:-1]}\\_"
 
             formatted_annotation = format_annotation(
                 annotation,
                 fully_qualified=app.config.typehints_fully_qualified,
-                simplify_optional_unions=app.config.simplify_optional_unions)
+                simplify_optional_unions=app.config.simplify_optional_unions,
+            )
 
-            searchfor = [':{} {}:'.format(field, argname)
-                         for field in ('param', 'parameter', 'arg', 'argument')]
+            search_for = [f":{field} {arg_name}:" for field in ("param", "parameter", "arg", "argument")]
             insert_index = None
 
             for i, line in enumerate(lines):
-                if any(line.startswith(search_string) for search_string in searchfor):
+                if any(line.startswith(search_string) for search_string in search_for):
                     insert_index = i
                     break
 
             if insert_index is None and app.config.always_document_param_types:
-                lines.append(':param {}:'.format(argname))
+                lines.append(f":param {arg_name}:")
                 insert_index = len(lines)
 
             if insert_index is not None:
-                lines.insert(
-                    insert_index,
-                    ':type {}: {}'.format(argname, formatted_annotation)
-                )
+                lines.insert(insert_index, f":type {arg_name}: {formatted_annotation}")
 
-        if 'return' in type_hints and not inspect.isclass(original_obj):
+        if "return" in type_hints and not inspect.isclass(original_obj):
             # This avoids adding a return type for data class __init__ methods
-            if what == 'method' and name.endswith('.__init__'):
+            if what == "method" and name.endswith(".__init__"):
                 return
 
             formatted_annotation = format_annotation(
-                type_hints['return'], fully_qualified=app.config.typehints_fully_qualified,
-                simplify_optional_unions=app.config.simplify_optional_unions
+                type_hints["return"],
+                fully_qualified=app.config.typehints_fully_qualified,
+                simplify_optional_unions=app.config.simplify_optional_unions,
             )
 
             insert_index = len(lines)
             for i, line in enumerate(lines):
-                if line.startswith(':rtype:'):
+                if line.startswith(":rtype:"):
                     insert_index = None
                     break
-                elif line.startswith(':return:') or line.startswith(':returns:'):
+                elif line.startswith(":return:") or line.startswith(":returns:"):
                     insert_index = i
 
             if insert_index is not None and app.config.typehints_document_rtype:
                 if insert_index == len(lines):
                     # Ensure that :rtype: doesn't get joined with a paragraph of text, which
                     # prevents it being interpreted.
-                    lines.append('')
+                    lines.append("")
                     insert_index += 1
 
-                lines.insert(insert_index, ':rtype: {}'.format(formatted_annotation))
+                lines.insert(insert_index, f":rtype: {formatted_annotation}")
 
 
 def builder_ready(app):
@@ -516,12 +499,12 @@ def builder_ready(app):
 
 
 def setup(app):
-    app.add_config_value('set_type_checking_flag', False, 'html')
-    app.add_config_value('always_document_param_types', False, 'html')
-    app.add_config_value('typehints_fully_qualified', False, 'env')
-    app.add_config_value('typehints_document_rtype', True, 'env')
-    app.add_config_value('simplify_optional_unions', True, 'env')
-    app.connect('builder-inited', builder_ready)
-    app.connect('autodoc-process-signature', process_signature)
-    app.connect('autodoc-process-docstring', process_docstring)
-    return dict(parallel_read_safe=True)
+    app.add_config_value("set_type_checking_flag", False, "html")
+    app.add_config_value("always_document_param_types", False, "html")
+    app.add_config_value("typehints_fully_qualified", False, "env")
+    app.add_config_value("typehints_document_rtype", True, "env")
+    app.add_config_value("simplify_optional_unions", True, "env")
+    app.connect("builder-inited", builder_ready)
+    app.connect("autodoc-process-signature", process_signature)
+    app.connect("autodoc-process-docstring", process_docstring)
+    return {"parallel_read_safe": True}

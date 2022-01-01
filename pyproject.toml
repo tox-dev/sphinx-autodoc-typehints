@@ -1,22 +1,17 @@
 [build-system]
-requires = [
-    "setuptools >= 40.0.4",
-    "setuptools_scm >= 2.0.0",
-    "wheel >= 0.29.0",
-]
+requires = ["setuptools>=50", "setuptools_scm>=6"]
 build-backend = 'setuptools.build_meta'
 
+[tool.black]
+line-length = 120
+
 [tool.isort]
-skip_gitignore = true
-line_length = 99
-multi_line_output = 4
+line_length = 120
+profile = "black"
+known_first_party = ["sphinx_autodoc_typehints", "tests"]
 
-[tool.autopep8]
-max_line_length = 99
-
-[tool.flake8]
-max-line-length = 99
+[tool.setuptools_scm]
+write_to = "src/sphinx_autodoc_typehints/version.py"
 
 [tool.pytest.ini_options]
-addopts = "-rsx --tb=short"
 testpaths = ["tests"]
