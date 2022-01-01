@@ -89,10 +89,6 @@ PY310_PLUS = sys.version_info >= (3, 10)
     pytest.param(A.Inner, __name__, 'A.Inner', (), id='Inner')
 ])
 def test_parse_annotation(annotation, module, class_name, args):
-    if sys.version_info[:2] >= (3, 10) and annotation == W:
-        module = "test_sphinx_autodoc_typehints"
-        class_name = "W"
-        args = ()
     assert get_annotation_module(annotation) == module
     assert get_annotation_class_name(annotation, module) == class_name
     assert get_annotation_args(annotation, module, class_name) == args
@@ -135,10 +131,7 @@ def test_parse_annotation(annotation, module, class_name, args):
                                     ':py:data:`~typing.Any`]',
                  marks=pytest.mark.skipif((3, 5, 0) <= sys.version_info[:3] <= (3, 5, 2),
                                           reason='Union erases the str on 3.5.0 -> 3.5.2')),
-    (Optional[str],                 ':py:data:`~typing.Optional`\\' + (
-                                    '[:py:class:`str`]'
-                                    if sys.version_info[:2] < (3, 10) else
-                                    '[:py:class:`str`, :py:obj:`None`]')),
+    (Optional[str],                 ':py:data:`~typing.Optional`\\[:py:class:`str`]'),
     (Optional[Union[str, bool]],    ':py:data:`~typing.Union`\\[:py:class:`str`, '
                                     ':py:class:`bool`, :py:obj:`None`]'),
     (Callable,                      ':py:data:`~typing.Callable`'),
@@ -246,19 +239,20 @@ def set_python_path():
 def maybe_fix_py310(expected_contents):
     if sys.version_info[:2] >= (3, 10):
         for old, new in [
-                ("*str** | **None*", '"Optional"["str", "None"]'),
+                ("*str** | **None*", '"Optional"["str"]'),
                 ("(*bool*)", '("bool")'),
                 ("(*int*)", '("int")'),
                 ("   str", '   "str"'),
-                ('"Optional"["str"]', '"Optional"["str", "None"]'),
+                ('"Optional"["str"]', '"Optional"["str"]'),
                 ('"Optional"["Callable"[["int", "bytes"], "int"]]',
-                 '"Optional"["Callable"[["int", "bytes"], "int"], "None"]'),
+                 '"Optional"["Callable"[["int", "bytes"], "int"]]'),
         ]:
             expected_contents = expected_contents.replace(old, new)
     return expected_contents
 
 
-@pytest.mark.parametrize('always_document_param_types', [True, False])
+@pytest.mark.parametrize('always_document_param_types', [True, False],
+                         ids=['doc_param_type', 'no_doc_param_type'])
 @pytest.mark.sphinx('text', testroot='dummy')
 @patch('sphinx.writers.text.MAXWIDTH', 2000)
 def test_sphinx_output(app, status, warning, always_document_param_types):

@@ -273,8 +273,9 @@ def _future_annotations_imported(obj):
     if _annotations is None:
         return False
 
-    # Make sure that annotations is imported from __future__
-    CO_FUTURE_ANNOTATIONS = 0x1000000  # defined in cpython/Lib/__future__.py
+    # Make sure that annotations is imported from __future__ - defined in cpython/Lib/__future__.py
+    # annotations become strings at runtime
+    CO_FUTURE_ANNOTATIONS = 0x100000 if sys.version_info[0:2] == (3, 7) else 0x1000000
     return _annotations.compiler_flag == CO_FUTURE_ANNOTATIONS
 
 
