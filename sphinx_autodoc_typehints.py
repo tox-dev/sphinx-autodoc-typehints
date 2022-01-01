@@ -264,15 +264,38 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
     return stringify_signature(signature).replace('\\', '\\\\'), None
 
 
+def _future_annotations_imported(obj):
+    if sys.version_info < (3, 7):
+        # Only Python ≥ 3.7 supports PEP563.
+        return False
+
+    _annotations = getattr(inspect.getmodule(obj), "annotations", None)
+    if _annotations is None:
+        return False
+
+    # Make sure that annotations is imported from __future__ - defined in cpython/Lib/__future__.py
+    # annotations become strings at runtime
+    CO_FUTURE_ANNOTATIONS = 0x100000 if sys.version_info[0:2] == (3, 7) else 0x1000000
+    return _annotations.compiler_flag == CO_FUTURE_ANNOTATIONS
+
+
 def get_all_type_hints(obj, name):
     rv = {}
 
     try:
         rv = get_type_hints(obj)
-    except (AttributeError, TypeError, RecursionError):
+    except (AttributeError, TypeError, RecursionError) as exc:
         # Introspecting a slot wrapper will raise TypeError, and and some recursive type
         # definitions will cause a RecursionError (https://github.com/python/typing/issues/574).
-        pass
+
+        # If one is using PEP563 annotations, Python will raise a (e.g.,)
+        # TypeError("TypeError: unsupported operand type(s) for |: 'type' and 'NoneType'")
+        # on 'str | None', therefore we accept TypeErrors with that error message
+        # if 'annotations' is imported from '__future__'.
+        if (isinstance(exc, TypeError)
+            and _future_annotations_imported(obj)
+                and "unsupported operand type" in str(exc)):
+            rv = obj.__annotations__
     except NameError as exc:
         logger.warning('Cannot resolve forward reference in type annotations of "%s": %s',
                        name, exc)
