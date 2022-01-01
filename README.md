@@ -5,7 +5,6 @@
 versions](https://img.shields.io/pypi/pyversions/sphinx-autodoc-typehints.svg)](https://pypi.org/project/sphinx-autodoc-typehints/)
 [![Downloads](https://pepy.tech/badge/sphinx-autodoc-typehints/month)](https://pepy.tech/project/sphinx-autodoc-typehints/month)
 [![check](https://github.com/tox-dev/sphinx-autodoc-typehints/actions/workflows/check.yml/badge.svg)](https://github.com/tox-dev/sphinx-autodoc-typehints/actions/workflows/check.yml)
-[![codecov](https://codecov.io/gh/tox-dev/sphinx-autodoc-typehints/branch/rewrite/graph/badge.svg)](https://codecov.io/gh/tox-dev/sphinx-autodoc-typehints/branch/main)
 [![Code style:
 black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Documentation Status](https://readthedocs.org/projects/sphinx-autodoc-typehints/badge/?version=latest)](https://sphinx-autodoc-typehints.readthedocs.io/en/latest/?badge=latest)
