@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.13.0
+
+- Dropped Python 3.6 support
+- Python 3.10 support
+- Normalize async functions properly
+- Allow py310 style annotations (PEP-563)
+
 ## 1.12.0
 
 - Dropped Python 3.5 support
