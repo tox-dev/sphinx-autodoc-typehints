@@ -98,11 +98,11 @@ def format_annotation(
     annotation: Any,
     fully_qualified: bool = False,
     simplify_optional_unions: bool = True,
-    typehints_formatter: Callable = lambda _annotation, **_opts: None,
+    typehints_formatter: Callable = None,
 ) -> str:
     # all options except for the formatter:
-    opts = dict(fully_qualified=fully_qualified, simplify_optional_unions=simplify_optional_unions)
-    formatted = typehints_formatter(annotation, **opts)
+    opts = {"fully_qualified": fully_qualified, "simplify_optional_unions": simplify_optional_unions}
+    formatted = None if typehints_formatter is None else typehints_formatter(annotation, **opts)
     if formatted is not None:
         return formatted
     # Special cases
@@ -514,7 +514,7 @@ def setup(app):
     app.add_config_value("typehints_fully_qualified", False, "env")
     app.add_config_value("typehints_document_rtype", True, "env")
     app.add_config_value("simplify_optional_unions", True, "env")
-    app.add_config_value("typehints_formatter", lambda _annotation, **_opts: None, "env")
+    app.add_config_value("typehints_formatter", None, "env")
     app.connect("builder-inited", builder_ready)
     app.connect("autodoc-process-signature", process_signature)
     app.connect("autodoc-process-docstring", process_docstring)

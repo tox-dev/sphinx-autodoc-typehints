@@ -12,6 +12,7 @@ exc
 fget
 fmt
 fn
+formatter
 func
 getmodule
 getsource
