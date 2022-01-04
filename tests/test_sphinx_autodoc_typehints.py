@@ -182,7 +182,7 @@ def test_parse_annotation(annotation, module, class_name, args):
         (D, ":py:class:`~%s.D`" % __name__),
         (E, ":py:class:`~%s.E`" % __name__),
         (E[int], ":py:class:`~%s.E`\\[:py:class:`int`]" % __name__),
-        (W, f':py:{"class" if PY310_PLUS else "func"}:' f"`~typing.NewType`\\(:py:data:`~W`, :py:class:`str`)"),
+        (W, f':py:{"class" if PY310_PLUS else "func"}:' f"`~typing.NewType`\\(``W``, :py:class:`str`)"),
     ],
 )
 def test_format_annotation(inv, annotation, expected_result):
