@@ -1,5 +1,9 @@
 # Changelog
 
+# dev
+
+- Made formatting function configurable using the option `typehints_formatter`
+
 ## 1.13.0
 
 - Dropped Python 3.6 support

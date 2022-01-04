@@ -53,6 +53,10 @@ extensions = ["sphinx.ext.autodoc", "sphinx_autodoc_typehints"]
 
 The following configuration options are accepted:
 
+- `typehints_formatter` (default: `None`): If set to a function, this function will be called with `annotation` as first
+  argument and several keyword arguments corresponding to other options such as `fully_qualified: bool` and
+  `simplify_optional_unions: bool`. The function is expected to return a string with reStructuredText code or `None` to
+  fall back to the default formatter.
 - `set_type_checking_flag` (default: `False`): if `True`, set `typing.TYPE_CHECKING` to `True` to enable \"expensive\"
   typing imports
 - `typehints_fully_qualified` (default: `False`): if `True`, class names are always fully qualified (e.g.
