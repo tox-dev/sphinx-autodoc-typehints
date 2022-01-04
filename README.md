@@ -61,6 +61,12 @@ The following configuration options are accepted:
   `True`, add stub documentation for undocumented parameters to be able to add type info.
 - `typehints_document_rtype` (default: `True`): If `False`, never add an `:rtype:` directive. If `True`, add the
   `:rtype:` directive if no existing `:rtype:` is found.
+- `document_defaults` (default: `None`): If `None`, defaults are not added. Otherwise adds a default annotation:
+
+  - `'comma'` adds it after the type, changing Sphinx’ default look to “**param** (*int*, default: `1`) -- text”.
+  - `'braces'` adds `(default: ...)` after the type (useful for numpydoc like styles).
+  - `'braces-after'` adds `(default: ...)` at the end of the parameter documentation text instead.
+
 - `simplify_optional_unions` (default: `True`): If `True`, optional parameters of type \"Union\[\...\]\" are simplified
   as being of type Union\[\..., None\] in the resulting documention (e.g. Optional\[Union\[A, B\]\] -\> Union\[A, B,
   None\]). If `False`, the \"Optional\"-type is kept. Note: If `False`, **any** Union containing `None` will be
