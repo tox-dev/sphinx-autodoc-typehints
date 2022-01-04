@@ -613,6 +613,48 @@ def test_sphinx_output_future_annotations(app, status):
         assert text_contents == maybe_fix_py310(expected_contents)
 
 
+@pytest.mark.parametrize(
+    ("defaults_confval", "expected"),
+    [
+        (None, "(*int*) -- bar"),
+        ("comma", '(*int*, default: "1") -- bar'),
+        ("braces", '(*int* (default: "1")) -- bar'),
+        ("braces-after", '(*int*) -- bar (default: "1")'),
+    ],
+)
+@pytest.mark.sphinx("text", testroot="dummy")
+@patch("sphinx.writers.text.MAXWIDTH", 2000)
+def test_sphinx_output_defaults(app, status, defaults_config_val, expected):
+    set_python_path()
+
+    app.config.master_doc = "simple"
+    app.config.typehints_defaults = defaults_config_val
+    app.build()
+    assert "build succeeded" in status.getvalue()
+
+    text_path = pathlib.Path(app.srcdir) / "_build" / "text" / "simple.txt"
+    text_contents = text_path.read_text().replace("–", "--")
+    expected_contents = textwrap.dedent(
+        f"""\
+    Simple Module
+    *************
+
+    dummy_module_simple.function(x, y=1)
+
+       Function docstring.
+
+       Parameters:
+          * **x** (*bool*) -- foo
+
+          * **y** {expected}
+
+       Return type:
+          str
+    """
+    )
+    assert text_contents == maybe_fix_py310(expected_contents)
+
+
 def test_normalize_source_lines_async_def():
     source = textwrap.dedent(
         """

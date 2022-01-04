@@ -454,6 +454,7 @@ def process_docstring(app: Sphinx, what, name, obj, options, lines):  # noqa: U1
         for arg_name, annotation in type_hints.items():
             if arg_name == "return":
                 continue  # this is handled separately later
+            default = signature.parameters[arg_name].default
             if arg_name.endswith("_"):
                 arg_name = f"{arg_name[:-1]}\\_"
 
@@ -478,11 +479,12 @@ def process_docstring(app: Sphinx, what, name, obj, options, lines):  # noqa: U1
             if insert_index is not None:
                 type_annotation = f":type {arg_name}: {formatted_annotation}"
                 if app.config.typehints_defaults:
-                    default = format_default(app, signature.parameters[arg_name].default)
-                    if app.config.typehints_defaults.endswith("after"):
-                        type_annotation += default
-                    else:  # add to last param doc line
-                        lines[insert_index] += default
+                    formatted_default = format_default(app, default)
+                    if formatted_default:
+                        if app.config.typehints_defaults.endswith("after"):
+                            lines[insert_index] += formatted_default
+                        else:  # add to last param doc line
+                            type_annotation += formatted_default
                 lines.insert(insert_index, type_annotation)
 
         if "return" in type_hints and not inspect.isclass(original_obj):
