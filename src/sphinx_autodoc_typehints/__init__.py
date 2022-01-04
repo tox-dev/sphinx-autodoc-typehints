@@ -435,11 +435,13 @@ def process_docstring(app, what, name, obj, options, lines):  # noqa: U100
             obj = obj.__init__
 
         obj = inspect.unwrap(obj)
+        signature = sphinx_signature(obj)
         type_hints = get_all_type_hints(obj, name)
 
         for arg_name, annotation in type_hints.items():
             if arg_name == "return":
                 continue  # this is handled separately later
+            default = signature.parameters[arg_name].default
             if arg_name.endswith("_"):
                 arg_name = f"{arg_name[:-1]}\\_"
 
@@ -462,6 +464,8 @@ def process_docstring(app, what, name, obj, options, lines):  # noqa: U100
                 insert_index = len(lines)
 
             if insert_index is not None:
+                if default is not inspect.Parameter.empty:
+                    lines[insert_index] += f" (default: ``{default!r}``)".replace("\\", "\\\\")
                 lines.insert(insert_index, f":type {arg_name}: {formatted_annotation}")
 
         if "return" in type_hints and not inspect.isclass(original_obj):

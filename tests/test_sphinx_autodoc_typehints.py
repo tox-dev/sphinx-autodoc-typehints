@@ -319,7 +319,7 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
 
               * **y** ("int") – bar
 
-              * **z** ("Optional"["str"]) – baz
+              * **z** ("Optional"["str"]) – baz (default: "None")
 
            class InnerClass
 
@@ -384,7 +384,7 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
 
                  * **y** ("int") – bar
 
-                 * **z** ("Optional"["str"]) – baz
+                 * **z** ("Optional"["str"]) – baz (default: "None")
 
               Return type:
                  "str"
@@ -398,7 +398,7 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
 
                  * **y** ("int") – bar
 
-                 * **z** ("Optional"["str"]) – baz
+                 * **z** ("Optional"["str"]) – baz (default: "None")
 
               Return type:
                  "str"
@@ -419,7 +419,7 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
 
                  * **y** ("int") – bar
 
-                 * **z** ("Optional"["str"]) – baz
+                 * **z** ("Optional"["str"]) – baz (default: "None")
 
               Return type:
                  "str"
@@ -447,7 +447,7 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
 
               * **y** ("int") – bar
 
-              * **z_** ("Optional"["str"]) – baz
+              * **z_** ("Optional"["str"]) – baz (default: "None")
 
            Returns:
               something
@@ -460,7 +460,7 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
            Function docstring.
 
            Parameters:
-              **x** ("str") – foo
+              **x** ("str") – foo (default: "'\\\\x08'")
 
         dummy_module.function_with_unresolvable_annotation(x)
 
@@ -507,7 +507,7 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
            Function docstring.
 
            Parameters:
-              * **x** ("Union"["str", "bytes", "None"]) -- foo
+              * **x** ("Union"["str", "bytes", "None"]) -- foo (default: "None")
 
               * **y** ("str") -- bar
 
@@ -523,14 +523,14 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
            Class docstring.
 
            Parameters:
-              **x** ("Optional"["Callable"[["int", "bytes"], "int"]]) -- foo
+              **x** ("Optional"["Callable"[["int", "bytes"], "int"]]) -- foo (default: "None")
 
            foo(x=1)
 
               Method docstring.
 
               Parameters:
-                 **x** ("Callable"[["int", "bytes"], "int"]) -- foo
+                 **x** ("Callable"[["int", "bytes"], "int"]) -- foo (default: "1")
 
               Return type:
                  "int"
@@ -540,7 +540,7 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
               Method docstring.
 
               Parameters:
-                 **x** ("Optional"["Callable"[["int", "bytes"], "int"]]) -- foo
+                 **x** ("Optional"["Callable"[["int", "bytes"], "int"]]) -- foo (default: "None")
 
               Return type:
                  "ClassWithTypehintsNotInline"
@@ -604,7 +604,7 @@ def test_sphinx_output_future_annotations(app, status):
 
               * **y** (*int*) -- bar
 
-              * **z** (*str** | **None*) -- baz
+              * **z** (*str** | **None*) -- baz (default: "None")
 
            Return type:
               str
