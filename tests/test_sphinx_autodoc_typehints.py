@@ -267,7 +267,7 @@ def maybe_fix_py310(expected_contents):
         for old, new in [
             ("*str** | **None*", '"Optional"["str"]'),
             ("(*bool*)", '("bool")'),
-            ("(*int*)", '("int")'),
+            ("(*int*", '("int"'),
             ("   str", '   "str"'),
             ('"Optional"["str"]', '"Optional"["str"]'),
             ('"Optional"["Callable"[["int", "bytes"], "int"]]', '"Optional"["Callable"[["int", "bytes"], "int"]]'),
