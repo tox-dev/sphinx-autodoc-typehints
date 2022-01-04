@@ -614,7 +614,7 @@ def test_sphinx_output_future_annotations(app, status):
 
 
 @pytest.mark.parametrize(
-    ("defaults_confval", "expected"),
+    ("defaults_config_val", "expected"),
     [
         (None, "(*int*) -- bar"),
         ("comma", '(*int*, default: "1") -- bar'),
