@@ -102,7 +102,7 @@ def format_annotation(
     annotation: Any,
     fully_qualified: bool = False,
     simplify_optional_unions: bool = True,
-    typehints_formatter: Callable = None,
+    typehints_formatter: Callable[..., str] | None = None,
 ) -> str:
     # all options except for the formatter:
     opts = {"fully_qualified": fully_qualified, "simplify_optional_unions": simplify_optional_unions}
@@ -156,9 +156,9 @@ def format_annotation(
     elif full_name == "typing.Callable" and args and args[0] is not ...:
         opts_shortened = dict(opts, typehints_formatter=typehints_formatter)
         del opts_shortened["fully_qualified"]
-        fmt = ", ".join(format_annotation(arg, **opts_shortened) for arg in args[:-1])
+        fmt = ", ".join(format_annotation(arg, **opts_shortened) for arg in args[:-1])  # type: ignore # arg spec
         formatted_args = f"\\[\\[{fmt}]"
-        formatted_args += f", {format_annotation(args[-1], **opts_shortened)}]"
+        formatted_args += f", {format_annotation(args[-1], **opts_shortened)}]"  # type: ignore # arg spec
     elif full_name == "typing.Literal":
         formatted_args = f"\\[{', '.join(repr(arg) for arg in args)}]"
 
