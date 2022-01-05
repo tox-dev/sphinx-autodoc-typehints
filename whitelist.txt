@@ -2,11 +2,11 @@ ast3
 autodoc
 autouse
 backfill
-clsname
 contravariant
 cpython
 dedent
 dirname
+docnames
 dunder
 exc
 fget
@@ -39,10 +39,11 @@ rootdir
 rtype
 runtime
 skipif
-sourcelines
+sph
 sphobjinv
 srcdir
 stdlib
+stmt
 stringify
 subclasses
 supertype

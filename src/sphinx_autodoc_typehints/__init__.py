@@ -1,10 +1,15 @@
+from __future__ import annotations
+
 import inspect
 import sys
 import textwrap
 import typing
-from typing import Any, AnyStr, Dict, NewType, Optional, Tuple, TypeVar, get_type_hints
+from ast import FunctionDef, Module, stmt
+from typing import Any, AnyStr, NewType, TypeVar, get_type_hints
 
 from sphinx.application import Sphinx
+from sphinx.environment import BuildEnvironment
+from sphinx.ext.autodoc import Options
 from sphinx.util import logging
 from sphinx.util.inspect import signature as sphinx_signature
 from sphinx.util.inspect import stringify_signature
@@ -19,24 +24,24 @@ __all__ = [
 ]
 
 
-def get_annotation_module(annotation) -> str:
+def get_annotation_module(annotation: Any) -> str:
     # Special cases
     if annotation is None:
         return "builtins"
 
-    if sys.version_info >= (3, 10) and isinstance(annotation, NewType):
+    if sys.version_info >= (3, 10) and isinstance(annotation, NewType):  # type: ignore # isinstance NewType is Callable
         return "typing"
 
     if hasattr(annotation, "__module__"):
-        return annotation.__module__
+        return annotation.__module__  # type: ignore # deduced Any
 
     if hasattr(annotation, "__origin__"):
-        return annotation.__origin__.__module__
+        return annotation.__origin__.__module__  # type: ignore # deduced Any
 
     raise ValueError(f"Cannot determine the module of {annotation}")
 
 
-def get_annotation_class_name(annotation, module: str) -> str:
+def get_annotation_class_name(annotation: Any, module: str) -> str:
     # Special cases
     if annotation is None:
         return "None"
@@ -45,32 +50,30 @@ def get_annotation_class_name(annotation, module: str) -> str:
     elif annotation is AnyStr:
         return "AnyStr"
     elif (sys.version_info < (3, 10) and inspect.isfunction(annotation) and hasattr(annotation, "__supertype__")) or (
-        sys.version_info >= (3, 10) and isinstance(annotation, NewType)
+        sys.version_info >= (3, 10) and isinstance(annotation, NewType)  # type: ignore # isinstance NewType is Callable
     ):
         return "NewType"
 
     if getattr(annotation, "__qualname__", None):
-        return annotation.__qualname__
+        return annotation.__qualname__  # type: ignore # deduced Any
     elif getattr(annotation, "_name", None):  # Required for generic aliases on Python 3.7+
-        return annotation._name
+        return annotation._name  # type: ignore # deduced Any
     elif module in ("typing", "typing_extensions") and isinstance(getattr(annotation, "name", None), str):
         # Required for at least Pattern and Match
-        return annotation.name
+        return annotation.name  # type: ignore # deduced Any
 
     origin = getattr(annotation, "__origin__", None)
     if origin:
         if getattr(origin, "__qualname__", None):  # Required for Protocol subclasses
-            return origin.__qualname__
+            return origin.__qualname__  # type: ignore # deduced Any
         elif getattr(origin, "_name", None):  # Required for Union on Python 3.7+
-            return origin._name
-        else:
-            return origin.__class__.__qualname__.lstrip("_")  # Required for Union on Python < 3.7
+            return origin._name  # type: ignore # deduced Any
 
     annotation_cls = annotation if inspect.isclass(annotation) else annotation.__class__
-    return annotation_cls.__qualname__.lstrip("_")
+    return annotation_cls.__qualname__.lstrip("_")  # type: ignore # deduced Any
 
 
-def get_annotation_args(annotation, module: str, class_name: str) -> Tuple:
+def get_annotation_args(annotation: Any, module: str, class_name: str) -> tuple[Any, ...]:
     try:
         original = getattr(sys.modules[module], class_name)
     except (KeyError, AttributeError):
@@ -87,14 +90,14 @@ def get_annotation_args(annotation, module: str, class_name: str) -> Tuple:
     elif class_name == "NewType" and hasattr(annotation, "__supertype__"):
         return (annotation.__supertype__,)
     elif class_name == "Literal" and hasattr(annotation, "__values__"):
-        return annotation.__values__
+        return annotation.__values__  # type: ignore # deduced Any
     elif class_name == "Generic":
-        return annotation.__parameters__
+        return annotation.__parameters__  # type: ignore # deduced Any
 
     return getattr(annotation, "__args__", ())
 
 
-def format_annotation(annotation, fully_qualified: bool = False, simplify_optional_unions: bool = True) -> str:
+def format_annotation(annotation: Any, fully_qualified: bool = False, simplify_optional_unions: bool = True) -> str:
     # Special cases
     if annotation is None or annotation is type(None):  # noqa: E721
         return ":py:obj:`None`"
@@ -154,7 +157,7 @@ def format_annotation(annotation, fully_qualified: bool = False, simplify_option
 
 
 # reference: https://github.com/pytorch/pytorch/pull/46548/files
-def normalize_source_lines(sourcelines: str) -> str:
+def normalize_source_lines(source_lines: str) -> str:
     """
     This helper function accepts a list of source lines. It finds the
     indentation level of the function definition (`def`), then it indents
@@ -162,17 +165,17 @@ def normalize_source_lines(sourcelines: str) -> str:
     level. This allows for comments and continued string literals that
     are at a lower indentation than the rest of the code.
     Arguments:
-        sourcelines: source code
+        source_lines: source code
     Returns:
         source lines that have been correctly aligned
     """
-    sourcelines = sourcelines.split("\n")
+    lines = source_lines.split("\n")
 
-    def remove_prefix(text, prefix):
+    def remove_prefix(text: str, prefix: str) -> str:
         return text[text.startswith(prefix) and len(prefix) :]
 
     # Find the line and line number containing the function definition
-    for i, l in enumerate(sourcelines):
+    for i, l in enumerate(lines):
         if l.lstrip().startswith("def"):
             idx = i
             whitespace_separator = "def"
@@ -183,35 +186,37 @@ def normalize_source_lines(sourcelines: str) -> str:
             break
 
     else:
-        return "\n".join(sourcelines)
-    fn_def = sourcelines[idx]
+        return "\n".join(lines)
+    fn_def = lines[idx]
 
     # Get a string representing the amount of leading whitespace
     whitespace = fn_def.split(whitespace_separator)[0]
 
     # Add this leading whitespace to all lines before and after the `def`
-    aligned_prefix = [whitespace + remove_prefix(s, whitespace) for s in sourcelines[:idx]]
-    aligned_suffix = [whitespace + remove_prefix(s, whitespace) for s in sourcelines[idx + 1 :]]
+    aligned_prefix = [whitespace + remove_prefix(s, whitespace) for s in lines[:idx]]
+    aligned_suffix = [whitespace + remove_prefix(s, whitespace) for s in lines[idx + 1 :]]
 
     # Put it together again
     aligned_prefix.append(fn_def)
     return "\n".join(aligned_prefix + aligned_suffix)
 
 
-def process_signature(app, what: str, name: str, obj, options, signature, return_annotation):  # noqa: U100
+def process_signature(
+    app: Sphinx, what: str, name: str, obj: Any, options: Options, signature: str, return_annotation: str  # noqa: U100
+) -> tuple[str, None] | None:
     if not callable(obj):
-        return
+        return None
 
     original_obj = obj
     if inspect.isclass(obj):
         obj = getattr(obj, "__init__", getattr(obj, "__new__", None))
 
     if not getattr(obj, "__annotations__", None):
-        return
+        return None
 
     obj = inspect.unwrap(obj)
-    signature = sphinx_signature(obj)
-    parameters = [param.replace(annotation=inspect.Parameter.empty) for param in signature.parameters.values()]
+    sph_signature = sphinx_signature(obj)
+    parameters = [param.replace(annotation=inspect.Parameter.empty) for param in sph_signature.parameters.values()]
 
     # The generated dataclass __init__() and class are weird and need extra checks
     # This helper function operates on the generated class and methods
@@ -228,15 +233,15 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
 
     if "<locals>" in obj.__qualname__ and not _is_dataclass(name, what, obj.__qualname__):
         logger.warning('Cannot treat a function defined as a local function: "%s"  (use @functools.wraps)', name)
-        return
+        return None
 
     if parameters:
         if inspect.isclass(original_obj) or (what == "method" and name.endswith(".__init__")):
             del parameters[0]
         elif what == "method":
             outer = inspect.getmodule(obj)
-            for clsname in obj.__qualname__.split(".")[:-1]:
-                outer = getattr(outer, clsname)
+            for class_name in obj.__qualname__.split(".")[:-1]:
+                outer = getattr(outer, class_name)
 
             method_name = obj.__name__
             if method_name.startswith("__") and not method_name.endswith("__"):
@@ -250,16 +255,12 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
             if not isinstance(method_object, (classmethod, staticmethod)):
                 del parameters[0]
 
-    signature = signature.replace(parameters=parameters, return_annotation=inspect.Signature.empty)
+    sph_signature = sph_signature.replace(parameters=parameters, return_annotation=inspect.Signature.empty)
 
-    return stringify_signature(signature).replace("\\", "\\\\"), None
+    return stringify_signature(sph_signature).replace("\\", "\\\\"), None
 
 
-def _future_annotations_imported(obj):
-    if sys.version_info < (3, 7):
-        # Only Python ≥ 3.7 supports PEP563.
-        return False
-
+def _future_annotations_imported(obj: Any) -> bool:
     _annotations = getattr(inspect.getmodule(obj), "annotations", None)
     if _annotations is None:
         return False
@@ -267,10 +268,10 @@ def _future_annotations_imported(obj):
     # Make sure that annotations is imported from __future__ - defined in cpython/Lib/__future__.py
     # annotations become strings at runtime
     future_annotations = 0x100000 if sys.version_info[0:2] == (3, 7) else 0x1000000
-    return _annotations.compiler_flag == future_annotations
+    return bool(_annotations.compiler_flag == future_annotations)
 
 
-def get_all_type_hints(obj, name):
+def get_all_type_hints(obj: Any, name: str) -> dict[str, Any]:
     rv = {}
 
     try:
@@ -310,7 +311,7 @@ def get_all_type_hints(obj, name):
     return rv
 
 
-def backfill_type_hints(obj, name):
+def backfill_type_hints(obj: Any, name: str) -> dict[str, Any]:
     parse_kwargs = {}
     if sys.version_info < (3, 8):
         try:
@@ -322,17 +323,18 @@ def backfill_type_hints(obj, name):
 
         parse_kwargs = {"type_comments": True}
 
-    def _one_child(module):
+    def _one_child(module: Module) -> stmt | None:
         children = module.body  # use the body to ignore type comments
 
         if len(children) != 1:
             logger.warning('Did not get exactly one node from AST for "%s", got %s', name, len(children))
-            return
+            return None
 
         return children[0]
 
     try:
-        obj_ast = ast.parse(textwrap.dedent(normalize_source_lines(inspect.getsource(obj))), **parse_kwargs)
+        code = textwrap.dedent(normalize_source_lines(inspect.getsource(obj)))
+        obj_ast = ast.parse(code, **parse_kwargs)  # type: ignore # dynamic kwargs
     except (OSError, TypeError):
         return {}
 
@@ -385,7 +387,7 @@ def backfill_type_hints(obj, name):
     return rv
 
 
-def load_args(obj_ast):
+def load_args(obj_ast: FunctionDef) -> list[Any]:
     func_args = obj_ast.args
     args = []
     pos_only = getattr(func_args, "posonlyargs", None)
@@ -403,12 +405,12 @@ def load_args(obj_ast):
     return args
 
 
-def split_type_comment_args(comment):
-    def add(val):
+def split_type_comment_args(comment: str) -> list[str | None]:
+    def add(val: str) -> None:
         result.append(val.strip().lstrip("*"))  # remove spaces, and var/kw arg marker
 
     comment = comment.strip().lstrip("(").rstrip(")")
-    result = []
+    result: list[str | None] = []
     if not comment:
         return result
 
@@ -426,7 +428,7 @@ def split_type_comment_args(comment):
     return result
 
 
-def format_default(app: Sphinx, default: Any) -> Optional[str]:
+def format_default(app: Sphinx, default: Any) -> str | None:
     if default is inspect.Parameter.empty:
         return None
     formatted = repr(default).replace("\\", "\\\\")
@@ -436,7 +438,9 @@ def format_default(app: Sphinx, default: Any) -> Optional[str]:
         return f", default: ``{formatted}``"
 
 
-def process_docstring(app: Sphinx, what, name, obj, options, lines):  # noqa: U100
+def process_docstring(
+    app: Sphinx, what: str, name: str, obj: Any, options: Options | None, lines: list[str]  # noqa: U100
+) -> None:
     original_obj = obj
     if isinstance(obj, property):
         obj = obj.fget
@@ -519,13 +523,13 @@ def builder_ready(app: Sphinx) -> None:
         typing.TYPE_CHECKING = True
 
 
-def validate_config(app: Sphinx, *args) -> None:  # noqa: U100
+def validate_config(app: Sphinx, env: BuildEnvironment, docnames: list[str]) -> None:  # noqa: U100
     valid = {None, "comma", "braces", "braces-after"}
     if app.config.typehints_defaults not in valid | {False}:
         raise ValueError(f"typehints_defaults needs to be one of {valid!r}, not {app.config.typehints_defaults!r}")
 
 
-def setup(app: Sphinx) -> Dict[str, bool]:
+def setup(app: Sphinx) -> dict[str, bool]:
     app.add_config_value("set_type_checking_flag", False, "html")
     app.add_config_value("always_document_param_types", False, "html")
     app.add_config_value("typehints_fully_qualified", False, "env")
