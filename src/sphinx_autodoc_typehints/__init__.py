@@ -427,8 +427,6 @@ def split_type_comment_args(comment):
 
 
 def format_default(app: Sphinx, default: Any) -> Optional[str]:
-    if not app.config.typehints_defaults:
-        return None
     if default is inspect.Parameter.empty:
         return None
     formatted = repr(default).replace("\\", "\\\\")
