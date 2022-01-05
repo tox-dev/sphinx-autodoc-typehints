@@ -1,5 +1,9 @@
 # Changelog
 
+## dev
+
+- Added `document_defaults` config option allowing to automatically annotate parameter defaults.
+
 ## 1.13.1
 
 - Fixed ``NewType`` inserts a reference as first argument instead of a string
