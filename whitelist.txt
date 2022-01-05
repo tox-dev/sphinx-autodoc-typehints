@@ -17,6 +17,7 @@ func
 getmodule
 getsource
 idx
+inited
 inv
 isfunction
 iterdir

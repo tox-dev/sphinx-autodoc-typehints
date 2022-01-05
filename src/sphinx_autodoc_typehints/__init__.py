@@ -3,8 +3,9 @@ import sys
 import textwrap
 import typing
 from functools import partial
-from typing import Any, AnyStr, Callable, NewType, Tuple, TypeVar, get_type_hints
+from typing import Any, AnyStr, Callable, Dict, NewType, Optional, Tuple, TypeVar, get_type_hints
 
+from sphinx.application import Sphinx
 from sphinx.util import logging
 from sphinx.util.inspect import signature as sphinx_signature
 from sphinx.util.inspect import stringify_signature
@@ -137,7 +138,7 @@ def format_annotation(
 
     # Some types require special handling
     if full_name == "typing.NewType":
-        args_format = f"\\(:py:data:`~{annotation.__name__}`, {{}})"
+        args_format = f"\\(``{annotation.__name__}``, {{}})"
         role = "class" if sys.version_info >= (3, 10) else "func"
     elif full_name == "typing.Optional":
         args = tuple(x for x in args if x is not type(None))  # noqa: E721
@@ -438,7 +439,17 @@ def split_type_comment_args(comment):
     return result
 
 
-def process_docstring(app, what, name, obj, options, lines):  # noqa: U100
+def format_default(app: Sphinx, default: Any) -> Optional[str]:
+    if default is inspect.Parameter.empty:
+        return None
+    formatted = repr(default).replace("\\", "\\\\")
+    if app.config.typehints_defaults.startswith("braces"):
+        return f" (default: ``{formatted}``)"
+    else:
+        return f", default: ``{formatted}``"
+
+
+def process_docstring(app: Sphinx, what, name, obj, options, lines):  # noqa: U100
     original_obj = obj
     if isinstance(obj, property):
         obj = obj.fget
@@ -448,6 +459,7 @@ def process_docstring(app, what, name, obj, options, lines):  # noqa: U100
             obj = obj.__init__
 
         obj = inspect.unwrap(obj)
+        signature = sphinx_signature(obj)
         type_hints = get_all_type_hints(obj, name)
         if not type_hints:
             return
@@ -462,6 +474,7 @@ def process_docstring(app, what, name, obj, options, lines):  # noqa: U100
         for arg_name, annotation in type_hints.items():
             if arg_name == "return":
                 continue  # this is handled separately later
+            default = signature.parameters[arg_name].default
             if arg_name.endswith("_"):
                 arg_name = f"{arg_name[:-1]}\\_"
 
@@ -478,7 +491,15 @@ def process_docstring(app, what, name, obj, options, lines):  # noqa: U100
                 insert_index = len(lines)
 
             if insert_index is not None:
-                lines.insert(insert_index, f":type {arg_name}: {fmt(annotation)}")
+                type_annotation = f":type {arg_name}: {fmt(annotation)}"
+                if app.config.typehints_defaults:
+                    formatted_default = format_default(app, default)
+                    if formatted_default:
+                        if app.config.typehints_defaults.endswith("after"):
+                            lines[insert_index] += formatted_default
+                        else:  # add to last param doc line
+                            type_annotation += formatted_default
+                lines.insert(insert_index, type_annotation)
 
         if "return" in type_hints and not inspect.isclass(original_obj):
             # This avoids adding a return type for data class __init__ methods
@@ -503,19 +524,27 @@ def process_docstring(app, what, name, obj, options, lines):  # noqa: U100
                 lines.insert(insert_index, f":rtype: {fmt(type_hints['return'])}")
 
 
-def builder_ready(app):
+def builder_ready(app: Sphinx) -> None:
     if app.config.set_type_checking_flag:
         typing.TYPE_CHECKING = True
 
 
-def setup(app):
+def validate_config(app: Sphinx, *args) -> None:  # noqa: U100
+    valid = {None, "comma", "braces", "braces-after"}
+    if app.config.typehints_defaults not in valid | {False}:
+        raise ValueError(f"typehints_defaults needs to be one of {valid!r}, not {app.config.typehints_defaults!r}")
+
+
+def setup(app: Sphinx) -> Dict[str, bool]:
     app.add_config_value("set_type_checking_flag", False, "html")
     app.add_config_value("always_document_param_types", False, "html")
     app.add_config_value("typehints_fully_qualified", False, "env")
     app.add_config_value("typehints_document_rtype", True, "env")
+    app.add_config_value("typehints_defaults", None, "env")
     app.add_config_value("simplify_optional_unions", True, "env")
     app.add_config_value("typehints_formatter", None, "env")
     app.connect("builder-inited", builder_ready)
+    app.connect("env-before-read-docs", validate_config)  # config may be changed after “config-inited” event
     app.connect("autodoc-process-signature", process_signature)
     app.connect("autodoc-process-docstring", process_docstring)
     return {"parallel_read_safe": True}

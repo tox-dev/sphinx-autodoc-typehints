@@ -1,8 +1,13 @@
 # Changelog
 
-# dev
+## dev
 
+- Added `document_defaults` config option allowing to automatically annotate parameter defaults.
 - Made formatting function configurable using the option `typehints_formatter`
+
+## 1.13.1
+
+- Fixed ``NewType`` inserts a reference as first argument instead of a string
 
 ## 1.13.0
 
