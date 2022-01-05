@@ -534,6 +534,10 @@ def validate_config(app: Sphinx, *args) -> None:  # noqa: U100
     if app.config.typehints_defaults not in valid | {False}:
         raise ValueError(f"typehints_defaults needs to be one of {valid!r}, not {app.config.typehints_defaults!r}")
 
+    formatter = app.config.typehints_formatter
+    if formatter is not None and not callable(formatter):
+        raise ValueError(f"typehints_formatter needs to be callable or `None`, not {formatter}")
+
 
 def setup(app: Sphinx) -> Dict[str, bool]:
     app.add_config_value("set_type_checking_flag", False, "html")

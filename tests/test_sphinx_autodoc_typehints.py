@@ -662,6 +662,53 @@ def test_sphinx_output_defaults(app, status, defaults_config_val, expected):
     assert text_contents == expected_contents
 
 
+@pytest.mark.parametrize(
+    ("formatter_config_val", "expected"),
+    [
+        (None, ['("bool") -- foo', '("int") -- bar', '"str"']),
+        (lambda ann, **kw: "Test", ["(*Test*) -- foo", "(*Test*) -- bar", "Test"]),
+        ("some string", Exception("needs to be callable or `None`")),
+    ],
+)
+@pytest.mark.sphinx("text", testroot="dummy")
+@patch("sphinx.writers.text.MAXWIDTH", 2000)
+def test_sphinx_output_formatter(app, status, formatter_config_val, expected):
+    set_python_path()
+
+    app.config.master_doc = "simple"
+    app.config.typehints_formatter = formatter_config_val
+    try:
+        app.build()
+    except Exception as e:
+        if not isinstance(expected, Exception):
+            raise
+        assert str(expected) in str(e)
+        return
+    assert "build succeeded" in status.getvalue()
+
+    text_path = pathlib.Path(app.srcdir) / "_build" / "text" / "simple.txt"
+    text_contents = text_path.read_text().replace("–", "--")
+    expected_contents = textwrap.dedent(
+        f"""\
+    Simple Module
+    *************
+
+    dummy_module_simple.function(x, y=1)
+
+       Function docstring.
+
+       Parameters:
+          * **x** {expected[0]}
+
+          * **y** {expected[1]}
+
+       Return type:
+          {expected[2]}
+    """
+    )
+    assert text_contents == expected_contents
+
+
 def test_normalize_source_lines_async_def():
     source = textwrap.dedent(
         """
