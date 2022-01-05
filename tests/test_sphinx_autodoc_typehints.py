@@ -3,8 +3,10 @@ from __future__ import annotations
 import pathlib
 import re
 import sys
-import textwrap
 import typing
+from io import StringIO
+from textwrap import dedent, indent
+from types import ModuleType
 from typing import (
     IO,
     Any,
@@ -26,6 +28,8 @@ from unittest.mock import patch
 
 import pytest
 import typing_extensions
+from sphinx.testing.util import SphinxTestApp
+from sphobjinv import Inventory
 
 from sphinx_autodoc_typehints import (
     format_annotation,
@@ -43,7 +47,7 @@ W = NewType("W", str)
 
 
 class A:
-    def get_type(self):
+    def get_type(self) -> type:
         return type(self)
 
     class Inner:
@@ -63,7 +67,7 @@ class D(typing_extensions.Protocol):
     pass
 
 
-class E(typing_extensions.Protocol[T]):
+class E(typing_extensions.Protocol[T]):  # type: ignore #  Invariant type variable "T" used in protocol where covariant
     pass
 
 
@@ -111,7 +115,7 @@ PY310_PLUS = sys.version_info >= (3, 10)
         pytest.param(A.Inner, __name__, "A.Inner", (), id="Inner"),
     ],
 )
-def test_parse_annotation(annotation, module, class_name, args):
+def test_parse_annotation(annotation: Any, module: str, class_name: str, args: tuple[Any, ...]) -> None:
     assert get_annotation_module(annotation) == module
     assert get_annotation_class_name(annotation, module) == class_name
     assert get_annotation_args(annotation, module, class_name) == args
@@ -185,12 +189,12 @@ def test_parse_annotation(annotation, module, class_name, args):
         (W, f':py:{"class" if PY310_PLUS else "func"}:' f"`~typing.NewType`\\(``W``, :py:class:`str`)"),
     ],
 )
-def test_format_annotation(inv, annotation, expected_result):
+def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str) -> None:
     result = format_annotation(annotation)
     assert result == expected_result
 
     # Test with the "simplify_optional_unions" flag turned off:
-    if re.match(r"^:py:data:`~typing\.Union`\\\[.*``None``.*\]", expected_result):
+    if re.match(r"^:py:data:`~typing\.Union`\\\[.*``None``.*]", expected_result):
         # strip None - argument and copy string to avoid conflicts with
         # subsequent tests
         expected_result_not_simplified = expected_result.replace(", ``None``", "")
@@ -234,27 +238,28 @@ def test_format_annotation(inv, annotation, expected_result):
         ("NoReturn", None, ":py:data:`~typing.NoReturn`"),
         ("Literal", ("a", 1), ":py:data:`~typing.Literal`\\['a', 1]"),
         ("Type", None, ":py:class:`~typing.Type`"),
-        ("Type", (A,), ":py:class:`~typing.Type`\\[:py:class:`~%s.A`]" % __name__),
+        ("Type", (A,), f":py:class:`~typing.Type`\\[:py:class:`~{__name__}.A`]"),
     ],
 )
-def test_format_annotation_both_libs(library, annotation, params, expected_result):
+def test_format_annotation_both_libs(library: ModuleType, annotation: str, params: Any, expected_result: str) -> None:
     try:
         annotation_cls = getattr(library, annotation)
     except AttributeError:
         pytest.skip(f"{annotation} not available in the {library.__name__} module")
+        return  # pragma: no cover
 
     ann = annotation_cls if params is None else annotation_cls[params]
     result = format_annotation(ann)
     assert result == expected_result
 
 
-def test_process_docstring_slot_wrapper():
-    lines = []
-    process_docstring(None, "class", "SlotWrapper", Slotted, None, lines)
+def test_process_docstring_slot_wrapper() -> None:
+    lines: list[str] = []
+    process_docstring(None, "class", "SlotWrapper", Slotted, None, lines)  # type: ignore # first argument is not Sphinx
     assert not lines
 
 
-def set_python_path():
+def set_python_path() -> None:
     test_path = pathlib.Path(__file__).parent
 
     # Add test directory to sys.path to allow imports of dummy module.
@@ -262,7 +267,7 @@ def set_python_path():
         sys.path.insert(0, str(test_path))
 
 
-def maybe_fix_py310(expected_contents):
+def maybe_fix_py310(expected_contents: str) -> str:
     if PY310_PLUS:
         for old, new in [
             ("*str** | **None*", '"Optional"["str"]'),
@@ -279,11 +284,13 @@ def maybe_fix_py310(expected_contents):
 @pytest.mark.parametrize("always_document_param_types", [True, False], ids=["doc_param_type", "no_doc_param_type"])
 @pytest.mark.sphinx("text", testroot="dummy")
 @patch("sphinx.writers.text.MAXWIDTH", 2000)
-def test_sphinx_output(app, status, warning, always_document_param_types):
+def test_sphinx_output(
+    app: SphinxTestApp, status: StringIO, warning: StringIO, always_document_param_types: bool
+) -> None:
     set_python_path()
 
-    app.config.always_document_param_types = always_document_param_types
-    app.config.autodoc_mock_imports = ["mailbox"]
+    app.config.always_document_param_types = always_document_param_types  # type: ignore # create flag
+    app.config.autodoc_mock_imports = ["mailbox"]  # type: ignore # create flag
     if sys.version_info < (3, 7):
         app.config.autodoc_mock_imports.append("dummy_module_future_annotations")
     app.build()
@@ -298,15 +305,14 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
     for indentation_level in range(2):
         key = f"undoc_params_{indentation_level}"
         if always_document_param_types:
-            format_args[key] = textwrap.indent('\n\n   Parameters:\n      **x** ("int") --', "   " * indentation_level)
+            format_args[key] = indent('\n\n   Parameters:\n      **x** ("int") --', "   " * indentation_level)
         else:
             format_args[key] = ""
 
     text_path = pathlib.Path(app.srcdir) / "_build" / "text" / "index.txt"
     with text_path.open("r") as f:
         text_contents = f.read().replace("–", "--")
-        expected_contents = textwrap.dedent(
-            """\
+        expected_contents = """\
         Dummy Module
         ************
 
@@ -572,17 +578,16 @@ def test_sphinx_output(app, status, warning, always_document_param_types):
            Parameters:
               **x** ("Mailbox") -- function
         """
-        )
-        expected_contents = expected_contents.format(**format_args).replace("–", "--")
+        expected_contents = dedent(expected_contents).format(**format_args).replace("–", "--")
         assert text_contents == maybe_fix_py310(expected_contents)
 
 
 @pytest.mark.sphinx("text", testroot="dummy")
 @patch("sphinx.writers.text.MAXWIDTH", 2000)
-def test_sphinx_output_future_annotations(app, status):
+def test_sphinx_output_future_annotations(app: SphinxTestApp, status: StringIO) -> None:
     set_python_path()
 
-    app.config.master_doc = "future_annotations"
+    app.config.master_doc = "future_annotations"  # type: ignore # create flag
     app.build()
 
     assert "build succeeded" in status.getvalue()  # Build succeeded
@@ -590,8 +595,7 @@ def test_sphinx_output_future_annotations(app, status):
     text_path = pathlib.Path(app.srcdir) / "_build" / "text" / "future_annotations.txt"
     with text_path.open("r") as f:
         text_contents = f.read().replace("–", "--")
-        expected_contents = textwrap.dedent(
-            """\
+        expected_contents = """\
         Dummy Module
         ************
 
@@ -609,8 +613,7 @@ def test_sphinx_output_future_annotations(app, status):
            Return type:
               str
         """
-        )
-        assert text_contents == maybe_fix_py310(expected_contents)
+        assert text_contents == maybe_fix_py310(dedent(expected_contents))
 
 
 @pytest.mark.parametrize(
@@ -625,11 +628,13 @@ def test_sphinx_output_future_annotations(app, status):
 )
 @pytest.mark.sphinx("text", testroot="dummy")
 @patch("sphinx.writers.text.MAXWIDTH", 2000)
-def test_sphinx_output_defaults(app, status, defaults_config_val, expected):
+def test_sphinx_output_defaults(
+    app: SphinxTestApp, status: StringIO, defaults_config_val: str, expected: str | Exception
+) -> None:
     set_python_path()
 
-    app.config.master_doc = "simple"
-    app.config.typehints_defaults = defaults_config_val
+    app.config.master_doc = "simple"  # type: ignore # create flag
+    app.config.typehints_defaults = defaults_config_val  # type: ignore # create flag
     try:
         app.build()
     except Exception as e:
@@ -641,8 +646,7 @@ def test_sphinx_output_defaults(app, status, defaults_config_val, expected):
 
     text_path = pathlib.Path(app.srcdir) / "_build" / "text" / "simple.txt"
     text_contents = text_path.read_text().replace("–", "--")
-    expected_contents = textwrap.dedent(
-        f"""\
+    expected_contents = f"""\
     Simple Module
     *************
 
@@ -658,8 +662,7 @@ def test_sphinx_output_defaults(app, status, defaults_config_val, expected):
        Return type:
           "str"
     """
-    )
-    assert text_contents == expected_contents
+    assert text_contents == dedent(expected_contents)
 
 
 @pytest.mark.parametrize(
@@ -688,8 +691,7 @@ def test_sphinx_output_formatter(app, status, formatter_config_val, expected):
 
     text_path = pathlib.Path(app.srcdir) / "_build" / "text" / "simple.txt"
     text_contents = text_path.read_text().replace("–", "--")
-    expected_contents = textwrap.dedent(
-        f"""\
+    expected_contents = f"""\
     Simple Module
     *************
 
@@ -705,25 +707,20 @@ def test_sphinx_output_formatter(app, status, formatter_config_val, expected):
        Return type:
           {expected[2]}
     """
-    )
-    assert text_contents == expected_contents
+    assert text_contents == dedent(expected_contents)
 
 
-def test_normalize_source_lines_async_def():
-    source = textwrap.dedent(
-        """
+def test_normalize_source_lines_async_def() -> None:
+    source = """
     async def async_function():
         class InnerClass:
             def __init__(self): pass
     """
-    )
 
-    expected = textwrap.dedent(
-        """
+    expected = """
     async def async_function():
         class InnerClass:
             def __init__(self): pass
     """
-    )
 
-    assert normalize_source_lines(source) == expected
+    assert normalize_source_lines(dedent(source)) == dedent(expected)
