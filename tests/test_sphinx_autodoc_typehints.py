@@ -620,6 +620,7 @@ def test_sphinx_output_future_annotations(app, status):
         ("comma", '("int", default: "1") -- bar'),
         ("braces", '("int" (default: "1")) -- bar'),
         ("braces-after", '("int") -- bar (default: "1")'),
+        ("comma-after", Exception("needs to be one of")),
     ],
 )
 @pytest.mark.sphinx("text", testroot="dummy")
@@ -629,7 +630,13 @@ def test_sphinx_output_defaults(app, status, defaults_config_val, expected):
 
     app.config.master_doc = "simple"
     app.config.typehints_defaults = defaults_config_val
-    app.build()
+    try:
+        app.build()
+    except Exception as e:
+        if not isinstance(expected, Exception):
+            raise
+        assert str(expected) in str(e)
+        return
     assert "build succeeded" in status.getvalue()
 
     text_path = pathlib.Path(app.srcdir) / "_build" / "text" / "simple.txt"

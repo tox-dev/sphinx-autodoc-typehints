@@ -517,6 +517,9 @@ def process_docstring(app: Sphinx, what, name, obj, options, lines):  # noqa: U1
 def builder_ready(app: Sphinx) -> None:
     if app.config.set_type_checking_flag:
         typing.TYPE_CHECKING = True
+
+
+def validate_config(app: Sphinx, *args) -> None:  # noqa: U100
     valid = {None, "comma", "braces", "braces-after"}
     if app.config.typehints_defaults not in valid | {False}:
         raise ValueError(f"typehints_defaults needs to be one of {valid!r}, not {app.config.typehints_defaults!r}")
@@ -530,6 +533,7 @@ def setup(app: Sphinx) -> Dict[str, bool]:
     app.add_config_value("typehints_defaults", None, "env")
     app.add_config_value("simplify_optional_unions", True, "env")
     app.connect("builder-inited", builder_ready)
+    app.connect("env-before-read-docs", validate_config)  # config may be changed after “config-inited” event
     app.connect("autodoc-process-signature", process_signature)
     app.connect("autodoc-process-docstring", process_docstring)
     return {"parallel_read_safe": True}
