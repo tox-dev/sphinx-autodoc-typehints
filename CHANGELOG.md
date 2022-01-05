@@ -2,7 +2,7 @@
 
 ## dev
 
-- Added `document_defaults` config value allowing to automatically annotate parameter defaults.
+- Added `document_defaults` config option allowing to automatically annotate parameter defaults.
 
 ## 1.13.0
 
