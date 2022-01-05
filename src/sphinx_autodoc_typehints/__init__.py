@@ -2,7 +2,7 @@ import inspect
 import sys
 import textwrap
 import typing
-from typing import Any, AnyStr, NewType, Tuple, TypeVar, get_type_hints
+from typing import Any, AnyStr, Dict, NewType, Optional, Tuple, TypeVar, get_type_hints
 
 from sphinx.application import Sphinx
 from sphinx.util import logging
@@ -426,7 +426,7 @@ def split_type_comment_args(comment):
     return result
 
 
-def format_default(app: Sphinx, default):
+def format_default(app: Sphinx, default: Any) -> Optional[str]:
     if not app.config.typehints_defaults:
         return None
     if default is inspect.Parameter.empty:
@@ -516,7 +516,7 @@ def process_docstring(app: Sphinx, what, name, obj, options, lines):  # noqa: U1
                 lines.insert(insert_index, f":rtype: {formatted_annotation}")
 
 
-def builder_ready(app: Sphinx):
+def builder_ready(app: Sphinx) -> None:
     if app.config.set_type_checking_flag:
         typing.TYPE_CHECKING = True
     valid = {None, "comma", "braces", "braces-after"}
@@ -524,7 +524,7 @@ def builder_ready(app: Sphinx):
         raise ValueError(f"typehints_defaults needs to be one of {valid!r}, not {app.config.typehints_defaults!r}")
 
 
-def setup(app: Sphinx):
+def setup(app: Sphinx) -> Dict[str, bool]:
     app.add_config_value("set_type_checking_flag", False, "html")
     app.add_config_value("always_document_param_types", False, "html")
     app.add_config_value("typehints_fully_qualified", False, "env")
