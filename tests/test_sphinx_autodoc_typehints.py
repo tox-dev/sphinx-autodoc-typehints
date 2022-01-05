@@ -675,11 +675,13 @@ def test_sphinx_output_defaults(
 )
 @pytest.mark.sphinx("text", testroot="dummy")
 @patch("sphinx.writers.text.MAXWIDTH", 2000)
-def test_sphinx_output_formatter(app, status, formatter_config_val, expected):
+def test_sphinx_output_formatter(
+    app: SphinxTestApp, status: StringIO, formatter_config_val: str, expected: tuple[str, ...] | Exception
+) -> None:
     set_python_path()
 
-    app.config.master_doc = "simple"
-    app.config.typehints_formatter = formatter_config_val
+    app.config.master_doc = "simple"  # type: ignore # create flag
+    app.config.typehints_formatter = formatter_config_val  # type: ignore # create flag
     try:
         app.build()
     except Exception as e:
@@ -687,6 +689,7 @@ def test_sphinx_output_formatter(app, status, formatter_config_val, expected):
             raise
         assert str(expected) in str(e)
         return
+    assert not isinstance(expected, Exception), "Expected app.build() to raise exception, but it didn’t"
     assert "build succeeded" in status.getvalue()
 
     text_path = pathlib.Path(app.srcdir) / "_build" / "text" / "simple.txt"
