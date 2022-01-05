@@ -263,7 +263,7 @@ def set_python_path():
 
 
 def maybe_fix_py310(expected_contents):
-    if sys.version_info[:2] >= (3, 10):
+    if PY310_PLUS:
         for old, new in [
             ("*str** | **None*", '"Optional"["str"]'),
             ("(*bool*)", '("bool")'),
@@ -616,10 +616,10 @@ def test_sphinx_output_future_annotations(app, status):
 @pytest.mark.parametrize(
     ("defaults_config_val", "expected"),
     [
-        (None, "(*int*) -- bar"),
-        ("comma", '(*int*, default: "1") -- bar'),
-        ("braces", '(*int* (default: "1")) -- bar'),
-        ("braces-after", '(*int*) -- bar (default: "1")'),
+        (None, '("int") -- bar'),
+        ("comma", '("int", default: "1") -- bar'),
+        ("braces", '("int" (default: "1")) -- bar'),
+        ("braces-after", '("int") -- bar (default: "1")'),
     ],
 )
 @pytest.mark.sphinx("text", testroot="dummy")
@@ -644,15 +644,15 @@ def test_sphinx_output_defaults(app, status, defaults_config_val, expected):
        Function docstring.
 
        Parameters:
-          * **x** (*bool*) -- foo
+          * **x** ("bool") -- foo
 
           * **y** {expected}
 
        Return type:
-          str
+          "str"
     """
     )
-    assert text_contents == maybe_fix_py310(expected_contents)
+    assert text_contents == expected_contents
 
 
 def test_normalize_source_lines_async_def():
