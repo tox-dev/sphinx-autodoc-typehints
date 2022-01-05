@@ -105,6 +105,7 @@ jobs:
         tox_env:
           - dev
           - readme
+          - type
     steps:
       - uses: actions/checkout@v2
         with:
