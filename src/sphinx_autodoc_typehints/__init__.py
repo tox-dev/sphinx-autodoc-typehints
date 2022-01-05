@@ -127,7 +127,7 @@ def format_annotation(annotation, fully_qualified: bool = False, simplify_option
 
     # Some types require special handling
     if full_name == "typing.NewType":
-        args_format = f"\\(:py:data:`~{annotation.__name__}`, {{}})"
+        args_format = f"\\(``{annotation.__name__}``, {{}})"
         role = "class" if sys.version_info >= (3, 10) else "func"
     elif full_name == "typing.Optional":
         args = tuple(x for x in args if x is not type(None))  # noqa: E721
