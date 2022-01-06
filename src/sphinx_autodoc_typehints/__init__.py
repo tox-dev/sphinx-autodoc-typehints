@@ -104,11 +104,13 @@ def format_annotation(
     simplify_optional_unions: bool = True,
     typehints_formatter: Callable[..., str] | None = None,
 ) -> str:
-    # all options except for the formatter:
-    opts = {"fully_qualified": fully_qualified, "simplify_optional_unions": simplify_optional_unions}
-    formatted = None if typehints_formatter is None else typehints_formatter(annotation, **opts)
-    if formatted is not None:
-        return formatted
+    if typehints_formatter is not None:
+        formatted = typehints_formatter(
+            annotation, fully_qualified=fully_qualified, simplify_optional_unions=simplify_optional_unions
+        )
+        if formatted is not None:
+            return formatted
+
     # Special cases
     if annotation is None or annotation is type(None):  # noqa: E721
         return ":py:obj:`None`"
@@ -154,16 +156,26 @@ def format_annotation(
             args_format = f"\\[:py:data:`{prefix}typing.Union`\\[{{}}]]"
             args = tuple(x for x in args if x is not type(None))  # noqa: E721
     elif full_name == "typing.Callable" and args and args[0] is not ...:
-        opts_shortened = dict(opts, typehints_formatter=typehints_formatter)
-        del opts_shortened["fully_qualified"]
-        fmt = ", ".join(format_annotation(arg, **opts_shortened) for arg in args[:-1])  # type: ignore # arg spec
-        formatted_args = f"\\[\\[{fmt}]"
-        formatted_args += f", {format_annotation(args[-1], **opts_shortened)}]"  # type: ignore # arg spec
+        format_arg = partial(
+            format_annotation,
+            simplify_optional_unions=simplify_optional_unions,
+            typehints_formatter=typehints_formatter,
+        )
+        fmt = ", ".join(format_arg(arg) for arg in args[:-1])
+        formatted_args = f"\\[\\[{fmt}], {format_arg(args[-1])}]"
     elif full_name == "typing.Literal":
         formatted_args = f"\\[{', '.join(repr(arg) for arg in args)}]"
 
     if args and not formatted_args:
-        fmt = ", ".join(format_annotation(arg, **opts, typehints_formatter=typehints_formatter) for arg in args)
+        fmt = ", ".join(
+            format_annotation(
+                arg,
+                fully_qualified=fully_qualified,
+                simplify_optional_unions=simplify_optional_unions,
+                typehints_formatter=typehints_formatter,
+            )
+            for arg in args
+        )
         formatted_args = args_format.format(fmt)
 
     return f":py:{role}:`{prefix}{full_name}`{formatted_args}"
