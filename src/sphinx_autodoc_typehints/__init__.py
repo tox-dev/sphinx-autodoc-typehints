@@ -156,13 +156,15 @@ def format_annotation(
             args_format = f"\\[:py:data:`{prefix}typing.Union`\\[{{}}]]"
             args = tuple(x for x in args if x is not type(None))  # noqa: E721
     elif full_name == "typing.Callable" and args and args[0] is not ...:
-        format_arg = partial(
-            format_annotation,
-            simplify_optional_unions=simplify_optional_unions,
-            typehints_formatter=typehints_formatter,
-        )
-        fmt = ", ".join(format_arg(arg) for arg in args[:-1])
-        formatted_args = f"\\[\\[{fmt}], {format_arg(args[-1])}]"
+        formatted_args = [
+            format_annotation(
+                arg,
+                simplify_optional_unions=simplify_optional_unions,
+                typehints_formatter=typehints_formatter,
+            )
+            for arg in args
+        ]
+        formatted_args = f"\\[\\[{', '.join(formatted_args[:-1])}], {formatted_args[-1]}]"
     elif full_name == "typing.Literal":
         formatted_args = f"\\[{', '.join(repr(arg) for arg in args)}]"
 
