@@ -156,7 +156,7 @@ def format_annotation(
             args_format = f"\\[:py:data:`{prefix}typing.Union`\\[{{}}]]"
             args = tuple(x for x in args if x is not type(None))  # noqa: E721
     elif full_name == "typing.Callable" and args and args[0] is not ...:
-        formatted_args = [
+        fmt = [
             format_annotation(
                 arg,
                 simplify_optional_unions=simplify_optional_unions,
@@ -164,12 +164,12 @@ def format_annotation(
             )
             for arg in args
         ]
-        formatted_args = f"\\[\\[{', '.join(formatted_args[:-1])}], {formatted_args[-1]}]"
+        formatted_args = f"\\[\\[{', '.join(fmt[:-1])}], {fmt[-1]}]"
     elif full_name == "typing.Literal":
         formatted_args = f"\\[{', '.join(repr(arg) for arg in args)}]"
 
     if args and not formatted_args:
-        fmt = ", ".join(
+        fmt = [
             format_annotation(
                 arg,
                 fully_qualified=fully_qualified,
@@ -177,8 +177,8 @@ def format_annotation(
                 typehints_formatter=typehints_formatter,
             )
             for arg in args
-        )
-        formatted_args = args_format.format(fmt)
+        ]
+        formatted_args = args_format.format(", ".join(fmt))
 
     return f":py:{role}:`{prefix}{full_name}`{formatted_args}"
 
