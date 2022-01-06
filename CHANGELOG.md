@@ -2,8 +2,12 @@
 
 ## dev
 
-- Added `document_defaults` config option allowing to automatically annotate parameter defaults.
+- Fixed `normalize_source_lines()` messing with the indentation of methods with decorators that have parameters starting with `def`.
 - Made formatting function configurable using the option `typehints_formatter`
+
+## 1.14.0
+
+- Added `typehints_defaults` config option allowing to automatically annotate parameter defaults.
 
 ## 1.13.1
 
