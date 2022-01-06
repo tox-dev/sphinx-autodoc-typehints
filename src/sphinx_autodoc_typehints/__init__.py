@@ -450,13 +450,16 @@ def process_docstring(
             obj = obj.__init__
 
         obj = inspect.unwrap(obj)
-        signature = sphinx_signature(obj)
+        try:
+            signature = sphinx_signature(obj)
+        except ValueError:
+            signature = None
         type_hints = get_all_type_hints(obj, name)
 
         for arg_name, annotation in type_hints.items():
             if arg_name == "return":
                 continue  # this is handled separately later
-            default = signature.parameters[arg_name].default
+            default = inspect.Parameter.empty if signature is None else signature.parameters[arg_name].default
             if arg_name.endswith("_"):
                 arg_name = f"{arg_name[:-1]}\\_"
 
