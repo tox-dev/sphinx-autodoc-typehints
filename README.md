@@ -61,7 +61,7 @@ The following configuration options are accepted:
   `True`, add stub documentation for undocumented parameters to be able to add type info.
 - `typehints_document_rtype` (default: `True`): If `False`, never add an `:rtype:` directive. If `True`, add the
   `:rtype:` directive if no existing `:rtype:` is found.
-- `document_defaults` (default: `None`): If `None`, defaults are not added. Otherwise adds a default annotation:
+- `typehints_defaults` (default: `None`): If `None`, defaults are not added. Otherwise adds a default annotation:
 
   - `'comma'` adds it after the type, changing Sphinx’ default look to “**param** (*int*, default: `1`) -- text”.
   - `'braces'` adds `(default: ...)` after the type (useful for numpydoc like styles).
