@@ -176,7 +176,7 @@ def normalize_source_lines(source_lines: str) -> str:
 
     # Find the line and line number containing the function definition
     for i, l in enumerate(lines):
-        if l.lstrip().startswith("def"):
+        if l.lstrip().startswith("def "):
             idx = i
             whitespace_separator = "def"
             break

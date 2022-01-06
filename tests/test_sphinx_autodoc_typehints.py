@@ -679,3 +679,39 @@ def test_normalize_source_lines_async_def() -> None:
     """
 
     assert normalize_source_lines(dedent(source)) == dedent(expected)
+
+
+def test_normalize_source_lines_def_starting_decorator_parameter() -> None:
+    source = """
+    @_with_parameters(
+        _Parameter("self", _Parameter.POSITIONAL_OR_KEYWORD),
+        *_proxy_instantiation_parameters,
+        _project_id,
+        _Parameter(
+            "node_numbers",
+            _Parameter.POSITIONAL_OR_KEYWORD,
+            default=None,
+            annotation=Optional[Iterable[int]],
+        ),
+    )
+    def __init__(bound_args):  # noqa: N805
+        pass
+    """
+
+    expected = """
+    @_with_parameters(
+        _Parameter("self", _Parameter.POSITIONAL_OR_KEYWORD),
+        *_proxy_instantiation_parameters,
+        _project_id,
+        _Parameter(
+            "node_numbers",
+            _Parameter.POSITIONAL_OR_KEYWORD,
+            default=None,
+            annotation=Optional[Iterable[int]],
+        ),
+    )
+    def __init__(bound_args):  # noqa: N805
+        pass
+    """
+
+    assert normalize_source_lines(dedent(source)) == dedent(expected)
