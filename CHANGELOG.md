@@ -2,7 +2,7 @@
 
 ## 1.14.0
 
-- Added `document_defaults` config option allowing to automatically annotate parameter defaults.
+- Added `typehints_defaults` config option allowing to automatically annotate parameter defaults.
 
 ## 1.13.1
 
