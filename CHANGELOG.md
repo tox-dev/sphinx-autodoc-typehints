@@ -1,6 +1,6 @@
 # Changelog
 
-## dev
+## 1.14.0
 
 - Added `document_defaults` config option allowing to automatically annotate parameter defaults.
 
