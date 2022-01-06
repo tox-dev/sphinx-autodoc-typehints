@@ -1,5 +1,9 @@
 # Changelog
 
+## dev
+
+- Fixed `normalize_source_lines()` messing with the indentation of methods with decorators that have parameters starting with `def`.
+
 ## 1.14.0
 
 - Added `typehints_defaults` config option allowing to automatically annotate parameter defaults.
