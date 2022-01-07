@@ -4,6 +4,7 @@ import pathlib
 import re
 import sys
 import typing
+from functools import cmp_to_key
 from io import StringIO
 from textwrap import dedent, indent
 from types import ModuleType
@@ -24,10 +25,12 @@ from typing import (
     TypeVar,
     Union,
 )
-from unittest.mock import patch
+from unittest.mock import create_autospec, patch
 
 import pytest
 import typing_extensions
+from sphinx.application import Sphinx
+from sphinx.config import Config
 from sphinx.testing.util import SphinxTestApp
 from sphobjinv import Inventory
 
@@ -255,13 +258,14 @@ def test_format_annotation_both_libs(library: ModuleType, annotation: str, param
 
 def test_process_docstring_slot_wrapper() -> None:
     lines: list[str] = []
-    process_docstring(None, "class", "SlotWrapper", Slotted, None, lines)  # type: ignore # first argument is not Sphinx
+    config = create_autospec(Config, typehints_fully_qualified=False, simplify_optional_unions=False)
+    app: Sphinx = create_autospec(Sphinx, config=config)
+    process_docstring(app, "class", "SlotWrapper", Slotted, None, lines)
     assert not lines
 
 
 def set_python_path() -> None:
     test_path = pathlib.Path(__file__).parent
-
     # Add test directory to sys.path to allow imports of dummy module.
     if str(test_path) not in sys.path:
         sys.path.insert(0, str(test_path))
@@ -715,3 +719,12 @@ def test_normalize_source_lines_def_starting_decorator_parameter() -> None:
     """
 
     assert normalize_source_lines(dedent(source)) == dedent(expected)
+
+
+@pytest.mark.parametrize("obj", [cmp_to_key, 1])
+def test_default_no_signature(obj: Any) -> None:
+    config = create_autospec(Config, typehints_fully_qualified=False, simplify_optional_unions=False)
+    app: Sphinx = create_autospec(Sphinx, config=config)
+    lines: list[str] = []
+    process_docstring(app, "what", "name", obj, None, lines)
+    assert lines == []
