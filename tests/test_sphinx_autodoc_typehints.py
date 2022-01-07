@@ -84,7 +84,7 @@ class Metaclass(type):
 
 class HintedMethods:
     @classmethod
-    def clsmethod(cls: Type[T]) -> T:
+    def clsmethod(cls: type[T]) -> T:
         pass
 
     def method(self: T) -> T:
