@@ -740,11 +740,14 @@ def test_default_no_signature(obj: Any) -> None:
 
 
 @pytest.mark.parametrize("method", [HintedMethods.clsmethod, HintedMethods().method])
-@pytest.mark.sphinx("text", testroot="dummy")
-def test_bound_classmethod(app: SphinxTestApp, method: FunctionType) -> None:
-    # Make sure that processing bound methods with a typehint on self/cls don't
-    # raise an error because it doesn't appear in the inspect signature
-
-    # Raises KeyError('cls') on v1.14.0
+def test_bound_class_method(method: FunctionType) -> None:
+    config = create_autospec(
+        Config,
+        typehints_fully_qualified=False,
+        simplify_optional_unions=False,
+        typehints_document_rtype=False,
+        always_document_param_types=True,
+        typehints_defaults=True,
+    )
+    app: Sphinx = create_autospec(Sphinx, config=config)
     process_docstring(app, "class", method.__qualname__, method, None, [])
-    app.build()
