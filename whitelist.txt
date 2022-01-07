@@ -2,7 +2,6 @@ ast3
 autodoc
 autouse
 backfill
-clsmethod
 contravariant
 cpython
 dedent
