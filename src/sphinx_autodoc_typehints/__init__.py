@@ -5,6 +5,7 @@ import sys
 import textwrap
 import typing
 from ast import FunctionDef, Module, stmt
+from functools import partial
 from typing import Any, AnyStr, NewType, TypeVar, get_type_hints
 
 from sphinx.application import Sphinx
@@ -16,28 +17,19 @@ from sphinx.util.inspect import stringify_signature
 
 from .version import version as __version__
 
-logger = logging.getLogger(__name__)
-pydata_annotations = {"Any", "AnyStr", "Callable", "ClassVar", "Literal", "NoReturn", "Optional", "Tuple", "Union"}
-
-__all__ = [
-    "__version__",
-]
+_LOGGER = logging.getLogger(__name__)
+_PYDATA_ANNOTATIONS = {"Any", "AnyStr", "Callable", "ClassVar", "Literal", "NoReturn", "Optional", "Tuple", "Union"}
 
 
 def get_annotation_module(annotation: Any) -> str:
-    # Special cases
     if annotation is None:
         return "builtins"
-
     if sys.version_info >= (3, 10) and isinstance(annotation, NewType):  # type: ignore # isinstance NewType is Callable
         return "typing"
-
     if hasattr(annotation, "__module__"):
         return annotation.__module__  # type: ignore # deduced Any
-
     if hasattr(annotation, "__origin__"):
         return annotation.__origin__.__module__  # type: ignore # deduced Any
-
     raise ValueError(f"Cannot determine the module of {annotation}")
 
 
@@ -124,7 +116,7 @@ def format_annotation(annotation: Any, fully_qualified: bool = False, simplify_o
 
     full_name = f"{module}.{class_name}" if module != "builtins" else class_name
     prefix = "" if fully_qualified or full_name == class_name else "~"
-    role = "data" if class_name in pydata_annotations else "class"
+    role = "data" if class_name in _PYDATA_ANNOTATIONS else "class"
     args_format = "\\[{}]"
     formatted_args = ""
 
@@ -232,7 +224,7 @@ def process_signature(
         return False
 
     if "<locals>" in obj.__qualname__ and not _is_dataclass(name, what, obj.__qualname__):
-        logger.warning('Cannot treat a function defined as a local function: "%s"  (use @functools.wraps)', name)
+        _LOGGER.warning('Cannot treat a function defined as a local function: "%s"  (use @functools.wraps)', name)
         return None
 
     if parameters:
@@ -287,7 +279,7 @@ def get_all_type_hints(obj: Any, name: str) -> dict[str, Any]:
         if isinstance(exc, TypeError) and _future_annotations_imported(obj) and "unsupported operand type" in str(exc):
             rv = obj.__annotations__
     except NameError as exc:
-        logger.warning('Cannot resolve forward reference in type annotations of "%s": %s', name, exc)
+        _LOGGER.warning('Cannot resolve forward reference in type annotations of "%s": %s', name, exc)
         rv = obj.__annotations__
 
     if rv:
@@ -305,7 +297,7 @@ def get_all_type_hints(obj: Any, name: str) -> dict[str, Any]:
     except (AttributeError, TypeError):
         pass
     except NameError as exc:
-        logger.warning('Cannot resolve forward reference in type annotations of "%s": %s', name, exc)
+        _LOGGER.warning('Cannot resolve forward reference in type annotations of "%s": %s', name, exc)
         rv = obj.__annotations__
 
     return rv
@@ -327,7 +319,7 @@ def backfill_type_hints(obj: Any, name: str) -> dict[str, Any]:
         children = module.body  # use the body to ignore type comments
 
         if len(children) != 1:
-            logger.warning('Did not get exactly one node from AST for "%s", got %s', name, len(children))
+            _LOGGER.warning('Did not get exactly one node from AST for "%s", got %s', name, len(children))
             return None
 
         return children[0]
@@ -353,7 +345,7 @@ def backfill_type_hints(obj: Any, name: str) -> dict[str, Any]:
     try:
         comment_args_str, comment_returns = type_comment.split(" -> ")
     except ValueError:
-        logger.warning('Unparseable type hint comment for "%s": Expected to contain ` -> `', name)
+        _LOGGER.warning('Unparseable type hint comment for "%s": Expected to contain ` -> `', name)
         return {}
 
     rv = {}
@@ -368,7 +360,7 @@ def backfill_type_hints(obj: Any, name: str) -> dict[str, Any]:
             comment_args.insert(0, None)  # self/cls may be omitted in type comments, insert blank
 
         if len(args) != len(comment_args):
-            logger.warning('Not enough type comments found on "%s"', name)
+            _LOGGER.warning('Not enough type comments found on "%s"', name)
             return rv
 
     for at, arg in enumerate(args):
@@ -442,80 +434,71 @@ def process_docstring(
     app: Sphinx, what: str, name: str, obj: Any, options: Options | None, lines: list[str]  # noqa: U100
 ) -> None:
     original_obj = obj
-    if isinstance(obj, property):
-        obj = obj.fget
+    obj = obj.fget if isinstance(obj, property) else obj
+    if not callable(obj):
+        return
+    obj = obj.__init__ if inspect.isclass(obj) else obj
+    obj = inspect.unwrap(obj)
 
-    if callable(obj):
-        if inspect.isclass(obj):
-            obj = obj.__init__
-
-        obj = inspect.unwrap(obj)
+    try:
         signature = sphinx_signature(obj)
-        type_hints = get_all_type_hints(obj, name)
+    except (ValueError, TypeError):
+        signature = None
+    type_hints = get_all_type_hints(obj, name)
 
-        for arg_name, annotation in type_hints.items():
-            if arg_name == "return":
-                continue  # this is handled separately later
-            default = signature.parameters[arg_name].default
-            if arg_name.endswith("_"):
-                arg_name = f"{arg_name[:-1]}\\_"
+    formatter = partial(
+        format_annotation,
+        fully_qualified=app.config.typehints_fully_qualified,
+        simplify_optional_unions=app.config.simplify_optional_unions,
+    )
+    for arg_name, annotation in type_hints.items():
+        if arg_name == "return":
+            continue  # this is handled separately later
+        default = inspect.Parameter.empty if signature is None else signature.parameters[arg_name].default
+        if arg_name.endswith("_"):
+            arg_name = f"{arg_name[:-1]}\\_"
 
-            formatted_annotation = format_annotation(
-                annotation,
-                fully_qualified=app.config.typehints_fully_qualified,
-                simplify_optional_unions=app.config.simplify_optional_unions,
-            )
+        formatted_annotation = formatter(annotation)
 
-            search_for = [f":{field} {arg_name}:" for field in ("param", "parameter", "arg", "argument")]
-            insert_index = None
+        search_for = {f":{field} {arg_name}:" for field in ("param", "parameter", "arg", "argument")}
+        insert_index = None
+        for at, line in enumerate(lines):
+            if any(line.startswith(search_string) for search_string in search_for):
+                insert_index = at
+                break
 
-            for i, line in enumerate(lines):
-                if any(line.startswith(search_string) for search_string in search_for):
-                    insert_index = i
-                    break
-
-            if insert_index is None and app.config.always_document_param_types:
-                lines.append(f":param {arg_name}:")
-                insert_index = len(lines)
-
-            if insert_index is not None:
-                type_annotation = f":type {arg_name}: {formatted_annotation}"
-                if app.config.typehints_defaults:
-                    formatted_default = format_default(app, default)
-                    if formatted_default:
-                        if app.config.typehints_defaults.endswith("after"):
-                            lines[insert_index] += formatted_default
-                        else:  # add to last param doc line
-                            type_annotation += formatted_default
-                lines.insert(insert_index, type_annotation)
-
-        if "return" in type_hints and not inspect.isclass(original_obj):
-            # This avoids adding a return type for data class __init__ methods
-            if what == "method" and name.endswith(".__init__"):
-                return
-
-            formatted_annotation = format_annotation(
-                type_hints["return"],
-                fully_qualified=app.config.typehints_fully_qualified,
-                simplify_optional_unions=app.config.simplify_optional_unions,
-            )
-
+        if insert_index is None and app.config.always_document_param_types:
+            lines.append(f":param {arg_name}:")
             insert_index = len(lines)
-            for i, line in enumerate(lines):
-                if line.startswith(":rtype:"):
-                    insert_index = None
-                    break
-                elif line.startswith(":return:") or line.startswith(":returns:"):
-                    insert_index = i
 
-            if insert_index is not None and app.config.typehints_document_rtype:
-                if insert_index == len(lines):
-                    # Ensure that :rtype: doesn't get joined with a paragraph of text, which
-                    # prevents it being interpreted.
-                    lines.append("")
-                    insert_index += 1
+        if insert_index is not None:
+            type_annotation = f":type {arg_name}: {formatted_annotation}"
+            if app.config.typehints_defaults:
+                formatted_default = format_default(app, default)
+                if formatted_default:
+                    if app.config.typehints_defaults.endswith("after"):
+                        lines[insert_index] += formatted_default
+                    else:  # add to last param doc line
+                        type_annotation += formatted_default
+            lines.insert(insert_index, type_annotation)
 
-                lines.insert(insert_index, f":rtype: {formatted_annotation}")
+    if "return" in type_hints and not inspect.isclass(original_obj):
+        if what == "method" and name.endswith(".__init__"):  # avoid adding a return type for data class __init__
+            return
+        formatted_annotation = formatter(type_hints["return"])
+        insert_index = len(lines)
+        for at, line in enumerate(lines):
+            if line.startswith(":rtype:"):
+                insert_index = None
+                break
+            elif line.startswith(":return:") or line.startswith(":returns:"):
+                insert_index = at
+
+        if insert_index is not None and app.config.typehints_document_rtype:
+            if insert_index == len(lines):  # ensure that :rtype: doesn't get joined with a paragraph of text
+                lines.append("")
+                insert_index += 1
+            lines.insert(insert_index, f":rtype: {formatted_annotation}")
 
 
 def builder_ready(app: Sphinx) -> None:
@@ -541,3 +524,15 @@ def setup(app: Sphinx) -> dict[str, bool]:
     app.connect("autodoc-process-signature", process_signature)
     app.connect("autodoc-process-docstring", process_docstring)
     return {"parallel_read_safe": True}
+
+
+__all__ = [
+    "__version__",
+    "format_annotation",
+    "get_annotation_args",
+    "get_annotation_class_name",
+    "get_annotation_module",
+    "normalize_source_lines",
+    "process_docstring",
+    "process_signature",
+]
