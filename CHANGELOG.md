@@ -1,6 +1,6 @@
 # Changelog
 
-## dev
+## 1.14.1
 
 - Fixed `normalize_source_lines()` messing with the indentation of methods with decorators that have parameters starting with `def`.
 - Handle `ValueError` or `TypeError` being raised when signature of an object cannot be determined
