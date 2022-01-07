@@ -454,7 +454,10 @@ def process_docstring(
     for arg_name, annotation in type_hints.items():
         if arg_name == "return":
             continue  # this is handled separately later
-        default = inspect.Parameter.empty if signature is None else signature.parameters[arg_name].default
+        if signature is None or arg_name not in signature.parameters:
+            default = inspect.Parameter.empty
+        else:
+            default = signature.parameters[arg_name].default
         if arg_name.endswith("_"):
             arg_name = f"{arg_name[:-1]}\\_"
 

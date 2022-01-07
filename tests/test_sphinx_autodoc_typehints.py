@@ -7,7 +7,7 @@ import typing
 from functools import cmp_to_key
 from io import StringIO
 from textwrap import dedent, indent
-from types import ModuleType
+from types import FunctionType, ModuleType
 from typing import (
     IO,
     Any,
@@ -80,6 +80,15 @@ class Slotted:
 
 class Metaclass(type):
     pass
+
+
+class HintedMethods:
+    @classmethod
+    def clsmethod(cls: Type[T]) -> T:
+        pass
+
+    def method(self: T) -> T:
+        pass
 
 
 PY310_PLUS = sys.version_info >= (3, 10)
@@ -728,3 +737,14 @@ def test_default_no_signature(obj: Any) -> None:
     lines: list[str] = []
     process_docstring(app, "what", "name", obj, None, lines)
     assert lines == []
+
+
+@pytest.mark.parametrize("method", [HintedMethods.clsmethod, HintedMethods().method])
+@pytest.mark.sphinx("text", testroot="dummy")
+def test_bound_classmethod(app: SphinxTestApp, method: FunctionType) -> None:
+    # Make sure that processing bound methods with a typehint on self/cls don't
+    # raise an error because it doesn't appear in the inspect signature
+
+    # Raises KeyError('cls') on v1.14.0
+    process_docstring(app, "class", method.__qualname__, method, None, [])
+    app.build()
