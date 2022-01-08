@@ -216,7 +216,7 @@ def process_signature(
         return (what == "method" and name.endswith(".__init__")) or (what == "class" and qualname.endswith(".__init__"))
 
     if "<locals>" in obj.__qualname__ and not _is_dataclass(obj.__qualname__):
-        _LOGGER.warning('Cannot treat a function defined as a local function: "%s"  (use @functools.wraps)', name)
+        _LOGGER.warning('Cannot treat a function defined as a local function: "%s" (use @functools.wraps)', name)
         return None
 
     # if we have parameters we may need to delete first argument that's not documented, e.g. self
