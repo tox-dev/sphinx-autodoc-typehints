@@ -200,55 +200,43 @@ def process_signature(
         return None
 
     original_obj = obj
-    if inspect.isclass(obj):
-        obj = getattr(obj, "__init__", getattr(obj, "__new__", None))
-
-    if not getattr(obj, "__annotations__", None):
+    obj = getattr(obj, "__init__", getattr(obj, "__new__", None)) if inspect.isclass(obj) else obj
+    if not getattr(obj, "__annotations__", None):  # when has no annotation we cannot autodoc typehints so bail
         return None
 
     obj = inspect.unwrap(obj)
     sph_signature = sphinx_signature(obj)
     parameters = [param.replace(annotation=inspect.Parameter.empty) for param in sph_signature.parameters.values()]
 
-    # The generated dataclass __init__() and class are weird and need extra checks
-    # This helper function operates on the generated class and methods
-    # of a dataclass, not an instantiated dataclass object. As such,
-    # it cannot be replaced by a call to `dataclasses.is_dataclass()`.
-    def _is_dataclass(name: str, what: str, qualname: str) -> bool:
-        if what == "method" and name.endswith(".__init__"):
-            # generated __init__()
-            return True
-        if what == "class" and qualname.endswith(".__init__"):
-            # generated class
-            return True
-        return False
+    # bail if it is a local method as we cannot determine if first argument needs to be deleted or not
+    def _is_dataclass(qualname: str) -> bool:
+        # generated dataclass __init__() and class need extra checks, as the function operates on the generated class
+        # and methods (not an instantiated dataclass object) it cannot be replaced by a call to
+        # `dataclasses.is_dataclass()` => check manually for either generated __init__ or generated class
+        return (what == "method" and name.endswith(".__init__")) or (what == "class" and qualname.endswith(".__init__"))
 
-    if "<locals>" in obj.__qualname__ and not _is_dataclass(name, what, obj.__qualname__):
+    if "<locals>" in obj.__qualname__ and not _is_dataclass(obj.__qualname__):
         _LOGGER.warning('Cannot treat a function defined as a local function: "%s"  (use @functools.wraps)', name)
         return None
 
+    # if we have parameters we may need to delete first argument that's not documented, e.g. self
+    start = 0
     if parameters:
         if inspect.isclass(original_obj) or (what == "method" and name.endswith(".__init__")):
-            del parameters[0]
+            start = 1
         elif what == "method":
             outer = inspect.getmodule(obj)
             for class_name in obj.__qualname__.split(".")[:-1]:
                 outer = getattr(outer, class_name)
-
             method_name = obj.__name__
             if method_name.startswith("__") and not method_name.endswith("__"):
-                # If the method starts with double underscore (dunder)
-                # Python applies mangling so we need to prepend the class name.
-                # This doesn't happen if it always ends with double underscore.
-                class_name = obj.__qualname__.split(".")[-2]
-                method_name = f"_{class_name}{method_name}"
-
+                # when method starts with double underscore Python applies mangling -> prepend the class name
+                method_name = f"_{obj.__qualname__.split('.')[-2]}{method_name}"
             method_object = outer.__dict__[method_name] if outer else obj
             if not isinstance(method_object, (classmethod, staticmethod)):
-                del parameters[0]
+                start = 1
 
-    sph_signature = sph_signature.replace(parameters=parameters, return_annotation=inspect.Signature.empty)
-
+    sph_signature = sph_signature.replace(parameters=parameters[start:], return_annotation=inspect.Signature.empty)
     return stringify_signature(sph_signature).replace("\\", "\\\\"), None
 
 
