@@ -35,6 +35,7 @@ from sphinx.testing.util import SphinxTestApp
 from sphobjinv import Inventory
 
 from sphinx_autodoc_typehints import (
+    backfill_type_hints,
     format_annotation,
     get_annotation_args,
     get_annotation_class_name,
@@ -751,3 +752,12 @@ def test_bound_class_method(method: FunctionType) -> None:
     )
     app: Sphinx = create_autospec(Sphinx, config=config)
     process_docstring(app, "class", method.__qualname__, method, None, [])
+
+
+def test_syntax_error_backfill() -> None:
+    # Regression test for #188
+    # fmt: off
+    func = (  # Note: line break here is what previously led to SyntaxError in process_docstring
+        lambda x: x)
+    # fmt: on
+    backfill_type_hints(func, "func")

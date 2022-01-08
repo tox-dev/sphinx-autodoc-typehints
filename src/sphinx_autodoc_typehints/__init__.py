@@ -315,7 +315,7 @@ def backfill_type_hints(obj: Any, name: str) -> dict[str, Any]:
     try:
         code = textwrap.dedent(normalize_source_lines(inspect.getsource(obj)))
         obj_ast = ast.parse(code, **parse_kwargs)  # type: ignore # dynamic kwargs
-    except (OSError, TypeError):
+    except (OSError, TypeError, SyntaxError):
         return {}
 
     obj_ast = _one_child(obj_ast)
