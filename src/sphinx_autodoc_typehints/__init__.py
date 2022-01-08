@@ -208,23 +208,16 @@ def process_signature(
     sph_signature = sphinx_signature(obj)
     parameters = [param.replace(annotation=inspect.Parameter.empty) for param in sph_signature.parameters.values()]
 
-    # bail if it is a local method as we cannot determine if first argument needs to be deleted or not
-    def _is_dataclass(qualname: str) -> bool:
-        # generated dataclass __init__() and class need extra checks, as the function operates on the generated class
-        # and methods (not an instantiated dataclass object) it cannot be replaced by a call to
-        # `dataclasses.is_dataclass()` => check manually for either generated __init__ or generated class
-        return (what == "method" and name.endswith(".__init__")) or (what == "class" and qualname.endswith(".__init__"))
-
-    if "<locals>" in obj.__qualname__ and not _is_dataclass(obj.__qualname__):
-        _LOGGER.warning('Cannot treat a function defined as a local function: "%s" (use @functools.wraps)', name)
-        return None
-
     # if we have parameters we may need to delete first argument that's not documented, e.g. self
     start = 0
     if parameters:
         if inspect.isclass(original_obj) or (what == "method" and name.endswith(".__init__")):
             start = 1
         elif what == "method":
+            # bail if it is a local method as we cannot determine if first argument needs to be deleted or not
+            if "<locals>" in obj.__qualname__ and not _is_dataclass(name, what, obj.__qualname__):
+                _LOGGER.warning('Cannot handle as a local function: "%s" (use @functools.wraps)', name)
+                return None
             outer = inspect.getmodule(obj)
             for class_name in obj.__qualname__.split(".")[:-1]:
                 outer = getattr(outer, class_name)
@@ -238,6 +231,13 @@ def process_signature(
 
     sph_signature = sph_signature.replace(parameters=parameters[start:], return_annotation=inspect.Signature.empty)
     return stringify_signature(sph_signature).replace("\\", "\\\\"), None
+
+
+def _is_dataclass(name: str, what: str, qualname: str) -> bool:
+    # generated dataclass __init__() and class need extra checks, as the function operates on the generated class
+    # and methods (not an instantiated dataclass object) it cannot be replaced by a call to
+    # `dataclasses.is_dataclass()` => check manually for either generated __init__ or generated class
+    return (what == "method" and name.endswith(".__init__")) or (what == "class" and qualname.endswith(".__init__"))
 
 
 def _future_annotations_imported(obj: Any) -> bool:
