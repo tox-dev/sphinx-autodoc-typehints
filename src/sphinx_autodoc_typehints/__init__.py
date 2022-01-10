@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+import re
 import sys
 import textwrap
 import typing
@@ -252,43 +253,48 @@ def _future_annotations_imported(obj: Any) -> bool:
 
 
 def get_all_type_hints(obj: Any, name: str) -> dict[str, Any]:
-    rv = {}
-
+    result = _get_type_hint(name, obj)
+    if result:
+        return result
+    result = backfill_type_hints(obj, name)
     try:
-        rv = get_type_hints(obj)
+        obj.__annotations__ = result
+    except (AttributeError, TypeError):
+        return result
+    return _get_type_hint(name, obj)
+
+
+_TYPE_GUARD_IMPORT_RE = re.compile(r"if (typing.)?TYPE_CHECKING:([\s\S]*?)(?=\n\S)")
+_TYPE_GUARD_IMPORTS_RESOLVED = set()
+
+
+def _resolve_type_guarded_imports(obj: Any) -> None:
+    if hasattr(obj, "__module__") and obj.__module__ not in _TYPE_GUARD_IMPORTS_RESOLVED:
+        _TYPE_GUARD_IMPORTS_RESOLVED.add(obj.__module__)
+        if obj.__module__ not in sys.builtin_module_names:
+            module = inspect.getmodule(obj)
+            if module:
+                module_code = inspect.getsource(module)
+                for (_, part) in _TYPE_GUARD_IMPORT_RE.findall(module_code):
+                    module_code = textwrap.dedent(part)
+                    exec(module_code, obj.__globals__)
+
+
+def _get_type_hint(name: str, obj: Any) -> dict[str, Any]:
+    _resolve_type_guarded_imports(obj)
+    try:
+        result = get_type_hints(obj)
     except (AttributeError, TypeError, RecursionError) as exc:
-        # Introspecting a slot wrapper will raise TypeError, and and some recursive type
-        # definitions will cause a RecursionError (https://github.com/python/typing/issues/574).
-
-        # If one is using PEP563 annotations, Python will raise a (e.g.,)
-        # TypeError("TypeError: unsupported operand type(s) for |: 'type' and 'NoneType'")
-        # on 'str | None', therefore we accept TypeErrors with that error message
-        # if 'annotations' is imported from '__future__'.
+        # TypeError - slot wrapper, PEP-563 when part of new syntax not supported
+        # RecursionError - some recursive type definitions https://github.com/python/typing/issues/574
         if isinstance(exc, TypeError) and _future_annotations_imported(obj) and "unsupported operand type" in str(exc):
-            rv = obj.__annotations__
+            result = obj.__annotations__
+        else:
+            result = {}
     except NameError as exc:
         _LOGGER.warning('Cannot resolve forward reference in type annotations of "%s": %s', name, exc)
-        rv = obj.__annotations__
-
-    if rv:
-        return rv
-
-    rv = backfill_type_hints(obj, name)
-
-    try:
-        obj.__annotations__ = rv
-    except (AttributeError, TypeError):
-        return rv
-
-    try:
-        rv = get_type_hints(obj)
-    except (AttributeError, TypeError):
-        pass
-    except NameError as exc:
-        _LOGGER.warning('Cannot resolve forward reference in type annotations of "%s": %s', name, exc)
-        rv = obj.__annotations__
-
-    return rv
+        result = obj.__annotations__
+    return result
 
 
 def backfill_type_hints(obj: Any, name: str) -> dict[str, Any]:
@@ -305,11 +311,9 @@ def backfill_type_hints(obj: Any, name: str) -> dict[str, Any]:
 
     def _one_child(module: Module) -> stmt | None:
         children = module.body  # use the body to ignore type comments
-
         if len(children) != 1:
             _LOGGER.warning('Did not get exactly one node from AST for "%s", got %s', name, len(children))
             return None
-
         return children[0]
 
     try:
@@ -526,4 +530,5 @@ __all__ = [
     "normalize_source_lines",
     "process_docstring",
     "process_signature",
+    "backfill_type_hints",
 ]
