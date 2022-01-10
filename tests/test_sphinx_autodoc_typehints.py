@@ -4,9 +4,10 @@ import pathlib
 import re
 import sys
 import typing
+from functools import cmp_to_key
 from io import StringIO
 from textwrap import dedent, indent
-from types import ModuleType
+from types import FunctionType, ModuleType
 from typing import (
     IO,
     Any,
@@ -24,14 +25,17 @@ from typing import (
     TypeVar,
     Union,
 )
-from unittest.mock import patch
+from unittest.mock import create_autospec, patch
 
 import pytest
 import typing_extensions
+from sphinx.application import Sphinx
+from sphinx.config import Config
 from sphinx.testing.util import SphinxTestApp
 from sphobjinv import Inventory
 
 from sphinx_autodoc_typehints import (
+    backfill_type_hints,
     format_annotation,
     get_annotation_args,
     get_annotation_class_name,
@@ -51,7 +55,7 @@ class A:
         return type(self)
 
     class Inner:
-        pass
+        ...
 
 
 class B(Generic[T]):
@@ -60,15 +64,15 @@ class B(Generic[T]):
 
 
 class C(B[str]):
-    pass
+    ...
 
 
 class D(typing_extensions.Protocol):
-    pass
+    ...
 
 
 class E(typing_extensions.Protocol[T]):  # type: ignore #  Invariant type variable "T" used in protocol where covariant
-    pass
+    ...
 
 
 class Slotted:
@@ -76,7 +80,16 @@ class Slotted:
 
 
 class Metaclass(type):
-    pass
+    ...
+
+
+class HintedMethods:
+    @classmethod
+    def from_magic(cls: type[T]) -> T:
+        ...
+
+    def method(self: T) -> T:
+        ...
 
 
 PY310_PLUS = sys.version_info >= (3, 10)
@@ -255,13 +268,14 @@ def test_format_annotation_both_libs(library: ModuleType, annotation: str, param
 
 def test_process_docstring_slot_wrapper() -> None:
     lines: list[str] = []
-    process_docstring(None, "class", "SlotWrapper", Slotted, None, lines)  # type: ignore # first argument is not Sphinx
+    config = create_autospec(Config, typehints_fully_qualified=False, simplify_optional_unions=False)
+    app: Sphinx = create_autospec(Sphinx, config=config)
+    process_docstring(app, "class", "SlotWrapper", Slotted, None, lines)
     assert not lines
 
 
 def set_python_path() -> None:
     test_path = pathlib.Path(__file__).parent
-
     # Add test directory to sys.path to allow imports of dummy module.
     if str(test_path) not in sys.path:
         sys.path.insert(0, str(test_path))
@@ -717,13 +731,13 @@ def test_normalize_source_lines_async_def() -> None:
     source = """
     async def async_function():
         class InnerClass:
-            def __init__(self): pass
+            def __init__(self): ...
     """
 
     expected = """
     async def async_function():
         class InnerClass:
-            def __init__(self): pass
+            def __init__(self): ...
     """
 
     assert normalize_source_lines(dedent(source)) == dedent(expected)
@@ -743,7 +757,7 @@ def test_normalize_source_lines_def_starting_decorator_parameter() -> None:
         ),
     )
     def __init__(bound_args):  # noqa: N805
-        pass
+        ...
     """
 
     expected = """
@@ -759,7 +773,39 @@ def test_normalize_source_lines_def_starting_decorator_parameter() -> None:
         ),
     )
     def __init__(bound_args):  # noqa: N805
-        pass
+        ...
     """
 
     assert normalize_source_lines(dedent(source)) == dedent(expected)
+
+
+@pytest.mark.parametrize("obj", [cmp_to_key, 1])
+def test_default_no_signature(obj: Any) -> None:
+    config = create_autospec(Config, typehints_fully_qualified=False, simplify_optional_unions=False)
+    app: Sphinx = create_autospec(Sphinx, config=config)
+    lines: list[str] = []
+    process_docstring(app, "what", "name", obj, None, lines)
+    assert lines == []
+
+
+@pytest.mark.parametrize("method", [HintedMethods.from_magic, HintedMethods().method])
+def test_bound_class_method(method: FunctionType) -> None:
+    config = create_autospec(
+        Config,
+        typehints_fully_qualified=False,
+        simplify_optional_unions=False,
+        typehints_document_rtype=False,
+        always_document_param_types=True,
+        typehints_defaults=True,
+    )
+    app: Sphinx = create_autospec(Sphinx, config=config)
+    process_docstring(app, "class", method.__qualname__, method, None, [])
+
+
+def test_syntax_error_backfill() -> None:
+    # Regression test for #188
+    # fmt: off
+    func = (  # Note: line break here is what previously led to SyntaxError in process_docstring
+        lambda x: x)
+    # fmt: on
+    backfill_type_hints(func, "func")

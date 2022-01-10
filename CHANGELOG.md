@@ -2,8 +2,16 @@
 
 ## dev
 
-- Fixed `normalize_source_lines()` messing with the indentation of methods with decorators that have parameters starting with `def`.
+- Fix crash when the `inspect` module returns an invalid python syntax source
 - Made formatting function configurable using the option `typehints_formatter`
+
+## 1.14.1
+
+- Fixed `normalize_source_lines()` messing with the indentation of methods with decorators that have parameters starting
+  with `def`.
+- Handle `ValueError` or `TypeError` being raised when signature of an object cannot be determined
+- Fix `KeyError` being thrown when argument is not documented (e.g. `cls` argument for class methods, and `self` for
+  methods)
 
 ## 1.14.0
 
@@ -11,7 +19,7 @@
 
 ## 1.13.1
 
-- Fixed ``NewType`` inserts a reference as first argument instead of a string
+- Fixed `NewType` inserts a reference as first argument instead of a string
 
 ## 1.13.0
 

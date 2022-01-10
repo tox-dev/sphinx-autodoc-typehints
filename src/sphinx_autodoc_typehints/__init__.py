@@ -17,28 +17,19 @@ from sphinx.util.inspect import stringify_signature
 
 from .version import version as __version__
 
-logger = logging.getLogger(__name__)
-pydata_annotations = {"Any", "AnyStr", "Callable", "ClassVar", "Literal", "NoReturn", "Optional", "Tuple", "Union"}
-
-__all__ = [
-    "__version__",
-]
+_LOGGER = logging.getLogger(__name__)
+_PYDATA_ANNOTATIONS = {"Any", "AnyStr", "Callable", "ClassVar", "Literal", "NoReturn", "Optional", "Tuple", "Union"}
 
 
 def get_annotation_module(annotation: Any) -> str:
-    # Special cases
     if annotation is None:
         return "builtins"
-
     if sys.version_info >= (3, 10) and isinstance(annotation, NewType):  # type: ignore # isinstance NewType is Callable
         return "typing"
-
     if hasattr(annotation, "__module__"):
         return annotation.__module__  # type: ignore # deduced Any
-
     if hasattr(annotation, "__origin__"):
         return annotation.__origin__.__module__  # type: ignore # deduced Any
-
     raise ValueError(f"Cannot determine the module of {annotation}")
 
 
@@ -137,7 +128,7 @@ def format_annotation(
 
     full_name = f"{module}.{class_name}" if module != "builtins" else class_name
     prefix = "" if fully_qualified or full_name == class_name else "~"
-    role = "data" if class_name in pydata_annotations else "class"
+    role = "data" if class_name in _PYDATA_ANNOTATIONS else "class"
     args_format = "\\[{}]"
     formatted_args = ""
 
@@ -235,56 +226,44 @@ def process_signature(
         return None
 
     original_obj = obj
-    if inspect.isclass(obj):
-        obj = getattr(obj, "__init__", getattr(obj, "__new__", None))
-
-    if not getattr(obj, "__annotations__", None):
+    obj = getattr(obj, "__init__", getattr(obj, "__new__", None)) if inspect.isclass(obj) else obj
+    if not getattr(obj, "__annotations__", None):  # when has no annotation we cannot autodoc typehints so bail
         return None
 
     obj = inspect.unwrap(obj)
     sph_signature = sphinx_signature(obj)
     parameters = [param.replace(annotation=inspect.Parameter.empty) for param in sph_signature.parameters.values()]
 
-    # The generated dataclass __init__() and class are weird and need extra checks
-    # This helper function operates on the generated class and methods
-    # of a dataclass, not an instantiated dataclass object. As such,
-    # it cannot be replaced by a call to `dataclasses.is_dataclass()`.
-    def _is_dataclass(name: str, what: str, qualname: str) -> bool:
-        if what == "method" and name.endswith(".__init__"):
-            # generated __init__()
-            return True
-        if what == "class" and qualname.endswith(".__init__"):
-            # generated class
-            return True
-        return False
-
-    if "<locals>" in obj.__qualname__ and not _is_dataclass(name, what, obj.__qualname__):
-        logger.warning('Cannot treat a function defined as a local function: "%s"  (use @functools.wraps)', name)
-        return None
-
+    # if we have parameters we may need to delete first argument that's not documented, e.g. self
+    start = 0
     if parameters:
         if inspect.isclass(original_obj) or (what == "method" and name.endswith(".__init__")):
-            del parameters[0]
+            start = 1
         elif what == "method":
+            # bail if it is a local method as we cannot determine if first argument needs to be deleted or not
+            if "<locals>" in obj.__qualname__ and not _is_dataclass(name, what, obj.__qualname__):
+                _LOGGER.warning('Cannot handle as a local function: "%s" (use @functools.wraps)', name)
+                return None
             outer = inspect.getmodule(obj)
             for class_name in obj.__qualname__.split(".")[:-1]:
                 outer = getattr(outer, class_name)
-
             method_name = obj.__name__
             if method_name.startswith("__") and not method_name.endswith("__"):
-                # If the method starts with double underscore (dunder)
-                # Python applies mangling so we need to prepend the class name.
-                # This doesn't happen if it always ends with double underscore.
-                class_name = obj.__qualname__.split(".")[-2]
-                method_name = f"_{class_name}{method_name}"
-
+                # when method starts with double underscore Python applies mangling -> prepend the class name
+                method_name = f"_{obj.__qualname__.split('.')[-2]}{method_name}"
             method_object = outer.__dict__[method_name] if outer else obj
             if not isinstance(method_object, (classmethod, staticmethod)):
-                del parameters[0]
+                start = 1
 
-    sph_signature = sph_signature.replace(parameters=parameters, return_annotation=inspect.Signature.empty)
-
+    sph_signature = sph_signature.replace(parameters=parameters[start:], return_annotation=inspect.Signature.empty)
     return stringify_signature(sph_signature).replace("\\", "\\\\"), None
+
+
+def _is_dataclass(name: str, what: str, qualname: str) -> bool:
+    # generated dataclass __init__() and class need extra checks, as the function operates on the generated class
+    # and methods (not an instantiated dataclass object) it cannot be replaced by a call to
+    # `dataclasses.is_dataclass()` => check manually for either generated __init__ or generated class
+    return (what == "method" and name.endswith(".__init__")) or (what == "class" and qualname.endswith(".__init__"))
 
 
 def _future_annotations_imported(obj: Any) -> bool:
@@ -314,7 +293,7 @@ def get_all_type_hints(obj: Any, name: str) -> dict[str, Any]:
         if isinstance(exc, TypeError) and _future_annotations_imported(obj) and "unsupported operand type" in str(exc):
             rv = obj.__annotations__
     except NameError as exc:
-        logger.warning('Cannot resolve forward reference in type annotations of "%s": %s', name, exc)
+        _LOGGER.warning('Cannot resolve forward reference in type annotations of "%s": %s', name, exc)
         rv = obj.__annotations__
 
     if rv:
@@ -332,7 +311,7 @@ def get_all_type_hints(obj: Any, name: str) -> dict[str, Any]:
     except (AttributeError, TypeError):
         pass
     except NameError as exc:
-        logger.warning('Cannot resolve forward reference in type annotations of "%s": %s', name, exc)
+        _LOGGER.warning('Cannot resolve forward reference in type annotations of "%s": %s', name, exc)
         rv = obj.__annotations__
 
     return rv
@@ -354,7 +333,7 @@ def backfill_type_hints(obj: Any, name: str) -> dict[str, Any]:
         children = module.body  # use the body to ignore type comments
 
         if len(children) != 1:
-            logger.warning('Did not get exactly one node from AST for "%s", got %s', name, len(children))
+            _LOGGER.warning('Did not get exactly one node from AST for "%s", got %s', name, len(children))
             return None
 
         return children[0]
@@ -362,7 +341,7 @@ def backfill_type_hints(obj: Any, name: str) -> dict[str, Any]:
     try:
         code = textwrap.dedent(normalize_source_lines(inspect.getsource(obj)))
         obj_ast = ast.parse(code, **parse_kwargs)  # type: ignore # dynamic kwargs
-    except (OSError, TypeError):
+    except (OSError, TypeError, SyntaxError):
         return {}
 
     obj_ast = _one_child(obj_ast)
@@ -380,7 +359,7 @@ def backfill_type_hints(obj: Any, name: str) -> dict[str, Any]:
     try:
         comment_args_str, comment_returns = type_comment.split(" -> ")
     except ValueError:
-        logger.warning('Unparseable type hint comment for "%s": Expected to contain ` -> `', name)
+        _LOGGER.warning('Unparseable type hint comment for "%s": Expected to contain ` -> `', name)
         return {}
 
     rv = {}
@@ -395,7 +374,7 @@ def backfill_type_hints(obj: Any, name: str) -> dict[str, Any]:
             comment_args.insert(0, None)  # self/cls may be omitted in type comments, insert blank
 
         if len(args) != len(comment_args):
-            logger.warning('Not enough type comments found on "%s"', name)
+            _LOGGER.warning('Not enough type comments found on "%s"', name)
             return rv
 
     for at, arg in enumerate(args):
@@ -469,77 +448,75 @@ def process_docstring(
     app: Sphinx, what: str, name: str, obj: Any, options: Options | None, lines: list[str]  # noqa: U100
 ) -> None:
     original_obj = obj
-    if isinstance(obj, property):
-        obj = obj.fget
+    obj = obj.fget if isinstance(obj, property) else obj
+    if not callable(obj):
+        return
+    obj = obj.__init__ if inspect.isclass(obj) else obj
+    obj = inspect.unwrap(obj)
 
-    if callable(obj):
-        if inspect.isclass(obj):
-            obj = obj.__init__
-
-        obj = inspect.unwrap(obj)
+    try:
         signature = sphinx_signature(obj)
-        type_hints = get_all_type_hints(obj, name)
-        if not type_hints:
-            return
+    except (ValueError, TypeError):
+        signature = None
+    type_hints = get_all_type_hints(obj, name)
 
-        fmt = partial(
-            format_annotation,
-            fully_qualified=app.config.typehints_fully_qualified,
-            simplify_optional_unions=app.config.simplify_optional_unions,
-            typehints_formatter=app.config.typehints_formatter,
-        )
-
-        for arg_name, annotation in type_hints.items():
-            if arg_name == "return":
-                continue  # this is handled separately later
+    formatter = partial(
+        format_annotation,
+        fully_qualified=app.config.typehints_fully_qualified,
+        simplify_optional_unions=app.config.simplify_optional_unions,
+        typehints_formatter=app.config.typehints_formatter,
+    )
+    for arg_name, annotation in type_hints.items():
+        if arg_name == "return":
+            continue  # this is handled separately later
+        if signature is None or arg_name not in signature.parameters:
+            default = inspect.Parameter.empty
+        else:
             default = signature.parameters[arg_name].default
-            if arg_name.endswith("_"):
-                arg_name = f"{arg_name[:-1]}\\_"
+        if arg_name.endswith("_"):
+            arg_name = f"{arg_name[:-1]}\\_"
 
-            search_for = [f":{field} {arg_name}:" for field in ("param", "parameter", "arg", "argument")]
-            insert_index = None
+        formatted_annotation = formatter(annotation)
 
-            for i, line in enumerate(lines):
-                if any(line.startswith(search_string) for search_string in search_for):
-                    insert_index = i
-                    break
+        search_for = {f":{field} {arg_name}:" for field in ("param", "parameter", "arg", "argument")}
+        insert_index = None
+        for at, line in enumerate(lines):
+            if any(line.startswith(search_string) for search_string in search_for):
+                insert_index = at
+                break
 
-            if insert_index is None and app.config.always_document_param_types:
-                lines.append(f":param {arg_name}:")
-                insert_index = len(lines)
-
-            if insert_index is not None:
-                type_annotation = f":type {arg_name}: {fmt(annotation)}"
-                if app.config.typehints_defaults:
-                    formatted_default = format_default(app, default)
-                    if formatted_default:
-                        if app.config.typehints_defaults.endswith("after"):
-                            lines[insert_index] += formatted_default
-                        else:  # add to last param doc line
-                            type_annotation += formatted_default
-                lines.insert(insert_index, type_annotation)
-
-        if "return" in type_hints and not inspect.isclass(original_obj):
-            # This avoids adding a return type for data class __init__ methods
-            if what == "method" and name.endswith(".__init__"):
-                return
-
+        if insert_index is None and app.config.always_document_param_types:
+            lines.append(f":param {arg_name}:")
             insert_index = len(lines)
-            for i, line in enumerate(lines):
-                if line.startswith(":rtype:"):
-                    insert_index = None
-                    break
-                elif line.startswith(":return:") or line.startswith(":returns:"):
-                    insert_index = i
 
-            if insert_index is not None and app.config.typehints_document_rtype:
-                if insert_index == len(lines):
-                    # Ensure that :rtype: doesn't get joined with a paragraph of text, which
-                    # prevents it being interpreted.
-                    lines.append("")
-                    insert_index += 1
+        if insert_index is not None:
+            type_annotation = f":type {arg_name}: {formatted_annotation}"
+            if app.config.typehints_defaults:
+                formatted_default = format_default(app, default)
+                if formatted_default:
+                    if app.config.typehints_defaults.endswith("after"):
+                        lines[insert_index] += formatted_default
+                    else:  # add to last param doc line
+                        type_annotation += formatted_default
+            lines.insert(insert_index, type_annotation)
 
-                lines.insert(insert_index, f":rtype: {fmt(type_hints['return'])}")
+    if "return" in type_hints and not inspect.isclass(original_obj):
+        if what == "method" and name.endswith(".__init__"):  # avoid adding a return type for data class __init__
+            return
+        formatted_annotation = formatter(type_hints["return"])
+        insert_index = len(lines)
+        for at, line in enumerate(lines):
+            if line.startswith(":rtype:"):
+                insert_index = None
+                break
+            elif line.startswith(":return:") or line.startswith(":returns:"):
+                insert_index = at
+
+        if insert_index is not None and app.config.typehints_document_rtype:
+            if insert_index == len(lines):  # ensure that :rtype: doesn't get joined with a paragraph of text
+                lines.append("")
+                insert_index += 1
+            lines.insert(insert_index, f":rtype: {formatted_annotation}")
 
 
 def builder_ready(app: Sphinx) -> None:
@@ -570,3 +547,15 @@ def setup(app: Sphinx) -> dict[str, bool]:
     app.connect("autodoc-process-signature", process_signature)
     app.connect("autodoc-process-docstring", process_docstring)
     return {"parallel_read_safe": True}
+
+
+__all__ = [
+    "__version__",
+    "format_annotation",
+    "get_annotation_args",
+    "get_annotation_class_name",
+    "get_annotation_module",
+    "normalize_source_lines",
+    "process_docstring",
+    "process_signature",
+]

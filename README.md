@@ -67,7 +67,7 @@ The following configuration options are accepted:
   `:rtype:` directive if no existing `:rtype:` is found.
 - `typehints_defaults` (default: `None`): If `None`, defaults are not added. Otherwise adds a default annotation:
 
-  - `'comma'` adds it after the type, changing Sphinx’ default look to “**param** (*int*, default: `1`) -- text”.
+  - `'comma'` adds it after the type, changing Sphinx’ default look to “**param** (_int_, default: `1`) -- text”.
   - `'braces'` adds `(default: ...)` after the type (useful for numpydoc like styles).
   - `'braces-after'` adds `(default: ...)` at the end of the parameter documentation text instead.
 
