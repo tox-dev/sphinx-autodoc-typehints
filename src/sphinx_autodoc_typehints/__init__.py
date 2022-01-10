@@ -97,7 +97,9 @@ def format_annotation(
 ) -> str:
     if typehints_formatter is not None:
         formatted = typehints_formatter(
-            annotation, fully_qualified=fully_qualified, simplify_optional_unions=simplify_optional_unions
+            annotation,
+            fully_qualified=fully_qualified,
+            simplify_optional_unions=simplify_optional_unions,
         )
         if formatted is not None:
             return formatted
