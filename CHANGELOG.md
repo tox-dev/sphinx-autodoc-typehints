@@ -3,6 +3,7 @@
 ## dev
 
 - Resolve type guard imports before evaluating annotations for objects
+- Remove `set_type_checking_flag` flag as this is now done by default
 - Fix crash when the `inspect` module returns an invalid python syntax source
 - Made formatting function configurable using the option `typehints_formatter`
 

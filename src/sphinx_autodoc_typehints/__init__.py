@@ -4,7 +4,6 @@ import inspect
 import re
 import sys
 import textwrap
-import typing
 from ast import FunctionDef, Module, stmt
 from typing import Any, AnyStr, Callable, NewType, TypeVar, get_type_hints
 
@@ -499,11 +498,6 @@ def process_docstring(
             lines.insert(insert_index, f":rtype: {formatted_annotation}")
 
 
-def builder_ready(app: Sphinx) -> None:
-    if app.config.set_type_checking_flag:
-        typing.TYPE_CHECKING = True
-
-
 def validate_config(app: Sphinx, env: BuildEnvironment, docnames: list[str]) -> None:  # noqa: U100
     valid = {None, "comma", "braces", "braces-after"}
     if app.config.typehints_defaults not in valid | {False}:
@@ -515,14 +509,12 @@ def validate_config(app: Sphinx, env: BuildEnvironment, docnames: list[str]) -> 
 
 
 def setup(app: Sphinx) -> dict[str, bool]:
-    app.add_config_value("set_type_checking_flag", False, "html")
     app.add_config_value("always_document_param_types", False, "html")
     app.add_config_value("typehints_fully_qualified", False, "env")
     app.add_config_value("typehints_document_rtype", True, "env")
     app.add_config_value("typehints_defaults", None, "env")
     app.add_config_value("simplify_optional_unions", True, "env")
     app.add_config_value("typehints_formatter", None, "env")
-    app.connect("builder-inited", builder_ready)
     app.connect("env-before-read-docs", validate_config)  # config may be changed after “config-inited” event
     app.connect("autodoc-process-signature", process_signature)
     app.connect("autodoc-process-docstring", process_docstring)
