@@ -121,7 +121,7 @@ def format_annotation(annotation: Any, config: Config) -> str:
         module = "typing"
 
     full_name = f"{module}.{class_name}" if module != "builtins" else class_name
-    fully_qualified: bool = getattr(config, "fully_qualified", False)
+    fully_qualified: bool = getattr(config, "typehints_fully_qualified", False)
     prefix = "" if fully_qualified or full_name == class_name else "~"
     role = "data" if class_name in _PYDATA_ANNOTATIONS else "class"
     args_format = "\\[{}]"
