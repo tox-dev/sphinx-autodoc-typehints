@@ -4,6 +4,7 @@
 
 - Resolve type guard imports before evaluating annotations for objects
 - Fix crash when the `inspect` module returns an invalid python syntax source
+- Made formatting function configurable using the option `typehints_formatter`
 
 ## 1.14.1
 

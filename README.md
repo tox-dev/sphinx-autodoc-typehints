@@ -72,6 +72,9 @@ The following configuration options are accepted:
   None\]). If `False`, the \"Optional\"-type is kept. Note: If `False`, **any** Union containing `None` will be
   displayed as Optional! Note: If an optional parameter has only a single type (e.g Optional\[A\] or Union\[A, None\]),
   it will **always** be displayed as Optional!
+- `typehints_formatter` (default: `None`): If set to a function, this function will be called with `annotation` as first
+  argument and `sphinx.config.Config` argument second. The function is expected to return a string with reStructuredText
+  code or `None` to fall back to the default formatter.
 
 ## How it works
 

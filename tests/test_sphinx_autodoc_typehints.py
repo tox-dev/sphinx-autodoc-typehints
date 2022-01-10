@@ -203,7 +203,8 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
     ],
 )
 def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str) -> None:
-    result = format_annotation(annotation)
+    conf = create_autospec(Config)
+    result = format_annotation(annotation, conf)
     assert result == expected_result
 
     # Test with the "simplify_optional_unions" flag turned off:
@@ -214,21 +215,21 @@ def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str
         # encapsulate Union in typing.Optional
         expected_result_not_simplified = ":py:data:`~typing.Optional`\\[" + expected_result_not_simplified
         expected_result_not_simplified += "]"
-        assert format_annotation(annotation, simplify_optional_unions=False) == expected_result_not_simplified
+        conf = create_autospec(Config, simplify_optional_unions=False)
+        assert format_annotation(annotation, conf) == expected_result_not_simplified
 
         # Test with the "fully_qualified" flag turned on
         if "typing" in expected_result_not_simplified:
             expected_result_not_simplified = expected_result_not_simplified.replace("~typing", "typing")
-            assert (
-                format_annotation(annotation, fully_qualified=True, simplify_optional_unions=False)
-                == expected_result_not_simplified
-            )
+            conf = create_autospec(Config, fully_qualified=True, simplify_optional_unions=False)
+            assert format_annotation(annotation, conf) == expected_result_not_simplified
 
     # Test with the "fully_qualified" flag turned on
     if "typing" in expected_result or __name__ in expected_result:
         expected_result = expected_result.replace("~typing", "typing")
         expected_result = expected_result.replace("~" + __name__, __name__)
-        assert format_annotation(annotation, fully_qualified=True) == expected_result
+        conf = create_autospec(Config, fully_qualified=True)
+        assert format_annotation(annotation, conf) == expected_result
 
     # Test for the correct role (class vs data) using the official Sphinx inventory
     if "typing" in expected_result:
@@ -262,13 +263,15 @@ def test_format_annotation_both_libs(library: ModuleType, annotation: str, param
         return  # pragma: no cover
 
     ann = annotation_cls if params is None else annotation_cls[params]
-    result = format_annotation(ann)
+    result = format_annotation(ann, create_autospec(Config))
     assert result == expected_result
 
 
 def test_process_docstring_slot_wrapper() -> None:
     lines: list[str] = []
-    config = create_autospec(Config, typehints_fully_qualified=False, simplify_optional_unions=False)
+    config = create_autospec(
+        Config, typehints_fully_qualified=False, simplify_optional_unions=False, typehints_formatter=None
+    )
     app: Sphinx = create_autospec(Sphinx, config=config)
     process_docstring(app, "class", "SlotWrapper", Slotted, None, lines)
     assert not lines
@@ -679,6 +682,54 @@ def test_sphinx_output_defaults(
     assert text_contents == dedent(expected_contents)
 
 
+@pytest.mark.parametrize(
+    ("formatter_config_val", "expected"),
+    [
+        (None, ['("bool") -- foo', '("int") -- bar', '"str"']),
+        (lambda ann, conf: "Test", ["(*Test*) -- foo", "(*Test*) -- bar", "Test"]),
+        ("some string", Exception("needs to be callable or `None`")),
+    ],
+)
+@pytest.mark.sphinx("text", testroot="dummy")
+@patch("sphinx.writers.text.MAXWIDTH", 2000)
+def test_sphinx_output_formatter(
+    app: SphinxTestApp, status: StringIO, formatter_config_val: str, expected: tuple[str, ...] | Exception
+) -> None:
+    set_python_path()
+
+    app.config.master_doc = "simple"  # type: ignore # create flag
+    app.config.typehints_formatter = formatter_config_val  # type: ignore # create flag
+    try:
+        app.build()
+    except Exception as e:
+        if not isinstance(expected, Exception):
+            raise
+        assert str(expected) in str(e)
+        return
+    assert not isinstance(expected, Exception), "Expected app.build() to raise exception, but it didn’t"
+    assert "build succeeded" in status.getvalue()
+
+    text_path = pathlib.Path(app.srcdir) / "_build" / "text" / "simple.txt"
+    text_contents = text_path.read_text().replace("–", "--")
+    expected_contents = f"""\
+    Simple Module
+    *************
+
+    dummy_module_simple.function(x, y=1)
+
+       Function docstring.
+
+       Parameters:
+          * **x** {expected[0]}
+
+          * **y** {expected[1]}
+
+       Return type:
+          {expected[2]}
+    """
+    assert text_contents == dedent(expected_contents)
+
+
 def test_normalize_source_lines_async_def() -> None:
     source = """
     async def async_function():
@@ -733,7 +784,9 @@ def test_normalize_source_lines_def_starting_decorator_parameter() -> None:
 
 @pytest.mark.parametrize("obj", [cmp_to_key, 1])
 def test_default_no_signature(obj: Any) -> None:
-    config = create_autospec(Config, typehints_fully_qualified=False, simplify_optional_unions=False)
+    config = create_autospec(
+        Config, typehints_fully_qualified=False, simplify_optional_unions=False, typehints_formatter=None
+    )
     app: Sphinx = create_autospec(Sphinx, config=config)
     lines: list[str] = []
     process_docstring(app, "what", "name", obj, None, lines)
@@ -749,6 +802,7 @@ def test_bound_class_method(method: FunctionType) -> None:
         typehints_document_rtype=False,
         always_document_param_types=True,
         typehints_defaults=True,
+        typehints_formatter=None,
     )
     app: Sphinx = create_autospec(Sphinx, config=config)
     process_docstring(app, "class", method.__qualname__, method, None, [])

@@ -6,10 +6,10 @@ import sys
 import textwrap
 import typing
 from ast import FunctionDef, Module, stmt
-from functools import partial
-from typing import Any, AnyStr, NewType, TypeVar, get_type_hints
+from typing import Any, AnyStr, Callable, NewType, TypeVar, get_type_hints
 
 from sphinx.application import Sphinx
+from sphinx.config import Config
 from sphinx.environment import BuildEnvironment
 from sphinx.ext.autodoc import Options
 from sphinx.util import logging
@@ -90,7 +90,13 @@ def get_annotation_args(annotation: Any, module: str, class_name: str) -> tuple[
     return getattr(annotation, "__args__", ())
 
 
-def format_annotation(annotation: Any, fully_qualified: bool = False, simplify_optional_unions: bool = True) -> str:
+def format_annotation(annotation: Any, config: Config) -> str:
+    typehints_formatter: Callable[..., str] | None = getattr(config, "typehints_formatter", None)
+    if typehints_formatter is not None:
+        formatted = typehints_formatter(annotation, config)
+        if formatted is not None:
+            return formatted
+
     # Special cases
     if annotation is None or annotation is type(None):  # noqa: E721
         return ":py:obj:`None`"
@@ -116,6 +122,7 @@ def format_annotation(annotation: Any, fully_qualified: bool = False, simplify_o
         module = "typing"
 
     full_name = f"{module}.{class_name}" if module != "builtins" else class_name
+    fully_qualified: bool = getattr(config, "fully_qualified", False)
     prefix = "" if fully_qualified or full_name == class_name else "~"
     role = "data" if class_name in _PYDATA_ANNOTATIONS else "class"
     args_format = "\\[{}]"
@@ -131,20 +138,21 @@ def format_annotation(annotation: Any, fully_qualified: bool = False, simplify_o
         if len(args) == 2:
             full_name = "typing.Optional"
             args = tuple(x for x in args if x is not type(None))  # noqa: E721
-        elif not simplify_optional_unions:
-            full_name = "typing.Optional"
-            args_format = f"\\[:py:data:`{prefix}typing.Union`\\[{{}}]]"
-            args = tuple(x for x in args if x is not type(None))  # noqa: E721
+        else:
+            simplify_optional_unions: bool = getattr(config, "simplify_optional_unions", True)
+            if not simplify_optional_unions:
+                full_name = "typing.Optional"
+                args_format = f"\\[:py:data:`{prefix}typing.Union`\\[{{}}]]"
+                args = tuple(x for x in args if x is not type(None))  # noqa: E721
     elif full_name == "typing.Callable" and args and args[0] is not ...:
-        fmt = ", ".join(format_annotation(arg, simplify_optional_unions=simplify_optional_unions) for arg in args[:-1])
-        formatted_args = f"\\[\\[{fmt}]"
-        formatted_args += f", {format_annotation(args[-1], simplify_optional_unions=simplify_optional_unions)}]"
+        fmt = [format_annotation(arg, config) for arg in args]
+        formatted_args = f"\\[\\[{', '.join(fmt[:-1])}], {fmt[-1]}]"
     elif full_name == "typing.Literal":
         formatted_args = f"\\[{', '.join(repr(arg) for arg in args)}]"
 
     if args and not formatted_args:
-        fmt = ", ".join(format_annotation(arg, fully_qualified, simplify_optional_unions) for arg in args)
-        formatted_args = args_format.format(fmt)
+        fmt = [format_annotation(arg, config) for arg in args]
+        formatted_args = args_format.format(", ".join(fmt))
 
     return f":py:{role}:`{prefix}{full_name}`{formatted_args}"
 
@@ -438,11 +446,6 @@ def process_docstring(
         signature = None
     type_hints = get_all_type_hints(obj, name)
 
-    formatter = partial(
-        format_annotation,
-        fully_qualified=app.config.typehints_fully_qualified,
-        simplify_optional_unions=app.config.simplify_optional_unions,
-    )
     for arg_name, annotation in type_hints.items():
         if arg_name == "return":
             continue  # this is handled separately later
@@ -453,7 +456,7 @@ def process_docstring(
         if arg_name.endswith("_"):
             arg_name = f"{arg_name[:-1]}\\_"
 
-        formatted_annotation = formatter(annotation)
+        formatted_annotation = format_annotation(annotation, app.config)
 
         search_for = {f":{field} {arg_name}:" for field in ("param", "parameter", "arg", "argument")}
         insert_index = None
@@ -480,7 +483,7 @@ def process_docstring(
     if "return" in type_hints and not inspect.isclass(original_obj):
         if what == "method" and name.endswith(".__init__"):  # avoid adding a return type for data class __init__
             return
-        formatted_annotation = formatter(type_hints["return"])
+        formatted_annotation = format_annotation(type_hints["return"], app.config)
         insert_index = len(lines)
         for at, line in enumerate(lines):
             if line.startswith(":rtype:"):
@@ -506,6 +509,10 @@ def validate_config(app: Sphinx, env: BuildEnvironment, docnames: list[str]) -> 
     if app.config.typehints_defaults not in valid | {False}:
         raise ValueError(f"typehints_defaults needs to be one of {valid!r}, not {app.config.typehints_defaults!r}")
 
+    formatter = app.config.typehints_formatter
+    if formatter is not None and not callable(formatter):
+        raise ValueError(f"typehints_formatter needs to be callable or `None`, not {formatter}")
+
 
 def setup(app: Sphinx) -> dict[str, bool]:
     app.add_config_value("set_type_checking_flag", False, "html")
@@ -514,6 +521,7 @@ def setup(app: Sphinx) -> dict[str, bool]:
     app.add_config_value("typehints_document_rtype", True, "env")
     app.add_config_value("typehints_defaults", None, "env")
     app.add_config_value("simplify_optional_unions", True, "env")
+    app.add_config_value("typehints_formatter", None, "env")
     app.connect("builder-inited", builder_ready)
     app.connect("env-before-read-docs", validate_config)  # config may be changed after “config-inited” event
     app.connect("autodoc-process-signature", process_signature)
