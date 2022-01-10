@@ -203,7 +203,8 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
     ],
 )
 def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str) -> None:
-    result = format_annotation(annotation)
+    conf = create_autospec(Config)
+    result = format_annotation(annotation, conf)
     assert result == expected_result
 
     # Test with the "simplify_optional_unions" flag turned off:
@@ -214,21 +215,21 @@ def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str
         # encapsulate Union in typing.Optional
         expected_result_not_simplified = ":py:data:`~typing.Optional`\\[" + expected_result_not_simplified
         expected_result_not_simplified += "]"
-        assert format_annotation(annotation, simplify_optional_unions=False) == expected_result_not_simplified
+        conf = create_autospec(Config, simplify_optional_unions=False)
+        assert format_annotation(annotation, conf) == expected_result_not_simplified
 
         # Test with the "fully_qualified" flag turned on
         if "typing" in expected_result_not_simplified:
             expected_result_not_simplified = expected_result_not_simplified.replace("~typing", "typing")
-            assert (
-                format_annotation(annotation, fully_qualified=True, simplify_optional_unions=False)
-                == expected_result_not_simplified
-            )
+            conf = create_autospec(Config, fully_qualified=True, simplify_optional_unions=False)
+            assert format_annotation(annotation, conf) == expected_result_not_simplified
 
     # Test with the "fully_qualified" flag turned on
     if "typing" in expected_result or __name__ in expected_result:
         expected_result = expected_result.replace("~typing", "typing")
         expected_result = expected_result.replace("~" + __name__, __name__)
-        assert format_annotation(annotation, fully_qualified=True) == expected_result
+        conf = create_autospec(Config, fully_qualified=True)
+        assert format_annotation(annotation, conf) == expected_result
 
     # Test for the correct role (class vs data) using the official Sphinx inventory
     if "typing" in expected_result:
@@ -262,7 +263,7 @@ def test_format_annotation_both_libs(library: ModuleType, annotation: str, param
         return  # pragma: no cover
 
     ann = annotation_cls if params is None else annotation_cls[params]
-    result = format_annotation(ann)
+    result = format_annotation(ann, create_autospec(Config))
     assert result == expected_result
 
 
@@ -685,7 +686,7 @@ def test_sphinx_output_defaults(
     ("formatter_config_val", "expected"),
     [
         (None, ['("bool") -- foo', '("int") -- bar', '"str"']),
-        (lambda ann, **kw: "Test", ["(*Test*) -- foo", "(*Test*) -- bar", "Test"]),
+        (lambda ann, conf: "Test", ["(*Test*) -- foo", "(*Test*) -- bar", "Test"]),
         ("some string", Exception("needs to be callable or `None`")),
     ],
 )
