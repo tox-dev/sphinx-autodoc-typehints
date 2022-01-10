@@ -221,14 +221,14 @@ def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str
         # Test with the "fully_qualified" flag turned on
         if "typing" in expected_result_not_simplified:
             expected_result_not_simplified = expected_result_not_simplified.replace("~typing", "typing")
-            conf = create_autospec(Config, fully_qualified=True, simplify_optional_unions=False)
+            conf = create_autospec(Config, typehints_fully_qualified=True, simplify_optional_unions=False)
             assert format_annotation(annotation, conf) == expected_result_not_simplified
 
     # Test with the "fully_qualified" flag turned on
     if "typing" in expected_result or __name__ in expected_result:
         expected_result = expected_result.replace("~typing", "typing")
         expected_result = expected_result.replace("~" + __name__, __name__)
-        conf = create_autospec(Config, fully_qualified=True)
+        conf = create_autospec(Config, typehints_fully_qualified=True)
         assert format_annotation(annotation, conf) == expected_result
 
     # Test for the correct role (class vs data) using the official Sphinx inventory

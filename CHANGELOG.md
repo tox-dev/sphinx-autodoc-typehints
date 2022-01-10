@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.15.1
+
+- Fix `fully_qualified` should be `typehints_fully_qualified`
+
 ## 1.15.0
 
 - Resolve type guard imports before evaluating annotations for objects
