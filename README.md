@@ -53,8 +53,6 @@ extensions = ["sphinx.ext.autodoc", "sphinx_autodoc_typehints"]
 
 The following configuration options are accepted:
 
-- `set_type_checking_flag` (default: `False`): if `True`, set `typing.TYPE_CHECKING` to `True` to enable \"expensive\"
-  typing imports
 - `typehints_fully_qualified` (default: `False`): if `True`, class names are always fully qualified (e.g.
   `module.for.Class`). If `False`, just the class name displays (e.g. `Class`)
 - `always_document_param_types` (default: `False`): If `False`, do not add type info for undocumented parameters. If
