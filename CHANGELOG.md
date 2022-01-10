@@ -1,6 +1,6 @@
 # Changelog
 
-## dev
+## 1.15.0
 
 - Resolve type guard imports before evaluating annotations for objects
 - Remove `set_type_checking_flag` flag as this is now done by default
