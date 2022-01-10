@@ -16,6 +16,7 @@ formatter
 func
 getmodule
 getsource
+globals
 idx
 inited
 inv
@@ -29,7 +30,6 @@ param
 parametrized
 params
 pathlib
-pep563
 pos
 prepend
 py310

@@ -761,3 +761,11 @@ def test_syntax_error_backfill() -> None:
         lambda x: x)
     # fmt: on
     backfill_type_hints(func, "func")
+
+
+@pytest.mark.sphinx("text", testroot="resolve-typing-guard")
+def test_resolve_typing_guard_imports(app: SphinxTestApp, status: StringIO, warning: StringIO) -> None:
+    set_python_path()
+    app.build()
+    assert "build succeeded" in status.getvalue()
+    assert not warning.getvalue()

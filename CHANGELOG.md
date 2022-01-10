@@ -2,6 +2,7 @@
 
 ## dev
 
+- Resolve type guard imports before evaluating annotations for objects
 - Fix crash when the `inspect` module returns an invalid python syntax source
 
 ## 1.14.1
