@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.15.2
+
+- Log a warning instead of crashing when a type guard import fails to resolve
+- When resolving type guard imports if the target module does not have source code (such is the case for C-extension modules) do nothing instead of crashing
+
 ## 1.15.1
 
 - Fix `fully_qualified` should be `typehints_fully_qualified`

@@ -271,7 +271,7 @@ def get_all_type_hints(obj: Any, name: str) -> dict[str, Any]:
     return _get_type_hint(name, obj)
 
 
-_TYPE_GUARD_IMPORT_RE = re.compile(r"if (typing.)?TYPE_CHECKING:([\s\S]*?)(?=\n\S)")
+_TYPE_GUARD_IMPORT_RE = re.compile(r"if (typing.)?TYPE_CHECKING:[^\n]*([\s\S]*?)(?=\n\S)")
 _TYPE_GUARD_IMPORTS_RESOLVED = set()
 
 
@@ -281,10 +281,17 @@ def _resolve_type_guarded_imports(obj: Any) -> None:
         if obj.__module__ not in sys.builtin_module_names:
             module = inspect.getmodule(obj)
             if module:
-                module_code = inspect.getsource(module)
-                for (_, part) in _TYPE_GUARD_IMPORT_RE.findall(module_code):
-                    module_code = textwrap.dedent(part)
-                    exec(module_code, obj.__globals__)
+                try:
+                    module_code = inspect.getsource(module)
+                except OSError:
+                    ...  # no source code => no type guards
+                else:
+                    for (_, part) in _TYPE_GUARD_IMPORT_RE.findall(module_code):
+                        guarded_code = textwrap.dedent(part)
+                        try:
+                            exec(guarded_code, obj.__globals__)
+                        except Exception as exc:
+                            _LOGGER.warning(f"Failed guarded type import with {exc!r}")
 
 
 def _get_type_hint(name: str, obj: Any) -> dict[str, Any]:
