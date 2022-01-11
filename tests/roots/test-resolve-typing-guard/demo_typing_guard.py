@@ -14,6 +14,10 @@ if typing.TYPE_CHECKING:
     from typing import AnyStr
 
 
+if TYPE_CHECKING:  # bad import
+    from functools import missing  # noqa: F401
+
+
 def a(f: Decimal, s: AnyStr) -> Sequence[AnyStr | Decimal]:
     """
     Do.

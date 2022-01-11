@@ -35,6 +35,7 @@ from sphinx.testing.util import SphinxTestApp
 from sphobjinv import Inventory
 
 from sphinx_autodoc_typehints import (
+    _resolve_type_guarded_imports,
     backfill_type_hints,
     format_annotation,
     get_annotation_args,
@@ -822,4 +823,12 @@ def test_resolve_typing_guard_imports(app: SphinxTestApp, status: StringIO, warn
     set_python_path()
     app.build()
     assert "build succeeded" in status.getvalue()
-    assert not warning.getvalue()
+    pat = r'WARNING: Failed guarded type import with ImportError\("cannot import name \'missing\' from \'functools\''
+    err = warning.getvalue()
+    assert re.search(pat, err)
+
+
+def test_no_source_code_type_guard() -> None:
+    from csv import Error
+
+    _resolve_type_guarded_imports(Error)
