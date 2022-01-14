@@ -283,7 +283,7 @@ def _resolve_type_guarded_imports(obj: Any) -> None:
             if module:
                 try:
                     module_code = inspect.getsource(module)
-                except OSError:
+                except (TypeError, OSError):
                     ...  # no source code => no type guards
                 else:
                     for (_, part) in _TYPE_GUARD_IMPORT_RE.findall(module_code):
