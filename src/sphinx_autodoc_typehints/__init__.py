@@ -271,7 +271,7 @@ def get_all_type_hints(obj: Any, name: str) -> dict[str, Any]:
     return _get_type_hint(name, obj)
 
 
-_TYPE_GUARD_IMPORT_RE = re.compile(r"if (typing.)?TYPE_CHECKING:[^\n]*([\s\S]*?)(?=\n\S)")
+_TYPE_GUARD_IMPORT_RE = re.compile(r"\nif (typing.)?TYPE_CHECKING:[^\n]*([\s\S]*?)(?=\n\S)")
 _TYPE_GUARD_IMPORTS_RESOLVED = set()
 
 

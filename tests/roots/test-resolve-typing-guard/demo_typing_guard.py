@@ -29,6 +29,15 @@ def a(f: Decimal, s: AnyStr) -> Sequence[AnyStr | Decimal]:
     return [f, s]
 
 
+class SomeClass:
+    """This class do something."""
+
+    if TYPE_CHECKING:  # Classes doesn't have `__globals__` attribute
+
+        def __getattr__(self, item: str):  # noqa: U100
+            """This method do something."""
+
+
 __all__ = [
     "a",
     "ValueError",
