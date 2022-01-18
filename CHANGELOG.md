@@ -1,5 +1,9 @@
 # Changelog
 
+## WIP
+
+- Prevents reaching inner blocks that contains `if TYPE_CHECKING`
+
 ## 1.15.2
 
 - Log a warning instead of crashing when a type guard import fails to resolve
