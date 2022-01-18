@@ -1,6 +1,6 @@
 # Changelog
 
-## WIP
+## 1.15.3
 
 - Prevents reaching inner blocks that contains `if TYPE_CHECKING`
 
