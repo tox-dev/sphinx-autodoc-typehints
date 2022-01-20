@@ -28,6 +28,7 @@ kwonlyargs
 libs
 metaclass
 multiline
+nptyping
 param
 parametrized
 params
