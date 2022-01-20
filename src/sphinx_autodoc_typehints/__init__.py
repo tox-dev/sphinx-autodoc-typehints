@@ -89,6 +89,22 @@ def get_annotation_args(annotation: Any, module: str, class_name: str) -> tuple[
     return getattr(annotation, "__args__", ())
 
 
+def format_internal_tuple(t: tuple, config: Config) -> str:
+    # An annotation can be a tuple, e.g., for nptyping:
+    #   NDArray[(typing.Any, ...), Float]
+    # In this case, format_annotation receives:
+    #   (typing.Any, Ellipsis)
+    # This solution should hopefully be general for *any* type that allows
+    # tuples in annotations
+    fmt = [format_annotation(a, config) for a in t]
+    if len(fmt) == 0:
+        return "()"
+    elif len(fmt) == 1:
+        return f"({fmt[0]}, )"
+    else:
+        return f"({', '.join(fmt)})"
+
+
 def format_annotation(annotation: Any, config: Config) -> str:
     typehints_formatter: Callable[..., str] | None = getattr(config, "typehints_formatter", None)
     if typehints_formatter is not None:
@@ -101,6 +117,9 @@ def format_annotation(annotation: Any, config: Config) -> str:
         return ":py:obj:`None`"
     elif annotation is Ellipsis:
         return "..."
+
+    if isinstance(annotation, tuple):
+        return format_internal_tuple(annotation, config)
 
     # Type variables are also handled specially
     try:
@@ -150,7 +169,10 @@ def format_annotation(annotation: Any, config: Config) -> str:
         formatted_args = f"\\[{', '.join(repr(arg) for arg in args)}]"
 
     if args and not formatted_args:
-        fmt = [format_annotation(arg, config) for arg in args]
+        try:
+            fmt = [format_annotation(arg, config) for arg in args]
+        except TypeError:
+            fmt = [format_annotation(args, config)]
         formatted_args = args_format.format(", ".join(fmt))
 
     return f":py:{role}:`{prefix}{full_name}`{formatted_args}"
