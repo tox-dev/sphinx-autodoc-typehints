@@ -211,19 +211,19 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
         # Ellipsis in single tuple also gets flattened
         (Tuple[(int, ...)], ":py:data:`~typing.Tuple`\\[:py:class:`int`, ...]"),
         # Internal tuple with following additional type cannot be flattened (specific to nptyping?)
-        # Note, nptyping performs internal conversions away from native types; this risks brittle tests
-        (
-            nptyping.NDArray[(Any,), float],
-            (
-                ":py:class:`~nptyping.types._ndarray.NDArray`\\[(:py:data:`~typing.Any`, ), "
-                ":py:class:`~nptyping.types._number.Float`\\[64]]"
-            ),
-        ),
+        # These cases will fail if nptyping restructures its internal module hierarchy
         (
             nptyping.NDArray[(Any,), nptyping.Float],
             (
                 ":py:class:`~nptyping.types._ndarray.NDArray`\\[(:py:data:`~typing.Any`, ), "
                 ":py:class:`~nptyping.types._number.Float`]"
+            ),
+        ),
+        (
+            nptyping.NDArray[(Any,), nptyping.Float[64]],
+            (
+                ":py:class:`~nptyping.types._ndarray.NDArray`\\[(:py:data:`~typing.Any`, ), "
+                ":py:class:`~nptyping.types._number.Float`\\[64]]"
             ),
         ),
         (
@@ -246,6 +246,10 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
                 ":py:class:`~nptyping.types._ndarray.NDArray`\\[(:py:data:`~typing.Any`, 3), "
                 ":py:class:`~nptyping.types._number.Float`]"
             ),
+        ),
+        (
+            nptyping.NDArray[(3, ...), nptyping.Float],
+            (":py:class:`~nptyping.types._ndarray.NDArray`\\[(3, ...), :py:class:`~nptyping.types._number.Float`]"),
         ),
     ],
 )
