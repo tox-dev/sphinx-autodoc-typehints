@@ -94,8 +94,7 @@ def format_internal_tuple(t: tuple, config: Config) -> str:
     #   NDArray[(typing.Any, ...), Float]
     # In this case, format_annotation receives:
     #   (typing.Any, Ellipsis)
-    # This solution should hopefully be general for *any* type that allows
-    # tuples in annotations
+    # This solution should hopefully be general for *any* type that allows tuples in annotations
     fmt = [format_annotation(a, config) for a in t]
     if len(fmt) == 0:
         return "()"
