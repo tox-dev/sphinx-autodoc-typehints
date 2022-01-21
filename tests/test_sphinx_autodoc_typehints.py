@@ -27,7 +27,7 @@ from typing import (
 )
 from unittest.mock import create_autospec, patch
 
-import nptyping
+import nptyping  # type: ignore
 import pytest
 import typing_extensions
 from sphinx.application import Sphinx

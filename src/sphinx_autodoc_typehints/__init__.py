@@ -89,7 +89,7 @@ def get_annotation_args(annotation: Any, module: str, class_name: str) -> tuple[
     return getattr(annotation, "__args__", ())
 
 
-def format_internal_tuple(t: tuple, config: Config) -> str:
+def format_internal_tuple(t: tuple[Any, ...], config: Config) -> str:
     # An annotation can be a tuple, e.g., for nptyping:
     #   NDArray[(typing.Any, ...), Float]
     # In this case, format_annotation receives:
