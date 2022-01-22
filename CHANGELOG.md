@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.16.0
+
+- Add support for type subscriptions with multiple elements, where one or more elements
+are tuples; e.g., `nptyping.NDArray[(Any, ...), nptyping.Float]`
+- Fix bug for arbitrary types accepting singleton subscriptions; e.g., `nptyping.Float[64]`
+
 ## 1.15.3
 
 - Prevents reaching inner blocks that contains `if TYPE_CHECKING`
