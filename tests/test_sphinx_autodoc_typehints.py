@@ -27,6 +27,7 @@ from typing import (
 )
 from unittest.mock import create_autospec, patch
 
+import nptyping  # type: ignore
 import pytest
 import typing_extensions
 from sphinx.application import Sphinx
@@ -201,6 +202,55 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
         (E, ":py:class:`~%s.E`" % __name__),
         (E[int], ":py:class:`~%s.E`\\[:py:class:`int`]" % __name__),
         (W, f':py:{"class" if PY310_PLUS else "func"}:' f"`~typing.NewType`\\(``W``, :py:class:`str`)"),
+        # ## These test for correct internal tuple rendering, even if not all are valid Tuple types
+        # Zero-length tuple remains
+        (Tuple[()], ":py:data:`~typing.Tuple`\\[()]"),
+        # Internal single tuple with simple types is flattened in the output
+        (Tuple[(int,)], ":py:data:`~typing.Tuple`\\[:py:class:`int`]"),
+        (Tuple[(int, int)], ":py:data:`~typing.Tuple`\\[:py:class:`int`, :py:class:`int`]"),
+        # Ellipsis in single tuple also gets flattened
+        (Tuple[(int, ...)], ":py:data:`~typing.Tuple`\\[:py:class:`int`, ...]"),
+        # Internal tuple with following additional type cannot be flattened (specific to nptyping?)
+        # These cases will fail if nptyping restructures its internal module hierarchy
+        (
+            nptyping.NDArray[(Any,), nptyping.Float],
+            (
+                ":py:class:`~nptyping.types._ndarray.NDArray`\\[(:py:data:`~typing.Any`, ), "
+                ":py:class:`~nptyping.types._number.Float`]"
+            ),
+        ),
+        (
+            nptyping.NDArray[(Any,), nptyping.Float[64]],
+            (
+                ":py:class:`~nptyping.types._ndarray.NDArray`\\[(:py:data:`~typing.Any`, ), "
+                ":py:class:`~nptyping.types._number.Float`\\[64]]"
+            ),
+        ),
+        (
+            nptyping.NDArray[(Any, Any), nptyping.Float],
+            (
+                ":py:class:`~nptyping.types._ndarray.NDArray`\\[(:py:data:`~typing.Any`, "
+                ":py:data:`~typing.Any`), :py:class:`~nptyping.types._number.Float`]"
+            ),
+        ),
+        (
+            nptyping.NDArray[(Any, ...), nptyping.Float],
+            (
+                ":py:class:`~nptyping.types._ndarray.NDArray`\\[(:py:data:`~typing.Any`, ...), "
+                ":py:class:`~nptyping.types._number.Float`]"
+            ),
+        ),
+        (
+            nptyping.NDArray[(Any, 3), nptyping.Float],
+            (
+                ":py:class:`~nptyping.types._ndarray.NDArray`\\[(:py:data:`~typing.Any`, 3), "
+                ":py:class:`~nptyping.types._number.Float`]"
+            ),
+        ),
+        (
+            nptyping.NDArray[(3, ...), nptyping.Float],
+            (":py:class:`~nptyping.types._ndarray.NDArray`\\[(3, ...), :py:class:`~nptyping.types._number.Float`]"),
+        ),
     ],
 )
 def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str) -> None:
@@ -226,8 +276,9 @@ def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str
             assert format_annotation(annotation, conf) == expected_result_not_simplified
 
     # Test with the "fully_qualified" flag turned on
-    if "typing" in expected_result or __name__ in expected_result:
+    if "typing" in expected_result or "nptyping" in expected_result or __name__ in expected_result:
         expected_result = expected_result.replace("~typing", "typing")
+        expected_result = expected_result.replace("~nptyping", "nptyping")
         expected_result = expected_result.replace("~" + __name__, __name__)
         conf = create_autospec(Config, typehints_fully_qualified=True)
         assert format_annotation(annotation, conf) == expected_result
