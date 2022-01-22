@@ -169,9 +169,11 @@ def format_annotation(annotation: Any, config: Config) -> str:
 
     if args and not formatted_args:
         try:
-            fmt = [format_annotation(arg, config) for arg in args]
+            iter(args)
         except TypeError:
             fmt = [format_annotation(args, config)]
+        else:
+            fmt = [format_annotation(arg, config) for arg in args]
         formatted_args = args_format.format(", ".join(fmt))
 
     return f":py:{role}:`{prefix}{full_name}`{formatted_args}"
