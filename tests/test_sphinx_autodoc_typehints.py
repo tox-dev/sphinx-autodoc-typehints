@@ -49,6 +49,10 @@ from sphinx_autodoc_typehints import (
 T = TypeVar("T")
 U = TypeVar("U", covariant=True)
 V = TypeVar("V", contravariant=True)
+X = TypeVar("X", str, int)
+Y = TypeVar("Y", bound=str)
+Z = TypeVar("Z", bound="A")
+S = TypeVar("S", bound="miss")  # type: ignore # miss not defined on purpose # noqa: F821
 W = NewType("W", str)
 
 
@@ -61,8 +65,7 @@ class A:
 
 
 class B(Generic[T]):
-    # This is set to make sure the correct class name ("B") is picked up
-    name = "Foo"
+    name = "Foo"  # This is set to make sure the correct class name ("B") is picked up
 
 
 class C(B[str]):
@@ -147,21 +150,35 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
         (Type[A], ":py:class:`~typing.Type`\\[:py:class:`~%s.A`]" % __name__),
         (Any, ":py:data:`~typing.Any`"),
         (AnyStr, ":py:data:`~typing.AnyStr`"),
-        (Generic[T], ":py:class:`~typing.Generic`\\[\\~T]"),
+        (Generic[T], ":py:class:`~typing.Generic`\\[:py:class:`~typing.TypeVar`\\(``T``)]"),
         (Mapping, ":py:class:`~typing.Mapping`"),
-        (Mapping[T, int], ":py:class:`~typing.Mapping`\\[\\~T, :py:class:`int`]"),
-        (Mapping[str, V], ":py:class:`~typing.Mapping`\\[:py:class:`str`, \\-V]"),
-        (Mapping[T, U], ":py:class:`~typing.Mapping`\\[\\~T, \\+U]"),
+        (Mapping[T, int], ":py:class:`~typing.Mapping`\\[:py:class:`~typing.TypeVar`\\(``T``), :py:class:`int`]"),
+        (
+            Mapping[str, V],
+            ":py:class:`~typing.Mapping`\\[:py:class:`str`, :py:class:`~typing.TypeVar`\\(``V``, contravariant=True)]",
+        ),
+        (
+            Mapping[T, U],
+            ":py:class:`~typing.Mapping`\\[:py:class:`~typing.TypeVar`\\(``T``), "
+            ":py:class:`~typing.TypeVar`\\(``U``, covariant=True)]",
+        ),
         (Mapping[str, bool], ":py:class:`~typing.Mapping`\\[:py:class:`str`, " ":py:class:`bool`]"),
         (Dict, ":py:class:`~typing.Dict`"),
-        (Dict[T, int], ":py:class:`~typing.Dict`\\[\\~T, :py:class:`int`]"),
-        (Dict[str, V], ":py:class:`~typing.Dict`\\[:py:class:`str`, \\-V]"),
-        (Dict[T, U], ":py:class:`~typing.Dict`\\[\\~T, \\+U]"),
+        (Dict[T, int], ":py:class:`~typing.Dict`\\[:py:class:`~typing.TypeVar`\\(``T``), :py:class:`int`]"),
+        (
+            Dict[str, V],
+            ":py:class:`~typing.Dict`\\[:py:class:`str`, :py:class:`~typing.TypeVar`\\(``V``, contravariant=True)]",
+        ),
+        (
+            Dict[T, U],
+            ":py:class:`~typing.Dict`\\[:py:class:`~typing.TypeVar`\\(``T``),"
+            " :py:class:`~typing.TypeVar`\\(``U``, covariant=True)]",
+        ),
         (Dict[str, bool], ":py:class:`~typing.Dict`\\[:py:class:`str`, " ":py:class:`bool`]"),
         (Tuple, ":py:data:`~typing.Tuple`"),
         (Tuple[str, bool], ":py:data:`~typing.Tuple`\\[:py:class:`str`, " ":py:class:`bool`]"),
         (Tuple[int, int, int], ":py:data:`~typing.Tuple`\\[:py:class:`int`, " ":py:class:`int`, :py:class:`int`]"),
-        (Tuple[str, ...], ":py:data:`~typing.Tuple`\\[:py:class:`str`, ...]"),
+        (Tuple[str, ...], ":py:data:`~typing.Tuple`\\[:py:class:`str`, :py:data:`...<Ellipsis>`]"),
         (Union, ":py:data:`~typing.Union`"),
         (Union[str, bool], ":py:data:`~typing.Union`\\[:py:class:`str`, " ":py:class:`bool`]"),
         (Union[str, bool, None], ":py:data:`~typing.Union`\\[:py:class:`str`, " ":py:class:`bool`, :py:obj:`None`]"),
@@ -178,7 +195,7 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
             ":py:data:`~typing.Union`\\[:py:class:`str`, " ":py:class:`bool`, :py:obj:`None`]",
         ),
         (Callable, ":py:data:`~typing.Callable`"),
-        (Callable[..., int], ":py:data:`~typing.Callable`\\[..., :py:class:`int`]"),
+        (Callable[..., int], ":py:data:`~typing.Callable`\\[:py:data:`...<Ellipsis>`, :py:class:`int`]"),
         (Callable[[int], int], ":py:data:`~typing.Callable`\\[\\[:py:class:`int`], " ":py:class:`int`]"),
         (
             Callable[[int, str], bool],
@@ -188,7 +205,11 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
             Callable[[int, str], None],
             ":py:data:`~typing.Callable`\\[\\[:py:class:`int`, " ":py:class:`str`], :py:obj:`None`]",
         ),
-        (Callable[[T], T], ":py:data:`~typing.Callable`\\[\\[\\~T], \\~T]"),
+        (
+            Callable[[T], T],
+            ":py:data:`~typing.Callable`\\[\\[:py:class:`~typing.TypeVar`\\(``T``)],"
+            " :py:class:`~typing.TypeVar`\\(``T``)]",
+        ),
         (Pattern, ":py:class:`~typing.Pattern`"),
         (Pattern[str], ":py:class:`~typing.Pattern`\\[:py:class:`str`]"),
         (IO, ":py:class:`~typing.IO`"),
@@ -202,6 +223,13 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
         (E, ":py:class:`~%s.E`" % __name__),
         (E[int], ":py:class:`~%s.E`\\[:py:class:`int`]" % __name__),
         (W, f':py:{"class" if PY310_PLUS else "func"}:' f"`~typing.NewType`\\(``W``, :py:class:`str`)"),
+        (T, ":py:class:`~typing.TypeVar`\\(``T``)"),
+        (U, ":py:class:`~typing.TypeVar`\\(``U``, covariant=True)"),
+        (V, ":py:class:`~typing.TypeVar`\\(``V``, contravariant=True)"),
+        (X, ":py:class:`~typing.TypeVar`\\(``X``, :py:class:`str`, :py:class:`int`)"),
+        (Y, ":py:class:`~typing.TypeVar`\\(``Y``, bound= :py:class:`str`)"),
+        (Z, ":py:class:`~typing.TypeVar`\\(``Z``, bound= :py:class:`~test_sphinx_autodoc_typehints.A`)"),
+        (S, ":py:class:`~typing.TypeVar`\\(``S``, bound= miss)"),
         # ## These test for correct internal tuple rendering, even if not all are valid Tuple types
         # Zero-length tuple remains
         (Tuple[()], ":py:data:`~typing.Tuple`\\[()]"),
@@ -209,7 +237,7 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
         (Tuple[(int,)], ":py:data:`~typing.Tuple`\\[:py:class:`int`]"),
         (Tuple[(int, int)], ":py:data:`~typing.Tuple`\\[:py:class:`int`, :py:class:`int`]"),
         # Ellipsis in single tuple also gets flattened
-        (Tuple[(int, ...)], ":py:data:`~typing.Tuple`\\[:py:class:`int`, ...]"),
+        (Tuple[(int, ...)], ":py:data:`~typing.Tuple`\\[:py:class:`int`, :py:data:`...<Ellipsis>`]"),
         # Internal tuple with following additional type cannot be flattened (specific to nptyping?)
         # These cases will fail if nptyping restructures its internal module hierarchy
         (
@@ -236,7 +264,7 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
         (
             nptyping.NDArray[(Any, ...), nptyping.Float],
             (
-                ":py:class:`~nptyping.types._ndarray.NDArray`\\[(:py:data:`~typing.Any`, ...), "
+                ":py:class:`~nptyping.types._ndarray.NDArray`\\[(:py:data:`~typing.Any`, :py:data:`...<Ellipsis>`), "
                 ":py:class:`~nptyping.types._number.Float`]"
             ),
         ),
@@ -249,12 +277,15 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
         ),
         (
             nptyping.NDArray[(3, ...), nptyping.Float],
-            (":py:class:`~nptyping.types._ndarray.NDArray`\\[(3, ...), :py:class:`~nptyping.types._number.Float`]"),
+            (
+                ":py:class:`~nptyping.types._ndarray.NDArray`\\[(3, :py:data:`...<Ellipsis>`),"
+                " :py:class:`~nptyping.types._number.Float`]"
+            ),
         ),
     ],
 )
 def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str) -> None:
-    conf = create_autospec(Config)
+    conf = create_autospec(Config, _annotation_globals=globals())
     result = format_annotation(annotation, conf)
     assert result == expected_result
 
@@ -266,13 +297,15 @@ def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str
         # encapsulate Union in typing.Optional
         expected_result_not_simplified = ":py:data:`~typing.Optional`\\[" + expected_result_not_simplified
         expected_result_not_simplified += "]"
-        conf = create_autospec(Config, simplify_optional_unions=False)
+        conf = create_autospec(Config, simplify_optional_unions=False, _annotation_globals=globals())
         assert format_annotation(annotation, conf) == expected_result_not_simplified
 
         # Test with the "fully_qualified" flag turned on
         if "typing" in expected_result_not_simplified:
             expected_result_not_simplified = expected_result_not_simplified.replace("~typing", "typing")
-            conf = create_autospec(Config, typehints_fully_qualified=True, simplify_optional_unions=False)
+            conf = create_autospec(
+                Config, typehints_fully_qualified=True, simplify_optional_unions=False, _annotation_globals=globals()
+            )
             assert format_annotation(annotation, conf) == expected_result_not_simplified
 
     # Test with the "fully_qualified" flag turned on
@@ -280,7 +313,7 @@ def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str
         expected_result = expected_result.replace("~typing", "typing")
         expected_result = expected_result.replace("~nptyping", "nptyping")
         expected_result = expected_result.replace("~" + __name__, __name__)
-        conf = create_autospec(Config, typehints_fully_qualified=True)
+        conf = create_autospec(Config, typehints_fully_qualified=True, _annotation_globals=globals())
         assert format_annotation(annotation, conf) == expected_result
 
     # Test for the correct role (class vs data) using the official Sphinx inventory

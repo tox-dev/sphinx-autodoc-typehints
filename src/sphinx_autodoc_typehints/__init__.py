@@ -5,7 +5,8 @@ import re
 import sys
 import textwrap
 from ast import FunctionDef, Module, stmt
-from typing import Any, AnyStr, Callable, NewType, TypeVar, get_type_hints
+from typing import _eval_type  # type: ignore # no import defined in stubs
+from typing import Any, AnyStr, Callable, ForwardRef, NewType, TypeVar, get_type_hints
 
 from sphinx.application import Sphinx
 from sphinx.config import Config
@@ -24,7 +25,8 @@ _PYDATA_ANNOTATIONS = {"Any", "AnyStr", "Callable", "ClassVar", "Literal", "NoRe
 def get_annotation_module(annotation: Any) -> str:
     if annotation is None:
         return "builtins"
-    if sys.version_info >= (3, 10) and isinstance(annotation, NewType):  # type: ignore # isinstance NewType is Callable
+    is_new_type = sys.version_info >= (3, 10) and isinstance(annotation, NewType)  # type: ignore
+    if is_new_type or isinstance(annotation, TypeVar):
         return "typing"
     if hasattr(annotation, "__module__"):
         return annotation.__module__  # type: ignore # deduced Any
@@ -79,13 +81,14 @@ def get_annotation_args(annotation: Any, module: str, class_name: str) -> tuple[
         return (annotation.type_var,)
     elif class_name == "ClassVar" and hasattr(annotation, "__type__"):  # ClassVar on Python < 3.7
         return (annotation.__type__,)
+    elif class_name == "TypeVar" and hasattr(annotation, "__constraints__"):
+        return annotation.__constraints__  # type: ignore # no stubs defined
     elif class_name == "NewType" and hasattr(annotation, "__supertype__"):
         return (annotation.__supertype__,)
     elif class_name == "Literal" and hasattr(annotation, "__values__"):
         return annotation.__values__  # type: ignore # deduced Any
     elif class_name == "Generic":
         return annotation.__parameters__  # type: ignore # deduced Any
-
     return getattr(annotation, "__args__", ())
 
 
@@ -104,7 +107,7 @@ def format_internal_tuple(t: tuple[Any, ...], config: Config) -> str:
         return f"({', '.join(fmt)})"
 
 
-def format_annotation(annotation: Any, config: Config) -> str:
+def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901 # too complex
     typehints_formatter: Callable[..., str] | None = getattr(config, "typehints_formatter", None)
     if typehints_formatter is not None:
         formatted = typehints_formatter(annotation, config)
@@ -112,20 +115,16 @@ def format_annotation(annotation: Any, config: Config) -> str:
             return formatted
 
     # Special cases
+    if isinstance(annotation, ForwardRef):
+        value = _resolve_forward_ref(annotation, config)
+        return format_annotation(value, config)
     if annotation is None or annotation is type(None):  # noqa: E721
         return ":py:obj:`None`"
-    elif annotation is Ellipsis:
-        return "..."
+    if annotation is Ellipsis:
+        return ":py:data:`...<Ellipsis>`"
 
     if isinstance(annotation, tuple):
         return format_internal_tuple(annotation, config)
-
-    # Type variables are also handled specially
-    try:
-        if isinstance(annotation, TypeVar) and annotation is not AnyStr:
-            return "\\" + repr(annotation)
-    except TypeError:
-        pass
 
     try:
         module = get_annotation_module(annotation)
@@ -143,12 +142,22 @@ def format_annotation(annotation: Any, config: Config) -> str:
     prefix = "" if fully_qualified or full_name == class_name else "~"
     role = "data" if class_name in _PYDATA_ANNOTATIONS else "class"
     args_format = "\\[{}]"
-    formatted_args = ""
+    formatted_args: str | None = ""
 
     # Some types require special handling
     if full_name == "typing.NewType":
         args_format = f"\\(``{annotation.__name__}``, {{}})"
         role = "class" if sys.version_info >= (3, 10) else "func"
+    elif full_name == "typing.TypeVar":
+        params = {k: getattr(annotation, f"__{k}__") for k in ("bound", "covariant", "contravariant")}
+        params = {k: v for k, v in params.items() if v}
+        if "bound" in params:
+            params["bound"] = f" {format_annotation(params['bound'], config)}"
+        args_format = f"\\(``{annotation.__name__}``{', {}' if args else ''}"
+        if params:
+            args_format += "".join(f", {k}={v}" for k, v in params.items())
+        args_format += ")"
+        formatted_args = None if args else args_format
     elif full_name == "typing.Optional":
         args = tuple(x for x in args if x is not type(None))  # noqa: E721
     elif full_name == "typing.Union" and type(None) in args:
@@ -176,7 +185,19 @@ def format_annotation(annotation: Any, config: Config) -> str:
             fmt = [format_annotation(arg, config) for arg in args]
         formatted_args = args_format.format(", ".join(fmt))
 
-    return f":py:{role}:`{prefix}{full_name}`{formatted_args}"
+    result = f":py:{role}:`{prefix}{full_name}`{formatted_args}"
+    return result
+
+
+def _resolve_forward_ref(annotation: ForwardRef, config: Config) -> Any:
+    raw, base_globals = annotation.__forward_arg__, config._annotation_globals
+    params = {"is_class": True} if (3, 10) > sys.version_info >= (3, 9, 8) or sys.version_info >= (3, 10, 1) else {}
+    value = ForwardRef(raw, is_argument=False, **params)
+    try:
+        result = _eval_type(value, base_globals, None)
+    except NameError:
+        result = raw  # fallback to the value itself as string
+    return result
 
 
 # reference: https://github.com/pytorch/pytorch/pull/46548/files
@@ -284,14 +305,15 @@ def _future_annotations_imported(obj: Any) -> bool:
 
 def get_all_type_hints(obj: Any, name: str) -> dict[str, Any]:
     result = _get_type_hint(name, obj)
-    if result:
-        return result
-    result = backfill_type_hints(obj, name)
-    try:
-        obj.__annotations__ = result
-    except (AttributeError, TypeError):
-        return result
-    return _get_type_hint(name, obj)
+    if not result:
+        result = backfill_type_hints(obj, name)
+        try:
+            obj.__annotations__ = result
+        except (AttributeError, TypeError):
+            pass
+        else:
+            result = _get_type_hint(name, obj)
+    return result
 
 
 _TYPE_GUARD_IMPORT_RE = re.compile(r"\nif (typing.)?TYPE_CHECKING:[^\n]*([\s\S]*?)(?=\n\S)")
@@ -474,7 +496,22 @@ def process_docstring(
     except (ValueError, TypeError):
         signature = None
     type_hints = get_all_type_hints(obj, name)
+    app.config._annotation_globals = getattr(obj, "__globals__", {})  # type: ignore # config has no such attribute
+    try:
+        _inject_types_to_docstring(type_hints, signature, original_obj, app, what, name, lines)
+    finally:
+        delattr(app.config, "_annotation_globals")
 
+
+def _inject_types_to_docstring(
+    type_hints: dict[str, Any],
+    signature: inspect.Signature | None,
+    original_obj: Any,
+    app: Sphinx,
+    what: str,
+    name: str,
+    lines: list[str],
+) -> None:
     for arg_name, annotation in type_hints.items():
         if arg_name == "return":
             continue  # this is handled separately later
