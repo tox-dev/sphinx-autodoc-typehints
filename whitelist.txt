@@ -7,9 +7,11 @@ contravariant
 cpython
 csv
 dedent
+delattr
 dirname
 docnames
 dunder
+eval
 exc
 fget
 fmt

@@ -5,6 +5,9 @@
 - Add support for type subscriptions with multiple elements, where one or more elements
 are tuples; e.g., `nptyping.NDArray[(Any, ...), nptyping.Float]`
 - Fix bug for arbitrary types accepting singleton subscriptions; e.g., `nptyping.Float[64]`
+- Resolve forward references
+- Expand and better handle `TypeVar`
+- Add intershpinx reference link for `...` to `Ellipsis` (as is just an alias)
 
 ## 1.15.3
 
