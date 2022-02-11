@@ -956,6 +956,18 @@ def test_sphinx_output_formatter_no_use_rtype(app: SphinxTestApp, status: String
        Returns:
           *CustomType* -- A string
 
+    dummy_module_simple_no_use_rtype.function_returns_with_compound_type(x, y=1)
+
+       Function docstring.
+
+       Parameters:
+          * **x** ("bool") -- foo
+
+          * **y** ("int") -- bar
+
+       Returns:
+          Union[str, int] -- A string or int
+
     dummy_module_simple_no_use_rtype.function_returns_without_type(x, y=1)
 
        Function docstring.

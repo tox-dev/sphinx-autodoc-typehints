@@ -556,8 +556,6 @@ def _inject_types_to_docstring(
                 insert_index = None
                 break
             elif line.startswith(":return:") or line.startswith(":returns:"):
-                # This is brittle, I have not found information on how standard the use of " -- " to
-                # separate type from description is.
                 if " -- " in line and not app.config.typehints_use_rtype:
                     insert_index = None
                     break
