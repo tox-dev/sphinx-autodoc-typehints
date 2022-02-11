@@ -916,3 +916,68 @@ def test_no_source_code_type_guard() -> None:
     from csv import Error
 
     _resolve_type_guarded_imports(Error)
+
+
+@pytest.mark.sphinx("text", testroot="dummy")
+@patch("sphinx.writers.text.MAXWIDTH", 2000)
+def test_sphinx_output_formatter_no_use_rtype(app: SphinxTestApp, status: StringIO) -> None:
+    set_python_path()
+    app.config.master_doc = "simple_no_use_rtype"  # type: ignore # create flag
+    app.config.typehints_use_rtype = False  # type: ignore
+    app.build()
+    assert "build succeeded" in status.getvalue()
+    text_path = pathlib.Path(app.srcdir) / "_build" / "text" / "simple_no_use_rtype.txt"
+    text_contents = text_path.read_text().replace("–", "--")
+    expected_contents = """\
+    Simple Module
+    *************
+
+    dummy_module_simple_no_use_rtype.function_no_returns(x, y=1)
+
+       Function docstring.
+
+       Parameters:
+          * **x** ("bool") -- foo
+
+          * **y** ("int") -- bar
+
+       Return type:
+          "str"
+
+    dummy_module_simple_no_use_rtype.function_returns_with_type(x, y=1)
+
+       Function docstring.
+
+       Parameters:
+          * **x** ("bool") -- foo
+
+          * **y** ("int") -- bar
+
+       Returns:
+          *CustomType* -- A string
+
+    dummy_module_simple_no_use_rtype.function_returns_with_compound_type(x, y=1)
+
+       Function docstring.
+
+       Parameters:
+          * **x** ("bool") -- foo
+
+          * **y** ("int") -- bar
+
+       Returns:
+          Union[str, int] -- A string or int
+
+    dummy_module_simple_no_use_rtype.function_returns_without_type(x, y=1)
+
+       Function docstring.
+
+       Parameters:
+          * **x** ("bool") -- foo
+
+          * **y** ("int") -- bar
+
+       Returns:
+          "str" -- A string
+    """
+    assert text_contents == dedent(expected_contents)
