@@ -923,12 +923,12 @@ def test_no_source_code_type_guard() -> None:
 def test_sphinx_output_formatter_no_use_rtype(app: SphinxTestApp, status: StringIO) -> None:
     set_python_path()
     app.config.master_doc = "simple_no_use_rtype"  # type: ignore # create flag
-    app.config.typehints_use_rtype = False
+    app.config.typehints_use_rtype = False  # type: ignore
     app.build()
     assert "build succeeded" in status.getvalue()
     text_path = pathlib.Path(app.srcdir) / "_build" / "text" / "simple_no_use_rtype.txt"
     text_contents = text_path.read_text().replace("–", "--")
-    expected_contents = f"""\
+    expected_contents = """\
     Simple Module
     *************
 
