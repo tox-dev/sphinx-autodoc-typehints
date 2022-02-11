@@ -62,7 +62,7 @@ The following configuration options are accepted:
 - `typehints_use_rtype` (default: `True`):
   Controls behavior when `typehints_document_rtype` is set to `True`.
   If `True`, document return type in the `:rtype:` directive.
-  If `False`, document return type as part of the `:return:` directive, if present, otherwise fall back to useing `:rtype:`.
+  If `False`, document return type as part of the `:return:` directive, if present, otherwise fall back to using `:rtype:`.
   Use in conjunction with [napoleon_use_rtype](https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html#confval-napoleon_use_rtype) to avoid generation of duplicate or redundant return type information.
 - `typehints_defaults` (default: `None`): If `None`, defaults are not added. Otherwise adds a default annotation:
 
