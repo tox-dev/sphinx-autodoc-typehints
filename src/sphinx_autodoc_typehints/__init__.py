@@ -556,13 +556,22 @@ def _inject_types_to_docstring(
                 insert_index = None
                 break
             elif line.startswith(":return:") or line.startswith(":returns:"):
+                # This is brittle, I have not found information on how standard the use of " -- " to
+                # separate type from description is.
+                if " -- " in line and not app.config.typehints_use_rtype:
+                    insert_index = None
+                    break
                 insert_index = at
 
         if insert_index is not None and app.config.typehints_document_rtype:
             if insert_index == len(lines):  # ensure that :rtype: doesn't get joined with a paragraph of text
                 lines.append("")
                 insert_index += 1
-            lines.insert(insert_index, f":rtype: {formatted_annotation}")
+            if app.config.typehints_use_rtype or insert_index == len(lines):
+                lines.insert(insert_index, f":rtype: {formatted_annotation}")
+            else:
+                s = lines[insert_index]
+                lines[insert_index] = f":return: {formatted_annotation} --{s[s.find(' '):]}"
 
 
 def validate_config(app: Sphinx, env: BuildEnvironment, docnames: list[str]) -> None:  # noqa: U100
@@ -579,6 +588,7 @@ def setup(app: Sphinx) -> dict[str, bool]:
     app.add_config_value("always_document_param_types", False, "html")
     app.add_config_value("typehints_fully_qualified", False, "env")
     app.add_config_value("typehints_document_rtype", True, "env")
+    app.add_config_value("typehints_use_rtype", True, "env")
     app.add_config_value("typehints_defaults", None, "env")
     app.add_config_value("simplify_optional_unions", True, "env")
     app.add_config_value("typehints_formatter", None, "env")
