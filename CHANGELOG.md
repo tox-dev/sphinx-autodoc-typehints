@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.17.0
+
+- Add `typehints_use_rtype` option
+- Handles `TypeError` when getting source code via inspect
+
 ## 1.16.0
 
 - Add support for type subscriptions with multiple elements, where one or more elements
