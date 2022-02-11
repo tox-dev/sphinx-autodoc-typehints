@@ -570,8 +570,8 @@ def _inject_types_to_docstring(
             if app.config.typehints_use_rtype or insert_index == len(lines):
                 lines.insert(insert_index, f":rtype: {formatted_annotation}")
             else:
-                s = lines[insert_index]
-                lines[insert_index] = f":return: {formatted_annotation} --{s[s.find(' '):]}"
+                line = lines[insert_index]
+                lines[insert_index] = f":return: {formatted_annotation} --{line[line.find(' '):]}"
 
 
 def validate_config(app: Sphinx, env: BuildEnvironment, docnames: list[str]) -> None:  # noqa: U100
