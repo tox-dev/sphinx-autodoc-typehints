@@ -370,6 +370,8 @@ def set_python_path() -> None:
 def maybe_fix_py310(expected_contents: str) -> str:
     if PY310_PLUS:
         for old, new in [
+            ("*bool** | **None*", '"bool" | "None"'),
+            ("*int** | **str** | **float*", '"int" | "str" | "float"'),
             ("*str** | **None*", '"Optional"["str"]'),
             ("(*bool*)", '("bool")'),
             ("(*int*", '("int"'),
@@ -704,9 +706,9 @@ def test_sphinx_output_future_annotations(app: SphinxTestApp, status: StringIO) 
            Method docstring.
 
            Parameters:
-              * **x** (*bool*) -- foo
+              * **x** (*bool** | **None*) -- foo
 
-              * **y** (*int*) -- bar
+              * **y** (*int** | **str** | **float*) -- bar
 
               * **z** (*str** | **None*) -- baz
 

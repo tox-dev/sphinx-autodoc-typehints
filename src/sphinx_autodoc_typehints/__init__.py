@@ -175,6 +175,8 @@ def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901 # t
         formatted_args = f"\\[\\[{', '.join(fmt[:-1])}], {fmt[-1]}]"
     elif full_name == "typing.Literal":
         formatted_args = f"\\[{', '.join(repr(arg) for arg in args)}]"
+    elif full_name == "types.UnionType":
+        return " | ".join([format_annotation(arg, config) for arg in args])
 
     if args and not formatted_args:
         try:
