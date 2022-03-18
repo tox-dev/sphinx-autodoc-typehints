@@ -71,7 +71,7 @@ The following configuration options are accepted:
   - `'braces-after'` adds `(default: ...)` at the end of the parameter documentation text instead.
 
 - `simplify_optional_unions` (default: `True`): If `True`, optional parameters of type \"Union\[\...\]\" are simplified
-  as being of type Union\[\..., None\] in the resulting documention (e.g. Optional\[Union\[A, B\]\] -\> Union\[A, B,
+  as being of type Union\[\..., None\] in the resulting documentation (e.g. Optional\[Union\[A, B\]\] -\> Union\[A, B,
   None\]). If `False`, the \"Optional\"-type is kept. Note: If `False`, **any** Union containing `None` will be
   displayed as Optional! Note: If an optional parameter has only a single type (e.g Optional\[A\] or Union\[A, None\]),
   it will **always** be displayed as Optional!
@@ -109,7 +109,7 @@ On Python 3.7, you can even use `from __future__ import annotations` and remove 
 
 If you\'re documenting code that needs to stay compatible with Python 2.7, you cannot use regular type annotations.
 Instead, you must either be using Python 3.8 or later or have [typed_ast](https://pypi.org/project/typed-ast/)
-installed. The package extras `type_comments` will pull in the appropiate dependencies automatically. Then you can add
+installed. The package extras `type_comments` will pull in the appropriate dependencies automatically. Then you can add
 type hint comments in the following manner:
 
 ```python
