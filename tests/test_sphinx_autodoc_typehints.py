@@ -905,17 +905,21 @@ def test_syntax_error_backfill() -> None:
 @pytest.mark.sphinx("text", testroot="resolve-typing-guard")
 def test_resolve_typing_guard_imports(app: SphinxTestApp, status: StringIO, warning: StringIO) -> None:
     set_python_path()
+    app.config.autodoc_mock_imports = ["viktor"]  # type: ignore # create flag
     app.build()
     assert "build succeeded" in status.getvalue()
-    pat = r'WARNING: Failed guarded type import with ImportError\("cannot import name \'missing\' from \'functools\''
     err = warning.getvalue()
+    r = re.compile('WARNING: Failed guarded type import')
+    assert len(r.findall(err)) == 1
+    pat = r'WARNING: Failed guarded type import with ImportError\("cannot import name \'missing\' from \'functools\''
     assert re.search(pat, err)
 
 
 def test_no_source_code_type_guard() -> None:
     from csv import Error
 
-    _resolve_type_guarded_imports(Error)
+    app: Sphinx = create_autospec(Sphinx)
+    _resolve_type_guarded_imports(app, Error)
 
 
 @pytest.mark.sphinx("text", testroot="dummy")
