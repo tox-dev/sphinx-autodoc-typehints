@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 
-def function_with_py310_annotations(self, x: bool, y: int, z: str | None = None) -> str:  # noqa: U100
+def function_with_py310_annotations(
+    self, x: bool | None, y: int | str | float, z: str | None = None  # noqa: U100
+) -> str:
     """
     Method docstring.
 

@@ -3,6 +3,7 @@
 ## 1.18.0
 
 - Support and require `nptyping>=2`
+- Handle `UnionType`
 
 ## 1.17.1
 
