@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.18.1
+
+- Fix mocked module import not working when used as guarded import
+
 ## 1.18.0
 
 - Support and require `nptyping>=2`
