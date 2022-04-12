@@ -353,7 +353,11 @@ def test_format_annotation_both_libs(library: ModuleType, annotation: str, param
 def test_process_docstring_slot_wrapper() -> None:
     lines: list[str] = []
     config = create_autospec(
-        Config, typehints_fully_qualified=False, simplify_optional_unions=False, typehints_formatter=None
+        Config,
+        typehints_fully_qualified=False,
+        simplify_optional_unions=False,
+        typehints_formatter=None,
+        autodoc_mock_imports=[],
     )
     app: Sphinx = create_autospec(Sphinx, config=config)
     process_docstring(app, "class", "SlotWrapper", Slotted, None, lines)
@@ -870,7 +874,11 @@ def test_normalize_source_lines_def_starting_decorator_parameter() -> None:
 @pytest.mark.parametrize("obj", [cmp_to_key, 1])
 def test_default_no_signature(obj: Any) -> None:
     config = create_autospec(
-        Config, typehints_fully_qualified=False, simplify_optional_unions=False, typehints_formatter=None
+        Config,
+        typehints_fully_qualified=False,
+        simplify_optional_unions=False,
+        typehints_formatter=None,
+        autodoc_mock_imports=[],
     )
     app: Sphinx = create_autospec(Sphinx, config=config)
     lines: list[str] = []
@@ -888,6 +896,7 @@ def test_bound_class_method(method: FunctionType) -> None:
         always_document_param_types=True,
         typehints_defaults=True,
         typehints_formatter=None,
+        autodoc_mock_imports=[],
     )
     app: Sphinx = create_autospec(Sphinx, config=config)
     process_docstring(app, "class", method.__qualname__, method, None, [])
