@@ -6,7 +6,7 @@ import sys
 import textwrap
 from ast import FunctionDef, Module, stmt
 from typing import _eval_type  # type: ignore # no import defined in stubs
-from typing import Any, AnyStr, Callable, ForwardRef, NewType, TypeVar, get_type_hints, List
+from typing import Any, AnyStr, Callable, ForwardRef, NewType, TypeVar, get_type_hints
 
 from sphinx.application import Sphinx
 from sphinx.config import Config
@@ -306,7 +306,7 @@ def _future_annotations_imported(obj: Any) -> bool:
     return bool(_annotations.compiler_flag == future_annotations)
 
 
-def get_all_type_hints(autodoc_mock_imports: List[str], obj: Any, name: str) -> dict[str, Any]:
+def get_all_type_hints(autodoc_mock_imports: list[str], obj: Any, name: str) -> dict[str, Any]:
     result = _get_type_hint(autodoc_mock_imports, name, obj)
     if not result:
         result = backfill_type_hints(obj, name)
@@ -323,7 +323,7 @@ _TYPE_GUARD_IMPORT_RE = re.compile(r"\nif (typing.)?TYPE_CHECKING:[^\n]*([\s\S]*
 _TYPE_GUARD_IMPORTS_RESOLVED = set()
 
 
-def _resolve_type_guarded_imports(autodoc_mock_imports: List[str], obj: Any) -> None:
+def _resolve_type_guarded_imports(autodoc_mock_imports: list[str], obj: Any) -> None:
     if hasattr(obj, "__module__") and obj.__module__ not in _TYPE_GUARD_IMPORTS_RESOLVED:
         _TYPE_GUARD_IMPORTS_RESOLVED.add(obj.__module__)
         if obj.__module__ not in sys.builtin_module_names:
@@ -343,7 +343,7 @@ def _resolve_type_guarded_imports(autodoc_mock_imports: List[str], obj: Any) -> 
                             _LOGGER.warning(f"Failed guarded type import with {exc!r}")
 
 
-def _get_type_hint(autodoc_mock_imports: List[str], name: str, obj: Any) -> dict[str, Any]:
+def _get_type_hint(autodoc_mock_imports: list[str], name: str, obj: Any) -> dict[str, Any]:
     _resolve_type_guarded_imports(autodoc_mock_imports, obj)
     try:
         result = get_type_hints(obj)
