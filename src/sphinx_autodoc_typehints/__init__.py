@@ -5,13 +5,14 @@ import re
 import sys
 import textwrap
 from ast import FunctionDef, Module, stmt
-from typing import _eval_type, List  # type: ignore # no import defined in stubs
-from typing import Any, AnyStr, Callable, ForwardRef, NewType, TypeVar, get_type_hints
+from typing import _eval_type  # type: ignore # no import defined in stubs
+from typing import Any, AnyStr, Callable, ForwardRef, NewType, TypeVar, get_type_hints, List
 
 from sphinx.application import Sphinx
 from sphinx.config import Config
 from sphinx.environment import BuildEnvironment
-from sphinx.ext.autodoc import Options, mock
+from sphinx.ext.autodoc import Options
+from sphinx.ext.autodoc.mock import mock
 from sphinx.util import logging
 from sphinx.util.inspect import signature as sphinx_signature
 from sphinx.util.inspect import stringify_signature
