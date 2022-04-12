@@ -25,7 +25,7 @@ _PYDATA_ANNOTATIONS = {"Any", "AnyStr", "Callable", "ClassVar", "Literal", "NoRe
 def get_annotation_module(annotation: Any) -> str:
     if annotation is None:
         return "builtins"
-    is_new_type = sys.version_info >= (3, 10) and isinstance(annotation, NewType)  # type: ignore
+    is_new_type = sys.version_info >= (3, 10) and isinstance(annotation, NewType)
     if is_new_type or isinstance(annotation, TypeVar):
         return "typing"
     if hasattr(annotation, "__module__"):
@@ -44,7 +44,7 @@ def get_annotation_class_name(annotation: Any, module: str) -> str:
     elif annotation is AnyStr:
         return "AnyStr"
     elif (sys.version_info < (3, 10) and inspect.isfunction(annotation) and hasattr(annotation, "__supertype__")) or (
-        sys.version_info >= (3, 10) and isinstance(annotation, NewType)  # type: ignore # isinstance NewType is Callable
+        sys.version_info >= (3, 10) and isinstance(annotation, NewType)
     ):
         return "NewType"
 

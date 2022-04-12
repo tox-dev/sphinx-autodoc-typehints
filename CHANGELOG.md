@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.18.0
+
+- Support and require `nptyping>=2`
+
 ## 1.17.1
 
 - Mark it as requiring `nptyping<2`

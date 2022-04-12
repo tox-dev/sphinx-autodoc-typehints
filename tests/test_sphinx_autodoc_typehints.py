@@ -27,7 +27,7 @@ from typing import (
 )
 from unittest.mock import create_autospec, patch
 
-import nptyping  # type: ignore
+import nptyping
 import pytest
 import typing_extensions
 from sphinx.application import Sphinx
@@ -241,45 +241,42 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
         # Internal tuple with following additional type cannot be flattened (specific to nptyping?)
         # These cases will fail if nptyping restructures its internal module hierarchy
         (
-            nptyping.NDArray[(Any,), nptyping.Float],
+            nptyping.NDArray[nptyping.Shape["*"], nptyping.Float],
             (
-                ":py:class:`~nptyping.types._ndarray.NDArray`\\[(:py:data:`~typing.Any`, ), "
-                ":py:class:`~nptyping.types._number.Float`]"
+                ":py:class:`~nptyping.ndarray.NDArray`\\[:py:data:`~typing.Literal`\\['*'], "
+                ":py:class:`~numpy.float64`]"
             ),
         ),
         (
-            nptyping.NDArray[(Any,), nptyping.Float[64]],
+            nptyping.NDArray[nptyping.Shape["64"], nptyping.Float],
             (
-                ":py:class:`~nptyping.types._ndarray.NDArray`\\[(:py:data:`~typing.Any`, ), "
-                ":py:class:`~nptyping.types._number.Float`\\[64]]"
+                ":py:class:`~nptyping.ndarray.NDArray`\\[:py:data:`~typing.Literal`\\['64'], "
+                ":py:class:`~numpy.float64`]"
             ),
         ),
         (
-            nptyping.NDArray[(Any, Any), nptyping.Float],
+            nptyping.NDArray[nptyping.Shape["*, *"], nptyping.Float],
             (
-                ":py:class:`~nptyping.types._ndarray.NDArray`\\[(:py:data:`~typing.Any`, "
-                ":py:data:`~typing.Any`), :py:class:`~nptyping.types._number.Float`]"
+                ":py:class:`~nptyping.ndarray.NDArray`\\[:py:data:`~typing.Literal`\\['*, "
+                "*'], :py:class:`~numpy.float64`]"
             ),
         ),
         (
-            nptyping.NDArray[(Any, ...), nptyping.Float],
+            nptyping.NDArray[nptyping.Shape["*, ..."], nptyping.Float],
+            (":py:class:`~nptyping.ndarray.NDArray`\\[:py:data:`~typing.Any`, :py:class:`~numpy.float64`]"),
+        ),
+        (
+            nptyping.NDArray[nptyping.Shape["*, 3"], nptyping.Float],
             (
-                ":py:class:`~nptyping.types._ndarray.NDArray`\\[(:py:data:`~typing.Any`, :py:data:`...<Ellipsis>`), "
-                ":py:class:`~nptyping.types._number.Float`]"
+                ":py:class:`~nptyping.ndarray.NDArray`\\[:py:data:`~typing.Literal`\\['*, 3'], "
+                ":py:class:`~numpy.float64`]"
             ),
         ),
         (
-            nptyping.NDArray[(Any, 3), nptyping.Float],
+            nptyping.NDArray[nptyping.Shape["3, ..."], nptyping.Float],
             (
-                ":py:class:`~nptyping.types._ndarray.NDArray`\\[(:py:data:`~typing.Any`, 3), "
-                ":py:class:`~nptyping.types._number.Float`]"
-            ),
-        ),
-        (
-            nptyping.NDArray[(3, ...), nptyping.Float],
-            (
-                ":py:class:`~nptyping.types._ndarray.NDArray`\\[(3, :py:data:`...<Ellipsis>`),"
-                " :py:class:`~nptyping.types._number.Float`]"
+                ":py:class:`~nptyping.ndarray.NDArray`\\[:py:data:`~typing.Literal`\\['3, ...'], "
+                ":py:class:`~numpy.float64`]"
             ),
         ),
     ],
@@ -312,6 +309,7 @@ def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str
     if "typing" in expected_result or "nptyping" in expected_result or __name__ in expected_result:
         expected_result = expected_result.replace("~typing", "typing")
         expected_result = expected_result.replace("~nptyping", "nptyping")
+        expected_result = expected_result.replace("~numpy", "numpy")
         expected_result = expected_result.replace("~" + __name__, __name__)
         conf = create_autospec(Config, typehints_fully_qualified=True, _annotation_globals=globals())
         assert format_annotation(annotation, conf) == expected_result
