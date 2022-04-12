@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from decimal import Decimal
     from typing import Sequence
+
     from demo_typing_guard_dummy import AnotherClass  # module contains mocked import # noqa: F401
 
 if typing.TYPE_CHECKING:

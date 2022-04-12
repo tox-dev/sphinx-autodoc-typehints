@@ -918,7 +918,7 @@ def test_resolve_typing_guard_imports(app: SphinxTestApp, status: StringIO, warn
     app.build()
     assert "build succeeded" in status.getvalue()
     err = warning.getvalue()
-    r = re.compile('WARNING: Failed guarded type import')
+    r = re.compile("WARNING: Failed guarded type import")
     assert len(r.findall(err)) == 1
     pat = r'WARNING: Failed guarded type import with ImportError\("cannot import name \'missing\' from \'functools\''
     assert re.search(pat, err)
