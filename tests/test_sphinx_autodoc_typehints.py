@@ -918,8 +918,7 @@ def test_resolve_typing_guard_imports(app: SphinxTestApp, status: StringIO, warn
 def test_no_source_code_type_guard() -> None:
     from csv import Error
 
-    app: Sphinx = create_autospec(Sphinx)
-    _resolve_type_guarded_imports(app, Error)
+    _resolve_type_guarded_imports([], Error)
 
 
 @pytest.mark.sphinx("text", testroot="dummy")
