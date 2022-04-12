@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.17.1
+
+- Mark it as requiring `nptyping<2`
+
 ## 1.17.0
 
 - Add `typehints_use_rtype` option
