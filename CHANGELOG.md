@@ -15,8 +15,8 @@
 
 ## 1.16.0
 
-- Add support for type subscriptions with multiple elements, where one or more elements
-are tuples; e.g., `nptyping.NDArray[(Any, ...), nptyping.Float]`
+- Add support for type subscriptions with multiple elements, where one or more elements are tuples; e.g.,
+  `nptyping.NDArray[(Any, ...), nptyping.Float]`
 - Fix bug for arbitrary types accepting singleton subscriptions; e.g., `nptyping.Float[64]`
 - Resolve forward references
 - Expand and better handle `TypeVar`
@@ -29,7 +29,8 @@ are tuples; e.g., `nptyping.NDArray[(Any, ...), nptyping.Float]`
 ## 1.15.2
 
 - Log a warning instead of crashing when a type guard import fails to resolve
-- When resolving type guard imports if the target module does not have source code (such is the case for C-extension modules) do nothing instead of crashing
+- When resolving type guard imports if the target module does not have source code (such is the case for C-extension
+  modules) do nothing instead of crashing
 
 ## 1.15.1
 
