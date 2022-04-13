@@ -12,6 +12,7 @@ from sphinx.application import Sphinx
 from sphinx.config import Config
 from sphinx.environment import BuildEnvironment
 from sphinx.ext.autodoc import Options
+from sphinx.ext.autodoc.mock import mock
 from sphinx.util import logging
 from sphinx.util.inspect import signature as sphinx_signature
 from sphinx.util.inspect import stringify_signature
@@ -305,8 +306,8 @@ def _future_annotations_imported(obj: Any) -> bool:
     return bool(_annotations.compiler_flag == future_annotations)
 
 
-def get_all_type_hints(obj: Any, name: str) -> dict[str, Any]:
-    result = _get_type_hint(name, obj)
+def get_all_type_hints(autodoc_mock_imports: list[str], obj: Any, name: str) -> dict[str, Any]:
+    result = _get_type_hint(autodoc_mock_imports, name, obj)
     if not result:
         result = backfill_type_hints(obj, name)
         try:
@@ -314,7 +315,7 @@ def get_all_type_hints(obj: Any, name: str) -> dict[str, Any]:
         except (AttributeError, TypeError):
             pass
         else:
-            result = _get_type_hint(name, obj)
+            result = _get_type_hint(autodoc_mock_imports, name, obj)
     return result
 
 
@@ -322,7 +323,7 @@ _TYPE_GUARD_IMPORT_RE = re.compile(r"\nif (typing.)?TYPE_CHECKING:[^\n]*([\s\S]*
 _TYPE_GUARD_IMPORTS_RESOLVED = set()
 
 
-def _resolve_type_guarded_imports(obj: Any) -> None:
+def _resolve_type_guarded_imports(autodoc_mock_imports: list[str], obj: Any) -> None:
     if hasattr(obj, "__module__") and obj.__module__ not in _TYPE_GUARD_IMPORTS_RESOLVED:
         _TYPE_GUARD_IMPORTS_RESOLVED.add(obj.__module__)
         if obj.__module__ not in sys.builtin_module_names:
@@ -336,13 +337,14 @@ def _resolve_type_guarded_imports(obj: Any) -> None:
                     for (_, part) in _TYPE_GUARD_IMPORT_RE.findall(module_code):
                         guarded_code = textwrap.dedent(part)
                         try:
-                            exec(guarded_code, obj.__globals__)
+                            with mock(autodoc_mock_imports):
+                                exec(guarded_code, obj.__globals__)
                         except Exception as exc:
                             _LOGGER.warning(f"Failed guarded type import with {exc!r}")
 
 
-def _get_type_hint(name: str, obj: Any) -> dict[str, Any]:
-    _resolve_type_guarded_imports(obj)
+def _get_type_hint(autodoc_mock_imports: list[str], name: str, obj: Any) -> dict[str, Any]:
+    _resolve_type_guarded_imports(autodoc_mock_imports, obj)
     try:
         result = get_type_hints(obj)
     except (AttributeError, TypeError, RecursionError) as exc:
@@ -497,7 +499,7 @@ def process_docstring(
         signature = sphinx_signature(obj)
     except (ValueError, TypeError):
         signature = None
-    type_hints = get_all_type_hints(obj, name)
+    type_hints = get_all_type_hints(app.config.autodoc_mock_imports, obj, name)
     app.config._annotation_globals = getattr(obj, "__globals__", {})  # type: ignore # config has no such attribute
     try:
         _inject_types_to_docstring(type_hints, signature, original_obj, app, what, name, lines)

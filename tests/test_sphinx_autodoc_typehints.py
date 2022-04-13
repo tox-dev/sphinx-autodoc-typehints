@@ -353,7 +353,11 @@ def test_format_annotation_both_libs(library: ModuleType, annotation: str, param
 def test_process_docstring_slot_wrapper() -> None:
     lines: list[str] = []
     config = create_autospec(
-        Config, typehints_fully_qualified=False, simplify_optional_unions=False, typehints_formatter=None
+        Config,
+        typehints_fully_qualified=False,
+        simplify_optional_unions=False,
+        typehints_formatter=None,
+        autodoc_mock_imports=[],
     )
     app: Sphinx = create_autospec(Sphinx, config=config)
     process_docstring(app, "class", "SlotWrapper", Slotted, None, lines)
@@ -870,7 +874,11 @@ def test_normalize_source_lines_def_starting_decorator_parameter() -> None:
 @pytest.mark.parametrize("obj", [cmp_to_key, 1])
 def test_default_no_signature(obj: Any) -> None:
     config = create_autospec(
-        Config, typehints_fully_qualified=False, simplify_optional_unions=False, typehints_formatter=None
+        Config,
+        typehints_fully_qualified=False,
+        simplify_optional_unions=False,
+        typehints_formatter=None,
+        autodoc_mock_imports=[],
     )
     app: Sphinx = create_autospec(Sphinx, config=config)
     lines: list[str] = []
@@ -888,6 +896,7 @@ def test_bound_class_method(method: FunctionType) -> None:
         always_document_param_types=True,
         typehints_defaults=True,
         typehints_formatter=None,
+        autodoc_mock_imports=[],
     )
     app: Sphinx = create_autospec(Sphinx, config=config)
     process_docstring(app, "class", method.__qualname__, method, None, [])
@@ -905,17 +914,20 @@ def test_syntax_error_backfill() -> None:
 @pytest.mark.sphinx("text", testroot="resolve-typing-guard")
 def test_resolve_typing_guard_imports(app: SphinxTestApp, status: StringIO, warning: StringIO) -> None:
     set_python_path()
+    app.config.autodoc_mock_imports = ["viktor"]  # type: ignore # create flag
     app.build()
     assert "build succeeded" in status.getvalue()
-    pat = r'WARNING: Failed guarded type import with ImportError\("cannot import name \'missing\' from \'functools\''
     err = warning.getvalue()
+    r = re.compile("WARNING: Failed guarded type import")
+    assert len(r.findall(err)) == 1
+    pat = r'WARNING: Failed guarded type import with ImportError\("cannot import name \'missing\' from \'functools\''
     assert re.search(pat, err)
 
 
 def test_no_source_code_type_guard() -> None:
     from csv import Error
 
-    _resolve_type_guarded_imports(Error)
+    _resolve_type_guarded_imports([], Error)
 
 
 @pytest.mark.sphinx("text", testroot="dummy")
