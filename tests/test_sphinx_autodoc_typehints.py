@@ -241,39 +241,39 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
         # Internal tuple with following additional type cannot be flattened (specific to nptyping?)
         # These cases will fail if nptyping restructures its internal module hierarchy
         (
-            nptyping.NDArray[nptyping.Shape["*"], nptyping.Float],  # type: ignore # nptyping/issues/77
+            nptyping.NDArray[nptyping.Shape["*"], nptyping.Float],
             (
                 ":py:class:`~nptyping.base_meta_classes.NDArray`\\[:py:class:`~nptyping.base_meta_classes.Shape`\\[*], "
                 ":py:class:`~numpy.float64`]"
             ),
         ),
         (
-            nptyping.NDArray[nptyping.Shape["64"], nptyping.Float],  # type: ignore # nptyping/issues/77
+            nptyping.NDArray[nptyping.Shape["64"], nptyping.Float],
             (
                 ":py:class:`~nptyping.base_meta_classes.NDArray`\\[:py:class:`~nptyping.base_meta_classes.Shape`\\[64],"
                 " :py:class:`~numpy.float64`]"
             ),
         ),
         (
-            nptyping.NDArray[nptyping.Shape["*, *"], nptyping.Float],  # type: ignore # nptyping/issues/77
+            nptyping.NDArray[nptyping.Shape["*, *"], nptyping.Float],
             (
                 ":py:class:`~nptyping.base_meta_classes.NDArray`\\[:py:class:`~nptyping.base_meta_classes.Shape`\\[*, "
                 "*], :py:class:`~numpy.float64`]"
             ),
         ),
         (
-            nptyping.NDArray[nptyping.Shape["*, ..."], nptyping.Float],  # type: ignore # nptyping/issues/77
+            nptyping.NDArray[nptyping.Shape["*, ..."], nptyping.Float],
             (":py:class:`~nptyping.base_meta_classes.NDArray`\\[:py:data:`~typing.Any`, :py:class:`~numpy.float64`]"),
         ),
         (
-            nptyping.NDArray[nptyping.Shape["*, 3"], nptyping.Float],  # type: ignore # nptyping/issues/77
+            nptyping.NDArray[nptyping.Shape["*, 3"], nptyping.Float],
             (
                 ":py:class:`~nptyping.base_meta_classes.NDArray`\\[:py:class:`~nptyping.base_meta_classes.Shape`\\[*, 3"
                 "], :py:class:`~numpy.float64`]"
             ),
         ),
         (
-            nptyping.NDArray[nptyping.Shape["3, ..."], nptyping.Float],  # type: ignore # nptyping/issues/77
+            nptyping.NDArray[nptyping.Shape["3, ..."], nptyping.Float],
             (
                 ":py:class:`~nptyping.base_meta_classes.NDArray`\\[:py:class:`~nptyping.base_meta_classes.Shape`\\[3, "
                 "...], :py:class:`~numpy.float64`]"
