@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.18.3
+
+- Support and require `nptyping>=2.1.2`
+
 ## 1.18.2
 
 - Support and require `nptyping>=2.1.1`
