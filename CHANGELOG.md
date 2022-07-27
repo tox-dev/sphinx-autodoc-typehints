@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.19.0
+
+- Support for CPython 3.11, no longer adds `Optional` when the argument is default per
+  [recommendation from PEP-484](https://github.com/tox-dev/sphinx-autodoc-typehints/pull/247).
+
 ## 1.18.3
 
 - Support and require `nptyping>=2.1.2`

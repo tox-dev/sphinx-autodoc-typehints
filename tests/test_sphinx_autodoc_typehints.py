@@ -232,7 +232,7 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
         (S, ":py:class:`~typing.TypeVar`\\(``S``, bound= miss)"),
         # ## These test for correct internal tuple rendering, even if not all are valid Tuple types
         # Zero-length tuple remains
-        (Tuple[()], ":py:data:`~typing.Tuple`\\[()]"),
+        (Tuple[()], ":py:data:`~typing.Tuple`"),
         # Internal single tuple with simple types is flattened in the output
         (Tuple[(int,)], ":py:data:`~typing.Tuple`\\[:py:class:`int`]"),
         (Tuple[(int, int)], ":py:data:`~typing.Tuple`\\[:py:class:`int`, :py:class:`int`]"),
@@ -374,7 +374,7 @@ def set_python_path() -> None:
 def maybe_fix_py310(expected_contents: str) -> str:
     if PY310_PLUS:
         for old, new in [
-            ("*bool** | **None*", '"bool" | "None"'),
+            ("*bool** | **None*", '"Optional"["bool"]'),
             ("*int** | **str** | **float*", '"int" | "str" | "float"'),
             ("*str** | **None*", '"Optional"["str"]'),
             ("(*bool*)", '("bool")'),
@@ -719,7 +719,8 @@ def test_sphinx_output_future_annotations(app: SphinxTestApp, status: StringIO) 
            Return type:
               str
         """
-        assert text_contents == maybe_fix_py310(dedent(expected_contents))
+        expected_contents = maybe_fix_py310(dedent(expected_contents))
+        assert text_contents == expected_contents
 
 
 @pytest.mark.parametrize(

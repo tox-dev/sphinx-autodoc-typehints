@@ -90,7 +90,10 @@ def get_annotation_args(annotation: Any, module: str, class_name: str) -> tuple[
         return annotation.__values__  # type: ignore # deduced Any
     elif class_name == "Generic":
         return annotation.__parameters__  # type: ignore # deduced Any
-    return getattr(annotation, "__args__", ())
+    result = getattr(annotation, "__args__", ())
+    # 3.10 and earlier Tuple[()] returns ((), ) instead of () the tuple does
+    result = () if len(result) == 1 and result[0] == () else result  # type: ignore
+    return result
 
 
 def format_internal_tuple(t: tuple[Any, ...], config: Config) -> str:
@@ -161,7 +164,7 @@ def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901 # t
         formatted_args = None if args else args_format
     elif full_name == "typing.Optional":
         args = tuple(x for x in args if x is not type(None))  # noqa: E721
-    elif full_name == "typing.Union" and type(None) in args:
+    elif full_name in ("typing.Union", "types.UnionType") and type(None) in args:
         if len(args) == 2:
             full_name = "typing.Optional"
             args = tuple(x for x in args if x is not type(None))  # noqa: E721

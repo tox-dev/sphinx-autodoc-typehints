@@ -64,7 +64,7 @@ The following configuration options are accepted:
   directive, if present, otherwise fall back to using `:rtype:`. Use in conjunction with
   [napoleon_use_rtype](https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html#confval-napoleon_use_rtype)
   to avoid generation of duplicate or redundant return type information.
-- `typehints_defaults` (default: `None`): If `None`, defaults are not added. Otherwise adds a default annotation:
+- `typehints_defaults` (default: `None`): If `None`, defaults are not added. Otherwise, adds a default annotation:
 
   - `'comma'` adds it after the type, changing Sphinx’ default look to “**param** (_int_, default: `1`) -- text”.
   - `'braces'` adds `(default: ...)` after the type (useful for numpydoc like styles).
