@@ -191,7 +191,7 @@ test
 
 
 def function_with_typehint_comment_not_inline(x=None, *y, z, **kwargs):  # noqa: U100
-    # type: (Union[str, bytes], *str, bytes, **int) -> None
+    # type: (Union[str, bytes, None], *str, bytes, **int) -> None
     """
     Function docstring.
 

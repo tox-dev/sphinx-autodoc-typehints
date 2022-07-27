@@ -387,7 +387,17 @@ def maybe_fix_py310(expected_contents: str) -> str:
     return expected_contents
 
 
-@pytest.mark.parametrize("always_document_param_types", [True, False], ids=["doc_param_type", "no_doc_param_type"])
+@pytest.mark.parametrize(
+    "always_document_param_types",
+    [
+        True,
+        False,
+    ],
+    ids=[
+        "doc_param_type",
+        "no_doc_param_type",
+    ],
+)
 @pytest.mark.sphinx("text", testroot="dummy")
 @patch("sphinx.writers.text.MAXWIDTH", 2000)
 def test_sphinx_output(
