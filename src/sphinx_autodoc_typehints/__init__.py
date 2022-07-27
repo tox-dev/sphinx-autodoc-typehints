@@ -92,7 +92,7 @@ def get_annotation_args(annotation: Any, module: str, class_name: str) -> tuple[
         return annotation.__parameters__  # type: ignore # deduced Any
     result = getattr(annotation, "__args__", ())
     # 3.10 and earlier Tuple[()] returns ((), ) instead of () the tuple does
-    result = () if len(result) == 1 and result[0] == () else result
+    result = () if len(result) == 1 and result[0] == () else result  # type: ignore
     return result
 
 
