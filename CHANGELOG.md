@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.19.0
+
+- Support for CPython 3.11
+
 ## 1.18.3
 
 - Support and require `nptyping>=2.1.2`
