@@ -1,7 +1,7 @@
 import typing
 from dataclasses import dataclass
 from mailbox import Mailbox
-from typing import Callable, Union
+from typing import Callable, Optional, Union
 
 
 def get_local_function():
@@ -210,7 +210,7 @@ class ClassWithTypehintsNotInline:
     """
 
     def __init__(self, x=None):  # noqa: U100
-        # type: (Callable[[int, bytes], int]) -> None
+        # type: (Optional[Callable[[int, bytes], int]]) -> None
         pass
 
     def foo(self, x=1):
@@ -224,7 +224,7 @@ class ClassWithTypehintsNotInline:
 
     @classmethod
     def mk(cls, x=None):
-        # type: (Callable[[int, bytes], int]) -> ClassWithTypehintsNotInline
+        # type: (Optional[Callable[[int, bytes], int]]) -> ClassWithTypehintsNotInline
         """
         Method docstring.
 
