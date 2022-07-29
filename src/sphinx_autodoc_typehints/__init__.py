@@ -5,7 +5,6 @@ import re
 import sys
 import textwrap
 from ast import FunctionDef, Module, stmt
-from typing import _eval_type  # type: ignore # no import defined in stubs
 from typing import Any, AnyStr, Callable, ForwardRef, NewType, TypeVar, get_type_hints
 
 from sphinx.application import Sphinx
@@ -120,8 +119,7 @@ def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901 # t
 
     # Special cases
     if isinstance(annotation, ForwardRef):
-        value = _resolve_forward_ref(annotation, config)
-        return format_annotation(value, config)
+        return annotation.__forward_arg__
     if annotation is None or annotation is type(None):  # noqa: E721
         return ":py:obj:`None`"
     if annotation is Ellipsis:
@@ -192,17 +190,6 @@ def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901 # t
         formatted_args = args_format.format(", ".join(fmt))
 
     result = f":py:{role}:`{prefix}{full_name}`{formatted_args}"
-    return result
-
-
-def _resolve_forward_ref(annotation: ForwardRef, config: Config) -> Any:
-    raw, base_globals = annotation.__forward_arg__, config._annotation_globals
-    params = {"is_class": True} if (3, 10) > sys.version_info >= (3, 9, 8) or sys.version_info >= (3, 10, 1) else {}
-    value = ForwardRef(raw, is_argument=False, **params)
-    try:
-        result = _eval_type(value, base_globals, None)
-    except NameError:
-        result = raw  # fallback to the value itself as string
     return result
 
 

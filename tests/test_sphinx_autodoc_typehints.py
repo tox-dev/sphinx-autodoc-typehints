@@ -15,6 +15,7 @@ from typing import (
     Callable,
     Dict,
     Generic,
+    List,
     Mapping,
     Match,
     NewType,
@@ -54,6 +55,11 @@ Y = TypeVar("Y", bound=str)
 Z = TypeVar("Z", bound="A")
 S = TypeVar("S", bound="miss")  # type: ignore # miss not defined on purpose # noqa: F821
 W = NewType("W", str)
+
+RecList = Union[int, List["RecList"]]
+
+MutualRecA = Union[bool, List["MutualRecB"]]
+MutualRecB = Union[str, List["MutualRecA"]]
 
 
 class A:
@@ -228,7 +234,7 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
         (V, ":py:class:`~typing.TypeVar`\\(``V``, contravariant=True)"),
         (X, ":py:class:`~typing.TypeVar`\\(``X``, :py:class:`str`, :py:class:`int`)"),
         (Y, ":py:class:`~typing.TypeVar`\\(``Y``, bound= :py:class:`str`)"),
-        (Z, ":py:class:`~typing.TypeVar`\\(``Z``, bound= :py:class:`~test_sphinx_autodoc_typehints.A`)"),
+        (Z, ":py:class:`~typing.TypeVar`\\(``Z``, bound= A)"),
         (S, ":py:class:`~typing.TypeVar`\\(``S``, bound= miss)"),
         # ## These test for correct internal tuple rendering, even if not all are valid Tuple types
         # Zero-length tuple remains
@@ -278,6 +284,14 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
                 ":py:class:`~nptyping.base_meta_classes.NDArray`\\[:py:class:`~nptyping.base_meta_classes.Shape`\\[3, "
                 "...], :py:class:`~numpy.float64`]"
             ),
+        ),
+        (
+            RecList,
+            (":py:data:`~typing.Union`\\[:py:class:`int`, :py:class:`~typing.List`\\[RecList]]"),
+        ),
+        (
+            MutualRecA,
+            (":py:data:`~typing.Union`\\[:py:class:`bool`, :py:class:`~typing.List`\\[MutualRecB]]"),
         ),
     ],
 )
