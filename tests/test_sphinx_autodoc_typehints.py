@@ -56,10 +56,11 @@ Z = TypeVar("Z", bound="A")
 S = TypeVar("S", bound="miss")  # type: ignore # miss not defined on purpose # noqa: F821
 W = NewType("W", str)
 
-RecList = Union[int, List["RecList"]]
-
-MutualRecA = Union[bool, List["MutualRecB"]]
-MutualRecB = Union[str, List["MutualRecA"]]
+# Mypy does not support recursive type aliases, but
+# other type checkers do.
+RecList = Union[int, List["RecList"]]  # type: ignore
+MutualRecA = Union[bool, List["MutualRecB"]]  # type: ignore
+MutualRecB = Union[str, List["MutualRecA"]]  # type: ignore
 
 
 class A:

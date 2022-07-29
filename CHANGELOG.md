@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.19.1
+
+- Fix bug for recursive type alias.
+
 ## 1.19.0
 
 - Support for CPython 3.11, no longer adds `Optional` when the argument is default per
