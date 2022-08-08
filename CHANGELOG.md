@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.19.2
+
+- Fix incorrect domain used for collections.abc.Callable.
+
 ## 1.19.1
 
 - Fix bug for recursive type alias.

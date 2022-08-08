@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections.abc
 import pathlib
 import re
 import sys
@@ -153,6 +154,7 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
         (int, ":py:class:`int`"),
         (type(None), ":py:obj:`None`"),
         (type, ":py:class:`type`"),
+        (collections.abc.Callable, ":py:class:`~collections.abc.Callable`"),
         (Type, ":py:class:`~typing.Type`"),
         (Type[A], ":py:class:`~typing.Type`\\[:py:class:`~%s.A`]" % __name__),
         (Any, ":py:data:`~typing.Any`"),
