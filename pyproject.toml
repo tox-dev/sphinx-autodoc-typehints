@@ -1,6 +1,65 @@
 [build-system]
-requires = ["setuptools>=65.3", "setuptools_scm>=7.0.5"]
-build-backend = 'setuptools.build_meta'
+build-backend = "hatchling.build"
+requires = ["hatchling>=1.9", "hatch-vcs>=0.2"]
+
+[project]
+name = "sphinx_autodoc_typehints"
+description = "Type hints (PEP 484) support for the Sphinx autodoc extension"
+readme.file = "README.md"
+readme.content-type = "text/markdown"
+keywords = ["virtual", "environments", "isolated", "testing"]
+license = "MIT"
+urls.Homepage = "http://pyproject_api.readthedocs.org"
+urls.Source = "https://github.com/tox-dev/sphinx-autodoc-typehints"
+urls.Tracker = "https://github.com/tox-dev/sphinx-autodoc-typehints/issues"
+urls.Changelog = "https://github.com/tox-dev/sphinx-autodoc-typehints/blob/main/CHANGELOG.md"
+authors = [{ name = "Bernát Gábor", email = "gaborjbernat@gmail.com" }]
+maintainers = [{ name = "Bernát Gábor", email = "gaborjbernat@gmail.com" }]
+requires-python = ">=3.7"
+dependencies = ["Sphinx>=5.1.1"]
+optional-dependencies.docs = ["furo>=2022.6.21", "sphinx>=5.1.1", "sphinx-autodoc-typehints>=1.19.2"]
+optional-dependencies.testing = [
+  "covdefaults>=2.2",
+  "coverage>=6.4.4",
+  "diff-cover>=6.5.1",
+  "nptyping>=2.3.1",
+  "pytest>=7.1.3",
+  "pytest-cov>=3",
+  "sphobjinv>=2.2.2",
+  "typing-extensions>=4.3",
+]
+optional-dependencies.type_comment = ['typed-ast>=1.5.4; python_version < "3.8"']
+dynamic = ["version"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Framework :: Sphinx :: Extension",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Topic :: Documentation :: Sphinx",
+]
+
+[tool.hatch]
+build.hooks.vcs.version-file = "src/sphinx_autodoc_typehints/version.py"
+version.source = "vcs"
+
+[tool.coverage]
+html.show_contexts = true
+html.skip_covered = false
+paths.source = [
+  "src",
+  ".tox*/*/lib/python*/site-packages",
+  ".tox*/pypy*/site-packages",
+  ".tox*\\*\\Lib\\site-packages",
+  "*/src",
+  "*\\src",
+]
+report.fail_under = 81
+report.omit = []
+run.parallel = true
+run.plugins = ["covdefaults"]
 
 [tool.black]
 line-length = 120
@@ -9,9 +68,6 @@ line-length = 120
 line_length = 120
 profile = "black"
 known_first_party = ["sphinx_autodoc_typehints", "tests"]
-
-[tool.setuptools_scm]
-write_to = "src/sphinx_autodoc_typehints/version.py"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

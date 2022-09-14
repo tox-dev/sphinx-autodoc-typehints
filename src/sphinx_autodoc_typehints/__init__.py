@@ -16,7 +16,7 @@ from sphinx.util import logging
 from sphinx.util.inspect import signature as sphinx_signature
 from sphinx.util.inspect import stringify_signature
 
-from .version import version as __version__
+from .version import __version__
 
 _LOGGER = logging.getLogger(__name__)
 _PYDATA_ANNOTATIONS = {"Any", "AnyStr", "Callable", "ClassVar", "Literal", "NoReturn", "Optional", "Tuple", "Union"}

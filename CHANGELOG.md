@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.20
+
+- Use hatchling instead of setuptools
+
 ## 1.19.2
 
 - Fix incorrect domain used for collections.abc.Callable.
