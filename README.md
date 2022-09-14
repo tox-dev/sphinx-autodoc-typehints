@@ -41,7 +41,9 @@ def format_unit(value: Union[float, int], unit: str) -> str:
 
 First, use pip to download and install the extension:
 
-    $ pip install sphinx-autodoc-typehints
+```bash
+pip install sphinx-autodoc-typehints
+```
 
 Then, add the extension to your `conf.py`:
 
@@ -100,8 +102,8 @@ tracker for more information.
 Sometimes functions or classes from two different modules need to reference each other in their type annotations. This
 creates a circular import problem. The solution to this is the following:
 
-1.  Import only the module, not the classes/functions from it
-2.  Use forward references in the type annotations (e.g. `def methodname(self, param1: 'othermodule.OtherClass'):`)
+1. Import only the module, not the classes/functions from it
+2. Use forward references in the type annotations (e.g. `def methodname(self, param1: 'othermodule.OtherClass'):`)
 
 On Python 3.7, you can even use `from __future__ import annotations` and remove the quotes.
 
