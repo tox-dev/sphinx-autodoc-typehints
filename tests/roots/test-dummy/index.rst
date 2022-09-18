@@ -19,6 +19,8 @@ Dummy Module
 
 .. autofunction:: dummy_module.function_with_typehint_comment
 
+.. autofunction:: dummy_module.function_with_starred_documentation_param_names
+
 .. autoclass:: dummy_module.ClassWithTypehints
    :members:
 

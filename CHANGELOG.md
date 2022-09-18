@@ -4,6 +4,7 @@
 
 - Use hatchling instead of setuptools
 - Add support for typing.ParamSpec
+- Allow star prefixes for parameter names in docstring
 
 ## 1.19.2
 

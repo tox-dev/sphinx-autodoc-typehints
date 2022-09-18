@@ -126,6 +126,15 @@ def function(x: bool, y: int, z_: typing.Optional[str] = None) -> str:  # noqa: 
     """
 
 
+def function_with_starred_documentation_param_names(*args: int, **kwargs: str):  # noqa: U100
+    r"""
+    Function docstring.
+
+    :param \*args: foo
+    :param \**kwargs: bar
+    """
+
+
 def function_with_escaped_default(x: str = "\b"):  # noqa: U100
     """
     Function docstring.
