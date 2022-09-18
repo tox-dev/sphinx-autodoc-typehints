@@ -26,7 +26,7 @@ def get_annotation_module(annotation: Any) -> str:
     if annotation is None:
         return "builtins"
     is_new_type = sys.version_info >= (3, 10) and isinstance(annotation, NewType)
-    if is_new_type or isinstance(annotation, TypeVar):
+    if is_new_type or isinstance(annotation, TypeVar) or type(annotation).__name__ == "ParamSpec":
         return "typing"
     if hasattr(annotation, "__module__"):
         return annotation.__module__  # type: ignore # deduced Any
@@ -63,7 +63,7 @@ def get_annotation_class_name(annotation: Any, module: str) -> str:
         elif getattr(origin, "_name", None):  # Required for Union on Python 3.7+
             return origin._name  # type: ignore # deduced Any
 
-    annotation_cls = annotation if inspect.isclass(annotation) else annotation.__class__
+    annotation_cls = annotation if inspect.isclass(annotation) else type(annotation)
     return annotation_cls.__qualname__.lstrip("_")  # type: ignore # deduced Any
 
 
@@ -153,7 +153,7 @@ def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901 # t
     if full_name == "typing.NewType":
         args_format = f"\\(``{annotation.__name__}``, {{}})"
         role = "class" if sys.version_info >= (3, 10) else "func"
-    elif full_name == "typing.TypeVar":
+    elif full_name in {"typing.TypeVar", "typing.ParamSpec"}:
         params = {k: getattr(annotation, f"__{k}__") for k in ("bound", "covariant", "contravariant")}
         params = {k: v for k, v in params.items() if v}
         if "bound" in params:
