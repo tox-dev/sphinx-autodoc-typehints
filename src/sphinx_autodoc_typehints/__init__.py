@@ -64,7 +64,7 @@ def get_annotation_class_name(annotation: Any, module: str) -> str:
             return origin._name  # type: ignore # deduced Any
 
     annotation_cls = annotation if inspect.isclass(annotation) else type(annotation)
-    return annotation_cls.__qualname__.lstrip("_")  # type: ignore # deduced Any
+    return annotation_cls.__qualname__.lstrip("_")
 
 
 def get_annotation_args(annotation: Any, module: str, class_name: str) -> tuple[Any, ...]:
