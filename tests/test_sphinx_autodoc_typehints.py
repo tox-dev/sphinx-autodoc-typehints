@@ -57,9 +57,9 @@ Z = TypeVar("Z", bound="A")
 S = TypeVar("S", bound="miss")  # type: ignore # miss not defined on purpose # noqa: F821
 W = NewType("W", str)
 P = typing_extensions.ParamSpec("P")
-P_co = typing_extensions.ParamSpec("P_co", covariant=True)
-P_contra = typing_extensions.ParamSpec("P_contra", contravariant=True)
-P_bound = typing_extensions.ParamSpec("P_bound", bound=str)
+P_co = typing_extensions.ParamSpec("P_co", covariant=True)  # type: ignore
+P_contra = typing_extensions.ParamSpec("P_contra", contravariant=True)  # type: ignore
+P_bound = typing_extensions.ParamSpec("P_bound", bound=str)  # type: ignore
 
 # Mypy does not support recursive type aliases, but
 # other type checkers do.
