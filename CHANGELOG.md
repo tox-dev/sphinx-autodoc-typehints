@@ -3,6 +3,7 @@
 ## 1.20
 
 - Use hatchling instead of setuptools
+- Add support for typing.ParamSpec
 
 ## 1.19.2
 
