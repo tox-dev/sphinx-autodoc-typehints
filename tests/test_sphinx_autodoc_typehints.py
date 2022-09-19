@@ -56,6 +56,10 @@ Y = TypeVar("Y", bound=str)
 Z = TypeVar("Z", bound="A")
 S = TypeVar("S", bound="miss")  # type: ignore # miss not defined on purpose # noqa: F821
 W = NewType("W", str)
+P = typing_extensions.ParamSpec("P")
+P_co = typing_extensions.ParamSpec("P_co", covariant=True)
+P_contra = typing_extensions.ParamSpec("P_contra", contravariant=True)
+P_bound = typing_extensions.ParamSpec("P_bound", bound=str)
 
 # Mypy does not support recursive type aliases, but
 # other type checkers do.
@@ -239,6 +243,11 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
         (Y, ":py:class:`~typing.TypeVar`\\(``Y``, bound= :py:class:`str`)"),
         (Z, ":py:class:`~typing.TypeVar`\\(``Z``, bound= A)"),
         (S, ":py:class:`~typing.TypeVar`\\(``S``, bound= miss)"),
+        # ParamSpec should behave like TypeVar, except for missing constraints
+        (P, ":py:class:`~typing.ParamSpec`\\(``P``)"),
+        (P_co, ":py:class:`~typing.ParamSpec`\\(``P_co``, covariant=True)"),
+        (P_contra, ":py:class:`~typing.ParamSpec`\\(``P_contra``, contravariant=True)"),
+        (P_bound, ":py:class:`~typing.ParamSpec`\\(``P_bound``, bound= :py:class:`str`)"),
         # ## These test for correct internal tuple rendering, even if not all are valid Tuple types
         # Zero-length tuple remains
         (Tuple[()], ":py:data:`~typing.Tuple`"),
