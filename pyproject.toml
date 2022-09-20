@@ -28,7 +28,7 @@ optional-dependencies.testing = [
   "sphobjinv>=2.2.2",
   "typing-extensions>=4.3",
 ]
-optional-dependencies.type_comment = ['typed-ast>=1.5.4; python_version < "3.8"']
+optional-dependencies.type-comment = ['typed-ast>=1.5.4; python_version < "3.8"']
 dynamic = ["version"]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
