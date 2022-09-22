@@ -619,6 +619,15 @@ def test_sphinx_output(
            Return type:
               "None"
 
+        dummy_module.function_with_starred_documentation_param_names(*args, **kwargs)
+
+           Function docstring.
+
+           Parameters:
+              * ***args** ("int") -- foo
+
+              * ****kwargs** ("str") -- bar
+
         class dummy_module.ClassWithTypehints(x)
 
            Class docstring.

@@ -500,6 +500,49 @@ def process_docstring(
         delattr(app.config, "_annotation_globals")
 
 
+def _get_sphinx_line_keyword_and_argument(line: str) -> tuple[str, str | None] | None:
+    """
+    Extract a keyword, and its optional argument out of a sphinx field option line.
+
+    For example
+    >>> _get_sphinx_line_keyword_and_argument(":param parameter:")
+    ("param", "parameter")
+    >>> _get_sphinx_line_keyword_and_argument(":return:")
+    ("return", None)
+    >>> _get_sphinx_line_keyword_and_argument("some invalid line")
+    None
+    """
+
+    param_line_without_description = line.split(":", maxsplit=2)  # noqa: SC200
+    if len(param_line_without_description) != 3:
+        return None
+
+    split_directive_and_name = param_line_without_description[1].split(maxsplit=1)  # noqa: SC200
+    if len(split_directive_and_name) != 2:
+        return (split_directive_and_name[0], None)
+
+    return tuple(split_directive_and_name)  # type: ignore
+
+
+def _line_is_param_line_for_arg(line: str, arg_name: str) -> bool:
+    """Return True if `line` is a valid parameter line for `arg_name`, false otherwise."""
+    keyword_and_name = _get_sphinx_line_keyword_and_argument(line)
+    if keyword_and_name is None:
+        return False
+
+    keyword, doc_name = keyword_and_name
+    if doc_name is None:
+        return False
+
+    if keyword not in {"param", "parameter", "arg", "argument"}:
+        return False
+
+    for prefix in ("", r"\*", r"\**", r"\*\*"):
+        if doc_name == prefix + arg_name:
+            return True
+    return False
+
+
 def _inject_types_to_docstring(
     type_hints: dict[str, Any],
     signature: inspect.Signature | None,
@@ -521,10 +564,12 @@ def _inject_types_to_docstring(
 
         formatted_annotation = format_annotation(annotation, app.config)
 
-        search_for = {f":{field} {arg_name}:" for field in ("param", "parameter", "arg", "argument")}
         insert_index = None
         for at, line in enumerate(lines):
-            if any(line.startswith(search_string) for search_string in search_for):
+            if _line_is_param_line_for_arg(line, arg_name):
+                # Get the arg_name from the doc to match up for type in case it has a star prefix.
+                # Line is in the correct format so this is guaranteed to return tuple[str, str].
+                _, arg_name = _get_sphinx_line_keyword_and_argument(line)  # type: ignore[assignment, misc]
                 insert_index = at
                 break
 
