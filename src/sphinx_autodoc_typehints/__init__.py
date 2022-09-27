@@ -519,6 +519,8 @@ def _get_sphinx_line_keyword_and_argument(line: str) -> tuple[str, str | None] |
 
     split_directive_and_name = param_line_without_description[1].split(maxsplit=1)  # noqa: SC200
     if len(split_directive_and_name) != 2:
+        if not len(split_directive_and_name):
+            return None
         return (split_directive_and_name[0], None)
 
     return tuple(split_directive_and_name)  # type: ignore

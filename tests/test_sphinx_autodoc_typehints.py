@@ -623,6 +623,10 @@ def test_sphinx_output(
 
            Function docstring.
 
+           Usage:
+
+              print(1)
+
            Parameters:
               * ***args** ("int") -- foo
 
