@@ -17,7 +17,7 @@ authors = [{ name = "Bernát Gábor", email = "gaborjbernat@gmail.com" }]
 maintainers = [{ name = "Bernát Gábor", email = "gaborjbernat@gmail.com" }]
 requires-python = ">=3.7"
 dependencies = ["Sphinx>=5.2.1"]
-optional-dependencies.docs = ["furo>=2022.9.15", "sphinx>=5.2.1", "sphinx-autodoc-typehints>=1.19.2"]
+optional-dependencies.docs = ["furo>=2022.9.15", "sphinx>=5.2.1", "sphinx-autodoc-typehints>=1.19.3"]
 optional-dependencies.testing = [
   "covdefaults>=2.2",
   "coverage>=6.4.4",

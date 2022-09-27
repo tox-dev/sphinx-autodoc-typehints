@@ -130,6 +130,10 @@ def function_with_starred_documentation_param_names(*args: int, **kwargs: str): 
     r"""
     Function docstring.
 
+    Usage::
+
+        print(1)
+
     :param \*args: foo
     :param \**kwargs: bar
     """
