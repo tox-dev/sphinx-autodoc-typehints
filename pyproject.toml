@@ -1,6 +1,6 @@
 [build-system]
 build-backend = "hatchling.build"
-requires = ["hatchling>=1.10", "hatch-vcs>=0.2"]
+requires = ["hatchling>=1.11.1", "hatch-vcs>=0.2"]
 
 [project]
 name = "sphinx_autodoc_typehints"
@@ -16,17 +16,17 @@ urls.Changelog = "https://github.com/tox-dev/sphinx-autodoc-typehints/blob/main/
 authors = [{ name = "Bernát Gábor", email = "gaborjbernat@gmail.com" }]
 maintainers = [{ name = "Bernát Gábor", email = "gaborjbernat@gmail.com" }]
 requires-python = ">=3.7"
-dependencies = ["Sphinx>=5.2.1"]
-optional-dependencies.docs = ["furo>=2022.9.15", "sphinx>=5.2.1", "sphinx-autodoc-typehints>=1.19.3"]
+dependencies = ["Sphinx>=5.3"]
+optional-dependencies.docs = ["furo>=2022.9.29", "sphinx>=5.3", "sphinx-autodoc-typehints>=1.19.4"]
 optional-dependencies.testing = [
   "covdefaults>=2.2",
-  "coverage>=6.4.4",
+  "coverage>=6.5",
   "diff-cover>=7.0.1",
   "nptyping>=2.3.1",
-  "pytest>=7.1.3",
-  "pytest-cov>=3",
+  "pytest>=7.2",
+  "pytest-cov>=4",
   "sphobjinv>=2.2.2",
-  "typing-extensions>=4.3",
+  "typing-extensions>=4.4",
 ]
 optional-dependencies.type-comment = ['typed-ast>=1.5.4; python_version < "3.8"']
 dynamic = ["version"]
