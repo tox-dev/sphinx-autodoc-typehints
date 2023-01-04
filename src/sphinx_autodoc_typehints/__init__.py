@@ -254,7 +254,11 @@ def process_signature(
 
     obj = inspect.unwrap(obj)
     sph_signature = sphinx_signature(obj)
-    parameters = [param.replace(annotation=inspect.Parameter.empty) for param in sph_signature.parameters.values()]
+
+    if app.config.typehints_use_signature:
+        parameters = list(sph_signature.parameters.values())
+    else:
+        parameters = [param.replace(annotation=inspect.Parameter.empty) for param in sph_signature.parameters.values()]
 
     # if we have parameters we may need to delete first argument that's not documented, e.g. self
     start = 0
@@ -277,11 +281,10 @@ def process_signature(
             if not isinstance(method_object, (classmethod, staticmethod)):
                 start = 1
 
-    if not app.config.typehints_use_signature:
-        sph_signature = sph_signature.replace(parameters=parameters[start:])    
+    sph_signature = sph_signature.replace(parameters=parameters[start:])
     if not app.config.typehints_use_signature_return:
         sph_signature = sph_signature.replace(return_annotation=inspect.Signature.empty)
-        
+
     return stringify_signature(sph_signature).replace("\\", "\\\\"), None
 
 
