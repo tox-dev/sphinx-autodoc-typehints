@@ -602,8 +602,6 @@ def _inject_types_to_docstring(
                         else:  # add to last param doc line
                             type_annotation += formatted_default
 
-                if annotation is None:
-                    print(type_annotation)
                 lines.insert(insert_index, type_annotation)
 
     if "return" in type_hints and not inspect.isclass(original_obj):
