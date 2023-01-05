@@ -483,7 +483,7 @@ def format_default(app: Sphinx, default: Any, is_annotated: bool) -> str | None:
     if is_annotated:
         if app.config.typehints_defaults.startswith("braces"):
             return f" (default: ``{formatted}``)"
-        elif app.config.typehints_defaults == "comma":
+        else:  # other option is comma
             return f", default: ``{formatted}``"
     else:
         if app.config.typehints_defaults == "braces-after":
