@@ -254,7 +254,11 @@ def process_signature(
 
     obj = inspect.unwrap(obj)
     sph_signature = sphinx_signature(obj)
-    parameters = [param.replace(annotation=inspect.Parameter.empty) for param in sph_signature.parameters.values()]
+
+    if app.config.typehints_use_signature:
+        parameters = list(sph_signature.parameters.values())
+    else:
+        parameters = [param.replace(annotation=inspect.Parameter.empty) for param in sph_signature.parameters.values()]
 
     # if we have parameters we may need to delete first argument that's not documented, e.g. self
     start = 0
@@ -277,7 +281,10 @@ def process_signature(
             if not isinstance(method_object, (classmethod, staticmethod)):
                 start = 1
 
-    sph_signature = sph_signature.replace(parameters=parameters[start:], return_annotation=inspect.Signature.empty)
+    sph_signature = sph_signature.replace(parameters=parameters[start:])
+    if not app.config.typehints_use_signature_return:
+        sph_signature = sph_signature.replace(return_annotation=inspect.Signature.empty)
+
     return stringify_signature(sph_signature).replace("\\", "\\\\"), None
 
 
@@ -634,6 +641,8 @@ def setup(app: Sphinx) -> dict[str, bool]:
     app.add_config_value("typehints_defaults", None, "env")
     app.add_config_value("simplify_optional_unions", True, "env")
     app.add_config_value("typehints_formatter", None, "env")
+    app.add_config_value("typehints_use_signature", False, "env")
+    app.add_config_value("typehints_use_signature_return", False, "env")
     app.connect("env-before-read-docs", validate_config)  # config may be changed after “config-inited” event
     app.connect("autodoc-process-signature", process_signature)
     app.connect("autodoc-process-docstring", process_docstring)

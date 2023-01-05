@@ -83,6 +83,8 @@ The following configuration options are accepted:
 - `typehints_formatter` (default: `None`): If set to a function, this function will be called with `annotation` as first
   argument and `sphinx.config.Config` argument second. The function is expected to return a string with reStructuredText
   code or `None` to fall back to the default formatter.
+- `typehints_use_signature` (default: `False`): If `True`, typehints for parameters in the signature are shown.
+- `typehints_use_signature_return` (default: `False`): If `True`, return annotations in the signature are shown.
 
 ## How it works
 
