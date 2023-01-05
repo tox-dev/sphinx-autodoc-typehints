@@ -1128,7 +1128,7 @@ def test_sphinx_output_with_use_signature_and_return(app: SphinxTestApp, status:
 def test_default_annotation_without_typehints(app: SphinxTestApp, status: StringIO) -> None:
     set_python_path()
     app.config.master_doc = "without_complete_typehints"  # type: ignore # create flag
-    app.config.typehints_defaults = "comma"
+    app.config.typehints_defaults = "comma"  # type: ignore
     app.build()
     assert "build succeeded" in status.getvalue()
     text_path = pathlib.Path(app.srcdir) / "_build" / "text" / "without_complete_typehints.txt"
