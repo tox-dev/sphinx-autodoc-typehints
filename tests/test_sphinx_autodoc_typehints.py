@@ -1133,7 +1133,7 @@ def test_default_annotation_without_typehints(app: SphinxTestApp, status: String
     assert "build succeeded" in status.getvalue()
     text_path = pathlib.Path(app.srcdir) / "_build" / "text" / "without_complete_typehints.txt"
     text_contents = text_path.read_text().replace("–", "--")
-    expected_contents = f"""\
+    expected_contents = """\
     Simple Module
     *************
 
