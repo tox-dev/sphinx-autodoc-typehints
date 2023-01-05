@@ -479,12 +479,17 @@ def format_default(app: Sphinx, default: Any, is_annotated: bool) -> str | None:
     if default is inspect.Parameter.empty:
         return None
     formatted = repr(default).replace("\\", "\\\\")
-    if app.config.typehints_defaults.startswith("braces"):
-        return f" (default: ``{formatted}``)"
-    elif is_annotated:
-        return f", default: ``{formatted}``"
+
+    if is_annotated:
+        if app.config.typehints_defaults.startswith("braces"):
+            return f" (default: ``{formatted}``)"
+        elif app.config.typehints_defaults == "comma":
+            return f", default: ``{formatted}``"
     else:
-        return f"default: ``{formatted}``"
+        if app.config.typehints_defaults == "braces-after":
+            return f" (default: ``{formatted}``)"
+        else:
+            return f"default: ``{formatted}``"
 
 
 def process_docstring(
