@@ -1145,7 +1145,7 @@ def test_default_annotation_without_typehints(app: SphinxTestApp, status: String
           * **x** -- foo
 
           * **y** (default: "None") -- bar
-          
+
     dummy_module_without_complete_typehints.function_with_some_defaults_and_some_typehints(x, y=None)
 
        Function docstring.
@@ -1154,7 +1154,7 @@ def test_default_annotation_without_typehints(app: SphinxTestApp, status: String
           * **x** ("int") -- foo
 
           * **y** (default: "None") -- bar
-          
+
     dummy_module_without_complete_typehints.function_with_some_defaults_and_more_typehints(x, y=None)
 
        Function docstring.
@@ -1163,10 +1163,10 @@ def test_default_annotation_without_typehints(app: SphinxTestApp, status: String
           * **x** ("int") -- foo
 
           * **y** (default: "None") -- bar
-          
+
        Return type:
           "str"
-          
+
     dummy_module_without_complete_typehints.function_with_defaults_and_some_typehints(x=0, y=None)
 
        Function docstring.
@@ -1175,7 +1175,7 @@ def test_default_annotation_without_typehints(app: SphinxTestApp, status: String
           * **x** ("int", default: "0") -- foo
 
           * **y** (default: "None") -- bar
-        
+
        Return type:
           "str"
     """
