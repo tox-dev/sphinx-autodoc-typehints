@@ -6,3 +6,4 @@ dist
 .*_cache
 /src/sphinx_autodoc_typehints/version.py
 venv*
+.idea*

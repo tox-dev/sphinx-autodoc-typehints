@@ -1033,3 +1033,91 @@ def test_sphinx_output_formatter_no_use_rtype(app: SphinxTestApp, status: String
           "str" -- A string
     """
     assert text_contents == dedent(expected_contents)
+
+
+@pytest.mark.sphinx("text", testroot="dummy")
+@patch("sphinx.writers.text.MAXWIDTH", 2000)
+def test_sphinx_output_with_use_signature(app: SphinxTestApp, status: StringIO) -> None:
+    set_python_path()
+    app.config.master_doc = "simple"  # type: ignore # create flag
+    app.config.typehints_use_signature = True  # type: ignore
+    app.build()
+    assert "build succeeded" in status.getvalue()
+    text_path = pathlib.Path(app.srcdir) / "_build" / "text" / "simple.txt"
+    text_contents = text_path.read_text().replace("–", "--")
+    expected_contents = """\
+    Simple Module
+    *************
+
+    dummy_module_simple.function(x: bool, y: int = 1)
+
+       Function docstring.
+
+       Parameters:
+          * **x** ("bool") -- foo
+
+          * **y** ("int") -- bar
+
+       Return type:
+          "str"
+    """
+    assert text_contents == dedent(expected_contents)
+
+
+@pytest.mark.sphinx("text", testroot="dummy")
+@patch("sphinx.writers.text.MAXWIDTH", 2000)
+def test_sphinx_output_with_use_signature_return(app: SphinxTestApp, status: StringIO) -> None:
+    set_python_path()
+    app.config.master_doc = "simple"  # type: ignore # create flag
+    app.config.typehints_use_signature_return = True  # type: ignore
+    app.build()
+    assert "build succeeded" in status.getvalue()
+    text_path = pathlib.Path(app.srcdir) / "_build" / "text" / "simple.txt"
+    text_contents = text_path.read_text().replace("–", "--")
+    expected_contents = """\
+    Simple Module
+    *************
+
+    dummy_module_simple.function(x, y=1) -> str
+
+       Function docstring.
+
+       Parameters:
+          * **x** ("bool") -- foo
+
+          * **y** ("int") -- bar
+
+       Return type:
+          "str"
+    """
+    assert text_contents == dedent(expected_contents)
+
+
+@pytest.mark.sphinx("text", testroot="dummy")
+@patch("sphinx.writers.text.MAXWIDTH", 2000)
+def test_sphinx_output_with_use_signature_and_return(app: SphinxTestApp, status: StringIO) -> None:
+    set_python_path()
+    app.config.master_doc = "simple"  # type: ignore # create flag
+    app.config.typehints_use_signature = True  # type: ignore
+    app.config.typehints_use_signature_return = True  # type: ignore
+    app.build()
+    assert "build succeeded" in status.getvalue()
+    text_path = pathlib.Path(app.srcdir) / "_build" / "text" / "simple.txt"
+    text_contents = text_path.read_text().replace("–", "--")
+    expected_contents = """\
+    Simple Module
+    *************
+
+    dummy_module_simple.function(x: bool, y: int = 1) -> str
+
+       Function docstring.
+
+       Parameters:
+          * **x** ("bool") -- foo
+
+          * **y** ("int") -- bar
+
+       Return type:
+          "str"
+    """
+    assert text_contents == dedent(expected_contents)
