@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.20.1
+
+- Fixed default options not displaying for parameters without type hints.
+
 ## 1.20
 
 - Use hatchling instead of setuptools
