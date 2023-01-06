@@ -475,19 +475,27 @@ def split_type_comment_args(comment: str) -> list[str | None]:
     return result
 
 
-def format_default(app: Sphinx, default: Any) -> str | None:
+def format_default(app: Sphinx, default: Any, is_annotated: bool) -> str | None:
     if default is inspect.Parameter.empty:
         return None
     formatted = repr(default).replace("\\", "\\\\")
-    if app.config.typehints_defaults.startswith("braces"):
-        return f" (default: ``{formatted}``)"
+
+    if is_annotated:
+        if app.config.typehints_defaults.startswith("braces"):
+            return f" (default: ``{formatted}``)"
+        else:  # other option is comma
+            return f", default: ``{formatted}``"
     else:
-        return f", default: ``{formatted}``"
+        if app.config.typehints_defaults == "braces-after":
+            return f" (default: ``{formatted}``)"
+        else:
+            return f"default: ``{formatted}``"
 
 
 def process_docstring(
     app: Sphinx, what: str, name: str, obj: Any, options: Options | None, lines: list[str]  # noqa: U100
 ) -> None:
+
     original_obj = obj
     obj = obj.fget if isinstance(obj, property) else obj
     if not callable(obj):
@@ -561,41 +569,45 @@ def _inject_types_to_docstring(
     name: str,
     lines: list[str],
 ) -> None:
-    for arg_name, annotation in type_hints.items():
-        if arg_name == "return":
-            continue  # this is handled separately later
-        if signature is None or arg_name not in signature.parameters:
-            default = inspect.Parameter.empty
-        else:
+
+    if signature is not None:
+        for arg_name in signature.parameters:
+            annotation = type_hints.get(arg_name, None)
+
             default = signature.parameters[arg_name].default
-        if arg_name.endswith("_"):
-            arg_name = f"{arg_name[:-1]}\\_"
 
-        formatted_annotation = format_annotation(annotation, app.config)
+            if arg_name.endswith("_"):
+                arg_name = f"{arg_name[:-1]}\\_"
 
-        insert_index = None
-        for at, line in enumerate(lines):
-            if _line_is_param_line_for_arg(line, arg_name):
-                # Get the arg_name from the doc to match up for type in case it has a star prefix.
-                # Line is in the correct format so this is guaranteed to return tuple[str, str].
-                _, arg_name = _get_sphinx_line_keyword_and_argument(line)  # type: ignore[assignment, misc]
-                insert_index = at
-                break
+            insert_index = None
+            for at, line in enumerate(lines):
+                if _line_is_param_line_for_arg(line, arg_name):
+                    # Get the arg_name from the doc to match up for type in case it has a star prefix.
+                    # Line is in the correct format so this is guaranteed to return tuple[str, str].
+                    _, arg_name = _get_sphinx_line_keyword_and_argument(line)  # type: ignore[assignment, misc]
+                    insert_index = at
+                    break
 
-        if insert_index is None and app.config.always_document_param_types:
-            lines.append(f":param {arg_name}:")
-            insert_index = len(lines)
+            if annotation is not None and insert_index is None and app.config.always_document_param_types:
+                lines.append(f":param {arg_name}:")
+                insert_index = len(lines)
 
-        if insert_index is not None:
-            type_annotation = f":type {arg_name}: {formatted_annotation}"
-            if app.config.typehints_defaults:
-                formatted_default = format_default(app, default)
-                if formatted_default:
-                    if app.config.typehints_defaults.endswith("after"):
-                        lines[insert_index] += formatted_default
-                    else:  # add to last param doc line
-                        type_annotation += formatted_default
-            lines.insert(insert_index, type_annotation)
+            if insert_index is not None:
+                if annotation is None:
+                    type_annotation = f":type {arg_name}: "
+                else:
+                    formatted_annotation = format_annotation(annotation, app.config)
+                    type_annotation = f":type {arg_name}: {formatted_annotation}"
+
+                if app.config.typehints_defaults:
+                    formatted_default = format_default(app, default, annotation is not None)
+                    if formatted_default:
+                        if app.config.typehints_defaults.endswith("after"):
+                            lines[insert_index] += formatted_default
+                        else:  # add to last param doc line
+                            type_annotation += formatted_default
+
+                lines.insert(insert_index, type_annotation)
 
     if "return" in type_hints and not inspect.isclass(original_obj):
         if what == "method" and name.endswith(".__init__"):  # avoid adding a return type for data class __init__

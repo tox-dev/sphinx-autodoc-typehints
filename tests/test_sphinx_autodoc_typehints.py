@@ -1121,3 +1121,62 @@ def test_sphinx_output_with_use_signature_and_return(app: SphinxTestApp, status:
           "str"
     """
     assert text_contents == dedent(expected_contents)
+
+
+@pytest.mark.sphinx("text", testroot="dummy")
+@patch("sphinx.writers.text.MAXWIDTH", 2000)
+def test_default_annotation_without_typehints(app: SphinxTestApp, status: StringIO) -> None:
+    set_python_path()
+    app.config.master_doc = "without_complete_typehints"  # type: ignore # create flag
+    app.config.typehints_defaults = "comma"  # type: ignore
+    app.build()
+    assert "build succeeded" in status.getvalue()
+    text_path = pathlib.Path(app.srcdir) / "_build" / "text" / "without_complete_typehints.txt"
+    text_contents = text_path.read_text().replace("–", "--")
+    expected_contents = """\
+    Simple Module
+    *************
+
+    dummy_module_without_complete_typehints.function_with_some_defaults_and_without_typehints(x, y=None)
+
+       Function docstring.
+
+       Parameters:
+          * **x** -- foo
+
+          * **y** (default: "None") -- bar
+
+    dummy_module_without_complete_typehints.function_with_some_defaults_and_some_typehints(x, y=None)
+
+       Function docstring.
+
+       Parameters:
+          * **x** ("int") -- foo
+
+          * **y** (default: "None") -- bar
+
+    dummy_module_without_complete_typehints.function_with_some_defaults_and_more_typehints(x, y=None)
+
+       Function docstring.
+
+       Parameters:
+          * **x** ("int") -- foo
+
+          * **y** (default: "None") -- bar
+
+       Return type:
+          "str"
+
+    dummy_module_without_complete_typehints.function_with_defaults_and_some_typehints(x=0, y=None)
+
+       Function docstring.
+
+       Parameters:
+          * **x** ("int", default: "0") -- foo
+
+          * **y** (default: "None") -- bar
+
+       Return type:
+          "str"
+    """
+    assert text_contents == dedent(expected_contents)
