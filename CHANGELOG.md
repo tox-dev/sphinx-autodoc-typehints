@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.20.2
+
+- Fix Optional role to be data.
+
 ## 1.20.1
 
 - Fixed default options not displaying for parameters without type hints.
