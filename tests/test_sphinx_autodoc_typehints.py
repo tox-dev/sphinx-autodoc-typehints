@@ -203,6 +203,7 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
             ),
         ),
         (Optional[str], ":py:data:`~typing.Optional`\\[:py:class:`str`]"),
+        (Union[str, None], ":py:data:`~typing.Optional`\\[:py:class:`str`]"),
         (
             Optional[Union[str, bool]],
             ":py:data:`~typing.Union`\\[:py:class:`str`, " ":py:class:`bool`, :py:obj:`None`]",
