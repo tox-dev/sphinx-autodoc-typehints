@@ -545,9 +545,6 @@ def test_sphinx_output(
 
               Property docstring
 
-              Return type:
-                 "str"
-
            static a_staticmethod(x, y, z=None)
 
               Staticmethod docstring.
