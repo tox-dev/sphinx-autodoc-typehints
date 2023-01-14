@@ -611,11 +611,7 @@ def _inject_types_to_docstring(
 
                 lines.insert(insert_index, type_annotation)
 
-    if (
-        "return" in type_hints
-        and not inspect.isclass(original_obj)
-        and not inspect.isdatadescriptor(original_obj)  # noqa: SC200 # Possibly misspelt word: 'isdatadescriptor'
-    ):
+    if "return" in type_hints and not inspect.isclass(original_obj) and not inspect.isdatadescriptor(original_obj):
         if what == "method" and name.endswith(".__init__"):  # avoid adding a return type for data class __init__
             return
         formatted_annotation = format_annotation(type_hints["return"], app.config)
