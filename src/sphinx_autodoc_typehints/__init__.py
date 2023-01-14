@@ -612,7 +612,7 @@ def _inject_types_to_docstring(
     if (
         "return" in type_hints
         and not inspect.isclass(original_obj)
-        and not inspect.isdatadescriptor(original_obj)  # noqa: SC200
+        and not inspect.isdatadescriptor(original_obj)  # noqa: SC200 # Possibly misspelt word: 'isdatadescriptor'
     ):
         if what == "method" and name.endswith(".__init__"):  # avoid adding a return type for data class __init__
             return
