@@ -168,18 +168,20 @@ def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901 # t
     elif full_name in ("typing.Union", "types.UnionType") and type(None) in args:
         if len(args) == 2:
             full_name = "typing.Optional"
+            role = "data"
             args = tuple(x for x in args if x is not type(None))  # noqa: E721
         else:
             simplify_optional_unions: bool = getattr(config, "simplify_optional_unions", True)
             if not simplify_optional_unions:
                 full_name = "typing.Optional"
+                role = "data"
                 args_format = f"\\[:py:data:`{prefix}typing.Union`\\[{{}}]]"
                 args = tuple(x for x in args if x is not type(None))  # noqa: E721
-    elif full_name == "typing.Callable" and args and args[0] is not ...:
+    elif full_name in ("typing.Callable", "collections.abc.Callable") and args and args[0] is not ...:
         fmt = [format_annotation(arg, config) for arg in args]
         formatted_args = f"\\[\\[{', '.join(fmt[:-1])}], {fmt[-1]}]"
     elif full_name == "typing.Literal":
-        formatted_args = f"\\[{', '.join(repr(arg) for arg in args)}]"
+        formatted_args = "\\[{}]".format(", ".join(f"``{arg!r}``" for arg in args))
     elif full_name == "types.UnionType":
         return " | ".join([format_annotation(arg, config) for arg in args])
 
