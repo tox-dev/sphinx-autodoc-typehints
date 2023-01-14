@@ -177,7 +177,7 @@ def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901 # t
                 role = "data"
                 args_format = f"\\[:py:data:`{prefix}typing.Union`\\[{{}}]]"
                 args = tuple(x for x in args if x is not type(None))  # noqa: E721
-    elif full_name == "typing.Callable" and args and args[0] is not ...:
+    elif full_name in ("typing.Callable", "collections.abc.Callable") and args and args[0] is not ...:
         fmt = [format_annotation(arg, config) for arg in args]
         formatted_args = f"\\[\\[{', '.join(fmt[:-1])}], {fmt[-1]}]"
     elif full_name == "typing.Literal":
