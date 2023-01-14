@@ -128,6 +128,7 @@ PY310_PLUS = sys.version_info >= (3, 10)
         pytest.param(Callable, "typing", "Callable", (), id="Callable"),
         pytest.param(Callable[..., str], "typing", "Callable", (..., str), id="Callable_returntype"),
         pytest.param(Callable[[int, str], str], "typing", "Callable", (int, str, str), id="Callable_all_types"),
+        pytest.param(collections.abc.Callable[[int, str], str], "collections.abc", "Callable", (int, str, str), id="collections.abc.Callable_all_types"),
         pytest.param(Pattern, "typing", "Pattern", (), id="Pattern"),
         pytest.param(Pattern[str], "typing", "Pattern", (str,), id="Pattern_parametrized"),
         pytest.param(Match, "typing", "Match", (), id="Match"),
@@ -223,6 +224,10 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
             Callable[[T], T],
             ":py:data:`~typing.Callable`\\[\\[:py:class:`~typing.TypeVar`\\(``T``)],"
             " :py:class:`~typing.TypeVar`\\(``T``)]",
+        ),
+        (
+            collections.abc.Callable[[int, str], bool],
+            ":py:class:`~collections.abc.Callable`\\[\\[:py:class:`int`, " ":py:class:`str`], :py:class:`bool`]",
         ),
         (Pattern, ":py:class:`~typing.Pattern`"),
         (Pattern[str], ":py:class:`~typing.Pattern`\\[:py:class:`str`]"),
