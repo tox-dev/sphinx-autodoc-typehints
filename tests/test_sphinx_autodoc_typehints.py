@@ -360,7 +360,7 @@ def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str
     [
         ("ClassVar", int, ":py:data:`~typing.ClassVar`\\[:py:class:`int`]"),
         ("NoReturn", None, ":py:data:`~typing.NoReturn`"),
-        ("Literal", ("a", 1), ":py:data:`~typing.Literal`\\['a', 1]"),
+        ("Literal", ("a", 1), ":py:data:`~typing.Literal`\\[``'a'``, ``1``]"),
         ("Type", None, ":py:class:`~typing.Type`"),
         ("Type", (A,), f":py:class:`~typing.Type`\\[:py:class:`~{__name__}.A`]"),
     ],
