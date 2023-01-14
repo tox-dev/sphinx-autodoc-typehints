@@ -112,7 +112,7 @@ class HintedMethods:
 PY310_PLUS = sys.version_info >= (3, 10)
 
 if sys.version_info >= (3, 9):
-    AbcCallable = collections.abc.Callable
+    AbcCallable = collections.abc.Callable  # type: ignore[type-arg]
 else:
     # Hacks to make it work the same in old versions.
     # We could also set AbcCallable = typing.Callable and x fail the tests that
@@ -146,7 +146,7 @@ else:
         pytest.param(Callable[..., str], "typing", "Callable", (..., str), id="Callable_returntype"),
         pytest.param(Callable[[int, str], str], "typing", "Callable", (int, str, str), id="Callable_all_types"),
         pytest.param(
-            AbcCallable[[int, str], str],
+            AbcCallable[[int, str], str],  # type: ignore[misc]
             "collections.abc",
             "Callable",
             (int, str, str),
@@ -249,7 +249,7 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
             " :py:class:`~typing.TypeVar`\\(``T``)]",
         ),
         (
-            AbcCallable[[int, str], bool],
+            AbcCallable[[int, str], bool],  # type: ignore[misc]
             ":py:class:`~collections.abc.Callable`\\[\\[:py:class:`int`, " ":py:class:`str`], :py:class:`bool`]",
         ),
         (Pattern, ":py:class:`~typing.Pattern`"),
