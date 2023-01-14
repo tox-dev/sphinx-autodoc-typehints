@@ -112,21 +112,21 @@ class HintedMethods:
 PY310_PLUS = sys.version_info >= (3, 10)
 
 if sys.version_info >= (3, 9):
-    abcCallable = collections.abc.Callable
+    AbcCallable = collections.abc.Callable
 else:
     # Hacks to make it work the same in old versions.
-    # We could also set abcCallable = typing.Callable and xfail the tests that
-    # use in if not PY39_PLUS.
-    class MyGenericAlias(typing._VariadicGenericAlias, _root=True):
-        def __getitem__(self, params):
-            result = super().__getitem__(params)
+    # We could also set AbcCallable = typing.Callable and x fail the tests that
+    # use AbcCallable when in versions less than 3.9.
+    class MyGenericAlias(typing._VariadicGenericAlias, _root=True):  # noqa: SC200
+        def __getitem__(self, params):  # noqa: SC200
+            result = super().__getitem__(params)  # noqa: SC200
             # Make a copy so we don't change the name of a cached annotation
             result = result.copy_with(result.__args__)
             result.__module__ = "collections.abc"
             return result
 
-    abcCallable = MyGenericAlias(collections.abc.Callable, (), special=True)
-    abcCallable.__module__ = "collections.abc"
+    AbcCallable = MyGenericAlias(collections.abc.Callable, (), special=True)
+    AbcCallable.__module__ = "collections.abc"
 
 
 @pytest.mark.parametrize(
@@ -146,7 +146,7 @@ else:
         pytest.param(Callable[..., str], "typing", "Callable", (..., str), id="Callable_returntype"),
         pytest.param(Callable[[int, str], str], "typing", "Callable", (int, str, str), id="Callable_all_types"),
         pytest.param(
-            abcCallable[[int, str], str],
+            AbcCallable[[int, str], str],
             "collections.abc",
             "Callable",
             (int, str, str),
@@ -249,7 +249,7 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
             " :py:class:`~typing.TypeVar`\\(``T``)]",
         ),
         (
-            abcCallable[[int, str], bool],
+            AbcCallable[[int, str], bool],
             ":py:class:`~collections.abc.Callable`\\[\\[:py:class:`int`, " ":py:class:`str`], :py:class:`bool`]",
         ),
         (Pattern, ":py:class:`~typing.Pattern`"),
