@@ -139,6 +139,9 @@ def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901 # t
     if module == "typing_extensions":
         module = "typing"
 
+    if module == "_io":
+        module = "io"
+
     full_name = f"{module}.{class_name}" if module != "builtins" else class_name
     fully_qualified: bool = getattr(config, "typehints_fully_qualified", False)
     prefix = "" if fully_qualified or full_name == class_name else "~"

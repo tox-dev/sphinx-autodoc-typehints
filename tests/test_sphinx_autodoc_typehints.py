@@ -180,6 +180,7 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
     [
         (str, ":py:class:`str`"),
         (int, ":py:class:`int`"),
+        (StringIO, ":py:class:`~io.StringIO`"),
         (type(None), ":py:obj:`None`"),
         (type, ":py:class:`type`"),
         (collections.abc.Callable, ":py:class:`~collections.abc.Callable`"),
