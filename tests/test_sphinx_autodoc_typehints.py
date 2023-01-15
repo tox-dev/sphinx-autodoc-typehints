@@ -4,6 +4,7 @@ import collections.abc
 import pathlib
 import re
 import sys
+import types
 import typing
 from functools import cmp_to_key
 from io import StringIO
@@ -134,6 +135,10 @@ else:
     [
         pytest.param(str, "builtins", "str", (), id="str"),
         pytest.param(None, "builtins", "None", (), id="None"),
+        pytest.param(ModuleType, "types", "ModuleType", (), id="ModuleType"),
+        pytest.param(FunctionType, "types", "FunctionType", (), id="FunctionType"),
+        pytest.param(types.CodeType, "types", "CodeType", (), id="CodeType"),
+        pytest.param(types.CoroutineType, "types", "CoroutineType", (), id="CoroutineType"),
         pytest.param(Any, "typing", "Any", (), id="Any"),
         pytest.param(AnyStr, "typing", "AnyStr", (), id="AnyStr"),
         pytest.param(Dict, "typing", "Dict", (), id="Dict"),
@@ -170,9 +175,10 @@ else:
     ],
 )
 def test_parse_annotation(annotation: Any, module: str, class_name: str, args: tuple[Any, ...]) -> None:
-    assert get_annotation_module(annotation) == module
-    assert get_annotation_class_name(annotation, module) == class_name
-    assert get_annotation_args(annotation, module, class_name) == args
+    got_mod = get_annotation_module(annotation)
+    got_cls = get_annotation_class_name(annotation, module)
+    got_args = get_annotation_args(annotation, module, class_name)
+    assert (got_mod, got_cls, got_args) == (module, class_name, args)
 
 
 @pytest.mark.parametrize(
@@ -181,6 +187,8 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
         (str, ":py:class:`str`"),
         (int, ":py:class:`int`"),
         (StringIO, ":py:class:`~io.StringIO`"),
+        (FunctionType, ":py:class:`~types.FunctionType`"),
+        (ModuleType, ":py:class:`~types.ModuleType`"),
         (type(None), ":py:obj:`None`"),
         (type, ":py:class:`type`"),
         (collections.abc.Callable, ":py:class:`~collections.abc.Callable`"),

@@ -4,6 +4,7 @@ autouse
 backfill
 conf
 contravariant
+Coroutine
 cpython
 csv
 dedent
@@ -31,7 +32,9 @@ iterdir
 kwonlyargs
 libs
 metaclass
+ModuleType
 multiline
+newtype
 nptyping
 param
 parametrized
