@@ -18,12 +18,14 @@ fmt
 fn
 formatter
 func
+getitem
 getmodule
 getsource
 globals
 idx
 inited
 inv
+isdatadescriptor
 isfunction
 iterdir
 kwonlyargs

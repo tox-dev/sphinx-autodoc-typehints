@@ -118,8 +118,8 @@ else:
     # We could also set AbcCallable = typing.Callable and x fail the tests that
     # use AbcCallable when in versions less than 3.9.
     class MyGenericAlias(typing._VariadicGenericAlias, _root=True):  # noqa: SC200
-        def __getitem__(self, params):  # noqa: SC200
-            result = super().__getitem__(params)  # noqa: SC200
+        def __getitem__(self, params):
+            result = super().__getitem__(params)
             # Make a copy so we don't change the name of a cached annotation
             result = result.copy_with(result.__args__)
             result.__module__ = "collections.abc"
@@ -573,9 +573,6 @@ def test_sphinx_output(
            property a_property: str
 
               Property docstring
-
-              Return type:
-                 "str"
 
            static a_staticmethod(x, y, z=None)
 
