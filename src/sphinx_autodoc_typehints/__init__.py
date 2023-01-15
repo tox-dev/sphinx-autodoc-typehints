@@ -4,6 +4,7 @@ import inspect
 import re
 import sys
 import textwrap
+import types
 from ast import FunctionDef, Module, stmt
 from typing import Any, AnyStr, Callable, ForwardRef, NewType, TypeVar, get_type_hints
 
@@ -21,8 +22,16 @@ from .version import __version__
 _LOGGER = logging.getLogger(__name__)
 _PYDATA_ANNOTATIONS = {"Any", "AnyStr", "Callable", "ClassVar", "Literal", "NoReturn", "Optional", "Tuple", "Union"}
 
+# types has a bunch of things like ModuleType where ModuleType.__module__ is
+# "builtins" and ModuleType.__name__ is "module", so we have to check for this.
+_TYPES_DICT = {getattr(types, name): name for name in types.__all__}
+# Prefer FunctionType to LambdaType (they are synonymous)
+_TYPES_DICT[types.FunctionType] = "FunctionType"
+
 
 def get_annotation_module(annotation: Any) -> str:
+    if annotation in _TYPES_DICT:
+        return "types"
     if annotation is None:
         return "builtins"
     is_new_type = sys.version_info >= (3, 10) and isinstance(annotation, NewType)
@@ -35,17 +44,22 @@ def get_annotation_module(annotation: Any) -> str:
     raise ValueError(f"Cannot determine the module of {annotation}")
 
 
+def _is_newtype(annotation: Any):
+    if sys.version_info < (3, 10):
+        return inspect.isfunction(annotation) and hasattr(annotation, "__supertype__")
+    else:
+        return isinstance(annotation, NewType)
+
+
 def get_annotation_class_name(annotation: Any, module: str) -> str:
     # Special cases
     if annotation is None:
         return "None"
-    elif annotation is Any:
-        return "Any"
-    elif annotation is AnyStr:
+    if annotation is AnyStr:
         return "AnyStr"
-    elif (sys.version_info < (3, 10) and inspect.isfunction(annotation) and hasattr(annotation, "__supertype__")) or (
-        sys.version_info >= (3, 10) and isinstance(annotation, NewType)
-    ):
+    if annotation in _TYPES_DICT:
+        return _TYPES_DICT[annotation]
+    if _is_newtype(annotation):
         return "NewType"
 
     if getattr(annotation, "__qualname__", None):
