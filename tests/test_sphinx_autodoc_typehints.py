@@ -751,6 +751,17 @@ def test_sphinx_output(
 
            Parameters:
               **x** ("Mailbox") -- function
+
+        dummy_module.func_with_examples()
+
+           A docstring.
+
+           Return type:
+              "int"
+
+           -[ Examples ]-
+
+           Here are a couple of examples of how to use this function.
         """
         expected_contents = dedent(expected_contents).format(**format_args).replace("–", "--")
         assert text_contents == maybe_fix_py310(expected_contents)

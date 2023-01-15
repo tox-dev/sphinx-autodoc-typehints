@@ -625,6 +625,10 @@ def _inject_types_to_docstring(
                     insert_index = None
                     break
                 insert_index = at
+            elif line.startswith(".."):
+                # Make sure that rtype comes before any usage or examples section
+                insert_index = at
+                break
 
         if insert_index is not None and app.config.typehints_document_rtype:
             if insert_index == len(lines):  # ensure that :rtype: doesn't get joined with a paragraph of text

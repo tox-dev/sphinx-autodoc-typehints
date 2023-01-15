@@ -38,3 +38,5 @@ Dummy Module
 .. autodecorator:: dummy_module.Decorator
 
 .. autofunction:: dummy_module.mocked_import
+
+.. autofunction:: dummy_module.func_with_examples

@@ -276,3 +276,13 @@ def mocked_import(x: Mailbox):  # noqa: U100
 
     :param x: function
     """
+
+
+def func_with_examples() -> int:
+    """
+    A docstring.
+
+    .. rubric:: Examples
+
+    Here are a couple of examples of how to use this function.
+    """
