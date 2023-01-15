@@ -44,7 +44,7 @@ def get_annotation_module(annotation: Any) -> str:
     raise ValueError(f"Cannot determine the module of {annotation}")
 
 
-def _is_newtype(annotation: Any):
+def _is_newtype(annotation: Any) -> bool:
     if sys.version_info < (3, 10):
         return inspect.isfunction(annotation) and hasattr(annotation, "__supertype__")
     else:
