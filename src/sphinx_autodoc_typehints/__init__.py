@@ -633,6 +633,7 @@ def _inject_types_to_docstring(
             return
         formatted_annotation = format_annotation(type_hints["return"], app.config)
         insert_index = len(lines)
+        extra_newline = False
         for at, line in enumerate(lines):
             if line.startswith(":rtype:"):
                 insert_index = None
@@ -643,8 +644,9 @@ def _inject_types_to_docstring(
                     break
                 insert_index = at
             elif line.startswith(".."):
-                # Make sure that rtype comes before any usage or examples section
+                # Make sure that rtype comes before any usage or examples section, with a blank line between.
                 insert_index = at
+                extra_newline = True
                 break
 
         if insert_index is not None and app.config.typehints_document_rtype:
@@ -652,7 +654,11 @@ def _inject_types_to_docstring(
                 lines.append("")
                 insert_index += 1
             if app.config.typehints_use_rtype or insert_index == len(lines):
-                lines.insert(insert_index, f":rtype: {formatted_annotation}")
+                line = f":rtype: {formatted_annotation}"
+                if extra_newline:
+                    lines[insert_index:insert_index] = [line, "\n"]
+                else:
+                    lines.insert(insert_index, line)
             else:
                 line = lines[insert_index]
                 lines[insert_index] = f":return: {formatted_annotation} --{line[line.find(' '):]}"
