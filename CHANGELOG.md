@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.21
+
+- Handle types from types module
+- If module is \_io, use io instead
+- Put rtype before examples or usage section
+- Remove redundant return type for attributes
+- Handle collections.abc.Callable as well as typing.Callable
+- Put Literal args in code blocks
+
 ## 1.20.2
 
 - Fix Optional role to be data.
