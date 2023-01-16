@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.21.1
+
+- Fix spacing between `:rtype:` and directives
+
 ## 1.21
 
 - Handle types from types module
