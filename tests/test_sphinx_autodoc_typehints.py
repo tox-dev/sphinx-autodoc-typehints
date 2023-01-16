@@ -64,9 +64,9 @@ P_bound = typing_extensions.ParamSpec("P_bound", bound=str)  # type: ignore
 
 # Mypy does not support recursive type aliases, but
 # other type checkers do.
-RecList = Union[int, List["RecList"]]  # type: ignore
-MutualRecA = Union[bool, List["MutualRecB"]]  # type: ignore
-MutualRecB = Union[str, List["MutualRecA"]]  # type: ignore
+RecList = Union[int, List["RecList"]]
+MutualRecA = Union[bool, List["MutualRecB"]]
+MutualRecB = Union[str, List["MutualRecA"]]
 
 
 class A:
@@ -103,10 +103,10 @@ class Metaclass(type):
 
 class HintedMethods:
     @classmethod
-    def from_magic(cls: type[T]) -> T:
+    def from_magic(cls: type[T]) -> T:  # type: ignore
         ...
 
-    def method(self: T) -> T:
+    def method(self: T) -> T:  # type: ignore
         ...
 
 
@@ -151,7 +151,7 @@ else:
         pytest.param(Callable[..., str], "typing", "Callable", (..., str), id="Callable_returntype"),
         pytest.param(Callable[[int, str], str], "typing", "Callable", (int, str, str), id="Callable_all_types"),
         pytest.param(
-            AbcCallable[[int, str], str],  # type: ignore[misc]
+            AbcCallable[[int, str], str],  # type: ignore
             "collections.abc",
             "Callable",
             (int, str, str),
@@ -258,7 +258,7 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
             " :py:class:`~typing.TypeVar`\\(``T``)]",
         ),
         (
-            AbcCallable[[int, str], bool],  # type: ignore[misc]
+            AbcCallable[[int, str], bool],  # type: ignore
             ":py:class:`~collections.abc.Callable`\\[\\[:py:class:`int`, " ":py:class:`str`], :py:class:`bool`]",
         ),
         (Pattern, ":py:class:`~typing.Pattern`"),

@@ -1,7 +1,7 @@
-import typing
 from dataclasses import dataclass
 from mailbox import Mailbox
-from typing import Callable, Optional, Union
+from typing import Union  # noqa: F401 # needed for expansion of Optional
+from typing import Callable, Optional
 
 
 def get_local_function():
@@ -22,10 +22,10 @@ class Class:
     :param z: baz
     """
 
-    def __init__(self, x: bool, y: int, z: typing.Optional[str] = None) -> None:  # noqa: U100
+    def __init__(self, x: bool, y: int, z: Optional[str] = None) -> None:  # noqa: U100
         pass
 
-    def a_method(self, x: bool, y: int, z: typing.Optional[str] = None) -> str:  # noqa: U100
+    def a_method(self, x: bool, y: int, z: Optional[str] = None) -> str:  # noqa: U100
         """
         Method docstring.
 
@@ -56,7 +56,7 @@ class Class:
         """
 
     @classmethod
-    def a_classmethod(cls, x: bool, y: int, z: typing.Optional[str] = None) -> str:  # noqa: U100
+    def a_classmethod(cls, x: bool, y: int, z: Optional[str] = None) -> str:  # noqa: U100
         """
         Classmethod docstring.
 
@@ -66,7 +66,7 @@ class Class:
         """
 
     @staticmethod
-    def a_staticmethod(x: bool, y: int, z: typing.Optional[str] = None) -> str:  # noqa: U100
+    def a_staticmethod(x: bool, y: int, z: Optional[str] = None) -> str:  # noqa: U100
         """
         Staticmethod docstring.
 
@@ -114,7 +114,7 @@ class DummyException(Exception):  # noqa: N818
         super().__init__(message)
 
 
-def function(x: bool, y: int, z_: typing.Optional[str] = None) -> str:  # noqa: U100
+def function(x: bool, y: int, z_: Optional[str] = None) -> str:  # noqa: U100
     """
     Function docstring.
 
