@@ -588,74 +588,100 @@ def _inject_types_to_docstring(
     name: str,
     lines: list[str],
 ) -> None:
-
     if signature is not None:
-        for arg_name in signature.parameters:
-            annotation = type_hints.get(arg_name, None)
+        _inject_signature(type_hints, signature, app, lines)
+    if "return" in type_hints:
+        _inject_rtype(type_hints, original_obj, app, what, name, lines)
 
-            default = signature.parameters[arg_name].default
 
-            if arg_name.endswith("_"):
-                arg_name = f"{arg_name[:-1]}\\_"
+def _inject_signature(
+    type_hints: dict[str, Any],
+    signature: inspect.Signature,
+    app: Sphinx,
+    lines: list[str],
+) -> None:
+    for arg_name in signature.parameters:
+        annotation = type_hints.get(arg_name, None)
 
-            insert_index = None
-            for at, line in enumerate(lines):
-                if _line_is_param_line_for_arg(line, arg_name):
-                    # Get the arg_name from the doc to match up for type in case it has a star prefix.
-                    # Line is in the correct format so this is guaranteed to return tuple[str, str].
-                    _, arg_name = _get_sphinx_line_keyword_and_argument(line)  # type: ignore[assignment, misc]
-                    insert_index = at
-                    break
+        default = signature.parameters[arg_name].default
 
-            if annotation is not None and insert_index is None and app.config.always_document_param_types:
-                lines.append(f":param {arg_name}:")
-                insert_index = len(lines)
+        if arg_name.endswith("_"):
+            arg_name = f"{arg_name[:-1]}\\_"
 
-            if insert_index is not None:
-                if annotation is None:
-                    type_annotation = f":type {arg_name}: "
-                else:
-                    formatted_annotation = format_annotation(annotation, app.config)
-                    type_annotation = f":type {arg_name}: {formatted_annotation}"
-
-                if app.config.typehints_defaults:
-                    formatted_default = format_default(app, default, annotation is not None)
-                    if formatted_default:
-                        if app.config.typehints_defaults.endswith("after"):
-                            lines[insert_index] += formatted_default
-                        else:  # add to last param doc line
-                            type_annotation += formatted_default
-
-                lines.insert(insert_index, type_annotation)
-
-    if "return" in type_hints and not inspect.isclass(original_obj) and not inspect.isdatadescriptor(original_obj):
-        if what == "method" and name.endswith(".__init__"):  # avoid adding a return type for data class __init__
-            return
-        formatted_annotation = format_annotation(type_hints["return"], app.config)
-        insert_index = len(lines)
+        insert_index = None
         for at, line in enumerate(lines):
-            if line.startswith(":rtype:"):
+            if _line_is_param_line_for_arg(line, arg_name):
+                # Get the arg_name from the doc to match up for type in case it has a star prefix.
+                # Line is in the correct format so this is guaranteed to return tuple[str, str].
+                _, arg_name = _get_sphinx_line_keyword_and_argument(line)  # type: ignore[assignment, misc]
+                insert_index = at
+                break
+
+        if annotation is not None and insert_index is None and app.config.always_document_param_types:
+            lines.append(f":param {arg_name}:")
+            insert_index = len(lines)
+
+        if insert_index is not None:
+            if annotation is None:
+                type_annotation = f":type {arg_name}: "
+            else:
+                formatted_annotation = format_annotation(annotation, app.config)
+                type_annotation = f":type {arg_name}: {formatted_annotation}"
+
+            if app.config.typehints_defaults:
+                formatted_default = format_default(app, default, annotation is not None)
+                if formatted_default:
+                    if app.config.typehints_defaults.endswith("after"):
+                        lines[insert_index] += formatted_default
+                    else:  # add to last param doc line
+                        type_annotation += formatted_default
+
+            lines.insert(insert_index, type_annotation)
+
+
+def _inject_rtype(
+    type_hints: dict[str, Any],
+    original_obj: Any,
+    app: Sphinx,
+    what: str,
+    name: str,
+    lines: list[str],
+) -> None:
+    if inspect.isclass(original_obj) or inspect.isdatadescriptor(original_obj):
+        return
+    if what == "method" and name.endswith(".__init__"):  # avoid adding a return type for data class __init__
+        return
+    formatted_annotation = format_annotation(type_hints["return"], app.config)
+    insert_index: int | None = len(lines)
+    extra_newline = False
+    for at, line in enumerate(lines):
+        if line.startswith(":rtype:"):
+            insert_index = None
+            break
+        if line.startswith(":return:") or line.startswith(":returns:"):
+            if " -- " in line and not app.config.typehints_use_rtype:
                 insert_index = None
                 break
-            elif line.startswith(":return:") or line.startswith(":returns:"):
-                if " -- " in line and not app.config.typehints_use_rtype:
-                    insert_index = None
-                    break
-                insert_index = at
-            elif line.startswith(".."):
-                # Make sure that rtype comes before any usage or examples section
-                insert_index = at
-                break
+            insert_index = at
+        elif line.startswith(".."):
+            # Make sure that rtype comes before any usage or examples section, with a blank line between.
+            insert_index = at
+            extra_newline = True
+            break
 
-        if insert_index is not None and app.config.typehints_document_rtype:
-            if insert_index == len(lines):  # ensure that :rtype: doesn't get joined with a paragraph of text
-                lines.append("")
-                insert_index += 1
-            if app.config.typehints_use_rtype or insert_index == len(lines):
-                lines.insert(insert_index, f":rtype: {formatted_annotation}")
+    if insert_index is not None and app.config.typehints_document_rtype:
+        if insert_index == len(lines):  # ensure that :rtype: doesn't get joined with a paragraph of text
+            lines.append("")
+            insert_index += 1
+        if app.config.typehints_use_rtype or insert_index == len(lines):
+            line = f":rtype: {formatted_annotation}"
+            if extra_newline:
+                lines[insert_index:insert_index] = [line, "\n"]
             else:
-                line = lines[insert_index]
-                lines[insert_index] = f":return: {formatted_annotation} --{line[line.find(' '):]}"
+                lines.insert(insert_index, line)
+        else:
+            line = lines[insert_index]
+            lines[insert_index] = f":return: {formatted_annotation} --{line[line.find(' '):]}"
 
 
 def validate_config(app: Sphinx, env: BuildEnvironment, docnames: list[str]) -> None:  # noqa: U100

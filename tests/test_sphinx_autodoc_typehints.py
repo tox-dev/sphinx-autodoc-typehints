@@ -470,6 +470,8 @@ def test_sphinx_output(
     # There should be a warning about an unresolved forward reference
     warnings = warning.getvalue().strip()
     assert "Cannot resolve forward reference in type annotations of " in warnings, warnings
+    # There should not be warnings about incorrect block endings.
+    assert "Field list ends without a blank line; unexpected unindent." not in warnings, warnings
 
     format_args = {}
     for indentation_level in range(2):
