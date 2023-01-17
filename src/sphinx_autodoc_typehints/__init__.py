@@ -717,7 +717,6 @@ def fix_autodoc_typehints_for_overloaded_methods():
     if _FIX_HAS_RUN:
         return
     _FIX_HAS_RUN = True
-    return
 
     from sphinx.ext.autodoc import FunctionDocumenter, MethodDocumenter
 
