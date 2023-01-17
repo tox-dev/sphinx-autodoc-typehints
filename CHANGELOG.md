@@ -2,6 +2,10 @@
 
 ## 1.21.2
 
+- Use format_annotation to render class attribute type annotations
+
+## 1.21.2
+
 - Fix overloads support
 
 ## 1.21.1
