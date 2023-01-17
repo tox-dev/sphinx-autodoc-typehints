@@ -11,6 +11,7 @@ dedent
 delattr
 dirname
 docnames
+Documenter
 dunder
 eval
 exc
