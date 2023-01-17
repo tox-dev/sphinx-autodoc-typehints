@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from mailbox import Mailbox
-from typing import Union  # noqa: F401 # needed for expansion of Optional
-from typing import Callable, Optional, overload
+from typing import Callable, Optional, Union, overload
 
 
 def get_local_function():
@@ -298,7 +297,7 @@ def func_with_overload(a: str, b: str) -> None:  # noqa: U100
     ...
 
 
-def func_with_overload(a: int | str, b: int | str) -> None:  # noqa: U100
+def func_with_overload(a: Union[int, str], b: Union[int, str]) -> None:  # noqa: U100
     """
     f does the thing. The arguments can either be ints or strings but they must
     both have the same type.
