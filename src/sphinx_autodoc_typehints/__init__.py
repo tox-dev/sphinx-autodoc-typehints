@@ -694,6 +694,9 @@ def validate_config(app: Sphinx, env: BuildEnvironment, docnames: list[str]) -> 
         raise ValueError(f"typehints_formatter needs to be callable or `None`, not {formatter}")
 
 
+_FIX_HAS_RUN = False
+
+
 def fix_autodoc_typehints_for_overloaded_methods():
     """
     sphinx-autodoc-typehints responds to the "autodoc-process-signature" event
@@ -710,6 +713,11 @@ def fix_autodoc_typehints_for_overloaded_methods():
 
     See https://github.com/tox-dev/sphinx-autodoc-typehints/issues/296
     """
+    global _FIX_HAS_RUN
+    if _FIX_HAS_RUN:
+        return
+    _FIX_HAS_RUN = True
+
     from sphinx.ext.autodoc import FunctionDocumenter, MethodDocumenter
 
     del FunctionDocumenter.format_signature
