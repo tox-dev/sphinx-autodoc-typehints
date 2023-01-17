@@ -76,8 +76,10 @@ def patched_parse_annotation(settings: Values, typ: str, env: Any) -> Any:
 
 def patch_py_attribute_handle_signature() -> None:
     """
-    Patch PyAttribute.handle_signature so that it treats the :type: as rst and
-    renders it as-is rather than trying to parse it as a type annotation string.
+    Patch PyAttribute.handle_signature so that if the :type: begins with our
+    label it renders it as rst rather than trying to parse it as a type
+    annotation string. If the :type: does not begin with our label, treat it as
+    before.
     """
 
     def handle_signature(self: PyAttribute, sig: str, signode: desc_signature) -> Tuple[str, str]:
@@ -90,6 +92,7 @@ def patch_py_attribute_handle_signature() -> None:
 
 
 def patch_attribute_handling(app: Sphinx) -> None:
+    """Use format_signature to format class attribute type annotations"""
     if not OKAY_TO_PATCH:
         return
     patch_py_attribute_handle_signature()
