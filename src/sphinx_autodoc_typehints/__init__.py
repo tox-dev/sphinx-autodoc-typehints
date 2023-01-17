@@ -6,6 +6,7 @@ import sys
 import textwrap
 import types
 from ast import FunctionDef, Module, stmt
+from functools import cache
 from typing import Any, AnyStr, Callable, ForwardRef, NewType, TypeVar, get_type_hints
 
 from sphinx.application import Sphinx
@@ -694,10 +695,8 @@ def validate_config(app: Sphinx, env: BuildEnvironment, docnames: list[str]) -> 
         raise ValueError(f"typehints_formatter needs to be callable or `None`, not {formatter}")
 
 
-_FIX_HAS_RUN = False
-
-
-def fix_autodoc_typehints_for_overloaded_methods():
+@cache  # A cute way to make sure the function only runs once.
+def fix_autodoc_typehints_for_overloaded_methods() -> None:
     """
     sphinx-autodoc-typehints responds to the "autodoc-process-signature" event
     to remove types from the signature line of functions.
@@ -713,11 +712,6 @@ def fix_autodoc_typehints_for_overloaded_methods():
 
     See https://github.com/tox-dev/sphinx-autodoc-typehints/issues/296
     """
-    global _FIX_HAS_RUN
-    if _FIX_HAS_RUN:
-        return
-    _FIX_HAS_RUN = True
-
     from sphinx.ext.autodoc import FunctionDocumenter, MethodDocumenter
 
     del FunctionDocumenter.format_signature
