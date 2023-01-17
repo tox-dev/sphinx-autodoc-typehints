@@ -74,28 +74,18 @@ def patched_parse_annotation(settings: Values, typ: str, env: Any) -> Any:
     return rst_to_docutils(settings, typ)
 
 
-def patch_py_attribute_handle_signature() -> None:
-    """
-    Patch PyAttribute.handle_signature so that if the :type: begins with our
-    label it renders it as rst rather than trying to parse it as a type
-    annotation string. If the :type: does not begin with our label, treat it as
-    before.
-    """
-
-    def handle_signature(self: PyAttribute, sig: str, signode: desc_signature) -> Tuple[str, str]:
-        target = "sphinx.domains.python._parse_annotation"
-        new_func = partial(patched_parse_annotation, self.state.document.settings)
-        with patch(target, new_func):
-            return orig_handle_signature(self, sig, signode)
-
-    PyAttribute.handle_signature = handle_signature  # type:ignore[assignment]
+def patched_handle_signature(self: PyAttribute, sig: str, signode: desc_signature) -> Tuple[str, str]:
+    target = "sphinx.domains.python._parse_annotation"
+    new_func = partial(patched_parse_annotation, self.state.document.settings)
+    with patch(target, new_func):
+        return orig_handle_signature(self, sig, signode)
 
 
 def patch_attribute_handling(app: Sphinx) -> None:
     """Use format_signature to format class attribute type annotations"""
     if not OKAY_TO_PATCH:
         return
-    patch_py_attribute_handle_signature()
+    PyAttribute.handle_signature = patched_handle_signature  # type:ignore[assignment]
     patch_attribute_documenter(app)
 
 
