@@ -1,3 +1,4 @@
+addnodes
 ast3
 autodoc
 autouse
@@ -9,9 +10,11 @@ cpython
 csv
 dedent
 delattr
+desc
 dirname
 docnames
 Documenter
+docutils
 dunder
 eval
 exc
@@ -41,6 +44,7 @@ nptyping
 param
 parametrized
 params
+parsers
 pathlib
 pos
 prepend
@@ -49,8 +53,11 @@ pydata
 pytestconfig
 qualname
 rootdir
+rst
 rtype
 runtime
+sig
+signode
 skipif
 sph
 sphobjinv
@@ -63,9 +70,11 @@ supertype
 tempdir
 testroot
 textwrap
+typ
 typehint
 typehints
 unittest
 unresolvable
 util
+utils
 vararg

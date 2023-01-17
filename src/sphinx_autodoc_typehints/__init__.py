@@ -18,6 +18,7 @@ from sphinx.util import logging
 from sphinx.util.inspect import signature as sphinx_signature
 from sphinx.util.inspect import stringify_signature
 
+from .attributes_patch import patch_attribute_handling
 from .version import __version__
 
 _LOGGER = logging.getLogger(__name__)
@@ -732,6 +733,7 @@ def setup(app: Sphinx) -> dict[str, bool]:
     app.connect("autodoc-process-signature", process_signature)
     app.connect("autodoc-process-docstring", process_docstring)
     fix_autodoc_typehints_for_overloaded_methods()
+    patch_attribute_handling(app)
     return {"parallel_read_safe": True}
 
 
