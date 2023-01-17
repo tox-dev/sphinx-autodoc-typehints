@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from mailbox import Mailbox
+from types import CodeType
 from typing import Callable, Optional, Union, overload
 
 
@@ -309,3 +310,10 @@ def func_with_overload(a: Union[int, str], b: Union[int, str]) -> None:  # noqa:
     b:
         The second thing
     """
+
+
+class TestClassAttributeDocs:
+    """A class"""
+
+    code: Union[CodeType, None]
+    """An attribute"""

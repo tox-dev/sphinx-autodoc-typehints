@@ -42,3 +42,6 @@ Dummy Module
 .. autofunction:: dummy_module.func_with_examples
 
 .. autofunction:: dummy_module.func_with_overload
+
+.. autoclass:: dummy_module.TestClassAttributeDocs
+   :members:

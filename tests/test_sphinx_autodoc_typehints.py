@@ -782,6 +782,14 @@ def test_sphinx_output(
 
            Return type:
               "None"
+
+        class dummy_module.TestClassAttributeDocs
+
+           A class
+
+           code: "Optional"["CodeType"]
+
+              An attribute
         """
         expected_contents = dedent(expected_contents).format(**format_args).replace("–", "--")
         assert text_contents == maybe_fix_py310(expected_contents)
