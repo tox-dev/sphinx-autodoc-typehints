@@ -770,6 +770,18 @@ def test_sphinx_output(
            -[ Examples ]-
 
            Here are a couple of examples of how to use this function.
+
+        dummy_module.func_with_overload(a, b)
+
+           f does the thing. The arguments can either be ints or strings but they must both have the same type.
+
+           Parameters:
+              * **a** ("int" | "str") -- The first thing
+
+              * **b** ("int" | "str") -- The second thing
+
+           Return type:
+              "None"
         """
         expected_contents = dedent(expected_contents).format(**format_args).replace("–", "--")
         assert text_contents == maybe_fix_py310(expected_contents)

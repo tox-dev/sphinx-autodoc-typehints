@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from mailbox import Mailbox
 from typing import Union  # noqa: F401 # needed for expansion of Optional
-from typing import Callable, Optional
+from typing import Callable, Optional, overload
 
 
 def get_local_function():
@@ -285,4 +285,28 @@ def func_with_examples() -> int:
     .. rubric:: Examples
 
     Here are a couple of examples of how to use this function.
+    """
+
+
+@overload
+def func_with_overload(a: int, b: int) -> None:  # noqa: U100
+    ...
+
+
+@overload
+def func_with_overload(a: str, b: str) -> None:  # noqa: U100
+    ...
+
+
+def func_with_overload(a: int | str, b: int | str) -> None:  # noqa: U100
+    """
+    f does the thing. The arguments can either be ints or strings but they must
+    both have the same type.
+
+    Parameters
+    ----------
+    a:
+        The first thing
+    b:
+        The second thing
     """

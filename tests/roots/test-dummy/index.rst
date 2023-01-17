@@ -40,3 +40,5 @@ Dummy Module
 .. autofunction:: dummy_module.mocked_import
 
 .. autofunction:: dummy_module.func_with_examples
+
+.. autofunction:: dummy_module.func_with_overload
