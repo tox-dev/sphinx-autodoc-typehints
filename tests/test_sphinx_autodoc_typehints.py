@@ -776,9 +776,9 @@ def test_sphinx_output(
            f does the thing. The arguments can either be ints or strings but they must both have the same type.
 
            Parameters:
-              * **a** ("int" | "str") -- The first thing
+              * **a** ("Union"["int", "str"]) -- The first thing
 
-              * **b** ("int" | "str") -- The second thing
+              * **b** ("Union"["int", "str"]) -- The second thing
 
            Return type:
               "None"
