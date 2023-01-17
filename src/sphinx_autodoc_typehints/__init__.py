@@ -695,7 +695,7 @@ def validate_config(app: Sphinx, env: BuildEnvironment, docnames: list[str]) -> 
         raise ValueError(f"typehints_formatter needs to be callable or `None`, not {formatter}")
 
 
-@lru_cache  # A cute way to make sure the function only runs once.
+@lru_cache()  # A cute way to make sure the function only runs once.
 def fix_autodoc_typehints_for_overloaded_methods() -> None:
     """
     sphinx-autodoc-typehints responds to the "autodoc-process-signature" event
