@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.21.2
+
+- Fix overloads support
+
 ## 1.21.1
 
 - Fix spacing between `:rtype:` and directives
