@@ -16,6 +16,9 @@ from sphinx.ext.autodoc import AttributeDocumenter
 _parse_annotation = getattr(sphinx.domains.python, "_parse_annotation", None)
 
 STRINGIFY_NAME = None
+# We want to patch:
+# * sphinx.ext.autodoc.stringify_typehint (in sphinx < 6.1)
+# * sphinx.ext.autodoc.stringify_annotation (in sphinx >= 6.1)
 for target in ["stringify_typehint", "stringify_annotation"]:
     if hasattr(sphinx.ext.autodoc, target):
         STRINGIFY_PATCH_TARGET = f"sphinx.ext.autodoc.{target}"
@@ -32,7 +35,7 @@ TYPE_IS_RST_LABEL = "--is-rst--"
 orig_add_directive_header = AttributeDocumenter.add_directive_header
 
 
-def stringify_typehint(app: Sphinx, annotation: Any, mode: str = "") -> str:  # noqa: U100
+def stringify_annotation(app: Sphinx, annotation: Any, mode: str = "") -> str:  # noqa: U100
     """Format the annotation with sphinx-autodoc-typehints and inject our
     magic prefix to tell our patched PyAttribute.handle_signature to treat
     it as rst."""
@@ -42,16 +45,12 @@ def stringify_typehint(app: Sphinx, annotation: Any, mode: str = "") -> str:  # 
 
 
 def patch_attribute_documenter(app: Sphinx) -> None:
-    """Instead of using stringify-typehint in
-    `AttributeDocumenter.add_directive_header`, use `format_annotation`.
-
-    We either have to patch sphinx.ext.autodoc.stringify_typehint in sphinx <
-    6.1 or sphinx.ext.autodoc.stringify_annotation in sphinx >= 6.1. Bail if
-    neither of these exist.
+    """Instead of using stringify_typehint in
+    `AttributeDocumenter.add_directive_header`, use `format_annotation`
     """
 
     def add_directive_header(*args: Any, **kwargs: Any) -> Any:
-        with patch(STRINGIFY_PATCH_TARGET, partial(stringify_typehint, app)):
+        with patch(STRINGIFY_PATCH_TARGET, partial(stringify_annotation, app)):
             return orig_add_directive_header(*args, **kwargs)
 
     AttributeDocumenter.add_directive_header = add_directive_header  # type:ignore[assignment]
