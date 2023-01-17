@@ -1,4 +1,4 @@
-from functools import lru_cache, partial
+from functools import partial
 from optparse import Values
 from typing import Any, Tuple
 from unittest.mock import patch
@@ -33,6 +33,7 @@ TYPE_IS_RST_LABEL = "--is-rst--"
 
 
 orig_add_directive_header = AttributeDocumenter.add_directive_header
+orig_handle_signature = PyAttribute.handle_signature
 
 
 def stringify_annotation(app: Sphinx, annotation: Any, mode: str = "") -> str:  # noqa: U100
@@ -73,13 +74,11 @@ def patched_parse_annotation(settings: Values, typ: str, env: Any) -> Any:
     return rst_to_docutils(settings, typ)
 
 
-@lru_cache()
 def patch_py_attribute_handle_signature() -> None:
     """
     Patch PyAttribute.handle_signature so that it treats the :type: as rst and
     renders it as-is rather than trying to parse it as a type annotation string.
     """
-    orig_handle_signature = PyAttribute.handle_signature
 
     def handle_signature(self: PyAttribute, sig: str, signode: desc_signature) -> Tuple[str, str]:
         target = "sphinx.domains.python._parse_annotation"
