@@ -32,7 +32,7 @@ isfunction
 iterdir
 kwonlyargs
 libs
-memoize
+lru
 metaclass
 ModuleType
 multiline
