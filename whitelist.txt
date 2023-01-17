@@ -11,6 +11,7 @@ dedent
 delattr
 dirname
 docnames
+Documenter
 dunder
 eval
 exc
@@ -31,6 +32,7 @@ isfunction
 iterdir
 kwonlyargs
 libs
+lru
 metaclass
 ModuleType
 multiline

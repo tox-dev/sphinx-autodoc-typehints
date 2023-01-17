@@ -6,6 +6,7 @@ import sys
 import textwrap
 import types
 from ast import FunctionDef, Module, stmt
+from functools import lru_cache
 from typing import Any, AnyStr, Callable, ForwardRef, NewType, TypeVar, get_type_hints
 
 from sphinx.application import Sphinx
@@ -694,6 +695,29 @@ def validate_config(app: Sphinx, env: BuildEnvironment, docnames: list[str]) -> 
         raise ValueError(f"typehints_formatter needs to be callable or `None`, not {formatter}")
 
 
+@lru_cache()  # A cute way to make sure the function only runs once.
+def fix_autodoc_typehints_for_overloaded_methods() -> None:
+    """
+    sphinx-autodoc-typehints responds to the "autodoc-process-signature" event
+    to remove types from the signature line of functions.
+
+    Normally, `FunctionDocumenter.format_signature` and
+    `MethodDocumenter.format_signature` call `super().format_signature` which
+    ends up going to `Documenter.format_signature`, and this last method emits
+    the `autodoc-process-signature` event. However, if there are overloads,
+    `FunctionDocumenter.format_signature` does something else and the event
+    never occurs.
+
+    Here we remove this alternative code path by brute force.
+
+    See https://github.com/tox-dev/sphinx-autodoc-typehints/issues/296
+    """
+    from sphinx.ext.autodoc import FunctionDocumenter, MethodDocumenter
+
+    del FunctionDocumenter.format_signature
+    del MethodDocumenter.format_signature
+
+
 def setup(app: Sphinx) -> dict[str, bool]:
     app.add_config_value("always_document_param_types", False, "html")
     app.add_config_value("typehints_fully_qualified", False, "env")
@@ -707,6 +731,7 @@ def setup(app: Sphinx) -> dict[str, bool]:
     app.connect("env-before-read-docs", validate_config)  # config may be changed after “config-inited” event
     app.connect("autodoc-process-signature", process_signature)
     app.connect("autodoc-process-docstring", process_docstring)
+    fix_autodoc_typehints_for_overloaded_methods()
     return {"parallel_read_safe": True}
 
 
