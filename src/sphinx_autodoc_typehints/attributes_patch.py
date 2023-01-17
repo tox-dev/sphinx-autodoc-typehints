@@ -18,7 +18,7 @@ _parse_annotation = getattr(sphinx.domains.python, "_parse_annotation", None)
 # We want to patch:
 # * sphinx.ext.autodoc.stringify_typehint (in sphinx < 6.1)
 # * sphinx.ext.autodoc.stringify_annotation (in sphinx >= 6.1)
-STRINGIFY_PATCH_TARGET = None
+STRINGIFY_PATCH_TARGET = ""
 for target in ["stringify_typehint", "stringify_annotation"]:
     if hasattr(sphinx.ext.autodoc, target):
         STRINGIFY_PATCH_TARGET = f"sphinx.ext.autodoc.{target}"
