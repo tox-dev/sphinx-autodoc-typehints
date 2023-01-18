@@ -790,6 +790,55 @@ def test_sphinx_output(
            code: "Optional"["CodeType"]
 
               An attribute
+
+        dummy_module.func_with_examples_and_returns_after()
+
+           f does the thing.
+
+           -[ Examples ]-
+
+           Here is an example
+
+           Return type:
+              "int"
+
+           Returns:
+              The index of the widget
+
+        dummy_module.func_with_parameters_and_stuff_after(a, b)
+
+           A func
+
+           Parameters:
+              * **a** ("int") -- a tells us something
+
+              * **b** ("int") -- b tells us something
+
+           Return type:
+              "int"
+
+           More info about the function here.
+
+        dummy_module.func_with_rtype_in_weird_spot(a, b)
+
+           A func
+
+           Parameters:
+              * **a** ("int") -- a tells us something
+
+              * **b** ("int") -- b tells us something
+
+           -[ Examples ]-
+
+           Here is an example
+
+           Returns:
+              The index of the widget
+
+           More info about the function here.
+
+           Return type:
+              int
         """
         expected_contents = dedent(expected_contents).format(**format_args).replace("–", "--")
         assert text_contents == maybe_fix_py310(expected_contents)

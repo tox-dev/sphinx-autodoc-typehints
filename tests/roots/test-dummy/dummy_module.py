@@ -317,3 +317,45 @@ class TestClassAttributeDocs:
 
     code: Union[CodeType, None]
     """An attribute"""
+
+
+def func_with_examples_and_returns_after() -> int:
+    """
+    f does the thing.
+
+    Examples
+    --------
+
+    Here is an example
+
+    :returns: The index of the widget
+    """
+
+
+def func_with_parameters_and_stuff_after(a: int, b: int) -> int:  # noqa: U100
+    """A func
+
+    :param a: a tells us something
+    :param b: b tells us something
+
+    More info about the function here.
+    """
+
+
+def func_with_rtype_in_weird_spot(a: int, b: int) -> int:  # noqa: U100
+    """A func
+
+    :param a: a tells us something
+    :param b: b tells us something
+
+    Examples
+    --------
+
+    Here is an example
+
+    :returns: The index of the widget
+
+    More info about the function here.
+
+    :rtype: int
+    """
