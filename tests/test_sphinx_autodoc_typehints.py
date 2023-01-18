@@ -866,7 +866,7 @@ def test_sphinx_output(
 
            More stuff here.
 
-        dummy_module.func_with_codeblock()
+        dummy_module.func_with_code_block()
 
            A docstring.
 
