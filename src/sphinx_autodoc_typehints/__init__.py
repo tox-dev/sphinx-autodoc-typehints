@@ -701,13 +701,11 @@ def get_insert_index(app: Sphinx, lines: list[str]) -> InsertIndexInfo | None:
         idx = -1
 
     if idx == -1:
+        # No parameters
         pass
-    # Unfortunately docutils only tells us the line numbers that nodes start on,
-    # not the range (boo!).
     elif idx + 1 < len(doc.children):
-        # look up which line the next sibling starts on
-        # docutils lines are 1-indexed, so we'll insert before the line
-        # before the start of the next node, hence minus 2 here
+        # Unfortunately docutils only tells us the line numbers that nodes start on,
+        # not the range (boo!). So insert before the line before the next sibling.
         at = line_before_node(doc.children[idx + 1])
         return InsertIndexInfo(insert_index=at, found_param=True)
     else:
