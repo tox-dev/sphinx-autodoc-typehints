@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.21.2
+## 1.21.3
 
 - Use format_annotation to render class attribute type annotations
 
