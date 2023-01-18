@@ -839,6 +839,47 @@ def test_sphinx_output(
 
            Return type:
               int
+
+        dummy_module.empty_line_between_parameters(a, b)
+
+           A func
+
+           Parameters:
+              * **a** ("int") --
+
+                One of the following possibilities:
+
+                * a
+
+                * b
+
+                * c
+
+              * **b** ("int") --
+
+                Whatever else we have to say.
+
+                There is more of it And here too
+
+           Return type:
+              "int"
+
+           More stuff here.
+
+        dummy_module.func_with_codeblock()
+
+           A docstring.
+
+           You would say:
+
+              print("some python code here")
+
+           Return type:
+              "int"
+
+           -[ Examples ]-
+
+           Here are a couple of examples of how to use this function.
         """
         expected_contents = dedent(expected_contents).format(**format_args).replace("–", "--")
         assert text_contents == maybe_fix_py310(expected_contents)

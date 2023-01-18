@@ -10,6 +10,10 @@ from dataclasses import dataclass
 from functools import lru_cache
 from typing import Any, AnyStr, Callable, ForwardRef, NewType, TypeVar, get_type_hints
 
+from docutils.frontend import OptionParser
+from docutils.nodes import Node
+from docutils.parsers.rst import Parser as RstParser
+from docutils.utils import new_document
 from sphinx.application import Sphinx
 from sphinx.config import Config
 from sphinx.environment import BuildEnvironment
@@ -650,7 +654,22 @@ class InsertIndexInfo:
     found_directive: bool = False
 
 
-def get_insert_index(lines: list[str]) -> InsertIndexInfo | None:
+# Sphinx allows so many synonyms...
+# See sphinx.domains.python.PyObject
+PARAM_SYNONYMS = ("param ", "parameter ", "arg ", "argument ", "keyword ", "kwarg ", "kwparam ")
+
+
+def line_before_node(node: Node) -> int:
+    line = node.line
+    assert line
+    return line - 2
+
+
+def tag_name(node: Node) -> str:
+    return node.tagname  # type:ignore[attr-defined,no-any-return] # noqa: SC200
+
+
+def get_insert_index(app: Sphinx, lines: list[str]) -> InsertIndexInfo | None:
     # 1. If there is an existing :rtype: anywhere, don't insert anything.
     if any(line.startswith(":rtype:") for line in lines):
         return None
@@ -661,22 +680,53 @@ def get_insert_index(lines: list[str]) -> InsertIndexInfo | None:
         if line.startswith((":return:", ":returns:")):
             return InsertIndexInfo(insert_index=at, found_return=True)
 
-    # 3. Insert after the parameters
-    found_param = False
-    for at, line in enumerate(lines):
-        if line.startswith(":param"):
-            found_param = True
-        if found_param and not line.startswith((":", " ")):
-            return InsertIndexInfo(insert_index=at, found_param=True)
-    if found_param:
+    # 3. Insert after the parameters.
+    # To find the parameters, parse as a docutils tree.
+    settings = OptionParser(components=(RstParser,)).get_default_values()
+    settings.env = app.env
+    doc = new_document("", settings=settings)
+    RstParser().parse("\n".join(lines), doc)
+
+    # Find a top level child which is a field_list that contains a field whose
+    # name starts with one of the PARAM_SYNONYMS. This is the parameter list. We
+    # assume there is exactly one of these.
+    for idx, child in enumerate(doc.children):
+        if tag_name(child) != "field_list":
+            continue
+
+        if any(c.children[0].astext().startswith(PARAM_SYNONYMS) for c in child.children):
+            idx = idx
+            break
+    else:
+        idx = -1
+
+    if idx == -1:
+        pass
+    # Unfortunately docutils only tells us the line numbers that nodes start on,
+    # not the range (boo!).
+    elif idx + 1 < len(doc.children):
+        # look up which line the next sibling starts on
+        # docutils lines are 1-indexed, so we'll insert before the line
+        # before the start of the next node, hence minus 2 here
+        at = line_before_node(doc.children[idx + 1])
+        return InsertIndexInfo(insert_index=at, found_param=True)
+    else:
+        # No next sibling, insert at end
         return InsertIndexInfo(insert_index=len(lines), found_param=True)
 
-    # 4. No parameters, insert before the first directive -- in other words
-    #    before the first line starting with ...
-    # TODO: could be smarter about this.
-    for at, line in enumerate(lines):
-        if line.startswith(".."):
-            return InsertIndexInfo(insert_index=at, found_directive=True)
+    # 4. Insert before examples
+    # TODO: Maybe adjust which tags to insert ahead of
+    for idx, child in enumerate(doc.children):
+        if tag_name(child) not in ["literal_block", "paragraph", "field_list"]:
+            idx = idx
+            break
+    else:
+        idx = -1
+
+    if idx != -1:
+        at = line_before_node(doc.children[idx])
+        return InsertIndexInfo(insert_index=at, found_directive=True)
+
     # 5. Otherwise, insert at end
     return InsertIndexInfo(insert_index=len(lines))
 
@@ -696,7 +746,7 @@ def _inject_rtype(
     if not app.config.typehints_document_rtype:
         return
 
-    r = get_insert_index(lines)
+    r = get_insert_index(app, lines)
     if r is None:
         return
 

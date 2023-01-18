@@ -1,5 +1,6 @@
 addnodes
 ast3
+astext
 autodoc
 autouse
 backfill
