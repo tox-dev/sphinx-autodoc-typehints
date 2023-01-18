@@ -45,3 +45,13 @@ Dummy Module
 
 .. autoclass:: dummy_module.TestClassAttributeDocs
    :members:
+
+.. autofunction:: dummy_module.func_with_examples_and_returns_after
+
+.. autofunction:: dummy_module.func_with_parameters_and_stuff_after
+
+.. autofunction:: dummy_module.func_with_rtype_in_weird_spot
+
+.. autofunction:: dummy_module.empty_line_between_parameters
+
+.. autofunction:: dummy_module.func_with_code_block

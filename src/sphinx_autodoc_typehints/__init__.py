@@ -6,9 +6,14 @@ import sys
 import textwrap
 import types
 from ast import FunctionDef, Module, stmt
+from dataclasses import dataclass
 from functools import lru_cache
 from typing import Any, AnyStr, Callable, ForwardRef, NewType, TypeVar, get_type_hints
 
+from docutils.frontend import OptionParser
+from docutils.nodes import Node
+from docutils.parsers.rst import Parser as RstParser
+from docutils.utils import new_document
 from sphinx.application import Sphinx
 from sphinx.config import Config
 from sphinx.environment import BuildEnvironment
@@ -641,6 +646,89 @@ def _inject_signature(
             lines.insert(insert_index, type_annotation)
 
 
+@dataclass
+class InsertIndexInfo:
+    insert_index: int
+    found_param: bool = False
+    found_return: bool = False
+    found_directive: bool = False
+
+
+# Sphinx allows so many synonyms...
+# See sphinx.domains.python.PyObject
+PARAM_SYNONYMS = ("param ", "parameter ", "arg ", "argument ", "keyword ", "kwarg ", "kwparam ")
+
+
+def line_before_node(node: Node) -> int:
+    line = node.line
+    assert line
+    return line - 2
+
+
+def tag_name(node: Node) -> str:
+    return node.tagname  # type:ignore[attr-defined,no-any-return] # noqa: SC200
+
+
+def get_insert_index(app: Sphinx, lines: list[str]) -> InsertIndexInfo | None:
+    # 1. If there is an existing :rtype: anywhere, don't insert anything.
+    if any(line.startswith(":rtype:") for line in lines):
+        return None
+
+    # 2. If there is a :returns: anywhere, either modify that line or insert
+    #    just before it.
+    for at, line in enumerate(lines):
+        if line.startswith((":return:", ":returns:")):
+            return InsertIndexInfo(insert_index=at, found_return=True)
+
+    # 3. Insert after the parameters.
+    # To find the parameters, parse as a docutils tree.
+    settings = OptionParser(components=(RstParser,)).get_default_values()
+    settings.env = app.env
+    doc = new_document("", settings=settings)
+    RstParser().parse("\n".join(lines), doc)
+
+    # Find a top level child which is a field_list that contains a field whose
+    # name starts with one of the PARAM_SYNONYMS. This is the parameter list. We
+    # hope there is at most of these.
+    for idx, child in enumerate(doc.children):
+        if tag_name(child) != "field_list":
+            continue
+
+        if any(c.children[0].astext().startswith(PARAM_SYNONYMS) for c in child.children):
+            idx = idx
+            break
+    else:
+        idx = -1
+
+    if idx == -1:
+        # No parameters
+        pass
+    elif idx + 1 < len(doc.children):
+        # Unfortunately docutils only tells us the line numbers that nodes start on,
+        # not the range (boo!). So insert before the line before the next sibling.
+        at = line_before_node(doc.children[idx + 1])
+        return InsertIndexInfo(insert_index=at, found_param=True)
+    else:
+        # No next sibling, insert at end
+        return InsertIndexInfo(insert_index=len(lines), found_param=True)
+
+    # 4. Insert before examples
+    # TODO: Maybe adjust which tags to insert ahead of
+    for idx, child in enumerate(doc.children):
+        if tag_name(child) not in ["literal_block", "paragraph", "field_list"]:
+            idx = idx
+            break
+    else:
+        idx = -1
+
+    if idx != -1:
+        at = line_before_node(doc.children[idx])
+        return InsertIndexInfo(insert_index=at, found_directive=True)
+
+    # 5. Otherwise, insert at end
+    return InsertIndexInfo(insert_index=len(lines))
+
+
 def _inject_rtype(
     type_hints: dict[str, Any],
     original_obj: Any,
@@ -653,37 +741,32 @@ def _inject_rtype(
         return
     if what == "method" and name.endswith(".__init__"):  # avoid adding a return type for data class __init__
         return
-    formatted_annotation = format_annotation(type_hints["return"], app.config)
-    insert_index: int | None = len(lines)
-    extra_newline = False
-    for at, line in enumerate(lines):
-        if line.startswith(":rtype:"):
-            insert_index = None
-            break
-        if line.startswith(":return:") or line.startswith(":returns:"):
-            if " -- " in line and not app.config.typehints_use_rtype:
-                insert_index = None
-                break
-            insert_index = at
-        elif line.startswith(".."):
-            # Make sure that rtype comes before any usage or examples section, with a blank line between.
-            insert_index = at
-            extra_newline = True
-            break
+    if not app.config.typehints_document_rtype:
+        return
 
-    if insert_index is not None and app.config.typehints_document_rtype:
-        if insert_index == len(lines):  # ensure that :rtype: doesn't get joined with a paragraph of text
-            lines.append("")
-            insert_index += 1
-        if app.config.typehints_use_rtype or insert_index == len(lines):
-            line = f":rtype: {formatted_annotation}"
-            if extra_newline:
-                lines[insert_index:insert_index] = [line, "\n"]
-            else:
-                lines.insert(insert_index, line)
-        else:
-            line = lines[insert_index]
-            lines[insert_index] = f":return: {formatted_annotation} --{line[line.find(' '):]}"
+    r = get_insert_index(app, lines)
+    if r is None:
+        return
+
+    insert_index = r.insert_index
+
+    if not app.config.typehints_use_rtype and r.found_return and " -- " in lines[insert_index]:
+        return
+
+    formatted_annotation = format_annotation(type_hints["return"], app.config)
+
+    if insert_index == len(lines) and not r.found_param:
+        # ensure that :rtype: doesn't get joined with a paragraph of text
+        lines.append("")
+        insert_index += 1
+    if app.config.typehints_use_rtype or not r.found_return:
+        line = f":rtype: {formatted_annotation}"
+        lines.insert(insert_index, line)
+        if r.found_directive:
+            lines.insert(insert_index + 1, "")
+    else:
+        line = lines[insert_index]
+        lines[insert_index] = f":return: {formatted_annotation} --{line[line.find(' '):]}"
 
 
 def validate_config(app: Sphinx, env: BuildEnvironment, docnames: list[str]) -> None:  # noqa: U100

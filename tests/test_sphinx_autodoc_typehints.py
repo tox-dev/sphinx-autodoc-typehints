@@ -790,6 +790,96 @@ def test_sphinx_output(
            code: "Optional"["CodeType"]
 
               An attribute
+
+        dummy_module.func_with_examples_and_returns_after()
+
+           f does the thing.
+
+           -[ Examples ]-
+
+           Here is an example
+
+           Return type:
+              "int"
+
+           Returns:
+              The index of the widget
+
+        dummy_module.func_with_parameters_and_stuff_after(a, b)
+
+           A func
+
+           Parameters:
+              * **a** ("int") -- a tells us something
+
+              * **b** ("int") -- b tells us something
+
+           Return type:
+              "int"
+
+           More info about the function here.
+
+        dummy_module.func_with_rtype_in_weird_spot(a, b)
+
+           A func
+
+           Parameters:
+              * **a** ("int") -- a tells us something
+
+              * **b** ("int") -- b tells us something
+
+           -[ Examples ]-
+
+           Here is an example
+
+           Returns:
+              The index of the widget
+
+           More info about the function here.
+
+           Return type:
+              int
+
+        dummy_module.empty_line_between_parameters(a, b)
+
+           A func
+
+           Parameters:
+              * **a** ("int") --
+
+                One of the following possibilities:
+
+                * a
+
+                * b
+
+                * c
+
+              * **b** ("int") --
+
+                Whatever else we have to say.
+
+                There is more of it And here too
+
+           Return type:
+              "int"
+
+           More stuff here.
+
+        dummy_module.func_with_code_block()
+
+           A docstring.
+
+           You would say:
+
+              print("some python code here")
+
+           Return type:
+              "int"
+
+           -[ Examples ]-
+
+           Here are a couple of examples of how to use this function.
         """
         expected_contents = dedent(expected_contents).format(**format_args).replace("–", "--")
         assert text_contents == maybe_fix_py310(expected_contents)

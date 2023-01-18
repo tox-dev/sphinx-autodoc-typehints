@@ -164,7 +164,7 @@ def function_with_typehint_comment(
     Function docstring.
 
     :parameter x: foo
-    :param y: bar
+    :parameter y: bar
     """
 
 
@@ -317,3 +317,81 @@ class TestClassAttributeDocs:
 
     code: Union[CodeType, None]
     """An attribute"""
+
+
+def func_with_examples_and_returns_after() -> int:
+    """
+    f does the thing.
+
+    Examples
+    --------
+
+    Here is an example
+
+    :returns: The index of the widget
+    """
+
+
+def func_with_parameters_and_stuff_after(a: int, b: int) -> int:  # noqa: U100
+    """A func
+
+    :param a: a tells us something
+    :param b: b tells us something
+
+    More info about the function here.
+    """
+
+
+def func_with_rtype_in_weird_spot(a: int, b: int) -> int:  # noqa: U100
+    """A func
+
+    :param a: a tells us something
+    :param b: b tells us something
+
+    Examples
+    --------
+
+    Here is an example
+
+    :returns: The index of the widget
+
+    More info about the function here.
+
+    :rtype: int
+    """
+
+
+def empty_line_between_parameters(a: int, b: int) -> int:  # noqa: U100
+    """A func
+
+    :param a: One of the following possibilities:
+
+             - a
+
+             - b
+
+             - c
+
+    :param b: Whatever else we have to say.
+
+              There is more of it And here too
+
+    More stuff here.
+    """
+
+
+def func_with_code_block() -> int:
+    """
+    A docstring.
+
+    You would say:
+
+    .. code-block::
+
+        print("some python code here")
+
+
+    .. rubric:: Examples
+
+    Here are a couple of examples of how to use this function.
+    """
