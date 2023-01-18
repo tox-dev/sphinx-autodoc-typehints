@@ -689,7 +689,7 @@ def get_insert_index(app: Sphinx, lines: list[str]) -> InsertIndexInfo | None:
 
     # Find a top level child which is a field_list that contains a field whose
     # name starts with one of the PARAM_SYNONYMS. This is the parameter list. We
-    # assume there is exactly one of these.
+    # hope there is at most of these.
     for idx, child in enumerate(doc.children):
         if tag_name(child) != "field_list":
             continue
