@@ -880,6 +880,19 @@ def test_sphinx_output(
            -[ Examples ]-
 
            Here are a couple of examples of how to use this function.
+
+        dummy_module.func_with_definition_list()
+
+           Some text and then a definition list.
+
+           Return type:
+              "int"
+
+           abc
+              x
+
+           xyz
+              something
         """
         expected_contents = dedent(expected_contents).format(**format_args).replace("–", "--")
         assert text_contents == maybe_fix_py310(expected_contents)

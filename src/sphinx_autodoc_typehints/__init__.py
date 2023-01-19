@@ -659,10 +659,23 @@ class InsertIndexInfo:
 PARAM_SYNONYMS = ("param ", "parameter ", "arg ", "argument ", "keyword ", "kwarg ", "kwparam ")
 
 
-def line_before_node(node: Node) -> int:
-    line = node.line
-    assert line
-    return line - 2
+def node_line_no(node: Node) -> int | None:
+    """
+    Get the 1-indexed line on which the node starts if possible. If not, return
+    None.
+
+    Descend through the first children until we locate one with a line number or
+    return None if None of them have one.
+
+    I'm not aware of any rst on which this returns None, to find out would
+    require a more detailed analysis of the docutils rst parser source code. An
+    example where the node doesn't have a line number but the first child does
+    is all `definition_list` nodes. It seems like bullet_list and option_list
+    get line numbers, but enum_list also doesn't. *shrug*.
+    """
+    while node.line is None and node.children:
+        node = node.children[0]
+    return node.line
 
 
 def tag_name(node: Node) -> str:
@@ -690,39 +703,29 @@ def get_insert_index(app: Sphinx, lines: list[str]) -> InsertIndexInfo | None:
     # Find a top level child which is a field_list that contains a field whose
     # name starts with one of the PARAM_SYNONYMS. This is the parameter list. We
     # hope there is at most of these.
-    for idx, child in enumerate(doc.children):
+    for child in doc.children:
         if tag_name(child) != "field_list":
             continue
 
-        if any(c.children[0].astext().startswith(PARAM_SYNONYMS) for c in child.children):
-            idx = idx
-            break
-    else:
-        idx = -1
+        if not any(c.children[0].astext().startswith(PARAM_SYNONYMS) for c in child.children):
+            continue
 
-    if idx == -1:
-        # No parameters
-        pass
-    elif idx + 1 < len(doc.children):
-        # Unfortunately docutils only tells us the line numbers that nodes start on,
-        # not the range (boo!). So insert before the line before the next sibling.
-        at = line_before_node(doc.children[idx + 1])
+        # Found it! Try to insert before the next sibling. If there is no next
+        # sibling, insert at end.
+        # If there is a next sibling but we can't locate a line number, insert
+        # at end. (I don't know of any input where this happens.)
+        next_sibling = child.next_node(descend=False, siblings=True)
+        line_no = node_line_no(next_sibling) if next_sibling else None
+        at = line_no - 2 if line_no else len(lines)
         return InsertIndexInfo(insert_index=at, found_param=True)
-    else:
-        # No next sibling, insert at end
-        return InsertIndexInfo(insert_index=len(lines), found_param=True)
 
     # 4. Insert before examples
     # TODO: Maybe adjust which tags to insert ahead of
-    for idx, child in enumerate(doc.children):
-        if tag_name(child) not in ["literal_block", "paragraph", "field_list"]:
-            idx = idx
-            break
-    else:
-        idx = -1
-
-    if idx != -1:
-        at = line_before_node(doc.children[idx])
+    for child in doc.children:
+        if tag_name(child) in ["literal_block", "paragraph", "field_list"]:
+            continue
+        line_no = node_line_no(child)
+        at = line_no - 2 if line_no else len(lines)
         return InsertIndexInfo(insert_index=at, found_directive=True)
 
     # 5. Otherwise, insert at end

@@ -395,3 +395,15 @@ def func_with_code_block() -> int:
 
     Here are a couple of examples of how to use this function.
     """
+
+
+def func_with_definition_list() -> int:
+    """Some text and then a definition list.
+
+    abc
+        x
+
+    xyz
+        something
+    """
+    # See https://github.com/tox-dev/sphinx-autodoc-typehints/issues/302
