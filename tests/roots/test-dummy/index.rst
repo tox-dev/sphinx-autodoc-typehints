@@ -55,3 +55,5 @@ Dummy Module
 .. autofunction:: dummy_module.empty_line_between_parameters
 
 .. autofunction:: dummy_module.func_with_code_block
+
+.. autofunction:: dummy_module.func_with_definition_list
