@@ -816,6 +816,7 @@ def patched_lookup_annotation(*_args) -> str:  # noqa: U101
     """
     return ""
 
+
 def setup(app: Sphinx) -> dict[str, bool]:
     app.add_config_value("always_document_param_types", False, "html")
     app.add_config_value("typehints_fully_qualified", False, "env")
