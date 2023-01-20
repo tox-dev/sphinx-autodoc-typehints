@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.21.7
+
+- Fixed a bug where if a class has an attribute and a constructor argument with the same name, the constructor argument
+  type would be rendered incorrectly (issue 308)
+
+- Fixed napoleon handling of numpy docstrings with no specified return type.
+
 ## 1.21.6
 
 - Fix a `Field list ends without a blank line` warning (issue 305).
