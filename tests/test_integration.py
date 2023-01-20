@@ -874,6 +874,25 @@ def func_with_definition_list() -> int:
     # See https://github.com/tox-dev/sphinx-autodoc-typehints/issues/302
 
 
+@expected("")
+def decorator_2(f: Any) -> Any:
+    """Run the decorated function with `asyncio.run`.
+
+    Parameters
+    ----------
+    f
+        The function to wrap.
+
+    Examples
+    --------
+
+    .. code-block:: python
+
+        A
+    """
+    f
+
+
 AUTO_FUNCTION = ".. autofunction:: mod.{}"
 AUTO_CLASS = """\
 .. autoclass:: mod.{}

@@ -716,7 +716,7 @@ def get_insert_index(app: Sphinx, lines: list[str]) -> InsertIndexInfo | None:
         # at end. (I don't know of any input where this happens.)
         next_sibling = child.next_node(descend=False, siblings=True)
         line_no = node_line_no(next_sibling) if next_sibling else None
-        at = line_no - 2 if line_no else len(lines)
+        at = line_no - 3 if line_no else len(lines)
         return InsertIndexInfo(insert_index=at, found_param=True)
 
     # 4. Insert before examples
