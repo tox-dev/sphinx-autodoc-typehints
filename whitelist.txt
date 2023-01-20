@@ -57,6 +57,7 @@ rootdir
 rst
 rtype
 runtime
+setitem
 sig
 signode
 skipif
@@ -71,10 +72,12 @@ supertype
 tempdir
 testroot
 textwrap
+toctree
 typ
 typehint
 typehints
 unittest
+unlink
 unresolvable
 util
 utils

@@ -75,7 +75,7 @@ testpaths = ["tests"]
 [tool.mypy]
 python_version = "3.10"
 strict = true
-exclude = "^.*/roots/.*$"
+exclude = "^(.*/roots/.*)|(tests/test_integration.py)$"
 
 
 [[tool.mypy.overrides]]
