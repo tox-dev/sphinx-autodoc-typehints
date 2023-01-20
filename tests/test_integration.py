@@ -132,10 +132,10 @@ class Class:
     :param z: baz
     """
 
-    def __init__(self, x: bool, y: int, z: Optional[str] = None) -> None:  # noqa: U100
+    def __init__(self, x: bool, y: int, z: Optional[str] = None) -> None:
         pass
 
-    def a_method(self, x: bool, y: int, z: Optional[str] = None) -> str:  # noqa: U100
+    def a_method(self, x: bool, y: int, z: Optional[str] = None) -> str:
         """
         Method docstring.
 
@@ -144,21 +144,21 @@ class Class:
         :param z: baz
         """
 
-    def _private_method(self, x: str) -> str:  # noqa: U100
+    def _private_method(self, x: str) -> str:
         """
         Private method docstring.
 
         :param x: foo
         """
 
-    def __dunder_method(self, x: str) -> str:  # noqa: U100
+    def __dunder_method(self, x: str) -> str:
         """
         Dunder method docstring.
 
         :param x: foo
         """
 
-    def __magic_custom_method__(self, x: str) -> str:  # noqa: U100
+    def __magic_custom_method__(self, x: str) -> str:
         """
         Magic dunder method docstring.
 
@@ -166,7 +166,7 @@ class Class:
         """
 
     @classmethod
-    def a_classmethod(cls, x: bool, y: int, z: Optional[str] = None) -> str:  # noqa: U100
+    def a_classmethod(cls, x: bool, y: int, z: Optional[str] = None) -> str:
         """
         Classmethod docstring.
 
@@ -176,7 +176,7 @@ class Class:
         """
 
     @staticmethod
-    def a_staticmethod(x: bool, y: int, z: Optional[str] = None) -> str:  # noqa: U100
+    def a_staticmethod(x: bool, y: int, z: Optional[str] = None) -> str:
         """
         Staticmethod docstring.
 
@@ -196,14 +196,14 @@ class Class:
         Inner class.
         """
 
-        def inner_method(self, x: bool) -> str:  # noqa: U100
+        def inner_method(self, x: bool) -> str:
             """
             Inner method.
 
             :param x: foo
             """
 
-        def __dunder_inner_method(self, x: bool) -> str:  # noqa: U100
+        def __dunder_inner_method(self, x: bool) -> str:
             """
             Dunder inner method.
 
@@ -223,7 +223,7 @@ exception mod.DummyException(message)
       **message** ("str") -- blah
 """
 )
-class DummyException(Exception):  # noqa: N818
+class DummyException(Exception):
     """
     Exception docstring
 
@@ -254,7 +254,7 @@ mod.function(x, y, z_=None)
       bytes
 """
 )
-def function(x: bool, y: int, z_: Optional[str] = None) -> str:  # noqa: U100
+def function(x: bool, y: int, z_: Optional[str] = None) -> str:
     """
     Function docstring.
 
@@ -282,7 +282,7 @@ mod.function_with_starred_documentation_param_names(*args, **kwargs)
       * ****kwargs** ("str") -- bar
 """
 )
-def function_with_starred_documentation_param_names(*args: int, **kwargs: str):  # noqa: U100
+def function_with_starred_documentation_param_names(*args: int, **kwargs: str):
     r"""
     Function docstring.
 
@@ -305,7 +305,7 @@ mod.function_with_escaped_default(x='\\\\x08')
       **x** ("str") -- foo
 """
 )
-def function_with_escaped_default(x: str = "\b"):  # noqa: U100
+def function_with_escaped_default(x: str = "\b"):
     """
     Function docstring.
 
@@ -324,7 +324,7 @@ mod.function_with_unresolvable_annotation(x)
       **x** (*a.b.c*) -- foo
 """
 )
-def function_with_unresolvable_annotation(x: "a.b.c"):  # noqa: U100,F821
+def function_with_unresolvable_annotation(x: "a.b.c"):,F821
     """
     Function docstring.
 
@@ -348,8 +348,8 @@ mod.function_with_typehint_comment(x, y)
 """
 )
 def function_with_typehint_comment(
-    x,  # type: int  # noqa: U100
-    y,  # type: str  # noqa: U100
+    x,  # type: int
+    y,  # type: str
 ):
     # type: (...) -> None
     """
@@ -392,13 +392,13 @@ class ClassWithTypehints:
     """
 
     def __init__(
-        self, x  # type: int  # noqa: U100
+        self, x  # type: int
     ):
         # type: (...) -> None
         pass
 
     def foo(
-        self, x  # type: str  # noqa: U100
+        self, x  # type: str
     ):
         # type: (...) -> int
         """
@@ -408,7 +408,7 @@ class ClassWithTypehints:
         """
         return 42
 
-    def method_without_typehint(self, x):  # noqa: U100
+    def method_without_typehint(self, x):
         """
         Method docstring.
         """
@@ -438,7 +438,7 @@ mod.function_with_typehint_comment_not_inline(x=None, *y, z, **kwargs)
       "None"
 """
 )
-def function_with_typehint_comment_not_inline(x=None, *y, z, **kwargs):  # noqa: U100
+def function_with_typehint_comment_not_inline(x=None, *y, z, **kwargs):
     # type: (Union[str, bytes, None], *str, bytes, **int) -> None
     """
     Function docstring.
@@ -488,7 +488,7 @@ class ClassWithTypehintsNotInline:
     :param x: foo
     """
 
-    def __init__(self, x=None):  # noqa: U100
+    def __init__(self, x=None):
         # type: (Optional[Callable[[int, bytes], int]]) -> None
         pass
 
@@ -559,7 +559,7 @@ class Decorator:
     :param func: function
     """
 
-    def __init__(self, func: Callable[[int, str], str]):  # noqa: U100
+    def __init__(self, func: Callable[[int, str], str]):
         pass
 
 
@@ -573,7 +573,7 @@ mod.mocked_import(x)
       **x** ("Mailbox") -- function
 """
 )
-def mocked_import(x: Mailbox):  # noqa: U100
+def mocked_import(x: Mailbox):
     """
     A docstring.
 
@@ -606,12 +606,12 @@ def func_with_examples() -> int:
 
 
 @overload
-def func_with_overload(a: int, b: int) -> None:  # noqa: U100
+def func_with_overload(a: int, b: int) -> None:
     ...
 
 
 @overload
-def func_with_overload(a: str, b: str) -> None:  # noqa: U100
+def func_with_overload(a: str, b: str) -> None:
     ...
 
 
@@ -631,7 +631,7 @@ mod.func_with_overload(a, b)
       "None"
 """
 )
-def func_with_overload(a: Union[int, str], b: Union[int, str]) -> None:  # noqa: U100
+def func_with_overload(a: Union[int, str], b: Union[int, str]) -> None:
     """
     f does the thing. The arguments can either be ints or strings but they must
     both have the same type.
@@ -710,7 +710,7 @@ mod.func_with_parameters_and_stuff_after(a, b)
    More info about the function here.
 """
 )
-def func_with_parameters_and_stuff_after(a: int, b: int) -> int:  # noqa: U100
+def func_with_parameters_and_stuff_after(a: int, b: int) -> int:
     """A func
 
     :param a: a tells us something
@@ -744,7 +744,7 @@ mod.func_with_rtype_in_weird_spot(a, b)
       int
 """
 )
-def func_with_rtype_in_weird_spot(a: int, b: int) -> int:  # noqa: U100
+def func_with_rtype_in_weird_spot(a: int, b: int) -> int:
     """A func
 
     :param a: a tells us something
@@ -792,7 +792,7 @@ mod.empty_line_between_parameters(a, b)
    More stuff here.
 """
 )
-def empty_line_between_parameters(a: int, b: int) -> int:  # noqa: U100
+def empty_line_between_parameters(a: int, b: int) -> int:
     """A func
 
     :param a: One of the following possibilities:
