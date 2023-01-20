@@ -1,4 +1,6 @@
 addnodes
+arg1
+arg2
 ast3
 astext
 autodoc
@@ -14,6 +16,7 @@ delattr
 desc
 dirname
 docnames
+docstrings
 Documenter
 docutils
 dunder
@@ -41,6 +44,7 @@ metaclass
 ModuleType
 multiline
 newtype
+numpy
 nptyping
 param
 parametrized

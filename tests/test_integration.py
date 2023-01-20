@@ -941,6 +941,64 @@ class ParamAndAttributeHaveSameName:
     """Description of attribute blah"""
 
 
+@expected(
+    """
+    mod.napoleon_returns()
+
+       A function.
+
+       Return type:
+          "CodeType"
+
+       Returns:
+          The info about the whatever.
+    """
+)
+def napoleon_returns() -> CodeType:
+    """
+    A function.
+
+    Returns
+    -------
+        The info about the whatever.
+    """
+
+
+@expected(
+    """
+    mod.google_docstrings(arg1, arg2)
+
+       Summary line.
+
+       Extended description of function.
+
+       Parameters:
+          * **arg1** ("CodeType") -- Description of arg1
+
+          * **arg2** ("ModuleType") -- Description of arg2
+
+       Return type:
+          "CodeType"
+
+       Returns:
+          Description of return value
+
+    """
+)
+def google_docstrings(arg1: CodeType, arg2: ModuleType) -> CodeType:  # noqa: U100
+    """Summary line.
+
+    Extended description of function.
+
+    Args:
+        arg1: Description of arg1
+        arg2: Description of arg2
+
+    Returns:
+        Description of return value
+    """
+
+
 AUTO_FUNCTION = ".. autofunction:: mod.{}"
 AUTO_CLASS = """\
 .. autoclass:: mod.{}
