@@ -908,8 +908,11 @@ def test_blah(app: SphinxTestApp, status: StringIO, warning: StringIO, monkeypat
     else:
         assert not value
 
-    text_path = Path(app.srcdir) / "_build" / "text" / "index.txt"
-    x = text_path.read_text()
+    result = (Path(app.srcdir) / "_build/text/index.txt").read_text()
 
     expected = object.EXPECTED
-    assert x.strip() == dedent(expected).strip()
+    try:
+        assert result.strip() == dedent(expected).strip()
+    except Exception:
+        print("Result was:\n", result, "\n\n")
+        raise
