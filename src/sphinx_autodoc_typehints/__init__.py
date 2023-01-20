@@ -816,6 +816,11 @@ def patched_lookup_annotation(*_args) -> str:  # noqa: U101
     """
     return ""
 
+
+def patch_google_docstring_lookup_annotation():
+    GoogleDocstring._lookup_annotation = patched_lookup_annotation  # type: ignore[assignment]
+
+
 def setup(app: Sphinx) -> dict[str, bool]:
     app.add_config_value("always_document_param_types", False, "html")
     app.add_config_value("typehints_fully_qualified", False, "env")
@@ -831,7 +836,7 @@ def setup(app: Sphinx) -> dict[str, bool]:
     app.connect("autodoc-process-docstring", process_docstring)
     fix_autodoc_typehints_for_overloaded_methods()
     patch_attribute_handling(app)
-    GoogleDocstring._lookup_annotation = patched_lookup_annotation
+    patch_google_docstring_lookup_annotation()
     return {"parallel_read_safe": True}
 
 
