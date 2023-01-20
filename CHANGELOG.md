@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- Fix a `Field list ends without a blank line` warning (issue 305).
+
 ## 1.21.5
 
 - More robust determination of rtype location / fix issue 302
