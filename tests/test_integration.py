@@ -5,8 +5,8 @@ from inspect import isclass
 from io import StringIO
 from mailbox import Mailbox
 from pathlib import Path
-from textwrap import dedent
-from types import CodeType
+from textwrap import dedent, indent
+from types import CodeType, ModuleType
 from typing import Any, Callable, Optional, TypeVar, Union, overload
 
 import pytest
@@ -909,6 +909,38 @@ def decorator_2(f: Any) -> Any:
     f
 
 
+@expected(
+    """
+    class mod.ParamAndAttributeHaveSameName(blah)
+
+       A Class
+
+       Parameters:
+          **blah** ("CodeType") -- Description of parameter blah
+
+       blah: "ModuleType"
+
+          Description of attribute blah
+
+    """
+)
+class ParamAndAttributeHaveSameName:
+    """
+    A Class
+
+    Parameters
+    ----------
+    blah:
+        Description of parameter blah
+    """
+
+    def __init__(self, blah: CodeType):  # noqa: U100
+        pass
+
+    blah: ModuleType
+    """Description of attribute blah"""
+
+
 AUTO_FUNCTION = ".. autofunction:: mod.{}"
 AUTO_CLASS = """\
 .. autoclass:: mod.{}
@@ -949,5 +981,6 @@ def test_integration(app: SphinxTestApp, status: StringIO, warning: StringIO, mo
     try:
         assert result.strip() == dedent(expected).strip()
     except Exception:
-        print(f"Result was:\n{result}\n\n")
+        indented = indent(f'"""\n{result}\n"""', " " * 4)
+        print(f"@expected(\n{indented}\n)\n")
         raise
