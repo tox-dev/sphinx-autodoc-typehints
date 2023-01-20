@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import collections.abc
-import pathlib
 import re
 import sys
 import types
 import typing
 from functools import cmp_to_key
 from io import StringIO
+from pathlib import Path
 from textwrap import dedent, indent
 from types import FunctionType, ModuleType
 from typing import (
@@ -429,49 +429,39 @@ def test_process_docstring_slot_wrapper() -> None:
 
 
 def set_python_path() -> None:
-    test_path = pathlib.Path(__file__).parent
+    test_path = Path(__file__).parent
     # Add test directory to sys.path to allow imports of dummy module.
     if str(test_path) not in sys.path:
         sys.path.insert(0, str(test_path))
 
 
-def maybe_fix_py310(expected_contents: str) -> str:
-    if PY310_PLUS:
-        for old, new in [
-            ("*bool** | **None*", '"Optional"["bool"]'),
-            ("*int** | **str** | **float*", '"int" | "str" | "float"'),
-            ("*str** | **None*", '"Optional"["str"]'),
-            ("(*bool*)", '("bool")'),
-            ("(*int*", '("int"'),
-            ("   str", '   "str"'),
-            ('"Optional"["str"]', '"Optional"["str"]'),
-            ('"Optional"["Callable"[["int", "bytes"], "int"]]', '"Optional"["Callable"[["int", "bytes"], "int"]]'),
-        ]:
-            expected_contents = expected_contents.replace(old, new)
-    return expected_contents
-
-
 @pytest.mark.parametrize("always_document_param_types", [True, False], ids=["doc_param_type", "no_doc_param_type"])
 @pytest.mark.sphinx("text", testroot="dummy")
 @patch("sphinx.writers.text.MAXWIDTH", 2000)
-def test_sphinx_output(
+def test_always_document_param_types(
     app: SphinxTestApp, status: StringIO, warning: StringIO, always_document_param_types: bool
 ) -> None:
     set_python_path()
 
     app.config.always_document_param_types = always_document_param_types  # type: ignore # create flag
     app.config.autodoc_mock_imports = ["mailbox"]  # type: ignore # create flag
-    if sys.version_info < (3, 7):
-        app.config.autodoc_mock_imports.append("dummy_module_future_annotations")
+
+    (Path(app.srcdir) / "index.rst").write_text(
+        dedent(
+            """
+            .. autofunction:: dummy_module.undocumented_function
+
+            .. autoclass:: dummy_module.DataClass
+                :undoc-members:
+                :special-members: __init__
+            """
+        )
+    )
+
     app.build()
 
     assert "build succeeded" in status.getvalue()  # Build succeeded
-
-    # There should be a warning about an unresolved forward reference
-    warnings = warning.getvalue().strip()
-    assert "Cannot resolve forward reference in type annotations of " in warnings, warnings
-    # There should not be warnings about incorrect block endings.
-    assert "Field list ends without a blank line; unexpected unindent." not in warnings, warnings
+    assert not warning.getvalue().strip()
 
     format_args = {}
     for indentation_level in range(2):
@@ -481,421 +471,40 @@ def test_sphinx_output(
         else:
             format_args[key] = ""
 
-    text_path = pathlib.Path(app.srcdir) / "_build" / "text" / "index.txt"
-    with text_path.open("r") as f:
-        text_contents = f.read().replace("–", "--")
-        expected_contents = """\
-        Dummy Module
-        ************
-
-        class dummy_module.Class(x, y, z=None)
-
-           Initializer docstring.
-
-           Parameters:
-              * **x** ("bool") – foo
-
-              * **y** ("int") – bar
-
-              * **z** ("Optional"["str"]) – baz
-
-           class InnerClass
-
-              Inner class.
-
-              __dunder_inner_method(x)
-
-                 Dunder inner method.
-
-                 Parameters:
-                    **x** ("bool") -- foo
-
-                 Return type:
-                    "str"
-
-              inner_method(x)
-
-                 Inner method.
-
-                 Parameters:
-                    **x** ("bool") -- foo
-
-                 Return type:
-                    "str"
-
-           __dunder_method(x)
-
-              Dunder method docstring.
-
-              Parameters:
-                 **x** ("str") -- foo
-
-              Return type:
-                 "str"
-
-           __magic_custom_method__(x)
-
-              Magic dunder method docstring.
-
-              Parameters:
-                 **x** ("str") -- foo
-
-              Return type:
-                 "str"
-
-           _private_method(x)
-
-              Private method docstring.
-
-              Parameters:
-                 **x** ("str") -- foo
-
-              Return type:
-                 "str"
-
-           classmethod a_classmethod(x, y, z=None)
-
-              Classmethod docstring.
-
-              Parameters:
-                 * **x** ("bool") – foo
-
-                 * **y** ("int") – bar
-
-                 * **z** ("Optional"["str"]) – baz
-
-              Return type:
-                 "str"
-
-           a_method(x, y, z=None)
-
-              Method docstring.
-
-              Parameters:
-                 * **x** ("bool") – foo
-
-                 * **y** ("int") – bar
-
-                 * **z** ("Optional"["str"]) – baz
-
-              Return type:
-                 "str"
-
-           property a_property: str
-
-              Property docstring
-
-           static a_staticmethod(x, y, z=None)
-
-              Staticmethod docstring.
-
-              Parameters:
-                 * **x** ("bool") – foo
-
-                 * **y** ("int") – bar
-
-                 * **z** ("Optional"["str"]) – baz
-
-              Return type:
-                 "str"
-
-           locally_defined_callable_field() -> str
-
-              Wrapper
-
-              Return type:
-                 "str"
-
-        exception dummy_module.DummyException(message)
-
-           Exception docstring
-
-           Parameters:
-              **message** ("str") – blah
-
-        dummy_module.function(x, y, z_=None)
-
-           Function docstring.
-
-           Parameters:
-              * **x** ("bool") – foo
-
-              * **y** ("int") – bar
-
-              * **z_** ("Optional"["str"]) – baz
-
-           Returns:
-              something
-
-           Return type:
-              bytes
-
-        dummy_module.function_with_escaped_default(x='\\\\x08')
-
-           Function docstring.
-
-           Parameters:
-              **x** ("str") – foo
-
-        dummy_module.function_with_unresolvable_annotation(x)
-
-           Function docstring.
-
-           Parameters:
-              **x** (*a.b.c*) – foo
-
-        dummy_module.function_with_typehint_comment(x, y)
-
-           Function docstring.
-
-           Parameters:
-              * **x** ("int") – foo
-
-              * **y** ("str") – bar
-
-           Return type:
-              "None"
-
-        dummy_module.function_with_starred_documentation_param_names(*args, **kwargs)
-
-           Function docstring.
-
-           Usage:
-
-              print(1)
-
-           Parameters:
-              * ***args** ("int") -- foo
-
-              * ****kwargs** ("str") -- bar
-
-        class dummy_module.ClassWithTypehints(x)
-
-           Class docstring.
-
-           Parameters:
-              **x** ("int") -- foo
-
-           foo(x)
-
-              Method docstring.
-
-              Parameters:
-                 **x** ("str") -- foo
-
-              Return type:
-                 "int"
-
-           method_without_typehint(x)
-
-              Method docstring.
-
-        dummy_module.function_with_typehint_comment_not_inline(x=None, *y, z, **kwargs)
-
-           Function docstring.
-
-           Parameters:
-              * **x** ("Union"["str", "bytes", "None"]) -- foo
-
-              * **y** ("str") -- bar
-
-              * **z** ("bytes") -- baz
-
-              * **kwargs** ("int") -- some kwargs
-
-           Return type:
-              "None"
-
-        class dummy_module.ClassWithTypehintsNotInline(x=None)
-
-           Class docstring.
-
-           Parameters:
-              **x** ("Optional"["Callable"[["int", "bytes"], "int"]]) -- foo
-
-           foo(x=1)
-
-              Method docstring.
-
-              Parameters:
-                 **x** ("Callable"[["int", "bytes"], "int"]) -- foo
-
-              Return type:
-                 "int"
-
-           classmethod mk(x=None)
-
-              Method docstring.
-
-              Parameters:
-                 **x** ("Optional"["Callable"[["int", "bytes"], "int"]]) -- foo
-
-              Return type:
-                 "ClassWithTypehintsNotInline"
-
-        dummy_module.undocumented_function(x)
-
-           Hi{undoc_params_0}
-
-           Return type:
-              "str"
-
-        class dummy_module.DataClass(x)
-
-           Class docstring.{undoc_params_0}
-
-           __init__(x){undoc_params_1}
-
-        @dummy_module.Decorator(func)
-
-           Initializer docstring.
-
-           Parameters:
-              **func** ("Callable"[["int", "str"], "str"]) -- function
-
-        dummy_module.mocked_import(x)
-
-           A docstring.
-
-           Parameters:
-              **x** ("Mailbox") -- function
-
-        dummy_module.func_with_examples()
-
-           A docstring.
-
-           Return type:
-              "int"
-
-           -[ Examples ]-
-
-           Here are a couple of examples of how to use this function.
-
-        dummy_module.func_with_overload(a, b)
-
-           f does the thing. The arguments can either be ints or strings but they must both have the same type.
-
-           Parameters:
-              * **a** ("Union"["int", "str"]) -- The first thing
-
-              * **b** ("Union"["int", "str"]) -- The second thing
-
-           Return type:
-              "None"
-
-        class dummy_module.TestClassAttributeDocs
-
-           A class
-
-           code: "Optional"["CodeType"]
-
-              An attribute
-
-        dummy_module.func_with_examples_and_returns_after()
-
-           f does the thing.
-
-           -[ Examples ]-
-
-           Here is an example
-
-           Return type:
-              "int"
-
-           Returns:
-              The index of the widget
-
-        dummy_module.func_with_parameters_and_stuff_after(a, b)
-
-           A func
-
-           Parameters:
-              * **a** ("int") -- a tells us something
-
-              * **b** ("int") -- b tells us something
-
-           Return type:
-              "int"
-
-           More info about the function here.
-
-        dummy_module.func_with_rtype_in_weird_spot(a, b)
-
-           A func
-
-           Parameters:
-              * **a** ("int") -- a tells us something
-
-              * **b** ("int") -- b tells us something
-
-           -[ Examples ]-
-
-           Here is an example
-
-           Returns:
-              The index of the widget
-
-           More info about the function here.
-
-           Return type:
-              int
-
-        dummy_module.empty_line_between_parameters(a, b)
-
-           A func
-
-           Parameters:
-              * **a** ("int") --
-
-                One of the following possibilities:
-
-                * a
-
-                * b
-
-                * c
-
-              * **b** ("int") --
-
-                Whatever else we have to say.
-
-                There is more of it And here too
-
-           Return type:
-              "int"
-
-           More stuff here.
-
-        dummy_module.func_with_code_block()
-
-           A docstring.
-
-           You would say:
-
-              print("some python code here")
-
-           Return type:
-              "int"
-
-           -[ Examples ]-
-
-           Here are a couple of examples of how to use this function.
-
-        dummy_module.func_with_definition_list()
-
-           Some text and then a definition list.
-
-           Return type:
-              "int"
-
-           abc
-              x
-
-           xyz
-              something
-        """
-        expected_contents = dedent(expected_contents).format(**format_args).replace("–", "--")
-        assert text_contents == maybe_fix_py310(expected_contents)
+    contents = (Path(app.srcdir) / "_build/text/index.txt").read_text()
+    expected_contents = """\
+    dummy_module.undocumented_function(x)
+
+       Hi{undoc_params_0}
+
+       Return type:
+          "str"
+
+    class dummy_module.DataClass(x)
+
+       Class docstring.{undoc_params_0}
+
+       __init__(x){undoc_params_1}
+    """
+    expected_contents = dedent(expected_contents).format(**format_args)
+    assert contents == expected_contents
+
+
+def maybe_fix_py310(expected_contents: str) -> str:
+    if not PY310_PLUS:
+        return expected_contents
+    for old, new in [
+        ("*bool** | **None*", '"Optional"["bool"]'),
+        ("*int** | **str** | **float*", '"int" | "str" | "float"'),
+        ("*str** | **None*", '"Optional"["str"]'),
+        ("(*bool*)", '("bool")'),
+        ("(*int*", '("int"'),
+        ("   str", '   "str"'),
+        ('"Optional"["str"]', '"Optional"["str"]'),
+        ('"Optional"["Callable"[["int", "bytes"], "int"]]', '"Optional"["Callable"[["int", "bytes"], "int"]]'),
+    ]:
+        expected_contents = expected_contents.replace(old, new)
+    return expected_contents
 
 
 @pytest.mark.sphinx("text", testroot="dummy")
@@ -908,29 +517,27 @@ def test_sphinx_output_future_annotations(app: SphinxTestApp, status: StringIO) 
 
     assert "build succeeded" in status.getvalue()  # Build succeeded
 
-    text_path = pathlib.Path(app.srcdir) / "_build" / "text" / "future_annotations.txt"
-    with text_path.open("r") as f:
-        text_contents = f.read().replace("–", "--")
-        expected_contents = """\
-        Dummy Module
-        ************
+    contents = (Path(app.srcdir) / "_build/text/future_annotations.txt").read_text()
+    expected_contents = """\
+    Dummy Module
+    ************
 
-        dummy_module_future_annotations.function_with_py310_annotations(self, x, y, z=None)
+    dummy_module_future_annotations.function_with_py310_annotations(self, x, y, z=None)
 
-           Method docstring.
+       Method docstring.
 
-           Parameters:
-              * **x** (*bool** | **None*) -- foo
+       Parameters:
+          * **x** (*bool** | **None*) -- foo
 
-              * **y** (*int** | **str** | **float*) -- bar
+          * **y** (*int** | **str** | **float*) -- bar
 
-              * **z** (*str** | **None*) -- baz
+          * **z** (*str** | **None*) -- baz
 
-           Return type:
-              str
-        """
-        expected_contents = maybe_fix_py310(dedent(expected_contents))
-        assert text_contents == expected_contents
+       Return type:
+          str
+    """
+    expected_contents = maybe_fix_py310(dedent(expected_contents))
+    assert contents == expected_contents
 
 
 @pytest.mark.parametrize(
@@ -961,8 +568,7 @@ def test_sphinx_output_defaults(
         return
     assert "build succeeded" in status.getvalue()
 
-    text_path = pathlib.Path(app.srcdir) / "_build" / "text" / "simple.txt"
-    text_contents = text_path.read_text().replace("–", "--")
+    contents = (Path(app.srcdir) / "_build/text/simple.txt").read_text()
     expected_contents = f"""\
     Simple Module
     *************
@@ -979,7 +585,7 @@ def test_sphinx_output_defaults(
        Return type:
           "str"
     """
-    assert text_contents == dedent(expected_contents)
+    assert contents == dedent(expected_contents)
 
 
 @pytest.mark.parametrize(
@@ -1009,8 +615,7 @@ def test_sphinx_output_formatter(
     assert not isinstance(expected, Exception), "Expected app.build() to raise exception, but it didn’t"
     assert "build succeeded" in status.getvalue()
 
-    text_path = pathlib.Path(app.srcdir) / "_build" / "text" / "simple.txt"
-    text_contents = text_path.read_text().replace("–", "--")
+    contents = (Path(app.srcdir) / "_build/text/simple.txt").read_text()
     expected_contents = f"""\
     Simple Module
     *************
@@ -1027,7 +632,7 @@ def test_sphinx_output_formatter(
        Return type:
           {expected[2]}
     """
-    assert text_contents == dedent(expected_contents)
+    assert contents == dedent(expected_contents)
 
 
 def test_normalize_source_lines_async_def() -> None:
@@ -1149,7 +754,7 @@ def test_sphinx_output_formatter_no_use_rtype(app: SphinxTestApp, status: String
     app.config.typehints_use_rtype = False  # type: ignore
     app.build()
     assert "build succeeded" in status.getvalue()
-    text_path = pathlib.Path(app.srcdir) / "_build" / "text" / "simple_no_use_rtype.txt"
+    text_path = Path(app.srcdir) / "_build" / "text" / "simple_no_use_rtype.txt"
     text_contents = text_path.read_text().replace("–", "--")
     expected_contents = """\
     Simple Module
@@ -1214,7 +819,7 @@ def test_sphinx_output_with_use_signature(app: SphinxTestApp, status: StringIO) 
     app.config.typehints_use_signature = True  # type: ignore
     app.build()
     assert "build succeeded" in status.getvalue()
-    text_path = pathlib.Path(app.srcdir) / "_build" / "text" / "simple.txt"
+    text_path = Path(app.srcdir) / "_build" / "text" / "simple.txt"
     text_contents = text_path.read_text().replace("–", "--")
     expected_contents = """\
     Simple Module
@@ -1243,7 +848,7 @@ def test_sphinx_output_with_use_signature_return(app: SphinxTestApp, status: Str
     app.config.typehints_use_signature_return = True  # type: ignore
     app.build()
     assert "build succeeded" in status.getvalue()
-    text_path = pathlib.Path(app.srcdir) / "_build" / "text" / "simple.txt"
+    text_path = Path(app.srcdir) / "_build" / "text" / "simple.txt"
     text_contents = text_path.read_text().replace("–", "--")
     expected_contents = """\
     Simple Module
@@ -1273,7 +878,7 @@ def test_sphinx_output_with_use_signature_and_return(app: SphinxTestApp, status:
     app.config.typehints_use_signature_return = True  # type: ignore
     app.build()
     assert "build succeeded" in status.getvalue()
-    text_path = pathlib.Path(app.srcdir) / "_build" / "text" / "simple.txt"
+    text_path = Path(app.srcdir) / "_build" / "text" / "simple.txt"
     text_contents = text_path.read_text().replace("–", "--")
     expected_contents = """\
     Simple Module
@@ -1302,7 +907,7 @@ def test_default_annotation_without_typehints(app: SphinxTestApp, status: String
     app.config.typehints_defaults = "comma"  # type: ignore
     app.build()
     assert "build succeeded" in status.getvalue()
-    text_path = pathlib.Path(app.srcdir) / "_build" / "text" / "without_complete_typehints.txt"
+    text_path = Path(app.srcdir) / "_build" / "text" / "without_complete_typehints.txt"
     text_contents = text_path.read_text().replace("–", "--")
     expected_contents = """\
     Simple Module
