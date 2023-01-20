@@ -19,6 +19,7 @@ from sphinx.config import Config
 from sphinx.environment import BuildEnvironment
 from sphinx.ext.autodoc import Options
 from sphinx.ext.autodoc.mock import mock
+from sphinx.ext.napoleon.docstring import GoogleDocstring
 from sphinx.util import logging
 from sphinx.util.inspect import signature as sphinx_signature
 from sphinx.util.inspect import stringify_signature
@@ -808,6 +809,18 @@ def fix_autodoc_typehints_for_overloaded_methods() -> None:
     del MethodDocumenter.format_signature
 
 
+def patched_lookup_annotation(*_args: Any) -> str:  # noqa: U101
+    """GoogleDocstring._lookup_annotation sometimes adds incorrect type
+    annotations to constructor parameters (and otherwise does nothing). Disable
+    it so we can handle this on our own.
+    """
+    return ""
+
+
+def patch_google_docstring_lookup_annotation() -> None:
+    GoogleDocstring._lookup_annotation = patched_lookup_annotation  # type: ignore[assignment]
+
+
 def setup(app: Sphinx) -> dict[str, bool]:
     app.add_config_value("always_document_param_types", False, "html")
     app.add_config_value("typehints_fully_qualified", False, "env")
@@ -823,6 +836,7 @@ def setup(app: Sphinx) -> dict[str, bool]:
     app.connect("autodoc-process-docstring", process_docstring)
     fix_autodoc_typehints_for_overloaded_methods()
     patch_attribute_handling(app)
+    patch_google_docstring_lookup_annotation()
     return {"parallel_read_safe": True}
 
 
