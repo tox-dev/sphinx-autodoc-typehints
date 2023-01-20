@@ -758,6 +758,9 @@ def _inject_rtype(
 
     formatted_annotation = format_annotation(type_hints["return"], app.config)
 
+    if r.found_param and insert_index < len(lines) and lines[insert_index].strip() != "":
+        insert_index -= 1
+
     if insert_index == len(lines) and not r.found_param:
         # ensure that :rtype: doesn't get joined with a paragraph of text
         lines.append("")
