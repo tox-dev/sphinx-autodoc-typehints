@@ -887,7 +887,7 @@ AUTO_EXCEPTION = """\
 
 @pytest.mark.parametrize("object", [x for x in globals().values() if hasattr(x, "EXPECTED")])
 @pytest.mark.sphinx("text", testroot="integration")
-def test_blah(app: SphinxTestApp, status: StringIO, warning: StringIO, monkeypatch, object: Any) -> None:
+def test_integration(app: SphinxTestApp, status: StringIO, warning: StringIO, monkeypatch, object: Any) -> None:
     if isclass(object) and issubclass(object, BaseException):
         template = AUTO_EXCEPTION
     elif isclass(object):

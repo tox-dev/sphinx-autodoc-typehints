@@ -72,10 +72,12 @@ supertype
 tempdir
 testroot
 textwrap
+toctree
 typ
 typehint
 typehints
 unittest
+unlink
 unresolvable
 util
 utils

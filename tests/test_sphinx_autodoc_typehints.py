@@ -446,6 +446,9 @@ def test_always_document_param_types(
     app.config.always_document_param_types = always_document_param_types  # type: ignore # create flag
     app.config.autodoc_mock_imports = ["mailbox"]  # type: ignore # create flag
 
+    # Prevent "document isn't included in any toctree" warnings
+    for f in Path(app.srcdir).glob("*.rst"):
+        f.unlink()
     (Path(app.srcdir) / "index.rst").write_text(
         dedent(
             """
