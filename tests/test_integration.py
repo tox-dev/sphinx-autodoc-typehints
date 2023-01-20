@@ -874,7 +874,23 @@ def func_with_definition_list() -> int:
     # See https://github.com/tox-dev/sphinx-autodoc-typehints/issues/302
 
 
-@expected("")
+@expected(
+    """\
+mod.decorator_2(f)
+
+   Run the decorated function with *asyncio.run*.
+
+   Parameters:
+      **f** ("Any") -- The function to wrap.
+
+   Return type:
+      "Any"
+
+   -[ Examples ]-
+
+      A
+"""
+)
 def decorator_2(f: Any) -> Any:
     """Run the decorated function with `asyncio.run`.
 
@@ -933,5 +949,5 @@ def test_integration(app: SphinxTestApp, status: StringIO, warning: StringIO, mo
     try:
         assert result.strip() == dedent(expected).strip()
     except Exception:
-        print("Result was:\n", result, "\n\n")
+        print(f"Result was:\n{result}\n\n")
         raise
