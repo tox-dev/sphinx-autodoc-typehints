@@ -324,7 +324,7 @@ mod.function_with_unresolvable_annotation(x)
       **x** (*a.b.c*) -- foo
 """
 )
-def function_with_unresolvable_annotation(x: "a.b.c"):,F821
+def function_with_unresolvable_annotation(x: "a.b.c"):
     """
     Function docstring.
 
