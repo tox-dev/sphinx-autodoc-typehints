@@ -809,7 +809,7 @@ def fix_autodoc_typehints_for_overloaded_methods() -> None:
     del MethodDocumenter.format_signature
 
 
-def patched_lookup_annotation(*_args) -> str:  # noqa: U101
+def patched_lookup_annotation(*_args: Any) -> str:  # noqa: U101
     """GoogleDocstring._lookup_annotation sometimes adds incorrect type
     annotations to constructor parameters (and otherwise does nothing). Disable
     it so we can handle this on our own.
@@ -817,7 +817,7 @@ def patched_lookup_annotation(*_args) -> str:  # noqa: U101
     return ""
 
 
-def patch_google_docstring_lookup_annotation():
+def patch_google_docstring_lookup_annotation() -> None:
     GoogleDocstring._lookup_annotation = patched_lookup_annotation  # type: ignore[assignment]
 
 
