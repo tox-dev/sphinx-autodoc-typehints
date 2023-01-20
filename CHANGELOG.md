@@ -2,11 +2,11 @@
 
 ## 1.21.5
 
--  More robust determination of rtype location / fix issue 302
+- More robust determination of rtype location / fix issue 302
 
 ## 1.21.4
 
--  Improvements to the location of the return type
+- Improvements to the location of the return type
 
 ## 1.21.3
 
