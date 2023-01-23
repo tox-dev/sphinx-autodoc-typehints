@@ -86,7 +86,7 @@ def patch_google_docstring_lookup_annotation() -> None:
     GoogleDocstring._lookup_annotation = patched_lookup_annotation  # type: ignore[assignment]
 
 
-def install_patches(app):
+def install_patches(app: Sphinx) -> None:
     fix_autodoc_typehints_for_overloaded_methods()
     patch_attribute_handling(app)
     patch_google_docstring_lookup_annotation()
