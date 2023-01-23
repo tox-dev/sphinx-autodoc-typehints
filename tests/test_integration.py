@@ -999,6 +999,174 @@ def google_docstrings(arg1: CodeType, arg2: ModuleType) -> CodeType:  # noqa: U1
     """
 
 
+@expected(
+    """
+    mod.docstring_with_multiline_note_after_params(param)
+
+       Do something.
+
+       Parameters:
+          **param** ("int") -- A parameter.
+
+       Return type:
+          "None"
+
+       Note:
+
+         Some notes. More notes
+
+    """
+)
+def docstring_with_multiline_note_after_params(param: int) -> None:  # noqa: U100
+    """Do something.
+
+    Args:
+        param: A parameter.
+
+    Note:
+
+        Some notes.
+        More notes
+    """
+
+
+@expected(
+    """
+    mod.docstring_with_bullet_list_after_params(param)
+
+       Do something.
+
+       Parameters:
+          **param** ("int") -- A parameter.
+
+       Return type:
+          "None"
+
+       * A: B
+
+       * C: D
+
+    """
+)
+def docstring_with_bullet_list_after_params(param: int) -> None:  # noqa: U100
+    """Do something.
+
+    Args:
+        param: A parameter.
+
+    * A: B
+    * C: D
+    """
+
+
+@expected(
+    """
+    mod.docstring_with_definition_list_after_params(param)
+
+       Do something.
+
+       Parameters:
+          **param** ("int") -- A parameter.
+
+       Return type:
+          "None"
+
+       Term
+          A description
+
+          maybe multiple lines
+
+       Next Term
+          Somethign about it
+
+    """
+)
+def docstring_with_definition_list_after_params(param: int) -> None:  # noqa: U100
+    """Do something.
+
+    Args:
+        param: A parameter.
+
+    Term
+        A description
+
+        maybe multiple lines
+
+    Next Term
+        Somethign about it
+    """
+
+
+@expected(
+    """
+    mod.docstring_with_enum_list_after_params(param)
+
+       Do something.
+
+       Parameters:
+          **param** ("int") -- A parameter.
+
+       Return type:
+          "None"
+
+       1. A: B
+
+       2. C: D
+
+    """
+)
+def docstring_with_enum_list_after_params(param: int) -> None:  # noqa: U100
+    """Do something.
+
+    Args:
+        param: A parameter.
+
+    1. A: B
+    2. C: D
+    """
+
+
+@warns("Definition list ends without a blank line")
+@expected(
+    """
+    mod.docstring_with_definition_list_after_params_no_blank_line(param)
+
+       Do something.
+
+       Parameters:
+          **param** ("int") -- A parameter.
+
+       Return type:
+          "None"
+
+       Term
+          A description
+
+          maybe multiple lines
+
+       Next Term
+          Somethign about it
+
+       -[ Example ]-
+    """
+)
+def docstring_with_definition_list_after_params_no_blank_line(param: int) -> None:  # noqa: U100
+    """Do something.
+
+    Args:
+        param: A parameter.
+
+    Term
+        A description
+
+        maybe multiple lines
+
+    Next Term
+        Somethign about it
+    .. rubric:: Example
+    """
+
+
 AUTO_FUNCTION = ".. autofunction:: mod.{}"
 AUTO_CLASS = """\
 .. autoclass:: mod.{}

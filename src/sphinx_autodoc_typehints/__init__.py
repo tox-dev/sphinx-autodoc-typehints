@@ -678,7 +678,7 @@ def node_line_no(node: Node) -> int | None:
 
 
 def tag_name(node: Node) -> str:
-    return node.tagname  # type:ignore[attr-defined,no-any-return] # noqa: SC200
+    return node.tagname  # type:ignore[attr-defined,no-any-return]
 
 
 def get_insert_index(app: Sphinx, lines: list[str]) -> InsertIndexInfo | None:

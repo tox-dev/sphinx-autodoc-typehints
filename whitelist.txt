@@ -39,6 +39,7 @@ isfunction
 iterdir
 kwonlyargs
 libs
+lineno
 lru
 metaclass
 ModuleType
@@ -73,6 +74,7 @@ stmt
 stringify
 subclasses
 supertype
+tagname
 tempdir
 testroot
 textwrap

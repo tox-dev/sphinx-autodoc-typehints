@@ -3,6 +3,8 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Any
 
+from docutils.parsers.rst.directives.admonitions import BaseAdmonition
+from docutils.parsers.rst.states import Text
 from sphinx.application import Sphinx
 from sphinx.ext.autodoc import Options
 from sphinx.ext.napoleon.docstring import GoogleDocstring
@@ -86,11 +88,43 @@ def patch_google_docstring_lookup_annotation() -> None:
     GoogleDocstring._lookup_annotation = patched_lookup_annotation  # type: ignore[assignment]
 
 
+orig_base_admonition_run = BaseAdmonition.run
+
+
+def patched_base_admonition_run(self: BaseAdmonition) -> Any:
+    result = orig_base_admonition_run(self)
+    result[0].line = self.lineno
+    return result
+
+
+orig_text_indent = Text.indent
+
+
+def patched_text_indent(self: Text, *args: Any) -> Any:
+    _, line = self.state_machine.get_source_and_line()
+    result = orig_text_indent(self, *args)
+    node = self.parent[-1]
+    if node.tagname == "system_message":
+        node = self.parent[-2]
+    node.line = line
+    return result
+
+
+def patch_line_numbers() -> None:
+    """Make the rst parser put line numbers on more nodes.
+
+    When the line numbers are missing, we have a hard time placing the :rtype:.
+    """
+    Text.indent = patched_text_indent
+    BaseAdmonition.run = patched_base_admonition_run
+
+
 def install_patches(app: Sphinx) -> None:
     fix_autodoc_typehints_for_overloaded_methods()
     patch_attribute_handling(app)
     patch_google_docstring_lookup_annotation()
     fix_napoleon_numpy_docstring_return_type(app)
+    patch_line_numbers()
 
 
 ___all__ = ["install_patches"]
