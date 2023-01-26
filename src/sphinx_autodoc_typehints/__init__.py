@@ -7,7 +7,7 @@ import textwrap
 import types
 from ast import FunctionDef, Module, stmt
 from dataclasses import dataclass
-from typing import Any, AnyStr, Callable, ForwardRef, NewType, TypeVar, get_type_hints, Optional
+from typing import Any, AnyStr, Callable, ForwardRef, NewType, Optional, TypeVar, get_type_hints
 
 from docutils.frontend import OptionParser
 from docutils.nodes import Node
@@ -35,7 +35,7 @@ _TYPES_DICT = {getattr(types, name): name for name in types.__all__}
 _TYPES_DICT[types.FunctionType] = "FunctionType"
 
 
-def _get_types_type(obj: Any) -> Optional[str]:
+def _get_types_type(obj: Any) -> str | None:
     try:
         return _TYPES_DICT.get(obj)
     except TypeError:
