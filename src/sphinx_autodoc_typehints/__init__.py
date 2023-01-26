@@ -49,7 +49,11 @@ def get_annotation_module(annotation: Any) -> str:
     if annotation is None:
         return "builtins"
     is_new_type = sys.version_info >= (3, 10) and isinstance(annotation, NewType)
-    if is_new_type or isinstance(annotation, TypeVar) or type(annotation).__name__ in ("ParamSpec", 'ParamSpecArgs', 'ParamSpecKwargs'):
+    if (
+        is_new_type
+        or isinstance(annotation, TypeVar)
+        or type(annotation).__name__ in ("ParamSpec", "ParamSpecArgs", "ParamSpecKwargs")
+    ):
         return "typing"
     if hasattr(annotation, "__module__"):
         return annotation.__module__  # type: ignore # deduced Any
