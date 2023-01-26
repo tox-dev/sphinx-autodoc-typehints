@@ -798,7 +798,7 @@ def setup(app: Sphinx) -> dict[str, bool]:
     app.connect("autodoc-process-signature", process_signature)
     app.connect("autodoc-process-docstring", process_docstring)
     install_patches(app)
-    return {"parallel_read_safe": True}
+    return {"parallel_read_safe": True, "parallel_write_safe": True}
 
 
 __all__ = [
