@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.22 
+## 1.22
 
 - Allow Sphinx explicitly to write in parallel.
 
