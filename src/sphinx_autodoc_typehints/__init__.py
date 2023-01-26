@@ -35,13 +35,21 @@ _TYPES_DICT = {getattr(types, name): name for name in types.__all__}
 _TYPES_DICT[types.FunctionType] = "FunctionType"
 
 
+def get_types_type(obj):
+    try:
+        return _TYPES_DICT.get(obj)
+    except TypeError:
+        # e.g. exception: unhashable type
+        return None
+
+
 def get_annotation_module(annotation: Any) -> str:
-    if annotation in _TYPES_DICT:
+    if get_types_type(annotation) is not None:
         return "types"
     if annotation is None:
         return "builtins"
     is_new_type = sys.version_info >= (3, 10) and isinstance(annotation, NewType)
-    if is_new_type or isinstance(annotation, TypeVar) or type(annotation).__name__ == "ParamSpec":
+    if is_new_type or isinstance(annotation, TypeVar) or type(annotation).__name__ in ("ParamSpec", 'ParamSpecArgs', 'ParamSpecKwargs'):
         return "typing"
     if hasattr(annotation, "__module__"):
         return annotation.__module__  # type: ignore # deduced Any
@@ -63,8 +71,9 @@ def get_annotation_class_name(annotation: Any, module: str) -> str:
         return "None"
     if annotation is AnyStr:
         return "AnyStr"
-    if annotation in _TYPES_DICT:
-        return _TYPES_DICT[annotation]
+    val = get_types_type(annotation)
+    if val is not None:
+        return val
     if _is_newtype(annotation):
         return "NewType"
 
