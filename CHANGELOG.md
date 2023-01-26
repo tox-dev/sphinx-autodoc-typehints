@@ -11,6 +11,8 @@
 
 - Fixed napoleon handling of numpy docstrings with no specified return type.
 
+- Fixed crash when documenting ParamSpecArgs
+
 ## 1.21.6
 
 - Fix a `Field list ends without a blank line` warning (issue 305).
