@@ -1,5 +1,9 @@
 # Changelog
 
+## unreleased
+
+- Allow Sphinx explicitly to write in parallel.
+
 ## 1.21.7
 
 - Fixed a bug where if a class has an attribute and a constructor argument with the same name, the constructor argument
