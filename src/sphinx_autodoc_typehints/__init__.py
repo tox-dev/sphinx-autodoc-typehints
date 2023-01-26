@@ -7,7 +7,7 @@ import textwrap
 import types
 from ast import FunctionDef, Module, stmt
 from dataclasses import dataclass
-from typing import Any, AnyStr, Callable, ForwardRef, NewType, TypeVar, get_type_hints
+from typing import Any, AnyStr, Callable, ForwardRef, NewType, TypeVar, get_type_hints, Optional
 
 from docutils.frontend import OptionParser
 from docutils.nodes import Node
@@ -35,7 +35,7 @@ _TYPES_DICT = {getattr(types, name): name for name in types.__all__}
 _TYPES_DICT[types.FunctionType] = "FunctionType"
 
 
-def get_types_type(obj):
+def _get_types_type(obj: Any) -> Optional[str]:
     try:
         return _TYPES_DICT.get(obj)
     except TypeError:
@@ -44,7 +44,7 @@ def get_types_type(obj):
 
 
 def get_annotation_module(annotation: Any) -> str:
-    if get_types_type(annotation) is not None:
+    if _get_types_type(annotation) is not None:
         return "types"
     if annotation is None:
         return "builtins"
@@ -75,7 +75,7 @@ def get_annotation_class_name(annotation: Any, module: str) -> str:
         return "None"
     if annotation is AnyStr:
         return "AnyStr"
-    val = get_types_type(annotation)
+    val = _get_types_type(annotation)
     if val is not None:
         return val
     if _is_newtype(annotation):
