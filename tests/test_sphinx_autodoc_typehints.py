@@ -58,8 +58,8 @@ Z = TypeVar("Z", bound="A")
 S = TypeVar("S", bound="miss")  # type: ignore # miss not defined on purpose # noqa: F821
 W = NewType("W", str)
 P = typing_extensions.ParamSpec("P")
-P_args = P.args
-P_kwargs = P.kwargs
+P_args = P.args  # type:ignore[attr-defined]
+P_kwargs = P.kwargs  # type:ignore[attr-defined]
 P_co = typing_extensions.ParamSpec("P_co", covariant=True)  # type: ignore
 P_contra = typing_extensions.ParamSpec("P_contra", contravariant=True)  # type: ignore
 P_bound = typing_extensions.ParamSpec("P_bound", bound=str)  # type: ignore
