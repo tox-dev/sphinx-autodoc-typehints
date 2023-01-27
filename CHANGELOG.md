@@ -3,6 +3,7 @@
 ## 1.22
 
 - Allow Sphinx explicitly to write in parallel.
+- Fixed crash when documenting ParamSpecArgs
 
 ## 1.21.7
 
