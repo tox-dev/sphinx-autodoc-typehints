@@ -38,7 +38,7 @@ _TYPES_DICT[types.FunctionType] = "FunctionType"
 def _get_types_type(obj: Any) -> str | None:
     try:
         return _TYPES_DICT.get(obj)
-    except:
+    except Exception:
         # e.g. exception: unhashable type
         return None
 
