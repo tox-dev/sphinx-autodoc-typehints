@@ -7,7 +7,7 @@ import textwrap
 import types
 from ast import FunctionDef, Module, stmt
 from dataclasses import dataclass
-from typing import Any, AnyStr, Callable, ForwardRef, NewType, Optional, TypeVar, get_type_hints
+from typing import Any, AnyStr, Callable, ForwardRef, NewType, TypeVar, get_type_hints
 
 from docutils.frontend import OptionParser
 from docutils.nodes import Node
