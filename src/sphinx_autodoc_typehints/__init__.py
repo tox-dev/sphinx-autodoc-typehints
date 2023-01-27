@@ -38,16 +38,16 @@ _TYPES_DICT[types.FunctionType] = "FunctionType"
 def _get_types_type(obj: Any) -> str | None:
     try:
         return _TYPES_DICT.get(obj)
-    except TypeError:
+    except:
         # e.g. exception: unhashable type
         return None
 
 
 def get_annotation_module(annotation: Any) -> str:
-    if _get_types_type(annotation) is not None:
-        return "types"
     if annotation is None:
         return "builtins"
+    if _get_types_type(annotation) is not None:
+        return "types"
     is_new_type = sys.version_info >= (3, 10) and isinstance(annotation, NewType)
     if (
         is_new_type
