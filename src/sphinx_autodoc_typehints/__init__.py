@@ -372,7 +372,7 @@ def _resolve_type_guarded_imports(autodoc_mock_imports: list[str], obj: Any) -> 
                 except (TypeError, OSError):
                     ...  # no source code => no type guards
                 else:
-                    for (_, part) in _TYPE_GUARD_IMPORT_RE.findall(module_code):
+                    for _, part in _TYPE_GUARD_IMPORT_RE.findall(module_code):
                         guarded_code = textwrap.dedent(part)
                         try:
                             with mock(autodoc_mock_imports):
@@ -533,7 +533,6 @@ def format_default(app: Sphinx, default: Any, is_annotated: bool) -> str | None:
 def process_docstring(
     app: Sphinx, what: str, name: str, obj: Any, options: Options | None, lines: list[str]  # noqa: U100
 ) -> None:
-
     original_obj = obj
     obj = obj.fget if isinstance(obj, property) else obj
     if not callable(obj):
