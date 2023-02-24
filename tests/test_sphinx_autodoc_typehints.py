@@ -145,7 +145,7 @@ else:
         pytest.param(AnyStr, "typing", "AnyStr", (), id="AnyStr"),
         pytest.param(Dict, "typing", "Dict", (), id="Dict"),
         pytest.param(Dict[str, int], "typing", "Dict", (str, int), id="Dict_parametrized"),
-        pytest.param(Dict[T, int], "typing", "Dict", (T, int), id="Dict_typevar"),
+        pytest.param(Dict[T, int], "typing", "Dict", (T, int), id="Dict_typevar"),  # type: ignore[valid-type]
         pytest.param(Tuple, "typing", "Tuple", (), id="Tuple"),
         pytest.param(Tuple[str, int], "typing", "Tuple", (str, int), id="Tuple_parametrized"),
         pytest.param(Union[str, int], "typing", "Union", (str, int), id="Union"),
@@ -203,25 +203,31 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
         (AnyStr, ":py:data:`~typing.AnyStr`"),
         (Generic[T], ":py:class:`~typing.Generic`\\[:py:class:`~typing.TypeVar`\\(``T``)]"),
         (Mapping, ":py:class:`~typing.Mapping`"),
-        (Mapping[T, int], ":py:class:`~typing.Mapping`\\[:py:class:`~typing.TypeVar`\\(``T``), :py:class:`int`]"),
         (
-            Mapping[str, V],
+            Mapping[T, int],  # type: ignore[valid-type]
+            ":py:class:`~typing.Mapping`\\[:py:class:`~typing.TypeVar`\\(``T``), :py:class:`int`]",
+        ),
+        (
+            Mapping[str, V],  # type: ignore[valid-type]
             ":py:class:`~typing.Mapping`\\[:py:class:`str`, :py:class:`~typing.TypeVar`\\(``V``, contravariant=True)]",
         ),
         (
-            Mapping[T, U],
+            Mapping[T, U],  # type: ignore[valid-type]
             ":py:class:`~typing.Mapping`\\[:py:class:`~typing.TypeVar`\\(``T``), "
             ":py:class:`~typing.TypeVar`\\(``U``, covariant=True)]",
         ),
         (Mapping[str, bool], ":py:class:`~typing.Mapping`\\[:py:class:`str`, " ":py:class:`bool`]"),
         (Dict, ":py:class:`~typing.Dict`"),
-        (Dict[T, int], ":py:class:`~typing.Dict`\\[:py:class:`~typing.TypeVar`\\(``T``), :py:class:`int`]"),
         (
-            Dict[str, V],
+            Dict[T, int],  # type: ignore[valid-type]
+            ":py:class:`~typing.Dict`\\[:py:class:`~typing.TypeVar`\\(``T``), :py:class:`int`]",
+        ),
+        (
+            Dict[str, V],  # type: ignore[valid-type]
             ":py:class:`~typing.Dict`\\[:py:class:`str`, :py:class:`~typing.TypeVar`\\(``V``, contravariant=True)]",
         ),
         (
-            Dict[T, U],
+            Dict[T, U],  # type: ignore[valid-type]
             ":py:class:`~typing.Dict`\\[:py:class:`~typing.TypeVar`\\(``T``),"
             " :py:class:`~typing.TypeVar`\\(``U``, covariant=True)]",
         ),
@@ -304,49 +310,49 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
         (
             nptyping.NDArray[nptyping.Shape["*"], nptyping.Float],
             (
-                ":py:class:`~nptyping.base_meta_classes.NDArray`\\[:py:class:`~nptyping.base_meta_classes.Shape`\\[*], "
+                ":py:class:`~nptyping.ndarray.NDArray`\\[:py:class:`~nptyping.base_meta_classes.Shape`\\[*], "
                 ":py:class:`~numpy.float64`]"
             ),
         ),
         (
             nptyping.NDArray[nptyping.Shape["64"], nptyping.Float],
             (
-                ":py:class:`~nptyping.base_meta_classes.NDArray`\\[:py:class:`~nptyping.base_meta_classes.Shape`\\[64],"
+                ":py:class:`~nptyping.ndarray.NDArray`\\[:py:class:`~nptyping.base_meta_classes.Shape`\\[64],"
                 " :py:class:`~numpy.float64`]"
             ),
         ),
         (
             nptyping.NDArray[nptyping.Shape["*, *"], nptyping.Float],
             (
-                ":py:class:`~nptyping.base_meta_classes.NDArray`\\[:py:class:`~nptyping.base_meta_classes.Shape`\\[*, "
+                ":py:class:`~nptyping.ndarray.NDArray`\\[:py:class:`~nptyping.base_meta_classes.Shape`\\[*, "
                 "*], :py:class:`~numpy.float64`]"
             ),
         ),
         (
             nptyping.NDArray[nptyping.Shape["*, ..."], nptyping.Float],
-            (":py:class:`~nptyping.base_meta_classes.NDArray`\\[:py:data:`~typing.Any`, :py:class:`~numpy.float64`]"),
+            ":py:class:`~nptyping.ndarray.NDArray`\\[:py:data:`~typing.Any`, :py:class:`~numpy.float64`]",
         ),
         (
             nptyping.NDArray[nptyping.Shape["*, 3"], nptyping.Float],
             (
-                ":py:class:`~nptyping.base_meta_classes.NDArray`\\[:py:class:`~nptyping.base_meta_classes.Shape`\\[*, 3"
+                ":py:class:`~nptyping.ndarray.NDArray`\\[:py:class:`~nptyping.base_meta_classes.Shape`\\[*, 3"
                 "], :py:class:`~numpy.float64`]"
             ),
         ),
         (
             nptyping.NDArray[nptyping.Shape["3, ..."], nptyping.Float],
             (
-                ":py:class:`~nptyping.base_meta_classes.NDArray`\\[:py:class:`~nptyping.base_meta_classes.Shape`\\[3, "
+                ":py:class:`~nptyping.ndarray.NDArray`\\[:py:class:`~nptyping.base_meta_classes.Shape`\\[3, "
                 "...], :py:class:`~numpy.float64`]"
             ),
         ),
         (
             RecList,
-            (":py:data:`~typing.Union`\\[:py:class:`int`, :py:class:`~typing.List`\\[RecList]]"),
+            ":py:data:`~typing.Union`\\[:py:class:`int`, :py:class:`~typing.List`\\[RecList]]",
         ),
         (
             MutualRecA,
-            (":py:data:`~typing.Union`\\[:py:class:`bool`, :py:class:`~typing.List`\\[MutualRecB]]"),
+            ":py:data:`~typing.Union`\\[:py:class:`bool`, :py:class:`~typing.List`\\[MutualRecB]]",
         ),
     ],
 )
