@@ -13,7 +13,7 @@ urls.Homepage = "https://github.com/tox-dev/sphinx-autodoc-typehints"
 urls.Source = "https://github.com/tox-dev/sphinx-autodoc-typehints"
 urls.Tracker = "https://github.com/tox-dev/sphinx-autodoc-typehints/issues"
 urls.Changelog = "https://github.com/tox-dev/sphinx-autodoc-typehints/blob/main/CHANGELOG.md"
-authors = [{ name = "Bernát Gábor", email = "gaborjbernat@gmail.com" }]
+authors = [{ name = "Alex Grönholm", email = "alex.gronholm@nextday.fi" }]
 maintainers = [{ name = "Bernát Gábor", email = "gaborjbernat@gmail.com" }]
 requires-python = ">=3.7"
 dependencies = ["Sphinx>=5.3"]
