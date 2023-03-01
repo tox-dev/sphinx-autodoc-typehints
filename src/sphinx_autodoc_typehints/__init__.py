@@ -23,7 +23,13 @@ from sphinx.util.inspect import signature as sphinx_signature
 from sphinx.util.inspect import stringify_signature
 
 from .patches import install_patches
-from .version import __version__
+
+try:
+    from .version import __version__
+except ImportError:
+    # The format of this file was changed, so lets fall back to the older style.
+    # See https://github.com/tox-dev/sphinx-autodoc-typehints/issues/327
+    from .version import version as __version__
 
 _LOGGER = logging.getLogger(__name__)
 _PYDATA_ANNOTATIONS = {"Any", "AnyStr", "Callable", "ClassVar", "Literal", "NoReturn", "Optional", "Tuple", "Union"}
