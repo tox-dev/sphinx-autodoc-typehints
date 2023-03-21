@@ -54,7 +54,7 @@ def patch_attribute_documenter(app: Sphinx) -> None:
         with patch(STRINGIFY_PATCH_TARGET, partial(stringify_annotation, app)):
             return orig_add_directive_header(*args, **kwargs)
 
-    AttributeDocumenter.add_directive_header = add_directive_header  # type:ignore[assignment]
+    AttributeDocumenter.add_directive_header = add_directive_header  # type:ignore[method-assign]
 
 
 def rst_to_docutils(settings: Values, rst: str) -> Any:
@@ -85,7 +85,7 @@ def patch_attribute_handling(app: Sphinx) -> None:
     """Use format_signature to format class attribute type annotations"""
     if not OKAY_TO_PATCH:
         return
-    PyAttribute.handle_signature = patched_handle_signature  # type:ignore[assignment]
+    PyAttribute.handle_signature = patched_handle_signature  # type:ignore[method-assign]
     patch_attribute_documenter(app)
 
 

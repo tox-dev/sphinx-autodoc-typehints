@@ -43,10 +43,10 @@ optional-dependencies.docs = [
 ]
 optional-dependencies.testing = [
   "covdefaults>=2.2.2",
-  "coverage>=7.2",
+  "coverage>=7.2.2",
   "diff-cover>=7.5",
   "nptyping>=2.5",
-  "pytest>=7.2.1",
+  "pytest>=7.2.2",
   "pytest-cov>=4",
   "sphobjinv>=2.3.1",
   "typing-extensions>=4.5",
