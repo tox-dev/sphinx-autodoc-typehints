@@ -358,11 +358,22 @@ def get_all_type_hints(autodoc_mock_imports: list[str], obj: Any, name: str) -> 
 
 
 _TYPE_GUARD_IMPORT_RE = re.compile(r"\nif (typing.)?TYPE_CHECKING:[^\n]*([\s\S]*?)(?=\n\S)")
-
+_TYPE_GUARD_IMPORTS_RESOLVED = set()
+_TYPE_GUARD_IMPORTS_RESOLVED_GLOBALS_ID = set()
 
 def _resolve_type_guarded_imports(autodoc_mock_imports: list[str], obj: Any) -> None:
-    if hasattr(obj, "__module__"):
+    if (
+        hasattr(obj, "__module__")
+        and obj.__module__ not in _TYPE_GUARD_IMPORTS_RESOLVED
+    ) or (
+        hasattr(obj, "__globals__")
+        and id(obj.__globals__) not in _TYPE_GUARD_IMPORTS_RESOLVED_GLOBALS_ID
+    ):
+        _TYPE_GUARD_IMPORTS_RESOLVED.add(obj.__module__)
         if obj.__module__ not in sys.builtin_module_names:
+            if hasattr(obj, "__globals__"):
+                _TYPE_GUARD_IMPORTS_RESOLVED_GLOBALS_ID.add(id(obj.__globals__))
+
             module = inspect.getmodule(obj)
             if module:
                 try:
