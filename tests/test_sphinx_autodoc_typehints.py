@@ -754,6 +754,14 @@ def test_resolve_typing_guard_imports(app: SphinxTestApp, status: StringIO, warn
     assert re.search(pat, err)
 
 
+@pytest.mark.sphinx("text", testroot="resolve-typing-guard-tmp")
+def test_resolve_typing_guard_tmp_imports(app: SphinxTestApp, status: StringIO, warning: StringIO) -> None:
+    set_python_path()
+    app.build()
+    assert "build succeeded" in status.getvalue()
+    assert not warning.getvalue()
+
+
 def test_no_source_code_type_guard() -> None:
     from csv import Error
 
