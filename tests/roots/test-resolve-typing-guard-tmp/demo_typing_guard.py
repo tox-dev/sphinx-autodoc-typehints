@@ -13,47 +13,47 @@ if TYPE_CHECKING:
 class SomeClass:
     """This class does something."""
 
-    dt: datetime.date
+    date: datetime.date
     """Date to handle"""
 
     @classmethod
-    def from_str(cls, inp_v: str) -> SomeClass:
+    def from_str(cls, input_value: str) -> SomeClass:
         """
         Initialise from string
 
-        :param inp_v: Input
+        :param input_value: Input
         :return: result
         """
-        return cls()
+        return cls(input_value)
 
     @classmethod
-    def from_date(cls, inp_v: datetime.date) -> SomeClass:
+    def from_date(cls, input_value: datetime.date) -> SomeClass:
         """
         Initialise from date
 
-        :param inp_v: Input
+        :param input_value: Input
         :return: result
         """
-        return cls()
+        return cls(input_value)
 
     @classmethod
-    def from_time(cls, inp_v: datetime.time) -> SomeClass:
+    def from_time(cls, input_value: datetime.time) -> SomeClass:
         """
         Initialise from time
 
-        :param inp_v: Input
+        :param input_value: Input
         :return: result
         """
-        return cls()
+        return cls(input_value)
 
-    def calc_thing(self, num: float) -> datetime.timedelta:
+    def calculate_thing(self, number: float) -> datetime.timedelta:
         """
         Calculate a thing
 
-        :param num: Input
+        :param number: Input
         :return: result
         """
-        return datetime.timedelta(num)
+        return datetime.timedelta(number)
 
 
 __all__ = ["SomeClass"]

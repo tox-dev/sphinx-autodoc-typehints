@@ -755,7 +755,7 @@ def test_resolve_typing_guard_imports(app: SphinxTestApp, status: StringIO, warn
 
 
 @pytest.mark.sphinx("text", testroot="resolve-typing-guard-tmp")
-def test_resolve_typing_guard_tmp_imports(app: SphinxTestApp, status: StringIO, warning: StringIO) -> None:
+def test_resolve_typing_guard_attrs_imports(app: SphinxTestApp, status: StringIO, warning: StringIO) -> None:
     set_python_path()
     app.build()
     assert "build succeeded" in status.getvalue()
