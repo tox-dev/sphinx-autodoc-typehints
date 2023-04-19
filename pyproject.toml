@@ -19,7 +19,7 @@ keywords = [
 license = "MIT"
 maintainers = [{ name = "Bernát Gábor", email = "gaborjbernat@gmail.com" }]
 authors = [{ name = "Bernát Gábor", email = "gaborjbernat@gmail.com" }]
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Framework :: Sphinx :: Extension",
