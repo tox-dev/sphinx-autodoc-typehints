@@ -406,15 +406,9 @@ def _get_type_hint(autodoc_mock_imports: list[str], name: str, obj: Any) -> dict
 
 def backfill_type_hints(obj: Any, name: str) -> dict[str, Any]:
     parse_kwargs = {}
-    if sys.version_info < (3, 8):
-        try:
-            import typed_ast.ast3 as ast
-        except ImportError:
-            return {}
-    else:
-        import ast
+    import ast
 
-        parse_kwargs = {"type_comments": True}
+    parse_kwargs = {"type_comments": True}
 
     def _one_child(module: Module) -> stmt | None:
         children = module.body  # use the body to ignore type comments

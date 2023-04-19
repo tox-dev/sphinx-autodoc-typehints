@@ -12,7 +12,7 @@ from sphinx.ext.napoleon.docstring import GoogleDocstring
 from .attributes_patch import patch_attribute_handling
 
 
-@lru_cache()  # A cute way to make sure the function only runs once.
+@lru_cache  # A cute way to make sure the function only runs once.
 def fix_autodoc_typehints_for_overloaded_methods() -> None:
     """
     sphinx-autodoc-typehints responds to the "autodoc-process-signature" event
