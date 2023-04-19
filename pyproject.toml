@@ -2,7 +2,7 @@
 build-backend = "hatchling.build"
 requires = [
   "hatch-vcs>=0.3",
-  "hatchling>=1.13",
+  "hatchling>=1.14",
 ]
 
 [project]
@@ -34,19 +34,19 @@ dynamic = [
   "version",
 ]
 dependencies = [
-  "Sphinx>=5.3",
+  "Sphinx>=6.1.3",
 ]
 optional-dependencies.docs = [
-  "furo>=2022.12.7",
+  "furo>=2023.3.27",
   "sphinx>=6.1.3",
   "sphinx-autodoc-typehints>=1.23.4",
 ]
 optional-dependencies.testing = [
-  "covdefaults>=2.2.2",
-  "coverage>=7.2.2",
+  "covdefaults>=2.3",
+  "coverage>=7.2.3",
   "diff-cover>=7.5",
   "nptyping>=2.5",
-  "pytest>=7.2.2",
+  "pytest>=7.3.1",
   "pytest-cov>=4",
   "sphobjinv>=2.3.1",
   "typing-extensions>=4.5",
