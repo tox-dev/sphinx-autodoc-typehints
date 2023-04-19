@@ -99,7 +99,7 @@ added. The `:rtype:` directive is added if and only if no existing `:rtype:` is 
 
 To use [sphinx.ext.napoleon](http://www.sphinx-doc.org/en/stable/ext/napoleon.html) with sphinx-autodoc-typehints, make
 sure you load [sphinx.ext.napoleon](http://www.sphinx-doc.org/en/stable/ext/napoleon.html) first, **before**
-sphinx-autodoc-typehints. See [Issue 15](https://github.com/agronholm/sphinx-autodoc-typehints/issues/15) on the issue
+sphinx-autodoc-typehints. See [Issue 15](https://github.com/tox-dev/sphinx-autodoc-typehints/issues/15) on the issue
 tracker for more information.
 
 ## Dealing with circular imports
