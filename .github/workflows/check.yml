@@ -13,12 +13,12 @@ concurrency:
 jobs:
   test:
     name: test with CPython ${{ matrix.py }}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         py:
-          - "3.12.0-alpha.7"
+          - "3.12.0-beta.2"
           - "3.11"
           - "3.10"
           - "3.9"
@@ -68,7 +68,7 @@ jobs:
 
   coverage:
     name: Combine coverage
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     needs: test
     steps:
       - uses: actions/checkout@v3
@@ -100,7 +100,7 @@ jobs:
 
   check:
     name: tox env ${{ matrix.tox_env }}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:

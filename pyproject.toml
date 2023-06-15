@@ -45,11 +45,13 @@ optional-dependencies.docs = [
   "sphinx>=7.0.1",
   "sphinx-autodoc-typehints>=1.23.4",
 ]
+optional-dependencies.numpy = [
+  "nptyping>=2.5",
+]
 optional-dependencies.testing = [
   "covdefaults>=2.3",
   "coverage>=7.2.7",
   "diff-cover>=7.5",
-  "nptyping>=2.5",
   "pytest>=7.3.1",
   "pytest-cov>=4.1",
   "sphobjinv>=2.3.1",
@@ -84,7 +86,7 @@ paths.source = [
   "*/src",
   "*\\src",
 ]
-report.fail_under = 81
+report.fail_under = 85
 report.omit = []
 run.parallel = true
 run.plugins = ["covdefaults"]
