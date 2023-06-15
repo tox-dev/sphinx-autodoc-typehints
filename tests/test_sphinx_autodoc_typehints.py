@@ -35,9 +35,6 @@ import pytest
 import typing_extensions
 from sphinx.application import Sphinx
 from sphinx.config import Config
-from sphinx.testing.util import SphinxTestApp
-from sphobjinv import Inventory
-
 from sphinx_autodoc_typehints import (
     _resolve_type_guarded_imports,
     backfill_type_hints,
@@ -48,6 +45,10 @@ from sphinx_autodoc_typehints import (
     normalize_source_lines,
     process_docstring,
 )
+
+if typing.TYPE_CHECKING:
+    from sphinx.testing.util import SphinxTestApp
+    from sphobjinv import Inventory
 
 T = TypeVar("T")
 U = TypeVar("U", covariant=True)
@@ -120,7 +121,7 @@ else:
     # Hacks to make it work the same in old versions.
     # We could also set AbcCallable = typing.Callable and x fail the tests that
     # use AbcCallable when in versions less than 3.9.
-    class MyGenericAlias(typing._VariadicGenericAlias, _root=True):  # noqa: SC200
+    class MyGenericAlias(typing._VariadicGenericAlias, _root=True):
         def __getitem__(self, params):
             result = super().__getitem__(params)
             # Make a copy so we don't change the name of a cached annotation
@@ -243,7 +244,8 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
             Union[str, Any],
             ":py:data:`~typing.Union`\\[:py:class:`str`, " ":py:data:`~typing.Any`]",
             marks=pytest.mark.skipif(
-                (3, 5, 0) <= sys.version_info[:3] <= (3, 5, 2), reason="Union erases the str on 3.5.0 -> 3.5.2"
+                (3, 5, 0) <= sys.version_info[:3] <= (3, 5, 2),
+                reason="Union erases the str on 3.5.0 -> 3.5.2",
             ),
         ),
         (Optional[str], ":py:data:`~typing.Optional`\\[:py:class:`str`]"),
@@ -376,7 +378,10 @@ def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str
         if "typing" in expected_result_not_simplified:
             expected_result_not_simplified = expected_result_not_simplified.replace("~typing", "typing")
             conf = create_autospec(
-                Config, typehints_fully_qualified=True, simplify_optional_unions=False, _annotation_globals=globals()
+                Config,
+                typehints_fully_qualified=True,
+                simplify_optional_unions=False,
+                _annotation_globals=globals(),
             )
             assert format_annotation(annotation, conf) == expected_result_not_simplified
 
@@ -450,7 +455,10 @@ def set_python_path() -> None:
 @pytest.mark.sphinx("text", testroot="dummy")
 @patch("sphinx.writers.text.MAXWIDTH", 2000)
 def test_always_document_param_types(
-    app: SphinxTestApp, status: StringIO, warning: StringIO, always_document_param_types: bool
+    app: SphinxTestApp,
+    status: StringIO,
+    warning: StringIO,
+    always_document_param_types: bool,
 ) -> None:
     set_python_path()
 
@@ -468,8 +476,8 @@ def test_always_document_param_types(
             .. autoclass:: dummy_module.DataClass
                 :undoc-members:
                 :special-members: __init__
-            """
-        )
+            """,
+        ),
     )
 
     app.build()
@@ -567,7 +575,10 @@ def test_sphinx_output_future_annotations(app: SphinxTestApp, status: StringIO) 
 @pytest.mark.sphinx("text", testroot="dummy")
 @patch("sphinx.writers.text.MAXWIDTH", 2000)
 def test_sphinx_output_defaults(
-    app: SphinxTestApp, status: StringIO, defaults_config_val: str, expected: str | Exception
+    app: SphinxTestApp,
+    status: StringIO,
+    defaults_config_val: str,
+    expected: str | Exception,
 ) -> None:
     set_python_path()
 
@@ -613,7 +624,10 @@ def test_sphinx_output_defaults(
 @pytest.mark.sphinx("text", testroot="dummy")
 @patch("sphinx.writers.text.MAXWIDTH", 2000)
 def test_sphinx_output_formatter(
-    app: SphinxTestApp, status: StringIO, formatter_config_val: str, expected: tuple[str, ...] | Exception
+    app: SphinxTestApp,
+    status: StringIO,
+    formatter_config_val: str,
+    expected: tuple[str, ...] | Exception,
 ) -> None:
     set_python_path()
 
@@ -626,7 +640,7 @@ def test_sphinx_output_formatter(
             raise
         assert str(expected) in str(e)
         return
-    assert not isinstance(expected, Exception), "Expected app.build() to raise exception, but it didn’t"
+    assert not isinstance(expected, Exception), "Expected app.build() to raise exception, but it didn`t"
     assert "build succeeded" in status.getvalue()
 
     contents = (Path(app.srcdir) / "_build/text/simple.txt").read_text()
@@ -735,8 +749,8 @@ def test_bound_class_method(method: FunctionType) -> None:
 def test_syntax_error_backfill() -> None:
     # Regression test for #188
     # fmt: off
-    func = (  # Note: line break here is what previously led to SyntaxError in process_docstring
-        lambda x: x)
+    def func(x):  # type: ignore[no-untyped-def]
+        return x
     # fmt: on
     backfill_type_hints(func, "func")
 
@@ -777,7 +791,7 @@ def test_sphinx_output_formatter_no_use_rtype(app: SphinxTestApp, status: String
     app.build()
     assert "build succeeded" in status.getvalue()
     text_path = Path(app.srcdir) / "_build" / "text" / "simple_no_use_rtype.txt"
-    text_contents = text_path.read_text().replace("–", "--")
+    text_contents = text_path.read_text().replace("–", "--")  # noqa: RUF001 # keep ambiguous EN DASH
     expected_contents = """\
     Simple Module
     *************
@@ -842,7 +856,7 @@ def test_sphinx_output_with_use_signature(app: SphinxTestApp, status: StringIO) 
     app.build()
     assert "build succeeded" in status.getvalue()
     text_path = Path(app.srcdir) / "_build" / "text" / "simple.txt"
-    text_contents = text_path.read_text().replace("–", "--")
+    text_contents = text_path.read_text().replace("–", "--")  # noqa: RUF001 # keep ambiguous EN DASH
     expected_contents = """\
     Simple Module
     *************
@@ -871,7 +885,7 @@ def test_sphinx_output_with_use_signature_return(app: SphinxTestApp, status: Str
     app.build()
     assert "build succeeded" in status.getvalue()
     text_path = Path(app.srcdir) / "_build" / "text" / "simple.txt"
-    text_contents = text_path.read_text().replace("–", "--")
+    text_contents = text_path.read_text().replace("–", "--")  # noqa: RUF001 # keep ambiguous EN DASH
     expected_contents = """\
     Simple Module
     *************
@@ -901,7 +915,7 @@ def test_sphinx_output_with_use_signature_and_return(app: SphinxTestApp, status:
     app.build()
     assert "build succeeded" in status.getvalue()
     text_path = Path(app.srcdir) / "_build" / "text" / "simple.txt"
-    text_contents = text_path.read_text().replace("–", "--")
+    text_contents = text_path.read_text().replace("–", "--")  # noqa: RUF001 # keep ambiguous EN DASH
     expected_contents = """\
     Simple Module
     *************
@@ -930,7 +944,7 @@ def test_default_annotation_without_typehints(app: SphinxTestApp, status: String
     app.build()
     assert "build succeeded" in status.getvalue()
     text_path = Path(app.srcdir) / "_build" / "text" / "without_complete_typehints.txt"
-    text_contents = text_path.read_text().replace("–", "--")
+    text_contents = text_path.read_text().replace("–", "--")  # noqa: RUF001 # keep ambiguous EN DASH
     expected_contents = """\
     Simple Module
     *************

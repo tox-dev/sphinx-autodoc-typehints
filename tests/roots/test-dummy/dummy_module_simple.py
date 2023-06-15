@@ -1,4 +1,7 @@
-def function(x: bool, y: int = 1) -> str:  # noqa: U100
+from __future__ import annotations
+
+
+def function(x: bool, y: int = 1) -> str:
     """
     Function docstring.
 

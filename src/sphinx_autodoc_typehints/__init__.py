@@ -1,22 +1,17 @@
 from __future__ import annotations
 
+import ast
 import inspect
 import re
 import sys
 import textwrap
 import types
-from ast import FunctionDef, Module, stmt
 from dataclasses import dataclass
-from typing import Any, AnyStr, Callable, ForwardRef, NewType, TypeVar, get_type_hints
+from typing import TYPE_CHECKING, Any, AnyStr, Callable, ForwardRef, NewType, TypeVar, get_type_hints
 
 from docutils.frontend import OptionParser
-from docutils.nodes import Node
 from docutils.parsers.rst import Parser as RstParser
 from docutils.utils import new_document
-from sphinx.application import Sphinx
-from sphinx.config import Config
-from sphinx.environment import BuildEnvironment
-from sphinx.ext.autodoc import Options
 from sphinx.ext.autodoc.mock import mock
 from sphinx.util import logging
 from sphinx.util.inspect import signature as sphinx_signature
@@ -24,6 +19,15 @@ from sphinx.util.inspect import stringify_signature
 
 from .patches import install_patches
 from .version import __version__
+
+if TYPE_CHECKING:
+    from ast import FunctionDef, Module, stmt
+
+    from docutils.nodes import Node
+    from sphinx.application import Sphinx
+    from sphinx.config import Config
+    from sphinx.environment import BuildEnvironment
+    from sphinx.ext.autodoc import Options
 
 _LOGGER = logging.getLogger(__name__)
 _PYDATA_ANNOTATIONS = {"Any", "AnyStr", "Callable", "ClassVar", "Literal", "NoReturn", "Optional", "Tuple", "Union"}
@@ -59,7 +63,8 @@ def get_annotation_module(annotation: Any) -> str:
         return annotation.__module__  # type: ignore # deduced Any
     if hasattr(annotation, "__origin__"):
         return annotation.__origin__.__module__  # type: ignore # deduced Any
-    raise ValueError(f"Cannot determine the module of {annotation}")
+    msg = f"Cannot determine the module of {annotation}"
+    raise ValueError(msg)
 
 
 def _is_newtype(annotation: Any) -> bool:
@@ -130,9 +135,7 @@ def get_annotation_args(annotation: Any, module: str, class_name: str) -> tuple[
 
 def format_internal_tuple(t: tuple[Any, ...], config: Config) -> str:
     # An annotation can be a tuple, e.g., for nptyping:
-    #   NDArray[(typing.Any, ...), Float]
     # In this case, format_annotation receives:
-    #   (typing.Any, Ellipsis)
     # This solution should hopefully be general for *any* type that allows tuples in annotations
     fmt = [format_annotation(a, config) for a in t]
     if len(fmt) == 0:
@@ -153,7 +156,7 @@ def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901 # t
     # Special cases
     if isinstance(annotation, ForwardRef):
         return annotation.__forward_arg__
-    if annotation is None or annotation is type(None):  # noqa: E721
+    if annotation is None or annotation is type(None):
         return ":py:obj:`None`"
     if annotation is Ellipsis:
         return ":py:data:`...<Ellipsis>`"
@@ -178,10 +181,7 @@ def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901 # t
     full_name = f"{module}.{class_name}" if module != "builtins" else class_name
     fully_qualified: bool = getattr(config, "typehints_fully_qualified", False)
     prefix = "" if fully_qualified or full_name == class_name else "~"
-    if module == "typing" and class_name in _PYDATA_ANNOTATIONS:
-        role = "data"
-    else:
-        role = "class"
+    role = "data" if module == "typing" and class_name in _PYDATA_ANNOTATIONS else "class"
     args_format = "\\[{}]"
     formatted_args: str | None = ""
 
@@ -200,19 +200,19 @@ def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901 # t
         args_format += ")"
         formatted_args = None if args else args_format
     elif full_name == "typing.Optional":
-        args = tuple(x for x in args if x is not type(None))  # noqa: E721
+        args = tuple(x for x in args if x is not type(None))
     elif full_name in ("typing.Union", "types.UnionType") and type(None) in args:
         if len(args) == 2:
             full_name = "typing.Optional"
             role = "data"
-            args = tuple(x for x in args if x is not type(None))  # noqa: E721
+            args = tuple(x for x in args if x is not type(None))
         else:
             simplify_optional_unions: bool = getattr(config, "simplify_optional_unions", True)
             if not simplify_optional_unions:
                 full_name = "typing.Optional"
                 role = "data"
                 args_format = f"\\[:py:data:`{prefix}typing.Union`\\[{{}}]]"
-                args = tuple(x for x in args if x is not type(None))  # noqa: E721
+                args = tuple(x for x in args if x is not type(None))
     elif full_name in ("typing.Callable", "collections.abc.Callable") and args and args[0] is not ...:
         fmt = [format_annotation(arg, config) for arg in args]
         formatted_args = f"\\[\\[{', '.join(fmt[:-1])}], {fmt[-1]}]"
@@ -237,15 +237,12 @@ def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901 # t
 # reference: https://github.com/pytorch/pytorch/pull/46548/files
 def normalize_source_lines(source_lines: str) -> str:
     """
-    This helper function accepts a list of source lines. It finds the
-    indentation level of the function definition (`def`), then it indents
-    all lines in the function body to a point at or greater than that
-    level. This allows for comments and continued string literals that
-    are at a lower indentation than the rest of the code.
-    Arguments:
-        source_lines: source code
-    Returns:
-        source lines that have been correctly aligned
+    This helper function accepts a list of source lines. It finds the indentation level of the function definition
+    (`def`), then it indents all lines in the function body to a point at or greater than that level. This allows for
+    comments and continued string literals that are at a lower indentation than the rest of the code.
+
+    :param source_lines: source code
+    :return: source lines that have been correctly aligned
     """
     lines = source_lines.split("\n")
 
@@ -280,7 +277,13 @@ def normalize_source_lines(source_lines: str) -> str:
 
 
 def process_signature(
-    app: Sphinx, what: str, name: str, obj: Any, options: Options, signature: str, return_annotation: str  # noqa: U100
+    app: Sphinx,
+    what: str,
+    name: str,
+    obj: Any,
+    options: Options,
+    signature: str,
+    return_annotation: str,
 ) -> tuple[str, None] | None:
     if not callable(obj):
         return None
@@ -405,9 +408,6 @@ def _get_type_hint(autodoc_mock_imports: list[str], name: str, obj: Any) -> dict
 
 
 def backfill_type_hints(obj: Any, name: str) -> dict[str, Any]:
-    parse_kwargs = {}
-    import ast
-
     parse_kwargs = {"type_comments": True}
 
     def _one_child(module: Module) -> stmt | None:
@@ -531,7 +531,12 @@ def format_default(app: Sphinx, default: Any, is_annotated: bool) -> str | None:
 
 
 def process_docstring(
-    app: Sphinx, what: str, name: str, obj: Any, options: Options | None, lines: list[str]  # noqa: U100
+    app: Sphinx,
+    what: str,
+    name: str,
+    obj: Any,
+    options: Options | None,
+    lines: list[str],
 ) -> None:
     original_obj = obj
     obj = obj.fget if isinstance(obj, property) else obj
@@ -564,16 +569,15 @@ def _get_sphinx_line_keyword_and_argument(line: str) -> tuple[str, str | None] |
     >>> _get_sphinx_line_keyword_and_argument("some invalid line")
     None
     """
-
-    param_line_without_description = line.split(":", maxsplit=2)  # noqa: SC200
+    param_line_without_description = line.split(":", maxsplit=2)
     if len(param_line_without_description) != 3:
         return None
 
-    split_directive_and_name = param_line_without_description[1].split(maxsplit=1)  # noqa: SC200
+    split_directive_and_name = param_line_without_description[1].split(maxsplit=1)
     if len(split_directive_and_name) != 2:
         if not len(split_directive_and_name):
             return None
-        return (split_directive_and_name[0], None)
+        return split_directive_and_name[0], None
 
     return tuple(split_directive_and_name)  # type: ignore
 
@@ -591,10 +595,7 @@ def _line_is_param_line_for_arg(line: str, arg_name: str) -> bool:
     if keyword not in {"param", "parameter", "arg", "argument"}:
         return False
 
-    for prefix in ("", r"\*", r"\**", r"\*\*"):
-        if doc_name == prefix + arg_name:
-            return True
-    return False
+    return any(doc_name == prefix + arg_name for prefix in ("", "\\*", "\\**", "\\*\\*"))
 
 
 def _inject_types_to_docstring(
@@ -786,14 +787,16 @@ def _inject_rtype(
         lines[insert_index] = f":return: {formatted_annotation} --{line[line.find(' '):]}"
 
 
-def validate_config(app: Sphinx, env: BuildEnvironment, docnames: list[str]) -> None:  # noqa: U100
+def validate_config(app: Sphinx, env: BuildEnvironment, docnames: list[str]) -> None:
     valid = {None, "comma", "braces", "braces-after"}
     if app.config.typehints_defaults not in valid | {False}:
-        raise ValueError(f"typehints_defaults needs to be one of {valid!r}, not {app.config.typehints_defaults!r}")
+        msg = f"typehints_defaults needs to be one of {valid!r}, not {app.config.typehints_defaults!r}"
+        raise ValueError(msg)
 
     formatter = app.config.typehints_formatter
     if formatter is not None and not callable(formatter):
-        raise ValueError(f"typehints_formatter needs to be callable or `None`, not {formatter}")
+        msg = f"typehints_formatter needs to be callable or `None`, not {formatter}"
+        raise ValueError(msg)
 
 
 def setup(app: Sphinx) -> dict[str, bool]:

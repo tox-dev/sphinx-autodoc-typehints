@@ -2,7 +2,10 @@ from __future__ import annotations
 
 
 def function_with_py310_annotations(
-    self, x: bool | None, y: int | str | float, z: str | None = None  # noqa: U100
+    self,
+    x: bool | None,
+    y: int | str | float,
+    z: str | None = None,
 ) -> str:
     """
     Method docstring.

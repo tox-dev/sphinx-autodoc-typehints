@@ -1,16 +1,21 @@
+from __future__ import annotations
+
 from functools import partial
-from optparse import Values
-from typing import Any, Tuple
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import sphinx.domains.python
 import sphinx.ext.autodoc
 from docutils.parsers.rst import Parser as RstParser
 from docutils.utils import new_document
-from sphinx.addnodes import desc_signature
-from sphinx.application import Sphinx
 from sphinx.domains.python import PyAttribute
 from sphinx.ext.autodoc import AttributeDocumenter
+
+if TYPE_CHECKING:
+    from optparse import Values
+
+    from sphinx.addnodes import desc_signature
+    from sphinx.application import Sphinx
 
 # Defensively check for the things we want to patch
 _parse_annotation = getattr(sphinx.domains.python, "_parse_annotation", None)
@@ -36,18 +41,21 @@ orig_add_directive_header = AttributeDocumenter.add_directive_header
 orig_handle_signature = PyAttribute.handle_signature
 
 
-def stringify_annotation(app: Sphinx, annotation: Any, mode: str = "") -> str:  # noqa: U100
-    """Format the annotation with sphinx-autodoc-typehints and inject our
+def stringify_annotation(app: Sphinx, annotation: Any, mode: str = "") -> str:
+    """
+    Format the annotation with sphinx-autodoc-typehints and inject our
     magic prefix to tell our patched PyAttribute.handle_signature to treat
-    it as rst."""
+    it as rst.
+    """
     from . import format_annotation
 
     return TYPE_IS_RST_LABEL + format_annotation(annotation, app.config)
 
 
 def patch_attribute_documenter(app: Sphinx) -> None:
-    """Instead of using stringify_typehint in
-    `AttributeDocumenter.add_directive_header`, use `format_annotation`
+    """
+    Instead of using stringify_typehint in
+    `AttributeDocumenter.add_directive_header`, use `format_annotation`.
     """
 
     def add_directive_header(*args: Any, **kwargs: Any) -> Any:
@@ -58,7 +66,7 @@ def patch_attribute_documenter(app: Sphinx) -> None:
 
 
 def rst_to_docutils(settings: Values, rst: str) -> Any:
-    """Convert rst to a sequence of docutils nodes"""
+    """Convert rst to a sequence of docutils nodes."""
     doc = new_document("", settings)
     RstParser().parse(rst, doc)
     # Remove top level paragraph node so that there is no line break.
@@ -74,7 +82,7 @@ def patched_parse_annotation(settings: Values, typ: str, env: Any) -> Any:
     return rst_to_docutils(settings, typ)
 
 
-def patched_handle_signature(self: PyAttribute, sig: str, signode: desc_signature) -> Tuple[str, str]:
+def patched_handle_signature(self: PyAttribute, sig: str, signode: desc_signature) -> tuple[str, str]:
     target = "sphinx.domains.python._parse_annotation"
     new_func = partial(patched_parse_annotation, self.state.document.settings)
     with patch(target, new_func):
@@ -82,7 +90,7 @@ def patched_handle_signature(self: PyAttribute, sig: str, signode: desc_signatur
 
 
 def patch_attribute_handling(app: Sphinx) -> None:
-    """Use format_signature to format class attribute type annotations"""
+    """Use format_signature to format class attribute type annotations."""
     if not OKAY_TO_PATCH:
         return
     PyAttribute.handle_signature = patched_handle_signature  # type:ignore[method-assign]

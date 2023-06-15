@@ -1,15 +1,17 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from docutils.parsers.rst.directives.admonitions import BaseAdmonition
 from docutils.parsers.rst.states import Text
-from sphinx.application import Sphinx
-from sphinx.ext.autodoc import Options
 from sphinx.ext.napoleon.docstring import GoogleDocstring
 
 from .attributes_patch import patch_attribute_handling
+
+if TYPE_CHECKING:
+    from sphinx.application import Sphinx
+    from sphinx.ext.autodoc import Options
 
 
 @lru_cache  # A cute way to make sure the function only runs once.
@@ -36,7 +38,12 @@ def fix_autodoc_typehints_for_overloaded_methods() -> None:
 
 
 def napoleon_numpy_docstring_return_type_processor(
-    app: Sphinx, what: str, name: str, obj: Any, options: Options | None, lines: list[str]  # noqa: U100
+    app: Sphinx,
+    what: str,
+    name: str,
+    obj: Any,
+    options: Options | None,
+    lines: list[str],
 ) -> None:
     """Insert a : under Returns: to tell napoleon not to look for a return type."""
     if what not in ["function", "method"]:
@@ -73,8 +80,9 @@ def fix_napoleon_numpy_docstring_return_type(app: Sphinx) -> None:
     app.connect("autodoc-process-docstring", napoleon_numpy_docstring_return_type_processor, priority=499)
 
 
-def patched_lookup_annotation(*_args: Any) -> str:  # noqa: U101
-    """GoogleDocstring._lookup_annotation sometimes adds incorrect type
+def patched_lookup_annotation(*_args: Any) -> str:
+    """
+    GoogleDocstring._lookup_annotation sometimes adds incorrect type
     annotations to constructor parameters (and otherwise does nothing). Disable
     it so we can handle this on our own.
     """
@@ -82,8 +90,9 @@ def patched_lookup_annotation(*_args: Any) -> str:  # noqa: U101
 
 
 def patch_google_docstring_lookup_annotation() -> None:
-    """Fix issue 308:
-    https://github.com/tox-dev/sphinx-autodoc-typehints/issues/308
+    """
+    Fix issue 308:
+    https://github.com/tox-dev/sphinx-autodoc-typehints/issues/308.
     """
     GoogleDocstring._lookup_annotation = patched_lookup_annotation  # type: ignore[assignment]
 
@@ -111,7 +120,8 @@ def patched_text_indent(self: Text, *args: Any) -> Any:
 
 
 def patch_line_numbers() -> None:
-    """Make the rst parser put line numbers on more nodes.
+    """
+    Make the rst parser put line numbers on more nodes.
 
     When the line numbers are missing, we have a hard time placing the :rtype:.
     """

@@ -5,12 +5,14 @@ import re
 import shutil
 import sys
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
-from _pytest.config import Config
 from sphinx.testing.path import path
 from sphobjinv import Inventory
+
+if TYPE_CHECKING:
+    from _pytest.config import Config
 
 pytest_plugins = "sphinx.testing.fixtures"
 collect_ignore = ["roots"]
@@ -50,7 +52,7 @@ def rootdir() -> path:
     return path(os.path.dirname(__file__) or ".").abspath() / "roots"
 
 
-def pytest_ignore_collect(path: Any, config: Config) -> bool | None:  # noqa: U100
+def pytest_ignore_collect(path: Any, config: Config) -> bool | None:
     version_re = re.compile(r"_py(\d)(\d)\.py$")
     match = version_re.search(path.basename)
     if match:
