@@ -56,14 +56,14 @@ V = TypeVar("V", contravariant=True)
 X = TypeVar("X", str, int)
 Y = TypeVar("Y", bound=str)
 Z = TypeVar("Z", bound="A")
-S = TypeVar("S", bound="miss")  # type: ignore # miss not defined on purpose # noqa: F821
+S = TypeVar("S", bound="miss")  # type: ignore[name-defined] # miss not defined on purpose # noqa: F821
 W = NewType("W", str)
 P = typing_extensions.ParamSpec("P")
 P_args = P.args  # type:ignore[attr-defined]
 P_kwargs = P.kwargs  # type:ignore[attr-defined]
-P_co = typing_extensions.ParamSpec("P_co", covariant=True)  # type: ignore
-P_contra = typing_extensions.ParamSpec("P_contra", contravariant=True)  # type: ignore
-P_bound = typing_extensions.ParamSpec("P_bound", bound=str)  # type: ignore
+P_co = typing_extensions.ParamSpec("P_co", covariant=True)  # type: ignore[misc]
+P_contra = typing_extensions.ParamSpec("P_contra", contravariant=True)  # type: ignore[misc]
+P_bound = typing_extensions.ParamSpec("P_bound", bound=str)  # type: ignore[misc]
 
 # Mypy does not support recursive type aliases, but
 # other type checkers do.
@@ -92,7 +92,7 @@ class D(typing_extensions.Protocol):
     ...
 
 
-class E(typing_extensions.Protocol[T]):  # type: ignore #  Invariant type variable "T" used in protocol where covariant
+class E(typing_extensions.Protocol[T]):  # type: ignore[misc]
     ...
 
 
@@ -106,10 +106,10 @@ class Metaclass(type):
 
 class HintedMethods:
     @classmethod
-    def from_magic(cls: type[T]) -> T:  # type: ignore
+    def from_magic(cls: type[T]) -> T:  # type: ignore[empty-body]
         ...
 
-    def method(self: T) -> T:  # type: ignore
+    def method(self: T) -> T:  # type: ignore[empty-body]
         ...
 
 
@@ -154,7 +154,7 @@ else:
         pytest.param(Callable[..., str], "typing", "Callable", (..., str), id="Callable_returntype"),
         pytest.param(Callable[[int, str], str], "typing", "Callable", (int, str, str), id="Callable_all_types"),
         pytest.param(
-            AbcCallable[[int, str], str],  # type: ignore
+            AbcCallable[[int, str], str],  # type: ignore[type-arg,misc,valid-type]
             "collections.abc",
             "Callable",
             (int, str, str),
@@ -271,7 +271,7 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
             " :py:class:`~typing.TypeVar`\\(``T``)]",
         ),
         (
-            AbcCallable[[int, str], bool],  # type: ignore
+            AbcCallable[[int, str], bool],  # type: ignore[valid-type,misc,type-arg]
             ":py:class:`~collections.abc.Callable`\\[\\[:py:class:`int`, " ":py:class:`str`], :py:class:`bool`]",
         ),
         (Pattern, ":py:class:`~typing.Pattern`"),
@@ -462,8 +462,8 @@ def test_always_document_param_types(
 ) -> None:
     set_python_path()
 
-    app.config.always_document_param_types = always_document_param_types  # type: ignore # create flag
-    app.config.autodoc_mock_imports = ["mailbox"]  # type: ignore # create flag
+    app.config.always_document_param_types = always_document_param_types  # type: ignore[attr-defined] # create flag
+    app.config.autodoc_mock_imports = ["mailbox"]  # type: ignore[attr-defined] # create flag
 
     # Prevent "document isn't included in any toctree" warnings
     for f in Path(app.srcdir).glob("*.rst"):
@@ -534,7 +534,7 @@ def maybe_fix_py310(expected_contents: str) -> str:
 def test_sphinx_output_future_annotations(app: SphinxTestApp, status: StringIO) -> None:
     set_python_path()
 
-    app.config.master_doc = "future_annotations"  # type: ignore # create flag
+    app.config.master_doc = "future_annotations"  # type: ignore[attr-defined] # create flag
     app.build()
 
     assert "build succeeded" in status.getvalue()  # Build succeeded
@@ -582,8 +582,8 @@ def test_sphinx_output_defaults(
 ) -> None:
     set_python_path()
 
-    app.config.master_doc = "simple"  # type: ignore # create flag
-    app.config.typehints_defaults = defaults_config_val  # type: ignore # create flag
+    app.config.master_doc = "simple"  # type: ignore[attr-defined] # create flag
+    app.config.typehints_defaults = defaults_config_val  # type: ignore[attr-defined] # create flag
     try:
         app.build()
     except Exception as e:
@@ -631,8 +631,8 @@ def test_sphinx_output_formatter(
 ) -> None:
     set_python_path()
 
-    app.config.master_doc = "simple"  # type: ignore # create flag
-    app.config.typehints_formatter = formatter_config_val  # type: ignore # create flag
+    app.config.master_doc = "simple"  # type: ignore[attr-defined] # create flag
+    app.config.typehints_formatter = formatter_config_val  # type: ignore[attr-defined] # create flag
     try:
         app.build()
     except Exception as e:
@@ -758,7 +758,7 @@ def test_syntax_error_backfill() -> None:
 @pytest.mark.sphinx("text", testroot="resolve-typing-guard")
 def test_resolve_typing_guard_imports(app: SphinxTestApp, status: StringIO, warning: StringIO) -> None:
     set_python_path()
-    app.config.autodoc_mock_imports = ["viktor"]  # type: ignore # create flag
+    app.config.autodoc_mock_imports = ["viktor"]  # type: ignore[attr-defined] # create flag
     app.build()
     assert "build succeeded" in status.getvalue()
     err = warning.getvalue()
@@ -786,8 +786,8 @@ def test_no_source_code_type_guard() -> None:
 @patch("sphinx.writers.text.MAXWIDTH", 2000)
 def test_sphinx_output_formatter_no_use_rtype(app: SphinxTestApp, status: StringIO) -> None:
     set_python_path()
-    app.config.master_doc = "simple_no_use_rtype"  # type: ignore # create flag
-    app.config.typehints_use_rtype = False  # type: ignore
+    app.config.master_doc = "simple_no_use_rtype"  # type: ignore[attr-defined]  # create flag
+    app.config.typehints_use_rtype = False  # type: ignore[attr-defined]
     app.build()
     assert "build succeeded" in status.getvalue()
     text_path = Path(app.srcdir) / "_build" / "text" / "simple_no_use_rtype.txt"
@@ -851,8 +851,8 @@ def test_sphinx_output_formatter_no_use_rtype(app: SphinxTestApp, status: String
 @patch("sphinx.writers.text.MAXWIDTH", 2000)
 def test_sphinx_output_with_use_signature(app: SphinxTestApp, status: StringIO) -> None:
     set_python_path()
-    app.config.master_doc = "simple"  # type: ignore # create flag
-    app.config.typehints_use_signature = True  # type: ignore
+    app.config.master_doc = "simple"  # type: ignore[attr-defined] # create flag
+    app.config.typehints_use_signature = True  # type: ignore[attr-defined]
     app.build()
     assert "build succeeded" in status.getvalue()
     text_path = Path(app.srcdir) / "_build" / "text" / "simple.txt"
@@ -880,8 +880,8 @@ def test_sphinx_output_with_use_signature(app: SphinxTestApp, status: StringIO) 
 @patch("sphinx.writers.text.MAXWIDTH", 2000)
 def test_sphinx_output_with_use_signature_return(app: SphinxTestApp, status: StringIO) -> None:
     set_python_path()
-    app.config.master_doc = "simple"  # type: ignore # create flag
-    app.config.typehints_use_signature_return = True  # type: ignore
+    app.config.master_doc = "simple"  # type: ignore[attr-defined] # create flag
+    app.config.typehints_use_signature_return = True  # type: ignore[attr-defined]
     app.build()
     assert "build succeeded" in status.getvalue()
     text_path = Path(app.srcdir) / "_build" / "text" / "simple.txt"
@@ -909,9 +909,9 @@ def test_sphinx_output_with_use_signature_return(app: SphinxTestApp, status: Str
 @patch("sphinx.writers.text.MAXWIDTH", 2000)
 def test_sphinx_output_with_use_signature_and_return(app: SphinxTestApp, status: StringIO) -> None:
     set_python_path()
-    app.config.master_doc = "simple"  # type: ignore # create flag
-    app.config.typehints_use_signature = True  # type: ignore
-    app.config.typehints_use_signature_return = True  # type: ignore
+    app.config.master_doc = "simple"  # type: ignore[attr-defined] # create flag
+    app.config.typehints_use_signature = True  # type: ignore[attr-defined]
+    app.config.typehints_use_signature_return = True  # type: ignore[attr-defined]
     app.build()
     assert "build succeeded" in status.getvalue()
     text_path = Path(app.srcdir) / "_build" / "text" / "simple.txt"
@@ -939,8 +939,8 @@ def test_sphinx_output_with_use_signature_and_return(app: SphinxTestApp, status:
 @patch("sphinx.writers.text.MAXWIDTH", 2000)
 def test_default_annotation_without_typehints(app: SphinxTestApp, status: StringIO) -> None:
     set_python_path()
-    app.config.master_doc = "without_complete_typehints"  # type: ignore # create flag
-    app.config.typehints_defaults = "comma"  # type: ignore
+    app.config.master_doc = "without_complete_typehints"  # type: ignore[attr-defined]# create flag
+    app.config.typehints_defaults = "comma"  # type: ignore[attr-defined]
     app.build()
     assert "build succeeded" in status.getvalue()
     text_path = Path(app.srcdir) / "_build" / "text" / "without_complete_typehints.txt"

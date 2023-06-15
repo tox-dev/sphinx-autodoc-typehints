@@ -60,9 +60,9 @@ def get_annotation_module(annotation: Any) -> str:
     ):
         return "typing"
     if hasattr(annotation, "__module__"):
-        return annotation.__module__  # type: ignore # deduced Any
+        return annotation.__module__  # type: ignore[no-any-return]
     if hasattr(annotation, "__origin__"):
-        return annotation.__origin__.__module__  # type: ignore # deduced Any
+        return annotation.__origin__.__module__  # type: ignore[no-any-return]
     msg = f"Cannot determine the module of {annotation}"
     raise ValueError(msg)
 
@@ -87,19 +87,19 @@ def get_annotation_class_name(annotation: Any, module: str) -> str:
         return "NewType"
 
     if getattr(annotation, "__qualname__", None):
-        return annotation.__qualname__  # type: ignore # deduced Any
+        return annotation.__qualname__  # type: ignore[no-any-return]
     elif getattr(annotation, "_name", None):  # Required for generic aliases on Python 3.7+
-        return annotation._name  # type: ignore # deduced Any
+        return annotation._name  # type: ignore[no-any-return]
     elif module in ("typing", "typing_extensions") and isinstance(getattr(annotation, "name", None), str):
         # Required for at least Pattern and Match
-        return annotation.name  # type: ignore # deduced Any
+        return annotation.name  # type: ignore[no-any-return]
 
     origin = getattr(annotation, "__origin__", None)
     if origin:
         if getattr(origin, "__qualname__", None):  # Required for Protocol subclasses
-            return origin.__qualname__  # type: ignore # deduced Any
+            return origin.__qualname__  # type: ignore[no-any-return]
         elif getattr(origin, "_name", None):  # Required for Union on Python 3.7+
-            return origin._name  # type: ignore # deduced Any
+            return origin._name  # type: ignore[no-any-return]
 
     annotation_cls = annotation if inspect.isclass(annotation) else type(annotation)
     return annotation_cls.__qualname__.lstrip("_")
@@ -120,16 +120,16 @@ def get_annotation_args(annotation: Any, module: str, class_name: str) -> tuple[
     elif class_name == "ClassVar" and hasattr(annotation, "__type__"):  # ClassVar on Python < 3.7
         return (annotation.__type__,)
     elif class_name == "TypeVar" and hasattr(annotation, "__constraints__"):
-        return annotation.__constraints__  # type: ignore # no stubs defined
+        return annotation.__constraints__  # type: ignore[no-any-return]
     elif class_name == "NewType" and hasattr(annotation, "__supertype__"):
         return (annotation.__supertype__,)
     elif class_name == "Literal" and hasattr(annotation, "__values__"):
-        return annotation.__values__  # type: ignore # deduced Any
+        return annotation.__values__  # type: ignore[no-any-return]
     elif class_name == "Generic":
-        return annotation.__parameters__  # type: ignore # deduced Any
+        return annotation.__parameters__  # type: ignore[no-any-return]
     result = getattr(annotation, "__args__", ())
     # 3.10 and earlier Tuple[()] returns ((), ) instead of () the tuple does
-    result = () if len(result) == 1 and result[0] == () else result  # type: ignore
+    result = () if len(result) == 1 and result[0] == () else result  # type: ignore[misc]
     return result
 
 
@@ -419,7 +419,7 @@ def backfill_type_hints(obj: Any, name: str) -> dict[str, Any]:
 
     try:
         code = textwrap.dedent(normalize_source_lines(inspect.getsource(obj)))
-        obj_ast = ast.parse(code, **parse_kwargs)  # type: ignore # dynamic kwargs
+        obj_ast = ast.parse(code, **parse_kwargs)  # type: ignore[call-overload]  # dynamic kwargs
     except (OSError, TypeError, SyntaxError):
         return {}
 
@@ -550,7 +550,7 @@ def process_docstring(
     except (ValueError, TypeError):
         signature = None
     type_hints = get_all_type_hints(app.config.autodoc_mock_imports, obj, name)
-    app.config._annotation_globals = getattr(obj, "__globals__", {})  # type: ignore # config has no such attribute
+    app.config._annotation_globals = getattr(obj, "__globals__", {})  # type: ignore[attr-defined]
     try:
         _inject_types_to_docstring(type_hints, signature, original_obj, app, what, name, lines)
     finally:
@@ -579,7 +579,7 @@ def _get_sphinx_line_keyword_and_argument(line: str) -> tuple[str, str | None] |
             return None
         return split_directive_and_name[0], None
 
-    return tuple(split_directive_and_name)  # type: ignore
+    return tuple(split_directive_and_name)  # type: ignore[return-value]
 
 
 def _line_is_param_line_for_arg(line: str, arg_name: str) -> bool:

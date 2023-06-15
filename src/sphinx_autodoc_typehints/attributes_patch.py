@@ -76,7 +76,8 @@ def rst_to_docutils(settings: Values, rst: str) -> Any:
 def patched_parse_annotation(settings: Values, typ: str, env: Any) -> Any:
     # if typ doesn't start with our label, use original function
     if not typ.startswith(TYPE_IS_RST_LABEL):
-        return _parse_annotation(typ, env)  # type: ignore
+        assert _parse_annotation is not None
+        return _parse_annotation(typ, env)
     # Otherwise handle as rst
     typ = typ[len(TYPE_IS_RST_LABEL) :]
     return rst_to_docutils(settings, typ)
