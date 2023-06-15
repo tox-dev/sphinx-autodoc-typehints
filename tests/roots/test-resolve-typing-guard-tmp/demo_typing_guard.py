@@ -1,12 +1,9 @@
 """Module demonstrating imports that are type guarded"""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import datetime
 
 from attrs import define
-
-if TYPE_CHECKING:
-    import datetime
 
 
 @define()
@@ -17,7 +14,7 @@ class SomeClass:
     """Date to handle"""
 
     @classmethod
-    def from_str(cls, input_value: str) -> SomeClass:
+    def from_str(cls, input_value: str) -> SomeClass:  # noqa: ANN102
         """
         Initialise from string
 
@@ -27,7 +24,7 @@ class SomeClass:
         return cls(input_value)
 
     @classmethod
-    def from_date(cls, input_value: datetime.date) -> SomeClass:
+    def from_date(cls, input_value: datetime.date) -> SomeClass:  # noqa: ANN102
         """
         Initialise from date
 
@@ -37,7 +34,7 @@ class SomeClass:
         return cls(input_value)
 
     @classmethod
-    def from_time(cls, input_value: datetime.time) -> SomeClass:
+    def from_time(cls, input_value: datetime.time) -> SomeClass:  # noqa: ANN102
         """
         Initialise from time
 

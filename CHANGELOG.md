@@ -273,7 +273,7 @@
 
 ## 1.2.1
 
-- Fixed `` ValueError` when ``getargspec()\`\` encounters a built-in function
+- Fixed ``ValueError` when``getargspec()\`\` encounters a built-in function
 - Fixed `AttributeError` when `Any` is combined with another type in a `Union` (thanks Davis Kirkendall)
 
 ## 1.2.0

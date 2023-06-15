@@ -36,7 +36,7 @@ class SomeClass:
 
     if TYPE_CHECKING:  # Classes doesn't have `__globals__` attribute
 
-        def __getattr__(self, item: str):  # noqa: U100
+        def __getattr__(self, item: str):  # noqa: ANN204
             """This method do something."""
 
 

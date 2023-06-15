@@ -1,4 +1,7 @@
-def function_no_returns(x: bool, y: int = 1) -> str:  # noqa: U100
+from __future__ import annotations
+
+
+def function_no_returns(x: bool, y: int = 1) -> str:  # noqa: ARG001
     """
     Function docstring.
 
@@ -7,7 +10,7 @@ def function_no_returns(x: bool, y: int = 1) -> str:  # noqa: U100
     """
 
 
-def function_returns_with_type(x: bool, y: int = 1) -> str:  # noqa: U100
+def function_returns_with_type(x: bool, y: int = 1) -> str:  # noqa: ARG001
     """
     Function docstring.
 
@@ -17,7 +20,7 @@ def function_returns_with_type(x: bool, y: int = 1) -> str:  # noqa: U100
     """
 
 
-def function_returns_with_compound_type(x: bool, y: int = 1) -> str:  # noqa: U100
+def function_returns_with_compound_type(x: bool, y: int = 1) -> str:  # noqa: ARG001
     """
     Function docstring.
 
@@ -27,7 +30,7 @@ def function_returns_with_compound_type(x: bool, y: int = 1) -> str:  # noqa: U1
     """
 
 
-def function_returns_without_type(x: bool, y: int = 1) -> str:  # noqa: U100
+def function_returns_without_type(x: bool, y: int = 1) -> str:  # noqa: ARG001
     """
     Function docstring.
 
