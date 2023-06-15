@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import re
 import shutil
 import sys
@@ -26,8 +25,7 @@ def inv(pytestconfig: Config) -> Inventory:
     if inv_dict is not None:
         return Inventory(inv_dict)
 
-    print("Downloading objects.inv")
-    url = "https://docs.python.org/{v.major}.{v.minor}/objects.inv".format(v=sys.version_info)
+    url = f"https://docs.python.org/{sys.version_info.major}.{sys.version_info.minor}/objects.inv"
     inv = Inventory(url=url)
     pytestconfig.cache.set(cache_path, inv.json_dict())
     return inv
@@ -49,10 +47,10 @@ def _remove_sphinx_projects(sphinx_test_tempdir: path) -> None:
 
 @pytest.fixture()
 def rootdir() -> path:
-    return path(os.path.dirname(__file__) or ".").abspath() / "roots"
+    return path(str(Path(__file__).parent) or ".").abspath() / "roots"
 
 
-def pytest_ignore_collect(path: Any, config: Config) -> bool | None:
+def pytest_ignore_collect(path: Any, config: Config) -> bool | None:  # noqa: ARG001
     version_re = re.compile(r"_py(\d)(\d)\.py$")
     match = version_re.search(path.basename)
     if match:

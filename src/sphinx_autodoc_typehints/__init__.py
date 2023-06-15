@@ -1,3 +1,4 @@
+"""Sphinx autodoc type hints."""
 from __future__ import annotations
 
 import ast
@@ -42,12 +43,18 @@ _TYPES_DICT[types.FunctionType] = "FunctionType"
 def _get_types_type(obj: Any) -> str | None:
     try:
         return _TYPES_DICT.get(obj)
-    except Exception:
+    except Exception:  # noqa: BLE001
         # e.g. exception: unhashable type
         return None
 
 
 def get_annotation_module(annotation: Any) -> str:
+    """
+    Get module for an annotation.
+
+    :param annotation:
+    :return:
+    """
     if annotation is None:
         return "builtins"
     if _get_types_type(annotation) is not None:
@@ -70,11 +77,17 @@ def get_annotation_module(annotation: Any) -> str:
 def _is_newtype(annotation: Any) -> bool:
     if sys.version_info < (3, 10):
         return inspect.isfunction(annotation) and hasattr(annotation, "__supertype__")
-    else:
-        return isinstance(annotation, NewType)
+    return isinstance(annotation, NewType)
 
 
-def get_annotation_class_name(annotation: Any, module: str) -> str:
+def get_annotation_class_name(annotation: Any, module: str) -> str:  # noqa: C901, PLR0911
+    """
+    Get class name for annotation.
+
+    :param annotation:
+    :param module:
+    :return:
+    """
     # Special cases
     if annotation is None:
         return "None"
@@ -88,9 +101,9 @@ def get_annotation_class_name(annotation: Any, module: str) -> str:
 
     if getattr(annotation, "__qualname__", None):
         return annotation.__qualname__  # type: ignore[no-any-return]
-    elif getattr(annotation, "_name", None):  # Required for generic aliases on Python 3.7+
-        return annotation._name  # type: ignore[no-any-return]
-    elif module in ("typing", "typing_extensions") and isinstance(getattr(annotation, "name", None), str):
+    if getattr(annotation, "_name", None):  # Required for generic aliases on Python 3.7+
+        return annotation._name  # type: ignore[no-any-return]  # noqa: SLF001
+    if module in ("typing", "typing_extensions") and isinstance(getattr(annotation, "name", None), str):
         # Required for at least Pattern and Match
         return annotation.name  # type: ignore[no-any-return]
 
@@ -98,14 +111,22 @@ def get_annotation_class_name(annotation: Any, module: str) -> str:
     if origin:
         if getattr(origin, "__qualname__", None):  # Required for Protocol subclasses
             return origin.__qualname__  # type: ignore[no-any-return]
-        elif getattr(origin, "_name", None):  # Required for Union on Python 3.7+
-            return origin._name  # type: ignore[no-any-return]
+        if getattr(origin, "_name", None):  # Required for Union on Python 3.7+
+            return origin._name  # type: ignore[no-any-return]  # noqa: SLF001
 
     annotation_cls = annotation if inspect.isclass(annotation) else type(annotation)
     return annotation_cls.__qualname__.lstrip("_")
 
 
-def get_annotation_args(annotation: Any, module: str, class_name: str) -> tuple[Any, ...]:
+def get_annotation_args(annotation: Any, module: str, class_name: str) -> tuple[Any, ...]:  # noqa: PLR0911
+    """
+    Get annotation arguments.
+
+    :param annotation:
+    :param module:
+    :param class_name:
+    :return:
+    """
     try:
         original = getattr(sys.modules[module], class_name)
     except (KeyError, AttributeError):
@@ -117,15 +138,15 @@ def get_annotation_args(annotation: Any, module: str, class_name: str) -> tuple[
     # Special cases
     if class_name in ("Pattern", "Match") and hasattr(annotation, "type_var"):  # Python < 3.7
         return (annotation.type_var,)
-    elif class_name == "ClassVar" and hasattr(annotation, "__type__"):  # ClassVar on Python < 3.7
+    if class_name == "ClassVar" and hasattr(annotation, "__type__"):  # ClassVar on Python < 3.7
         return (annotation.__type__,)
-    elif class_name == "TypeVar" and hasattr(annotation, "__constraints__"):
+    if class_name == "TypeVar" and hasattr(annotation, "__constraints__"):
         return annotation.__constraints__  # type: ignore[no-any-return]
-    elif class_name == "NewType" and hasattr(annotation, "__supertype__"):
+    if class_name == "NewType" and hasattr(annotation, "__supertype__"):
         return (annotation.__supertype__,)
-    elif class_name == "Literal" and hasattr(annotation, "__values__"):
+    if class_name == "Literal" and hasattr(annotation, "__values__"):
         return annotation.__values__  # type: ignore[no-any-return]
-    elif class_name == "Generic":
+    if class_name == "Generic":
         return annotation.__parameters__  # type: ignore[no-any-return]
     result = getattr(annotation, "__args__", ())
     # 3.10 and earlier Tuple[()] returns ((), ) instead of () the tuple does
@@ -140,13 +161,19 @@ def format_internal_tuple(t: tuple[Any, ...], config: Config) -> str:
     fmt = [format_annotation(a, config) for a in t]
     if len(fmt) == 0:
         return "()"
-    elif len(fmt) == 1:
+    if len(fmt) == 1:
         return f"({fmt[0]}, )"
-    else:
-        return f"({', '.join(fmt)})"
+    return f"({', '.join(fmt)})"
 
 
-def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901 # too complex
+def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901, PLR0911, PLR0912, PLR0915
+    """
+    Format the annotation.
+
+    :param annotation:
+    :param config:
+    :return:
+    """
     typehints_formatter: Callable[..., str] | None = getattr(config, "typehints_formatter", None)
     if typehints_formatter is not None:
         formatted = typehints_formatter(annotation, config)
@@ -202,7 +229,7 @@ def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901 # t
     elif full_name == "typing.Optional":
         args = tuple(x for x in args if x is not type(None))
     elif full_name in ("typing.Union", "types.UnionType") and type(None) in args:
-        if len(args) == 2:
+        if len(args) == 2:  # noqa: PLR2004
             full_name = "typing.Optional"
             role = "data"
             args = tuple(x for x in args if x is not type(None))
@@ -230,16 +257,17 @@ def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901 # t
             fmt = [format_annotation(arg, config) for arg in args]
         formatted_args = args_format.format(", ".join(fmt))
 
-    result = f":py:{role}:`{prefix}{full_name}`{formatted_args}"
-    return result
+    return f":py:{role}:`{prefix}{full_name}`{formatted_args}"
 
 
 # reference: https://github.com/pytorch/pytorch/pull/46548/files
 def normalize_source_lines(source_lines: str) -> str:
     """
-    This helper function accepts a list of source lines. It finds the indentation level of the function definition
-    (`def`), then it indents all lines in the function body to a point at or greater than that level. This allows for
-    comments and continued string literals that are at a lower indentation than the rest of the code.
+    Normalize the source lines.
+
+    It finds the indentation level of the function definition (`def`), then it indents all lines in the function body to
+    a point at or greater than that level. This allows for comments and continued string literals that are at a lower
+    indentation than the rest of the code.
 
     :param source_lines: source code
     :return: source lines that have been correctly aligned
@@ -250,13 +278,13 @@ def normalize_source_lines(source_lines: str) -> str:
         return text[text.startswith(prefix) and len(prefix) :]
 
     # Find the line and line number containing the function definition
-    for i, l in enumerate(lines):
-        if l.lstrip().startswith("def "):
-            idx = i
+    for pos, line in enumerate(lines):
+        if line.lstrip().startswith("def "):
+            idx = pos
             whitespace_separator = "def"
             break
-        elif l.lstrip().startswith("async def"):
-            idx = i
+        if line.lstrip().startswith("async def"):
+            idx = pos
             whitespace_separator = "async def"
             break
 
@@ -276,15 +304,27 @@ def normalize_source_lines(source_lines: str) -> str:
     return "\n".join(aligned_prefix + aligned_suffix)
 
 
-def process_signature(
+def process_signature(  # noqa: C901, PLR0913
     app: Sphinx,
     what: str,
     name: str,
     obj: Any,
-    options: Options,
-    signature: str,
-    return_annotation: str,
+    options: Options,  # noqa: ARG001
+    signature: str,  # noqa: ARG001
+    return_annotation: str,  # noqa: ARG001
 ) -> tuple[str, None] | None:
+    """
+    Process the signature.
+
+    :param app:
+    :param what:
+    :param name:
+    :param obj:
+    :param options:
+    :param signature:
+    :param return_annotation:
+    :return:
+    """
     if not callable(obj):
         return None
 
@@ -385,8 +425,8 @@ def _resolve_type_guarded_imports(autodoc_mock_imports: list[str], obj: Any) -> 
                         guarded_code = textwrap.dedent(part)
                         try:
                             with mock(autodoc_mock_imports):
-                                exec(guarded_code, obj.__globals__)
-                        except Exception as exc:
+                                exec(guarded_code, obj.__globals__)  # noqa: S102
+                        except Exception as exc:  # noqa: BLE001
                             _LOGGER.warning(f"Failed guarded type import with {exc!r}")
 
 
@@ -407,7 +447,14 @@ def _get_type_hint(autodoc_mock_imports: list[str], name: str, obj: Any) -> dict
     return result
 
 
-def backfill_type_hints(obj: Any, name: str) -> dict[str, Any]:
+def backfill_type_hints(obj: Any, name: str) -> dict[str, Any]:  # noqa: C901, PLR0911, PLR0912
+    """
+    Backfill type hints.
+
+    :param obj: the object
+    :param name: the name
+    :return: backfilled value
+    """
     parse_kwargs = {"type_comments": True}
 
     def _one_child(module: Module) -> stmt | None:
@@ -461,10 +508,7 @@ def backfill_type_hints(obj: Any, name: str) -> dict[str, Any]:
         if arg_key is None:
             continue
 
-        if is_inline:  # the type information now is tied to the argument
-            value = getattr(arg, "type_comment", None)
-        else:  # type data from comment
-            value = comment_args[at]
+        value = getattr(arg, "type_comment", None) if is_inline else comment_args[at]
 
         if value is not None:
             rv[arg_key] = value
@@ -513,7 +557,7 @@ def split_type_comment_args(comment: str) -> list[str | None]:
     return result
 
 
-def format_default(app: Sphinx, default: Any, is_annotated: bool) -> str | None:
+def format_default(app: Sphinx, default: Any, is_annotated: bool) -> str | None:  # noqa: FBT001
     if default is inspect.Parameter.empty:
         return None
     formatted = repr(default).replace("\\", "\\\\")
@@ -521,23 +565,31 @@ def format_default(app: Sphinx, default: Any, is_annotated: bool) -> str | None:
     if is_annotated:
         if app.config.typehints_defaults.startswith("braces"):
             return f" (default: ``{formatted}``)"
-        else:  # other option is comma
-            return f", default: ``{formatted}``"
-    else:
-        if app.config.typehints_defaults == "braces-after":
-            return f" (default: ``{formatted}``)"
-        else:
-            return f"default: ``{formatted}``"
+        return f", default: ``{formatted}``"
+    if app.config.typehints_defaults == "braces-after":
+        return f" (default: ``{formatted}``)"
+    return f"default: ``{formatted}``"
 
 
-def process_docstring(
+def process_docstring(  # noqa: PLR0913
     app: Sphinx,
     what: str,
     name: str,
     obj: Any,
-    options: Options | None,
+    options: Options | None,  # noqa: ARG001
     lines: list[str],
 ) -> None:
+    """
+    Process the docstring for an entry.
+
+    :param app: the Sphinx app
+    :param what: the target
+    :param name: the name
+    :param obj: the object
+    :param options: the options
+    :param lines: the lines
+    :return:
+    """
     original_obj = obj
     obj = obj.fget if isinstance(obj, property) else obj
     if not callable(obj):
@@ -550,7 +602,7 @@ def process_docstring(
     except (ValueError, TypeError):
         signature = None
     type_hints = get_all_type_hints(app.config.autodoc_mock_imports, obj, name)
-    app.config._annotation_globals = getattr(obj, "__globals__", {})  # type: ignore[attr-defined]
+    app.config._annotation_globals = getattr(obj, "__globals__", {})  # type: ignore[attr-defined]  # noqa: SLF001
     try:
         _inject_types_to_docstring(type_hints, signature, original_obj, app, what, name, lines)
     finally:
@@ -570,11 +622,11 @@ def _get_sphinx_line_keyword_and_argument(line: str) -> tuple[str, str | None] |
     None
     """
     param_line_without_description = line.split(":", maxsplit=2)
-    if len(param_line_without_description) != 3:
+    if len(param_line_without_description) != 3:  # noqa: PLR2004
         return None
 
     split_directive_and_name = param_line_without_description[1].split(maxsplit=1)
-    if len(split_directive_and_name) != 2:
+    if len(split_directive_and_name) != 2:  # noqa: PLR2004
         if not len(split_directive_and_name):
             return None
         return split_directive_and_name[0], None
@@ -598,7 +650,7 @@ def _line_is_param_line_for_arg(line: str, arg_name: str) -> bool:
     return any(doc_name == prefix + arg_name for prefix in ("", "\\*", "\\**", "\\*\\*"))
 
 
-def _inject_types_to_docstring(
+def _inject_types_to_docstring(  # noqa: PLR0913
     type_hints: dict[str, Any],
     signature: inspect.Signature | None,
     original_obj: Any,
@@ -613,7 +665,7 @@ def _inject_types_to_docstring(
         _inject_rtype(type_hints, original_obj, app, what, name, lines)
 
 
-def _inject_signature(
+def _inject_signature(  # noqa: C901
     type_hints: dict[str, Any],
     signature: inspect.Signature,
     app: Sphinx,
@@ -625,14 +677,15 @@ def _inject_signature(
         default = signature.parameters[arg_name].default
 
         if arg_name.endswith("_"):
-            arg_name = f"{arg_name[:-1]}\\_"
+            arg_name = f"{arg_name[:-1]}\\_"  # noqa: PLW2901
 
         insert_index = None
         for at, line in enumerate(lines):
             if _line_is_param_line_for_arg(line, arg_name):
                 # Get the arg_name from the doc to match up for type in case it has a star prefix.
                 # Line is in the correct format so this is guaranteed to return tuple[str, str].
-                _, arg_name = _get_sphinx_line_keyword_and_argument(line)  # type: ignore[assignment, misc]
+                func = _get_sphinx_line_keyword_and_argument
+                _, arg_name = func(line)  # type: ignore[assignment, misc] # noqa: PLW2901
                 insert_index = at
                 break
 
@@ -673,17 +726,13 @@ PARAM_SYNONYMS = ("param ", "parameter ", "arg ", "argument ", "keyword ", "kwar
 
 def node_line_no(node: Node) -> int | None:
     """
-    Get the 1-indexed line on which the node starts if possible. If not, return
-    None.
+    Get the 1-indexed line on which the node starts if possible. If not, return None.
 
-    Descend through the first children until we locate one with a line number or
-    return None if None of them have one.
+    Descend through the first children until we locate one with a line number or return None if None of them have one.
 
-    I'm not aware of any rst on which this returns None, to find out would
-    require a more detailed analysis of the docutils rst parser source code. An
-    example where the node doesn't have a line number but the first child does
-    is all `definition_list` nodes. It seems like bullet_list and option_list
-    get line numbers, but enum_list also doesn't. *shrug*.
+    I'm not aware of any rst on which this returns None, to find out would require a more detailed analysis of the
+    docutils rst parser source code. An example where the node doesn't have a line number but the first child does is
+    all `definition_list` nodes. It seems like bullet_list and option_list get line numbers, but enum_list also doesn't.
     """
     while node.line is None and node.children:
         node = node.children[0]
@@ -732,7 +781,6 @@ def get_insert_index(app: Sphinx, lines: list[str]) -> InsertIndexInfo | None:
         return InsertIndexInfo(insert_index=at, found_param=True)
 
     # 4. Insert before examples
-    # TODO: Maybe adjust which tags to insert ahead of
     for child in doc.children:
         if tag_name(child) in ["literal_block", "paragraph", "field_list"]:
             continue
@@ -744,7 +792,7 @@ def get_insert_index(app: Sphinx, lines: list[str]) -> InsertIndexInfo | None:
     return InsertIndexInfo(insert_index=len(lines))
 
 
-def _inject_rtype(
+def _inject_rtype(  # noqa: PLR0913
     type_hints: dict[str, Any],
     original_obj: Any,
     app: Sphinx,
@@ -770,7 +818,7 @@ def _inject_rtype(
 
     formatted_annotation = format_annotation(type_hints["return"], app.config)
 
-    if r.found_param and insert_index < len(lines) and lines[insert_index].strip() != "":
+    if r.found_param and insert_index < len(lines) and lines[insert_index].strip():
         insert_index -= 1
 
     if insert_index == len(lines) and not r.found_param:
@@ -787,7 +835,7 @@ def _inject_rtype(
         lines[insert_index] = f":return: {formatted_annotation} --{line[line.find(' '):]}"
 
 
-def validate_config(app: Sphinx, env: BuildEnvironment, docnames: list[str]) -> None:
+def validate_config(app: Sphinx, env: BuildEnvironment, docnames: list[str]) -> None:  # noqa: ARG001
     valid = {None, "comma", "braces", "braces-after"}
     if app.config.typehints_defaults not in valid | {False}:
         msg = f"typehints_defaults needs to be one of {valid!r}, not {app.config.typehints_defaults!r}"
@@ -800,15 +848,15 @@ def validate_config(app: Sphinx, env: BuildEnvironment, docnames: list[str]) -> 
 
 
 def setup(app: Sphinx) -> dict[str, bool]:
-    app.add_config_value("always_document_param_types", False, "html")
-    app.add_config_value("typehints_fully_qualified", False, "env")
-    app.add_config_value("typehints_document_rtype", True, "env")
-    app.add_config_value("typehints_use_rtype", True, "env")
+    app.add_config_value("always_document_param_types", False, "html")  # noqa: FBT003
+    app.add_config_value("typehints_fully_qualified", False, "env")  # noqa: FBT003
+    app.add_config_value("typehints_document_rtype", True, "env")  # noqa: FBT003
+    app.add_config_value("typehints_use_rtype", True, "env")  # noqa: FBT003
     app.add_config_value("typehints_defaults", None, "env")
-    app.add_config_value("simplify_optional_unions", True, "env")
+    app.add_config_value("simplify_optional_unions", True, "env")  # noqa: FBT003
     app.add_config_value("typehints_formatter", None, "env")
-    app.add_config_value("typehints_use_signature", False, "env")
-    app.add_config_value("typehints_use_signature_return", False, "env")
+    app.add_config_value("typehints_use_signature", False, "env")  # noqa: FBT003
+    app.add_config_value("typehints_use_signature_return", False, "env")  # noqa: FBT003
     app.connect("env-before-read-docs", validate_config)  # config may be changed after “config-inited” event
     app.connect("autodoc-process-signature", process_signature)
     app.connect("autodoc-process-docstring", process_docstring)

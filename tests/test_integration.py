@@ -37,8 +37,8 @@ def warns(pattern: str) -> Callable[[T], T]:
 
 
 @expected("mod.get_local_function()")
-def get_local_function():
-    def wrapper(self) -> str:
+def get_local_function():  # noqa: ANN201
+    def wrapper(self) -> str:  # noqa: ANN001, ARG001
         """
         Wrapper
         """
@@ -171,7 +171,7 @@ class Class:
         """
 
     @classmethod
-    def a_classmethod(cls, x: bool, y: int, z: Optional[str] = None) -> str:  # noqa: UP007
+    def a_classmethod(cls, x: bool, y: int, z: Optional[str] = None) -> str:  # noqa: ANN102, UP007
         """
         Classmethod docstring.
 
@@ -259,7 +259,7 @@ mod.function(x, y, z_=None)
       bytes
 """,
 )
-def function(x: bool, y: int, z_: Optional[str] = None) -> str:  # noqa: UP007
+def function(x: bool, y: int, z_: Optional[str] = None) -> str:  # noqa: ARG001, UP007
     """
     Function docstring.
 
@@ -287,7 +287,7 @@ mod.function_with_starred_documentation_param_names(*args, **kwargs)
       * ****kwargs** ("str") -- bar
 """,
 )
-def function_with_starred_documentation_param_names(*args: int, **kwargs: str):
+def function_with_starred_documentation_param_names(*args: int, **kwargs: str):  # noqa: ANN201, ARG001
     r"""
     Function docstring.
 
@@ -310,7 +310,7 @@ mod.function_with_escaped_default(x='\\\\x08')
       **x** ("str") -- foo
 """,
 )
-def function_with_escaped_default(x: str = "\b"):
+def function_with_escaped_default(x: str = "\b"):  # noqa: ANN201, ARG001
     """
     Function docstring.
 
@@ -329,7 +329,7 @@ mod.function_with_unresolvable_annotation(x)
       **x** (*a.b.c*) -- foo
 """,
 )
-def function_with_unresolvable_annotation(x: a.b.c):  # noqa: F821
+def function_with_unresolvable_annotation(x: a.b.c):  # noqa: ANN201, ARG001, F821
     """
     Function docstring.
 
@@ -352,9 +352,9 @@ mod.function_with_typehint_comment(x, y)
       "None"
 """,
 )
-def function_with_typehint_comment(
-    x,  # type: int
-    y,  # type: str
+def function_with_typehint_comment(  # noqa: ANN201
+    x,  # type: int  # noqa: ANN001, ARG001
+    y,  # type: str  # noqa: ANN001, ARG001
 ):
     # type: (...) -> None
     """
@@ -398,14 +398,14 @@ class ClassWithTypehints:
 
     def __init__(
         self,
-        x,  # type: int
+        x,  # type: int  # noqa: ANN001
     ) -> None:
         # type: (...) -> None
         pass
 
-    def foo(
+    def foo(  # noqa: ANN201
         self,
-        x,  # type: str
+        x,  # type: str  # noqa: ANN001, ARG002
     ):
         # type: (...) -> int
         """
@@ -415,7 +415,7 @@ class ClassWithTypehints:
         """
         return 42
 
-    def method_without_typehint(self, x):
+    def method_without_typehint(self, x):  # noqa: ANN001, ANN201, ARG002
         """
         Method docstring.
         """
@@ -423,7 +423,7 @@ class ClassWithTypehints:
         multiline_str = """
 test
 """
-        return multiline_str
+        return multiline_str  # noqa: RET504
 
 
 @expected(
@@ -445,7 +445,7 @@ mod.function_with_typehint_comment_not_inline(x=None, *y, z, **kwargs)
       "None"
 """,
 )
-def function_with_typehint_comment_not_inline(x=None, *y, z, **kwargs):
+def function_with_typehint_comment_not_inline(x=None, *y, z, **kwargs):  # noqa: ANN001, ANN002, ANN003, ANN201, ARG001
     # type: (Union[str, bytes, None], *str, bytes, **int) -> None
     """
     Function docstring.
@@ -495,10 +495,10 @@ class ClassWithTypehintsNotInline:
     :param x: foo
     """
 
-    def __init__(self, x=None) -> None:  # type: (Optional[Callable[[int, bytes], int]]) -> None
+    def __init__(self, x=None) -> None:  # type: (Optional[Callable[[int, bytes], int]]) -> None  # noqa: ANN001
         pass
 
-    def foo(self, x=1):  # type: (Callable[[int, bytes], int]) -> int
+    def foo(self, x=1):  # type: (Callable[[int, bytes], int]) -> int  # noqa: ANN001, ANN201
         """
         Method docstring.
 
@@ -507,7 +507,10 @@ class ClassWithTypehintsNotInline:
         return x(1, b"")
 
     @classmethod
-    def mk(cls, x=None):  # type: (Optional[Callable[[int, bytes], int]]) -> ClassWithTypehintsNotInline
+    def mk(  # noqa: ANN206
+        cls,  # noqa: ANN102
+        x=None,  # noqa: ANN001
+    ):  # type: (Optional[Callable[[int, bytes], int]]) -> ClassWithTypehintsNotInline
         """
         Method docstring.
 
@@ -577,7 +580,7 @@ mod.mocked_import(x)
       **x** ("Mailbox") -- function
 """,
 )
-def mocked_import(x: Mailbox):
+def mocked_import(x: Mailbox):  # noqa: ANN201, ARG001
     """
     A docstring.
 
@@ -635,7 +638,7 @@ mod.func_with_overload(a, b)
       "None"
 """,
 )
-def func_with_overload(a: Union[int, str], b: Union[int, str]) -> None:  # noqa: UP007
+def func_with_overload(a: Union[int, str], b: Union[int, str]) -> None:  # noqa: ARG001, UP007
     """
     f does the thing. The arguments can either be ints or strings but they must
     both have the same type.
@@ -714,7 +717,7 @@ mod.func_with_parameters_and_stuff_after(a, b)
    More info about the function here.
 """,
 )
-def func_with_parameters_and_stuff_after(a: int, b: int) -> int:
+def func_with_parameters_and_stuff_after(a: int, b: int) -> int:  # noqa: ARG001
     """A func
 
     :param a: a tells us something
@@ -748,7 +751,7 @@ mod.func_with_rtype_in_weird_spot(a, b)
       int
 """,
 )
-def func_with_rtype_in_weird_spot(a: int, b: int) -> int:
+def func_with_rtype_in_weird_spot(a: int, b: int) -> int:  # noqa: ARG001
     """A func
 
     :param a: a tells us something
@@ -796,7 +799,7 @@ mod.empty_line_between_parameters(a, b)
    More stuff here.
 """,
 )
-def empty_line_between_parameters(a: int, b: int) -> int:
+def empty_line_between_parameters(a: int, b: int) -> int:  # noqa: ARG001
     """A func
 
     :param a: One of the following possibilities:
@@ -910,7 +913,7 @@ def decorator_2(f: Any) -> Any:
 
         A
     """
-    f
+    assert f is not None
 
 
 @expected(
@@ -989,7 +992,7 @@ def napoleon_returns() -> CodeType:
 
     """,
 )
-def google_docstrings(arg1: CodeType, arg2: ModuleType) -> CodeType:
+def google_docstrings(arg1: CodeType, arg2: ModuleType) -> CodeType:  # noqa: ARG001
     """Summary line.
 
     Extended description of function.
@@ -1021,7 +1024,7 @@ def google_docstrings(arg1: CodeType, arg2: ModuleType) -> CodeType:
 
     """,
 )
-def docstring_with_multiline_note_after_params(param: int) -> None:
+def docstring_with_multiline_note_after_params(param: int) -> None:  # noqa: ARG001
     """Do something.
 
     Args:
@@ -1052,7 +1055,7 @@ def docstring_with_multiline_note_after_params(param: int) -> None:
 
     """,
 )
-def docstring_with_bullet_list_after_params(param: int) -> None:
+def docstring_with_bullet_list_after_params(param: int) -> None:  # noqa: ARG001
     """Do something.
 
     Args:
@@ -1085,7 +1088,7 @@ def docstring_with_bullet_list_after_params(param: int) -> None:
 
     """,
 )
-def docstring_with_definition_list_after_params(param: int) -> None:
+def docstring_with_definition_list_after_params(param: int) -> None:  # noqa: ARG001
     """Do something.
 
     Args:
@@ -1119,7 +1122,7 @@ def docstring_with_definition_list_after_params(param: int) -> None:
 
     """,
 )
-def docstring_with_enum_list_after_params(param: int) -> None:
+def docstring_with_enum_list_after_params(param: int) -> None:  # noqa: ARG001
     """Do something.
 
     Args:
@@ -1154,7 +1157,7 @@ def docstring_with_enum_list_after_params(param: int) -> None:
        -[ Example ]-
     """,
 )
-def docstring_with_definition_list_after_params_no_blank_line(param: int) -> None:
+def docstring_with_definition_list_after_params_no_blank_line(param: int) -> None:  # noqa: ARG001
     """Do something.
 
     Args:
@@ -1182,22 +1185,28 @@ AUTO_EXCEPTION = """\
 """
 
 
-@pytest.mark.parametrize("object", [x for x in globals().values() if hasattr(x, "EXPECTED")])
+@pytest.mark.parametrize("val", [x for x in globals().values() if hasattr(x, "EXPECTED")])
 @pytest.mark.sphinx("text", testroot="integration")
-def test_integration(app: SphinxTestApp, status: StringIO, warning: StringIO, monkeypatch, object: Any) -> None:
-    if isclass(object) and issubclass(object, BaseException):
+def test_integration(
+    app: SphinxTestApp,
+    status: StringIO,
+    warning: StringIO,
+    monkeypatch: pytest.MonkeyPatch,
+    val: Any,
+) -> None:
+    if isclass(val) and issubclass(val, BaseException):
         template = AUTO_EXCEPTION
-    elif isclass(object):
+    elif isclass(val):
         template = AUTO_CLASS
     else:
         template = AUTO_FUNCTION
 
-    (Path(app.srcdir) / "index.rst").write_text(template.format(object.__name__))
+    (Path(app.srcdir) / "index.rst").write_text(template.format(val.__name__))
     monkeypatch.setitem(sys.modules, "mod", sys.modules[__name__])
     app.build()
     assert "build succeeded" in status.getvalue()  # Build succeeded
 
-    regexp = getattr(object, "WARNING", None)
+    regexp = getattr(val, "WARNING", None)
     value = warning.getvalue().strip()
     if regexp:
         msg = f"Regex pattern did not match.\n Regex: {regexp!r}\n Input: {value!r}"
@@ -1207,10 +1216,10 @@ def test_integration(app: SphinxTestApp, status: StringIO, warning: StringIO, mo
 
     result = (Path(app.srcdir) / "_build/text/index.txt").read_text()
 
-    expected = object.EXPECTED
+    expected = val.EXPECTED
     try:
         assert result.strip() == dedent(expected).strip()
     except Exception:
         indented = indent(f'"""\n{result}\n"""', " " * 4)
-        print(f"@expected(\n{indented}\n)\n")
+        print(f"@expected(\n{indented}\n)\n")  # noqa: T201
         raise

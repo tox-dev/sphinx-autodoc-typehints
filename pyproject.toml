@@ -101,6 +101,8 @@ line-length = 120
 target-version = "py37"
 isort = {known-first-party = ["tox", "tests"], required-imports = ["from __future__ import annotations"]}
 ignore = [
+  "ANN101",  # no typoe annotation for self
+  "ANN401",  # allow Any as type annotation
   "D203",  # `one-blank-line-before-class` (D203) and `no-blank-line-before-class` (D211) are incompatible
   "D212",  # `multi-line-summary-first-line` (D212) and `multi-line-summary-second-line` (D213) are incompatible
   "S104",  # Possible binding to all interface

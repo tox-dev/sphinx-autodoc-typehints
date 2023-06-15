@@ -118,11 +118,10 @@ PY310_PLUS = sys.version_info >= (3, 10)
 if sys.version_info >= (3, 9):
     AbcCallable = collections.abc.Callable  # type: ignore[type-arg]
 else:
-    # Hacks to make it work the same in old versions.
     # We could also set AbcCallable = typing.Callable and x fail the tests that
     # use AbcCallable when in versions less than 3.9.
-    class MyGenericAlias(typing._VariadicGenericAlias, _root=True):
-        def __getitem__(self, params):
+    class MyGenericAlias(typing._VariadicGenericAlias, _root=True):  # noqa: SLF001
+        def __getitem__(self, params):  # noqa: ANN001, ANN204
             result = super().__getitem__(params)
             # Make a copy so we don't change the name of a cached annotation
             result = result.copy_with(result.__args__)
@@ -217,7 +216,7 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
             ":py:class:`~typing.Mapping`\\[:py:class:`~typing.TypeVar`\\(``T``), "
             ":py:class:`~typing.TypeVar`\\(``U``, covariant=True)]",
         ),
-        (Mapping[str, bool], ":py:class:`~typing.Mapping`\\[:py:class:`str`, " ":py:class:`bool`]"),
+        (Mapping[str, bool], ":py:class:`~typing.Mapping`\\[:py:class:`str`, :py:class:`bool`]"),
         (Dict, ":py:class:`~typing.Dict`"),
         (
             Dict[T, int],  # type: ignore[valid-type]
@@ -232,17 +231,17 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
             ":py:class:`~typing.Dict`\\[:py:class:`~typing.TypeVar`\\(``T``),"
             " :py:class:`~typing.TypeVar`\\(``U``, covariant=True)]",
         ),
-        (Dict[str, bool], ":py:class:`~typing.Dict`\\[:py:class:`str`, " ":py:class:`bool`]"),
+        (Dict[str, bool], ":py:class:`~typing.Dict`\\[:py:class:`str`, :py:class:`bool`]"),
         (Tuple, ":py:data:`~typing.Tuple`"),
-        (Tuple[str, bool], ":py:data:`~typing.Tuple`\\[:py:class:`str`, " ":py:class:`bool`]"),
-        (Tuple[int, int, int], ":py:data:`~typing.Tuple`\\[:py:class:`int`, " ":py:class:`int`, :py:class:`int`]"),
+        (Tuple[str, bool], ":py:data:`~typing.Tuple`\\[:py:class:`str`, :py:class:`bool`]"),
+        (Tuple[int, int, int], ":py:data:`~typing.Tuple`\\[:py:class:`int`, :py:class:`int`, :py:class:`int`]"),
         (Tuple[str, ...], ":py:data:`~typing.Tuple`\\[:py:class:`str`, :py:data:`...<Ellipsis>`]"),
         (Union, ":py:data:`~typing.Union`"),
-        (Union[str, bool], ":py:data:`~typing.Union`\\[:py:class:`str`, " ":py:class:`bool`]"),
-        (Union[str, bool, None], ":py:data:`~typing.Union`\\[:py:class:`str`, " ":py:class:`bool`, :py:obj:`None`]"),
+        (Union[str, bool], ":py:data:`~typing.Union`\\[:py:class:`str`, :py:class:`bool`]"),
+        (Union[str, bool, None], ":py:data:`~typing.Union`\\[:py:class:`str`, :py:class:`bool`, :py:obj:`None`]"),
         pytest.param(
             Union[str, Any],
-            ":py:data:`~typing.Union`\\[:py:class:`str`, " ":py:data:`~typing.Any`]",
+            ":py:data:`~typing.Union`\\[:py:class:`str`, :py:data:`~typing.Any`]",
             marks=pytest.mark.skipif(
                 (3, 5, 0) <= sys.version_info[:3] <= (3, 5, 2),
                 reason="Union erases the str on 3.5.0 -> 3.5.2",
@@ -252,18 +251,18 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
         (Union[str, None], ":py:data:`~typing.Optional`\\[:py:class:`str`]"),
         (
             Optional[Union[str, bool]],
-            ":py:data:`~typing.Union`\\[:py:class:`str`, " ":py:class:`bool`, :py:obj:`None`]",
+            ":py:data:`~typing.Union`\\[:py:class:`str`, :py:class:`bool`, :py:obj:`None`]",
         ),
         (Callable, ":py:data:`~typing.Callable`"),
         (Callable[..., int], ":py:data:`~typing.Callable`\\[:py:data:`...<Ellipsis>`, :py:class:`int`]"),
-        (Callable[[int], int], ":py:data:`~typing.Callable`\\[\\[:py:class:`int`], " ":py:class:`int`]"),
+        (Callable[[int], int], ":py:data:`~typing.Callable`\\[\\[:py:class:`int`], :py:class:`int`]"),
         (
             Callable[[int, str], bool],
-            ":py:data:`~typing.Callable`\\[\\[:py:class:`int`, " ":py:class:`str`], :py:class:`bool`]",
+            ":py:data:`~typing.Callable`\\[\\[:py:class:`int`, :py:class:`str`], :py:class:`bool`]",
         ),
         (
             Callable[[int, str], None],
-            ":py:data:`~typing.Callable`\\[\\[:py:class:`int`, " ":py:class:`str`], :py:obj:`None`]",
+            ":py:data:`~typing.Callable`\\[\\[:py:class:`int`, :py:class:`str`], :py:obj:`None`]",
         ),
         (
             Callable[[T], T],
@@ -272,7 +271,7 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
         ),
         (
             AbcCallable[[int, str], bool],  # type: ignore[valid-type,misc,type-arg]
-            ":py:class:`~collections.abc.Callable`\\[\\[:py:class:`int`, " ":py:class:`str`], :py:class:`bool`]",
+            ":py:class:`~collections.abc.Callable`\\[\\[:py:class:`int`, :py:class:`str`], :py:class:`bool`]",
         ),
         (Pattern, ":py:class:`~typing.Pattern`"),
         (Pattern[str], ":py:class:`~typing.Pattern`\\[:py:class:`str`]"),
@@ -286,7 +285,7 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
         (D, ":py:class:`~%s.D`" % __name__),
         (E, ":py:class:`~%s.E`" % __name__),
         (E[int], ":py:class:`~%s.E`\\[:py:class:`int`]" % __name__),
-        (W, f':py:{"class" if PY310_PLUS else "func"}:' f"`~typing.NewType`\\(``W``, :py:class:`str`)"),
+        (W, f':py:{"class" if PY310_PLUS else "func"}:' f"`~typing.NewType`\\(``W``, :py:class:`str`)"),  # noqa: ISC001
         (T, ":py:class:`~typing.TypeVar`\\(``T``)"),
         (U, ":py:class:`~typing.TypeVar`\\(``U``, covariant=True)"),
         (V, ":py:class:`~typing.TypeVar`\\(``V``, contravariant=True)"),
@@ -584,13 +583,11 @@ def test_sphinx_output_defaults(
 
     app.config.master_doc = "simple"  # type: ignore[attr-defined] # create flag
     app.config.typehints_defaults = defaults_config_val  # type: ignore[attr-defined] # create flag
-    try:
-        app.build()
-    except Exception as e:
-        if not isinstance(expected, Exception):
-            raise
-        assert str(expected) in str(e)
+    if isinstance(expected, Exception):
+        with pytest.raises(Exception, match=re.escape(str(expected))):
+            app.build()
         return
+    app.build()
     assert "build succeeded" in status.getvalue()
 
     contents = (Path(app.srcdir) / "_build/text/simple.txt").read_text()
@@ -617,7 +614,7 @@ def test_sphinx_output_defaults(
     ("formatter_config_val", "expected"),
     [
         (None, ['("bool") -- foo', '("int") -- bar', '"str"']),
-        (lambda ann, conf: "Test", ["(*Test*) -- foo", "(*Test*) -- bar", "Test"]),
+        (lambda ann, conf: "Test", ["(*Test*) -- foo", "(*Test*) -- bar", "Test"]),  # noqa: ARG005
         ("some string", Exception("needs to be callable or `None`")),
     ],
 )
@@ -633,14 +630,11 @@ def test_sphinx_output_formatter(
 
     app.config.master_doc = "simple"  # type: ignore[attr-defined] # create flag
     app.config.typehints_formatter = formatter_config_val  # type: ignore[attr-defined] # create flag
-    try:
-        app.build()
-    except Exception as e:
-        if not isinstance(expected, Exception):
-            raise
-        assert str(expected) in str(e)
+    if isinstance(expected, Exception):
+        with pytest.raises(Exception, match=re.escape(str(expected))):
+            app.build()
         return
-    assert not isinstance(expected, Exception), "Expected app.build() to raise exception, but it didn`t"
+    app.build()
     assert "build succeeded" in status.getvalue()
 
     contents = (Path(app.srcdir) / "_build/text/simple.txt").read_text()
@@ -749,7 +743,7 @@ def test_bound_class_method(method: FunctionType) -> None:
 def test_syntax_error_backfill() -> None:
     # Regression test for #188
     # fmt: off
-    def func(x):  # type: ignore[no-untyped-def]
+    def func(x):  # type: ignore[no-untyped-def]  # noqa: ANN001, ANN202
         return x
     # fmt: on
     backfill_type_hints(func, "func")

@@ -1,3 +1,4 @@
+"""Custom patches to make the world work."""
 from __future__ import annotations
 
 from functools import lru_cache
@@ -17,17 +18,12 @@ if TYPE_CHECKING:
 @lru_cache  # A cute way to make sure the function only runs once.
 def fix_autodoc_typehints_for_overloaded_methods() -> None:
     """
-    sphinx-autodoc-typehints responds to the "autodoc-process-signature" event
-    to remove types from the signature line of functions.
+    sphinx-autodoc-typehints responds to the "autodoc-process-signature" event to remove types from the signature line.
 
-    Normally, `FunctionDocumenter.format_signature` and
-    `MethodDocumenter.format_signature` call `super().format_signature` which
-    ends up going to `Documenter.format_signature`, and this last method emits
-    the `autodoc-process-signature` event. However, if there are overloads,
-    `FunctionDocumenter.format_signature` does something else and the event
-    never occurs.
-
-    Here we remove this alternative code path by brute force.
+    Normally, `FunctionDocumenter.format_signature` and `MethodDocumenter.format_signature` call
+    `super().format_signature` which ends up going to `Documenter.format_signature`, and this last method emits the
+    `autodoc-process-signature` event. However, if there are overloads, `FunctionDocumenter.format_signature` does
+    something else and the event never occurs. Here we remove this alternative code path by brute force.
 
     See https://github.com/tox-dev/sphinx-autodoc-typehints/issues/296
     """
@@ -37,12 +33,12 @@ def fix_autodoc_typehints_for_overloaded_methods() -> None:
     del MethodDocumenter.format_signature
 
 
-def napoleon_numpy_docstring_return_type_processor(
+def napoleon_numpy_docstring_return_type_processor(  # noqa: PLR0913
     app: Sphinx,
     what: str,
-    name: str,
-    obj: Any,
-    options: Options | None,
+    name: str,  # noqa: ARG001
+    obj: Any,  # noqa: ARG001
+    options: Options | None,  # noqa: ARG001
     lines: list[str],
 ) -> None:
     """Insert a : under Returns: to tell napoleon not to look for a return type."""
@@ -54,53 +50,47 @@ def napoleon_numpy_docstring_return_type_processor(
     # Search for the returns header:
     # Returns:
     # --------
-    for idx, line in enumerate(lines[:-2]):
+    for pos, line in enumerate(lines[:-2]):
         if line.lower().strip(":") not in ["return", "returns"]:
             continue
         # Underline detection.
-        chars = set(lines[idx + 1].strip())
+        chars = set(lines[pos + 1].strip())
         # Napoleon allows the underline to consist of a bunch of weirder things...
         if len(chars) != 1 or list(chars)[0] not in "=-~_*+#":
             continue
-        idx = idx + 2
+        pos = pos + 2  # noqa: PLW2901
         break
     else:
         return
 
-    lines.insert(idx, ":")
+    lines.insert(pos, ":")
 
 
 def fix_napoleon_numpy_docstring_return_type(app: Sphinx) -> None:
-    """
-    If no return type is explicitly provided, numpy docstrings will mess up and
-    use the return type text as return types.
-    """
+    """If no return type is explicitly set, numpy docstrings will use the return type text as return types."""
     # standard priority is 500. Setting priority to 499 ensures this runs before
     # napoleon's docstring processor.
     app.connect("autodoc-process-docstring", napoleon_numpy_docstring_return_type_processor, priority=499)
 
 
-def patched_lookup_annotation(*_args: Any) -> str:
+def _patched_lookup_annotation(*_args: Any) -> str:
     """
-    GoogleDocstring._lookup_annotation sometimes adds incorrect type
-    annotations to constructor parameters (and otherwise does nothing). Disable
-    it so we can handle this on our own.
+    GoogleDocstring._lookup_annotation sometimes adds incorrect type annotations to constructor parameters.
+
+    Disable it so we can handle this on our own.
     """
     return ""
 
 
-def patch_google_docstring_lookup_annotation() -> None:
-    """
-    Fix issue 308:
-    https://github.com/tox-dev/sphinx-autodoc-typehints/issues/308.
-    """
-    GoogleDocstring._lookup_annotation = patched_lookup_annotation  # type: ignore[assignment]
+def _patch_google_docstring_lookup_annotation() -> None:
+    """Fix issue https://github.com/tox-dev/sphinx-autodoc-typehints/issues/308."""
+    GoogleDocstring._lookup_annotation = _patched_lookup_annotation  # type: ignore[assignment] # noqa: SLF001
 
 
 orig_base_admonition_run = BaseAdmonition.run
 
 
-def patched_base_admonition_run(self: BaseAdmonition) -> Any:
+def _patched_base_admonition_run(self: BaseAdmonition) -> Any:
     result = orig_base_admonition_run(self)
     result[0].line = self.lineno
     return result
@@ -109,7 +99,7 @@ def patched_base_admonition_run(self: BaseAdmonition) -> Any:
 orig_text_indent = Text.indent
 
 
-def patched_text_indent(self: Text, *args: Any) -> Any:
+def _patched_text_indent(self: Text, *args: Any) -> Any:
     _, line = self.state_machine.get_source_and_line()
     result = orig_text_indent(self, *args)
     node = self.parent[-1]
@@ -119,22 +109,29 @@ def patched_text_indent(self: Text, *args: Any) -> Any:
     return result
 
 
-def patch_line_numbers() -> None:
+def _patch_line_numbers() -> None:
     """
     Make the rst parser put line numbers on more nodes.
 
     When the line numbers are missing, we have a hard time placing the :rtype:.
     """
-    Text.indent = patched_text_indent
-    BaseAdmonition.run = patched_base_admonition_run
+    Text.indent = _patched_text_indent
+    BaseAdmonition.run = _patched_base_admonition_run
 
 
 def install_patches(app: Sphinx) -> None:
+    """
+    Install the patches.
+
+    :param app: the Sphinx app
+    """
     fix_autodoc_typehints_for_overloaded_methods()
     patch_attribute_handling(app)
-    patch_google_docstring_lookup_annotation()
+    _patch_google_docstring_lookup_annotation()
     fix_napoleon_numpy_docstring_return_type(app)
-    patch_line_numbers()
+    _patch_line_numbers()
 
 
-___all__ = ["install_patches"]
+___all__ = [
+    "install_patches",
+]

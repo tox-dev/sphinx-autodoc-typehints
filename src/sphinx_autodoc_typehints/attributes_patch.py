@@ -1,3 +1,4 @@
+"""Patch for attributes."""
 from __future__ import annotations
 
 from functools import partial
@@ -41,25 +42,19 @@ orig_add_directive_header = AttributeDocumenter.add_directive_header
 orig_handle_signature = PyAttribute.handle_signature
 
 
-def stringify_annotation(app: Sphinx, annotation: Any, mode: str = "") -> str:
-    """
-    Format the annotation with sphinx-autodoc-typehints and inject our
-    magic prefix to tell our patched PyAttribute.handle_signature to treat
-    it as rst.
-    """
+def _stringify_annotation(app: Sphinx, annotation: Any, mode: str = "") -> str:  # noqa: ARG001
+    # Format the annotation with sphinx-autodoc-typehints and inject our magic prefix to tell our patched
+    # PyAttribute.handle_signature to treat it as rst.
     from . import format_annotation
 
     return TYPE_IS_RST_LABEL + format_annotation(annotation, app.config)
 
 
 def patch_attribute_documenter(app: Sphinx) -> None:
-    """
-    Instead of using stringify_typehint in
-    `AttributeDocumenter.add_directive_header`, use `format_annotation`.
-    """
+    """Instead of using stringify_typehint in `AttributeDocumenter.add_directive_header`, use `format_annotation`."""
 
     def add_directive_header(*args: Any, **kwargs: Any) -> Any:
-        with patch(STRINGIFY_PATCH_TARGET, partial(stringify_annotation, app)):
+        with patch(STRINGIFY_PATCH_TARGET, partial(_stringify_annotation, app)):
             return orig_add_directive_header(*args, **kwargs)
 
     AttributeDocumenter.add_directive_header = add_directive_header  # type:ignore[method-assign]
@@ -76,7 +71,7 @@ def rst_to_docutils(settings: Values, rst: str) -> Any:
 def patched_parse_annotation(settings: Values, typ: str, env: Any) -> Any:
     # if typ doesn't start with our label, use original function
     if not typ.startswith(TYPE_IS_RST_LABEL):
-        assert _parse_annotation is not None
+        assert _parse_annotation is not None  # noqa: S101
         return _parse_annotation(typ, env)
     # Otherwise handle as rst
     typ = typ[len(TYPE_IS_RST_LABEL) :]
