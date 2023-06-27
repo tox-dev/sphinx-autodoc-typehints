@@ -764,7 +764,8 @@ def test_resolve_typing_guard_imports(app: SphinxTestApp, status: StringIO, warn
     set_python_path()
     app.config.autodoc_mock_imports = ["viktor"]  # type: ignore[attr-defined] # create flag
     app.build()
-    assert "build succeeded" in status.getvalue()
+    out = status.getvalue()
+    assert "build succeeded" in out
     err = warning.getvalue()
     r = re.compile("WARNING: Failed guarded type import")
     assert len(r.findall(err)) == 1
