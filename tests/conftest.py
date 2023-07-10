@@ -41,7 +41,7 @@ def _remove_sphinx_projects(sphinx_test_tempdir: path) -> None:
         try:
             if entry.is_dir() and Path(entry, "_build").exists():
                 shutil.rmtree(str(entry))
-        except PermissionError:
+        except PermissionError:  # noqa: PERF203
             pass
 
 
