@@ -428,7 +428,7 @@ def _resolve_type_guarded_imports(autodoc_mock_imports: list[str], obj: Any) -> 
                     try:
                         with mock(autodoc_mock_imports):
                             exec(guarded_code, obj.__globals__)  # noqa: S102
-                    except Exception as exc:  # noqa: BLE001
+                    except Exception as exc:  # noqa: BLE001, PERF203
                         _LOGGER.warning(f"Failed guarded type import with {exc!r}")
 
 
