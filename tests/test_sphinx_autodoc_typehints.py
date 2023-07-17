@@ -55,8 +55,8 @@ except ImportError:
     nptyping = None  # type: ignore[assignment]
 
 T = TypeVar("T")
-U = TypeVar("U", covariant=True)
-V = TypeVar("V", contravariant=True)
+U_co = TypeVar("U_co", covariant=True)
+V_contra = TypeVar("V_contra", contravariant=True)
 X = TypeVar("X", str, int)
 Y = TypeVar("Y", bound=str)
 Z = TypeVar("Z", bound="A")
@@ -211,13 +211,14 @@ _CASES = [
         ":py:class:`~typing.Mapping`\\[:py:class:`~typing.TypeVar`\\(``T``), :py:class:`int`]",
     ),
     (
-        Mapping[str, V],  # type: ignore[valid-type]
-        ":py:class:`~typing.Mapping`\\[:py:class:`str`, :py:class:`~typing.TypeVar`\\(``V``, contravariant=True)]",
+        Mapping[str, V_contra],  # type: ignore[valid-type]
+        ":py:class:`~typing.Mapping`\\[:py:class:`str`, :py:class:`~typing.TypeVar`\\("
+        "``V_contra``, contravariant=True)]",
     ),
     (
-        Mapping[T, U],  # type: ignore[valid-type]
+        Mapping[T, U_co],  # type: ignore[valid-type]
         ":py:class:`~typing.Mapping`\\[:py:class:`~typing.TypeVar`\\(``T``), "
-        ":py:class:`~typing.TypeVar`\\(``U``, covariant=True)]",
+        ":py:class:`~typing.TypeVar`\\(``U_co``, covariant=True)]",
     ),
     (Mapping[str, bool], ":py:class:`~typing.Mapping`\\[:py:class:`str`, :py:class:`bool`]"),
     (Dict, ":py:class:`~typing.Dict`"),
@@ -226,13 +227,13 @@ _CASES = [
         ":py:class:`~typing.Dict`\\[:py:class:`~typing.TypeVar`\\(``T``), :py:class:`int`]",
     ),
     (
-        Dict[str, V],  # type: ignore[valid-type]
-        ":py:class:`~typing.Dict`\\[:py:class:`str`, :py:class:`~typing.TypeVar`\\(``V``, contravariant=True)]",
+        Dict[str, V_contra],  # type: ignore[valid-type]
+        ":py:class:`~typing.Dict`\\[:py:class:`str`, :py:class:`~typing.TypeVar`\\(``V_contra``, contravariant=True)]",
     ),
     (
-        Dict[T, U],  # type: ignore[valid-type]
+        Dict[T, U_co],  # type: ignore[valid-type]
         ":py:class:`~typing.Dict`\\[:py:class:`~typing.TypeVar`\\(``T``),"
-        " :py:class:`~typing.TypeVar`\\(``U``, covariant=True)]",
+        " :py:class:`~typing.TypeVar`\\(``U_co``, covariant=True)]",
     ),
     (Dict[str, bool], ":py:class:`~typing.Dict`\\[:py:class:`str`, :py:class:`bool`]"),
     (Tuple, ":py:data:`~typing.Tuple`"),
@@ -283,8 +284,8 @@ _CASES = [
     (E[int], ":py:class:`~%s.E`\\[:py:class:`int`]" % __name__),
     (W, f":py:{'class' if PY310_PLUS else 'func'}:`~typing.NewType`\\(``W``, :py:class:`str`)"),
     (T, ":py:class:`~typing.TypeVar`\\(``T``)"),
-    (U, ":py:class:`~typing.TypeVar`\\(``U``, covariant=True)"),
-    (V, ":py:class:`~typing.TypeVar`\\(``V``, contravariant=True)"),
+    (U_co, ":py:class:`~typing.TypeVar`\\(``U_co``, covariant=True)"),
+    (V_contra, ":py:class:`~typing.TypeVar`\\(``V_contra``, contravariant=True)"),
     (X, ":py:class:`~typing.TypeVar`\\(``X``, :py:class:`str`, :py:class:`int`)"),
     (Y, ":py:class:`~typing.TypeVar`\\(``Y``, bound= :py:class:`str`)"),
     (Z, ":py:class:`~typing.TypeVar`\\(``Z``, bound= A)"),

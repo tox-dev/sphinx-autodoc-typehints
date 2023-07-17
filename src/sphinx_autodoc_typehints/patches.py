@@ -56,7 +56,7 @@ def napoleon_numpy_docstring_return_type_processor(  # noqa: PLR0913
         # Underline detection.
         chars = set(lines[pos + 1].strip())
         # Napoleon allows the underline to consist of a bunch of weirder things...
-        if len(chars) != 1 or list(chars)[0] not in "=-~_*+#":
+        if len(chars) != 1 or next(iter(chars)) not in "=-~_*+#":
             continue
         pos = pos + 2  # noqa: PLW2901
         break
