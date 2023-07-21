@@ -111,27 +111,3 @@ creates a circular import problem. The solution to this is the following:
 2. Use forward references in the type annotations (e.g. `def methodname(self, param1: 'othermodule.OtherClass'):`)
 
 On Python 3.7, you can even use `from __future__ import annotations` and remove the quotes.
-
-## Using type hint comments
-
-If you\'re documenting code that needs to stay compatible with Python 2.7, you cannot use regular type annotations.
-Instead, you must either be using Python 3.8 or later or have [typed_ast](https://pypi.org/project/typed-ast/)
-installed. The package extras `type_comments` will pull in the appropriate dependencies automatically. Then you can add
-type hint comments in the following manner:
-
-```python
-def myfunction(arg1, arg2):
-    # type: (int, str) -> int
-    return 42
-```
-
-or alternatively:
-
-```python
-def myfunction(
-    arg1,  # type: int
-    arg2,  # type: str
-):
-    # type: (...) -> int
-    return 42
-```

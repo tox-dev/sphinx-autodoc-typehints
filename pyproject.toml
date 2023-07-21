@@ -56,9 +56,6 @@ optional-dependencies.testing = [
   "sphobjinv>=2.3.1",
   "typing-extensions>=4.6.3",
 ]
-optional-dependencies.type-comment = [
-  'typed-ast>=1.5.4; python_version < "3.8"',
-]
 urls.Changelog = "https://github.com/tox-dev/sphinx-autodoc-typehints/blob/main/CHANGELOG.md"
 urls.Homepage = "https://github.com/tox-dev/sphinx-autodoc-typehints"
 urls.Source = "https://github.com/tox-dev/sphinx-autodoc-typehints"
