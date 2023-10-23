@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import pytest
-from sphinx.testing.path import path
 from sphobjinv import Inventory
 
 if TYPE_CHECKING:
@@ -32,7 +31,7 @@ def inv(pytestconfig: Config) -> Inventory:
 
 
 @pytest.fixture(autouse=True)
-def _remove_sphinx_projects(sphinx_test_tempdir: path) -> None:
+def _remove_sphinx_projects(sphinx_test_tempdir: Path) -> None:
     # Remove any directory which appears to be a Sphinx project from
     # the temporary directory area.
     # See https://github.com/sphinx-doc/sphinx/issues/4040
@@ -46,8 +45,8 @@ def _remove_sphinx_projects(sphinx_test_tempdir: path) -> None:
 
 
 @pytest.fixture()
-def rootdir() -> path:
-    return path(str(Path(__file__).parent) or ".").abspath() / "roots"
+def rootdir() -> Path:
+    return Path(str(Path(__file__).parent) or ".").absolute() / "roots"
 
 
 def pytest_ignore_collect(path: Any, config: Config) -> bool | None:  # noqa: ARG001
