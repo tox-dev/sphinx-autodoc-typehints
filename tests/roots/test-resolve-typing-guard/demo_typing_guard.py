@@ -12,6 +12,8 @@ if TYPE_CHECKING:
     from decimal import Decimal
     from typing import Sequence
 
+    from demo_typing_guard_dummy import Literal  # guarded by another `if TYPE_CHECKING` in demo_typing_guard_dummy
+
 
 if typing.TYPE_CHECKING:
     from typing import AnyStr
@@ -50,6 +52,10 @@ class SomeClass:
 
             :param item: some item
             """
+
+
+def func(_x: Literal) -> None:
+    ...
 
 
 __all__ = [
