@@ -418,14 +418,10 @@ def _should_skip_guarded_import_resolution(obj: Any) -> bool:
     return id(obj.__globals__) in _TYPE_GUARD_IMPORTS_RESOLVED_GLOBALS_ID
 
 
-def _execute_guarded_code(autodoc_mock_imports: list[str], obj: Any, module: types.ModuleType) -> None:
-    try:
-        module_code = inspect.getsource(module)
-    except (TypeError, OSError):
-        ...  # no source code => no type guards
-    else:
-        for _, part in _TYPE_GUARD_IMPORT_RE.findall(module_code):
-            guarded_code = textwrap.dedent(part)
+def _execute_guarded_code(autodoc_mock_imports: list[str], obj: Any, module_code: str) -> None:
+    for _, part in _TYPE_GUARD_IMPORT_RE.findall(module_code):
+        guarded_code = textwrap.dedent(part)
+        try:
             try:
                 with mock(autodoc_mock_imports):
                     exec(guarded_code, getattr(obj, "__globals__", obj.__dict__))  # noqa: S102
@@ -433,18 +429,13 @@ def _execute_guarded_code(autodoc_mock_imports: list[str], obj: Any, module: typ
                 # ImportError might have occurred because the module has guarded code as well,
                 # so we recurse on the module.
                 if exc.name:
-                    try:
-                        _resolve_type_guarded_imports(autodoc_mock_imports, importlib.import_module(exc.name))
+                    _resolve_type_guarded_imports(autodoc_mock_imports, importlib.import_module(exc.name))
 
-                        # Retry the guarded code and see if it works now after resolving all nested type guards.
-                        with mock(autodoc_mock_imports):
-                            exec(guarded_code, getattr(obj, "__globals__", obj.__dict__))  # noqa: S102
-                    except Exception as exc:  # noqa: BLE001
-                        # Give up if that still didn't work
-                        _LOGGER.warning("Failed guarded type import with %r", exc)
-
-            except Exception as exc:  # noqa: BLE001
-                _LOGGER.warning("Failed guarded type import with %r", exc)
+                    # Retry the guarded code and see if it works now after resolving all nested type guards.
+                    with mock(autodoc_mock_imports):
+                        exec(guarded_code, getattr(obj, "__globals__", obj.__dict__))  # noqa: S102
+        except Exception as exc:  # noqa: BLE001
+            _LOGGER.warning("Failed guarded type import with %r", exc)
 
 
 def _resolve_type_guarded_imports(autodoc_mock_imports: list[str], obj: Any) -> None:
@@ -457,8 +448,13 @@ def _resolve_type_guarded_imports(autodoc_mock_imports: list[str], obj: Any) -> 
     module = inspect.getmodule(obj)
 
     if module:
-        _TYPE_GUARD_IMPORTS_RESOLVED.add(module.__name__)
-        _execute_guarded_code(autodoc_mock_imports, obj, module)
+        try:
+            module_code = inspect.getsource(module)
+        except (TypeError, OSError):
+            ...  # no source code => no type guards
+        else:
+            _TYPE_GUARD_IMPORTS_RESOLVED.add(module.__name__)
+            _execute_guarded_code(autodoc_mock_imports, obj, module_code)
 
 
 def _get_type_hint(autodoc_mock_imports: list[str], name: str, obj: Any) -> dict[str, Any]:
