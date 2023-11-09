@@ -11,11 +11,13 @@ import types
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, AnyStr, Callable, ForwardRef, NewType, TypeVar, get_type_hints
 
+from docutils import nodes
 from docutils.frontend import OptionParser
 from docutils.parsers.rst import Parser as RstParser
+from docutils.parsers.rst import states
 from docutils.utils import new_document
 from sphinx.ext.autodoc.mock import mock
-from sphinx.util import logging
+from sphinx.util import logging, rst
 from sphinx.util.inspect import signature as sphinx_signature
 from sphinx.util.inspect import stringify_signature
 
@@ -209,7 +211,7 @@ def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901, PL
     fully_qualified: bool = getattr(config, "typehints_fully_qualified", False)
     prefix = "" if fully_qualified or full_name == class_name else "~"
     role = "data" if module == "typing" and class_name in _PYDATA_ANNOTATIONS else "class"
-    args_format = "\\[{}]"
+    args_format = "\\ \\[{}]"
     formatted_args: str | None = ""
 
     # Some types require special handling
@@ -242,9 +244,9 @@ def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901, PL
                 args = tuple(x for x in args if x is not type(None))
     elif full_name in ("typing.Callable", "collections.abc.Callable") and args and args[0] is not ...:
         fmt = [format_annotation(arg, config) for arg in args]
-        formatted_args = f"\\[\\[{', '.join(fmt[:-1])}], {fmt[-1]}]"
+        formatted_args = f"\\ \\[\\[{', '.join(fmt[:-1])}], {fmt[-1]}]"
     elif full_name == "typing.Literal":
-        formatted_args = f"\\[{', '.join(f'``{arg!r}``' for arg in args)}]"
+        formatted_args = f"\\ \\[{', '.join(f'``{arg!r}``' for arg in args)}]"
     elif full_name == "types.UnionType":
         return " | ".join([format_annotation(arg, config) for arg in args])
 
@@ -724,7 +726,7 @@ def _inject_signature(  # noqa: C901
             if annotation is None:
                 type_annotation = f":type {arg_name}: "
             else:
-                formatted_annotation = format_annotation(annotation, app.config)
+                formatted_annotation = add_type_css_class(format_annotation(annotation, app.config))
                 type_annotation = f":type {arg_name}: {formatted_annotation}"
 
             if app.config.typehints_defaults:
@@ -843,7 +845,7 @@ def _inject_rtype(  # noqa: PLR0913
     if not app.config.typehints_use_rtype and r.found_return and " -- " in lines[insert_index]:
         return
 
-    formatted_annotation = format_annotation(type_hints["return"], app.config)
+    formatted_annotation = add_type_css_class(format_annotation(type_hints["return"], app.config))
 
     if r.found_param and insert_index < len(lines) and lines[insert_index].strip():
         insert_index -= 1
@@ -874,6 +876,45 @@ def validate_config(app: Sphinx, env: BuildEnvironment, docnames: list[str]) -> 
         raise ValueError(msg)
 
 
+def unescape(escaped: str) -> str:
+    # For some reason the string we get has a bunch of null bytes in it??
+    # Remove them...
+    escaped = escaped.replace("\x00", "")
+    # For some reason the extra slash before spaces gets lost between the .rst
+    # source and when this directive is called. So don't replace "\<space>" =>
+    # "<space>"
+    return re.sub(r"\\([^ ])", r"\1", escaped)
+
+
+def add_type_css_class(type_rst: str) -> str:
+    return f":sphinx_autodoc_typehints_type:`{rst.escape(type_rst)}`"
+
+
+def sphinx_autodoc_typehints_type_role(
+    _role: str,
+    _rawtext: str,
+    text: str,
+    _lineno: int,
+    inliner: states.Inliner,
+    _options: dict[str, Any] | None = None,
+    _content: list[str] | None = None,
+) -> tuple[list[Node], list[Node]]:
+    """
+    Add css tag around rendered type.
+
+    The body should be escaped rst. This renders its body as rst and wraps the
+    result in <span class="sphinx_autodoc_typehints-type"> </span>
+    """
+    unescaped = unescape(text)
+    # the typestubs for docutils don't have any info about Inliner
+    doc = new_document("", inliner.document.settings)  # type: ignore[attr-defined]
+    RstParser().parse(unescaped, doc)
+    n = nodes.inline(text)
+    n["classes"].append("sphinx_autodoc_typehints-type")
+    n += doc.children[0].children
+    return [n], []
+
+
 def setup(app: Sphinx) -> dict[str, bool]:
     app.add_config_value("always_document_param_types", False, "html")  # noqa: FBT003
     app.add_config_value("typehints_fully_qualified", False, "env")  # noqa: FBT003
@@ -884,6 +925,7 @@ def setup(app: Sphinx) -> dict[str, bool]:
     app.add_config_value("typehints_formatter", None, "env")
     app.add_config_value("typehints_use_signature", False, "env")  # noqa: FBT003
     app.add_config_value("typehints_use_signature_return", False, "env")  # noqa: FBT003
+    app.add_role("sphinx_autodoc_typehints_type", sphinx_autodoc_typehints_type_role)
     app.connect("env-before-read-docs", validate_config)  # config may be changed after “config-inited” event
     app.connect("autodoc-process-signature", process_signature)
     app.connect("autodoc-process-docstring", process_docstring)

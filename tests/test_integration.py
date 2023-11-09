@@ -326,7 +326,7 @@ mod.function_with_unresolvable_annotation(x)
    Function docstring.
 
    Parameters:
-      **x** (*a.b.c*) -- foo
+      **x** (a.b.c) -- foo
 """,
 )
 def function_with_unresolvable_annotation(x: a.b.c):  # noqa: ANN201, ARG001, F821

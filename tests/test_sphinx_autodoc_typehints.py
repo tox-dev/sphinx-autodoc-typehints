@@ -201,87 +201,87 @@ _CASES = [
     (type, ":py:class:`type`"),
     (collections.abc.Callable, ":py:class:`~collections.abc.Callable`"),
     (Type, ":py:class:`~typing.Type`"),
-    (Type[A], ":py:class:`~typing.Type`\\[:py:class:`~%s.A`]" % __name__),
+    (Type[A], ":py:class:`~typing.Type`\\ \\[:py:class:`~%s.A`]" % __name__),
     (Any, ":py:data:`~typing.Any`"),
     (AnyStr, ":py:data:`~typing.AnyStr`"),
-    (Generic[T], ":py:class:`~typing.Generic`\\[:py:class:`~typing.TypeVar`\\(``T``)]"),
+    (Generic[T], ":py:class:`~typing.Generic`\\ \\[:py:class:`~typing.TypeVar`\\(``T``)]"),
     (Mapping, ":py:class:`~typing.Mapping`"),
     (
         Mapping[T, int],  # type: ignore[valid-type]
-        ":py:class:`~typing.Mapping`\\[:py:class:`~typing.TypeVar`\\(``T``), :py:class:`int`]",
+        ":py:class:`~typing.Mapping`\\ \\[:py:class:`~typing.TypeVar`\\(``T``), :py:class:`int`]",
     ),
     (
         Mapping[str, V_contra],  # type: ignore[valid-type]
-        ":py:class:`~typing.Mapping`\\[:py:class:`str`, :py:class:`~typing.TypeVar`\\("
+        ":py:class:`~typing.Mapping`\\ \\[:py:class:`str`, :py:class:`~typing.TypeVar`\\("
         "``V_contra``, contravariant=True)]",
     ),
     (
         Mapping[T, U_co],  # type: ignore[valid-type]
-        ":py:class:`~typing.Mapping`\\[:py:class:`~typing.TypeVar`\\(``T``), "
+        ":py:class:`~typing.Mapping`\\ \\[:py:class:`~typing.TypeVar`\\(``T``), "
         ":py:class:`~typing.TypeVar`\\(``U_co``, covariant=True)]",
     ),
-    (Mapping[str, bool], ":py:class:`~typing.Mapping`\\[:py:class:`str`, :py:class:`bool`]"),
+    (Mapping[str, bool], ":py:class:`~typing.Mapping`\\ \\[:py:class:`str`, :py:class:`bool`]"),
     (Dict, ":py:class:`~typing.Dict`"),
     (
         Dict[T, int],  # type: ignore[valid-type]
-        ":py:class:`~typing.Dict`\\[:py:class:`~typing.TypeVar`\\(``T``), :py:class:`int`]",
+        ":py:class:`~typing.Dict`\\ \\[:py:class:`~typing.TypeVar`\\(``T``), :py:class:`int`]",
     ),
     (
         Dict[str, V_contra],  # type: ignore[valid-type]
-        ":py:class:`~typing.Dict`\\[:py:class:`str`, :py:class:`~typing.TypeVar`\\(``V_contra``, contravariant=True)]",
+        ":py:class:`~typing.Dict`\\ \\[:py:class:`str`, :py:class:`~typing.TypeVar`\\(``V_contra``, contravariant=True)]",  # noqa: E501
     ),
     (
         Dict[T, U_co],  # type: ignore[valid-type]
-        ":py:class:`~typing.Dict`\\[:py:class:`~typing.TypeVar`\\(``T``),"
+        ":py:class:`~typing.Dict`\\ \\[:py:class:`~typing.TypeVar`\\(``T``),"
         " :py:class:`~typing.TypeVar`\\(``U_co``, covariant=True)]",
     ),
-    (Dict[str, bool], ":py:class:`~typing.Dict`\\[:py:class:`str`, :py:class:`bool`]"),
+    (Dict[str, bool], ":py:class:`~typing.Dict`\\ \\[:py:class:`str`, :py:class:`bool`]"),
     (Tuple, ":py:data:`~typing.Tuple`"),
-    (Tuple[str, bool], ":py:data:`~typing.Tuple`\\[:py:class:`str`, :py:class:`bool`]"),
-    (Tuple[int, int, int], ":py:data:`~typing.Tuple`\\[:py:class:`int`, :py:class:`int`, :py:class:`int`]"),
-    (Tuple[str, ...], ":py:data:`~typing.Tuple`\\[:py:class:`str`, :py:data:`...<Ellipsis>`]"),
+    (Tuple[str, bool], ":py:data:`~typing.Tuple`\\ \\[:py:class:`str`, :py:class:`bool`]"),
+    (Tuple[int, int, int], ":py:data:`~typing.Tuple`\\ \\[:py:class:`int`, :py:class:`int`, :py:class:`int`]"),
+    (Tuple[str, ...], ":py:data:`~typing.Tuple`\\ \\[:py:class:`str`, :py:data:`...<Ellipsis>`]"),
     (Union, ":py:data:`~typing.Union`"),
-    (Union[str, bool], ":py:data:`~typing.Union`\\[:py:class:`str`, :py:class:`bool`]"),
-    (Union[str, bool, None], ":py:data:`~typing.Union`\\[:py:class:`str`, :py:class:`bool`, :py:obj:`None`]"),
-    pytest.param(Union[str, Any], ":py:data:`~typing.Union`\\[:py:class:`str`, :py:data:`~typing.Any`]"),
-    (Optional[str], ":py:data:`~typing.Optional`\\[:py:class:`str`]"),
-    (Union[str, None], ":py:data:`~typing.Optional`\\[:py:class:`str`]"),
+    (Union[str, bool], ":py:data:`~typing.Union`\\ \\[:py:class:`str`, :py:class:`bool`]"),
+    (Union[str, bool, None], ":py:data:`~typing.Union`\\ \\[:py:class:`str`, :py:class:`bool`, :py:obj:`None`]"),
+    pytest.param(Union[str, Any], ":py:data:`~typing.Union`\\ \\[:py:class:`str`, :py:data:`~typing.Any`]"),
+    (Optional[str], ":py:data:`~typing.Optional`\\ \\[:py:class:`str`]"),
+    (Union[str, None], ":py:data:`~typing.Optional`\\ \\[:py:class:`str`]"),
     (
         Optional[Union[str, bool]],
-        ":py:data:`~typing.Union`\\[:py:class:`str`, :py:class:`bool`, :py:obj:`None`]",
+        ":py:data:`~typing.Union`\\ \\[:py:class:`str`, :py:class:`bool`, :py:obj:`None`]",
     ),
     (Callable, ":py:data:`~typing.Callable`"),
-    (Callable[..., int], ":py:data:`~typing.Callable`\\[:py:data:`...<Ellipsis>`, :py:class:`int`]"),
-    (Callable[[int], int], ":py:data:`~typing.Callable`\\[\\[:py:class:`int`], :py:class:`int`]"),
+    (Callable[..., int], ":py:data:`~typing.Callable`\\ \\[:py:data:`...<Ellipsis>`, :py:class:`int`]"),
+    (Callable[[int], int], ":py:data:`~typing.Callable`\\ \\[\\[:py:class:`int`], :py:class:`int`]"),
     (
         Callable[[int, str], bool],
-        ":py:data:`~typing.Callable`\\[\\[:py:class:`int`, :py:class:`str`], :py:class:`bool`]",
+        ":py:data:`~typing.Callable`\\ \\[\\[:py:class:`int`, :py:class:`str`], :py:class:`bool`]",
     ),
     (
         Callable[[int, str], None],
-        ":py:data:`~typing.Callable`\\[\\[:py:class:`int`, :py:class:`str`], :py:obj:`None`]",
+        ":py:data:`~typing.Callable`\\ \\[\\[:py:class:`int`, :py:class:`str`], :py:obj:`None`]",
     ),
     (
         Callable[[T], T],
-        ":py:data:`~typing.Callable`\\[\\[:py:class:`~typing.TypeVar`\\(``T``)],"
+        ":py:data:`~typing.Callable`\\ \\[\\[:py:class:`~typing.TypeVar`\\(``T``)],"
         " :py:class:`~typing.TypeVar`\\(``T``)]",
     ),
     (
         AbcCallable[[int, str], bool],  # type: ignore[valid-type,misc,type-arg]
-        ":py:class:`~collections.abc.Callable`\\[\\[:py:class:`int`, :py:class:`str`], :py:class:`bool`]",
+        ":py:class:`~collections.abc.Callable`\\ \\[\\[:py:class:`int`, :py:class:`str`], :py:class:`bool`]",
     ),
     (Pattern, ":py:class:`~typing.Pattern`"),
-    (Pattern[str], ":py:class:`~typing.Pattern`\\[:py:class:`str`]"),
+    (Pattern[str], ":py:class:`~typing.Pattern`\\ \\[:py:class:`str`]"),
     (IO, ":py:class:`~typing.IO`"),
-    (IO[str], ":py:class:`~typing.IO`\\[:py:class:`str`]"),
+    (IO[str], ":py:class:`~typing.IO`\\ \\[:py:class:`str`]"),
     (Metaclass, ":py:class:`~%s.Metaclass`" % __name__),
     (A, ":py:class:`~%s.A`" % __name__),
     (B, ":py:class:`~%s.B`" % __name__),
-    (B[int], ":py:class:`~%s.B`\\[:py:class:`int`]" % __name__),
+    (B[int], ":py:class:`~%s.B`\\ \\[:py:class:`int`]" % __name__),
     (C, ":py:class:`~%s.C`" % __name__),
     (D, ":py:class:`~%s.D`" % __name__),
     (E, ":py:class:`~%s.E`" % __name__),
-    (E[int], ":py:class:`~%s.E`\\[:py:class:`int`]" % __name__),
+    (E[int], ":py:class:`~%s.E`\\ \\[:py:class:`int`]" % __name__),
     (W, f":py:{'class' if PY310_PLUS else 'func'}:`~typing.NewType`\\(``W``, :py:class:`str`)"),
     (T, ":py:class:`~typing.TypeVar`\\(``T``)"),
     (U_co, ":py:class:`~typing.TypeVar`\\(``U_co``, covariant=True)"),
@@ -306,17 +306,17 @@ _CASES = [
     # Zero-length tuple remains
     (Tuple[()], ":py:data:`~typing.Tuple`"),
     # Internal single tuple with simple types is flattened in the output
-    (Tuple[(int,)], ":py:data:`~typing.Tuple`\\[:py:class:`int`]"),
-    (Tuple[(int, int)], ":py:data:`~typing.Tuple`\\[:py:class:`int`, :py:class:`int`]"),
+    (Tuple[(int,)], ":py:data:`~typing.Tuple`\\ \\[:py:class:`int`]"),
+    (Tuple[(int, int)], ":py:data:`~typing.Tuple`\\ \\[:py:class:`int`, :py:class:`int`]"),
     # Ellipsis in single tuple also gets flattened
-    (Tuple[(int, ...)], ":py:data:`~typing.Tuple`\\[:py:class:`int`, :py:data:`...<Ellipsis>`]"),
+    (Tuple[(int, ...)], ":py:data:`~typing.Tuple`\\ \\[:py:class:`int`, :py:data:`...<Ellipsis>`]"),
     (
         RecList,
-        ":py:data:`~typing.Union`\\[:py:class:`int`, :py:class:`~typing.List`\\[RecList]]",
+        ":py:data:`~typing.Union`\\ \\[:py:class:`int`, :py:class:`~typing.List`\\ \\[RecList]]",
     ),
     (
         MutualRecA,
-        ":py:data:`~typing.Union`\\[:py:class:`bool`, :py:class:`~typing.List`\\[MutualRecB]]",
+        ":py:data:`~typing.Union`\\ \\[:py:class:`bool`, :py:class:`~typing.List`\\ \\[MutualRecB]]",
     ),
 ]
 
@@ -327,39 +327,39 @@ if nptyping is not None:
             (
                 nptyping.NDArray[nptyping.Shape["*"], nptyping.Float],
                 (
-                    ":py:class:`~nptyping.ndarray.NDArray`\\[:py:class:`~nptyping.base_meta_classes.Shape`\\[*], "
+                    ":py:class:`~nptyping.ndarray.NDArray`\\ \\[:py:class:`~nptyping.base_meta_classes.Shape`\\ \\[*], "
                     ":py:class:`~numpy.float64`]"
                 ),
             ),
             (
                 nptyping.NDArray[nptyping.Shape["64"], nptyping.Float],
                 (
-                    ":py:class:`~nptyping.ndarray.NDArray`\\[:py:class:`~nptyping.base_meta_classes.Shape`\\[64],"
+                    ":py:class:`~nptyping.ndarray.NDArray`\\ \\[:py:class:`~nptyping.base_meta_classes.Shape`\\ \\[64],"
                     " :py:class:`~numpy.float64`]"
                 ),
             ),
             (
                 nptyping.NDArray[nptyping.Shape["*, *"], nptyping.Float],
                 (
-                    ":py:class:`~nptyping.ndarray.NDArray`\\[:py:class:`~nptyping.base_meta_classes.Shape`\\[*, "
+                    ":py:class:`~nptyping.ndarray.NDArray`\\ \\[:py:class:`~nptyping.base_meta_classes.Shape`\\ \\[*, "
                     "*], :py:class:`~numpy.float64`]"
                 ),
             ),
             (
                 nptyping.NDArray[nptyping.Shape["*, ..."], nptyping.Float],
-                ":py:class:`~nptyping.ndarray.NDArray`\\[:py:data:`~typing.Any`, :py:class:`~numpy.float64`]",
+                ":py:class:`~nptyping.ndarray.NDArray`\\ \\[:py:data:`~typing.Any`, :py:class:`~numpy.float64`]",
             ),
             (
                 nptyping.NDArray[nptyping.Shape["*, 3"], nptyping.Float],
                 (
-                    ":py:class:`~nptyping.ndarray.NDArray`\\[:py:class:`~nptyping.base_meta_classes.Shape`\\[*, 3"
+                    ":py:class:`~nptyping.ndarray.NDArray`\\ \\[:py:class:`~nptyping.base_meta_classes.Shape`\\ \\[*, 3"
                     "], :py:class:`~numpy.float64`]"
                 ),
             ),
             (
                 nptyping.NDArray[nptyping.Shape["3, ..."], nptyping.Float],
                 (
-                    ":py:class:`~nptyping.ndarray.NDArray`\\[:py:class:`~nptyping.base_meta_classes.Shape`\\[3, "
+                    ":py:class:`~nptyping.ndarray.NDArray`\\ \\[:py:class:`~nptyping.base_meta_classes.Shape`\\ \\[3, "
                     "...], :py:class:`~numpy.float64`]"
                 ),
             ),
@@ -379,7 +379,7 @@ def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str
         # subsequent tests
         expected_result_not_simplified = expected_result.replace(", ``None``", "")
         # encapsulate Union in typing.Optional
-        expected_result_not_simplified = ":py:data:`~typing.Optional`\\[" + expected_result_not_simplified
+        expected_result_not_simplified = ":py:data:`~typing.Optional`\\ \\[" + expected_result_not_simplified
         expected_result_not_simplified += "]"
         conf = create_autospec(Config, simplify_optional_unions=False, _annotation_globals=globals())
         assert format_annotation(annotation, conf) == expected_result_not_simplified
@@ -421,11 +421,11 @@ def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str
 @pytest.mark.parametrize(
     ("annotation", "params", "expected_result"),
     [
-        ("ClassVar", int, ":py:data:`~typing.ClassVar`\\[:py:class:`int`]"),
+        ("ClassVar", int, ":py:data:`~typing.ClassVar`\\ \\[:py:class:`int`]"),
         ("NoReturn", None, ":py:data:`~typing.NoReturn`"),
-        ("Literal", ("a", 1), ":py:data:`~typing.Literal`\\[``'a'``, ``1``]"),
+        ("Literal", ("a", 1), ":py:data:`~typing.Literal`\\ \\[``'a'``, ``1``]"),
         ("Type", None, ":py:class:`~typing.Type`"),
-        ("Type", (A,), f":py:class:`~typing.Type`\\[:py:class:`~{__name__}.A`]"),
+        ("Type", (A,), f":py:class:`~typing.Type`\\ \\[:py:class:`~{__name__}.A`]"),
     ],
 )
 def test_format_annotation_both_libs(library: ModuleType, annotation: str, params: Any, expected_result: str) -> None:
@@ -524,16 +524,11 @@ def test_always_document_param_types(
 
 def maybe_fix_py310(expected_contents: str) -> str:
     if not PY310_PLUS:
-        return expected_contents
+        return expected_contents.replace('"', "")
+
     for old, new in [
-        ("*bool** | **None*", '"Optional"["bool"]'),
-        ("*int** | **str** | **float*", '"int" | "str" | "float"'),
-        ("*str** | **None*", '"Optional"["str"]'),
-        ("(*bool*)", '("bool")'),
-        ("(*int*", '("int"'),
-        ("   str", '   "str"'),
-        ('"Optional"["str"]', '"Optional"["str"]'),
-        ('"Optional"["Callable"[["int", "bytes"], "int"]]', '"Optional"["Callable"[["int", "bytes"], "int"]]'),
+        ("bool | None", '"Optional"["bool"]'),
+        ("str | None", '"Optional"["str"]'),
     ]:
         expected_contents = expected_contents.replace(old, new)
     return expected_contents
@@ -559,14 +554,14 @@ def test_sphinx_output_future_annotations(app: SphinxTestApp, status: StringIO) 
        Method docstring.
 
        Parameters:
-          * **x** (*bool** | **None*) -- foo
+          * **x** (bool | None) -- foo
 
-          * **y** (*int** | **str** | **float*) -- bar
+          * **y** ("int" | "str" | "float") -- bar
 
-          * **z** (*str** | **None*) -- baz
+          * **z** (str | None) -- baz
 
        Return type:
-          str
+          "str"
     """
     expected_contents = maybe_fix_py310(dedent(expected_contents))
     assert contents == expected_contents
@@ -625,7 +620,7 @@ def test_sphinx_output_defaults(
     ("formatter_config_val", "expected"),
     [
         (None, ['("bool") -- foo', '("int") -- bar', '"str"']),
-        (lambda ann, conf: "Test", ["(*Test*) -- foo", "(*Test*) -- bar", "Test"]),  # noqa: ARG005
+        (lambda ann, conf: "Test", ["(Test) -- foo", "(Test) -- bar", "Test"]),  # noqa: ARG005
         ("some string", Exception("needs to be callable or `None`")),
     ],
 )
