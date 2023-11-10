@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from inspect import isclass
 from pathlib import Path
 from textwrap import dedent, indent
-from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union, overload  # no type comments
+from typing import TYPE_CHECKING, Any, Callable, NewType, Optional, TypeVar, Union, overload  # no type comments
 
 import pytest
 
@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from sphinx.testing.util import SphinxTestApp
 
 T = TypeVar("T")
+W = NewType("W", str)
 
 
 def expected(expected: str) -> Callable[[T], T]:
@@ -1174,6 +1175,52 @@ def docstring_with_definition_list_after_params_no_blank_line(param: int) -> Non
     """
 
 
+@expected(
+    """
+    mod.has_typevar(param)
+
+       Do something.
+
+       Parameters:
+          **param** ("TypeVar"("T")) -- A parameter.
+
+       Return type:
+          "TypeVar"("T")
+
+    """,
+)
+def has_typevar(param: T) -> T:
+    """Do something.
+
+    Args:
+        param: A parameter.
+    """
+    return param
+
+
+@expected(
+    """
+    mod.has_newtype(param)
+
+       Do something.
+
+       Parameters:
+          **param** ("NewType"("W", "str")) -- A parameter.
+
+       Return type:
+          "NewType"("W", "str")
+
+    """,
+)
+def has_newtype(param: W) -> W:
+    """Do something.
+
+    Args:
+        param: A parameter.
+    """
+    return param
+
+
 AUTO_FUNCTION = ".. autofunction:: mod.{}"
 AUTO_CLASS = """\
 .. autoclass:: mod.{}
@@ -1183,6 +1230,8 @@ AUTO_EXCEPTION = """\
 .. autoexception:: mod.{}
    :members:
 """
+
+LT_PY310 = sys.version_info < (3, 10)
 
 
 @pytest.mark.parametrize("val", [x for x in globals().values() if hasattr(x, "EXPECTED")])
@@ -1217,6 +1266,8 @@ def test_integration(
     result = (Path(app.srcdir) / "_build/text/index.txt").read_text()
 
     expected = val.EXPECTED
+    if LT_PY310:
+        expected = expected.replace("NewType", "NewType()")
     try:
         assert result.strip() == dedent(expected).strip()
     except Exception:
