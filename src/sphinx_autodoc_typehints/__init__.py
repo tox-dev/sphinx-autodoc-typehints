@@ -367,10 +367,16 @@ def process_signature(  # noqa: C901, PLR0913
                 start = 1
 
     sph_signature = sph_signature.replace(parameters=parameters[start:])
-    if not app.config.typehints_use_signature_return:
-        sph_signature = sph_signature.replace(return_annotation=inspect.Signature.empty)
-
-    return stringify_signature(sph_signature).replace("\\", "\\\\"), None
+    show_return_annotation = app.config.typehints_use_signature_return
+    unqualified_typehints = not getattr(app.config, "typehints_fully_qualified", False)
+    return (
+        stringify_signature(
+            sph_signature,
+            show_return_annotation=show_return_annotation,
+            unqualified_typehints=unqualified_typehints,
+        ).replace("\\", "\\\\"),
+        None,
+    )
 
 
 def _is_dataclass(name: str, what: str, qualname: str) -> bool:
