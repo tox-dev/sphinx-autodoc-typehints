@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from inspect import isclass
 from pathlib import Path
 from textwrap import dedent, indent
-from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union, overload  # no type comments
+from typing import TYPE_CHECKING, Any, Callable, NewType, Optional, TypeVar, Union, overload  # no type comments
 
 import pytest
 
@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from sphinx.testing.util import SphinxTestApp
 
 T = TypeVar("T")
+W = NewType("W", str)
 
 
 def expected(expected: str) -> Callable[[T], T]:
@@ -1172,6 +1173,52 @@ def docstring_with_definition_list_after_params_no_blank_line(param: int) -> Non
         Somethign about it
     .. rubric:: Example
     """
+
+
+@expected(
+    """
+    mod.has_typevar(param)
+
+       Do something.
+
+       Parameters:
+          **param** ("TypeVar"("T")) -- A parameter.
+
+       Return type:
+          "TypeVar"("T")
+
+    """,
+)
+def has_typevar(param: T) -> T:
+    """Do something.
+
+    Args:
+        param: A parameter.
+    """
+    return param
+
+
+@expected(
+    """
+    mod.has_newtype(param)
+
+       Do something.
+
+       Parameters:
+          **param** ("NewType"("W", "str")) -- A parameter.
+
+       Return type:
+          "NewType"("W", "str")
+
+    """,
+)
+def has_newtype(param: W) -> W:
+    """Do something.
+
+    Args:
+        param: A parameter.
+    """
+    return param
 
 
 AUTO_FUNCTION = ".. autofunction:: mod.{}"

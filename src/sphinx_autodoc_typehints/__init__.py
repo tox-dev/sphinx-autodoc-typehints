@@ -211,7 +211,7 @@ def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901, PL
     fully_qualified: bool = getattr(config, "typehints_fully_qualified", False)
     prefix = "" if fully_qualified or full_name == class_name else "~"
     role = "data" if module == "typing" and class_name in _PYDATA_ANNOTATIONS else "class"
-    args_format = "\\ \\[{}]"
+    args_format = "\\[{}]"
     formatted_args: str | None = ""
 
     # Some types require special handling
@@ -244,9 +244,9 @@ def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901, PL
                 args = tuple(x for x in args if x is not type(None))
     elif full_name in ("typing.Callable", "collections.abc.Callable") and args and args[0] is not ...:
         fmt = [format_annotation(arg, config) for arg in args]
-        formatted_args = f"\\ \\[\\[{', '.join(fmt[:-1])}], {fmt[-1]}]"
+        formatted_args = f"\\[\\[{', '.join(fmt[:-1])}], {fmt[-1]}]"
     elif full_name == "typing.Literal":
-        formatted_args = f"\\ \\[{', '.join(f'``{arg!r}``' for arg in args)}]"
+        formatted_args = f"\\[{', '.join(f'``{arg!r}``' for arg in args)}]"
     elif full_name == "types.UnionType":
         return " | ".join([format_annotation(arg, config) for arg in args])
 
@@ -258,6 +258,8 @@ def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901, PL
         else:
             fmt = [format_annotation(arg, config) for arg in args]
         formatted_args = args_format.format(", ".join(fmt))
+    if formatted_args:
+        formatted_args = "\\ " + formatted_args
 
     return f":py:{role}:`{prefix}{full_name}`{formatted_args}"
 
