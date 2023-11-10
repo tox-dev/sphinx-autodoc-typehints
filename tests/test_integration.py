@@ -6,11 +6,21 @@ from dataclasses import dataclass
 from inspect import isclass
 from pathlib import Path
 from textwrap import dedent, indent
-from typing import TYPE_CHECKING, Any, Callable, NewType, Optional, TypeVar, Union, overload  # no type comments
+from typing import (  # no type comments
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    NewType,
+    Optional,
+    TypeVar,
+    Union,
+    overload,
+)
 
 import pytest
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator
     from io import StringIO
     from mailbox import Mailbox
     from types import CodeType, ModuleType
@@ -21,9 +31,10 @@ T = TypeVar("T")
 W = NewType("W", str)
 
 
-def expected(expected: str) -> Callable[[T], T]:
+def expected(expected: str, **options: dict[str, Any]) -> Callable[[T], T]:
     def dec(val: T) -> T:
         val.EXPECTED = expected
+        val.OPTIONS = options
         return val
 
     return dec
@@ -1234,6 +1245,31 @@ AUTO_EXCEPTION = """\
 LT_PY310 = sys.version_info < (3, 10)
 
 
+@expected(
+    """
+    mod.typehints_use_signature(a: AsyncGenerator) -> AsyncGenerator
+
+       Do something.
+
+       Parameters:
+          **a** ("AsyncGenerator") -- blah
+
+       Return type:
+          "AsyncGenerator"
+
+    """,
+    typehints_use_signature=True,
+    typehints_use_signature_return=True,
+)
+def typehints_use_signature(a: AsyncGenerator) -> AsyncGenerator:
+    """Do something.
+
+    Args:
+        a: blah
+    """
+    return a
+
+
 @pytest.mark.parametrize("val", [x for x in globals().values() if hasattr(x, "EXPECTED")])
 @pytest.mark.sphinx("text", testroot="integration")
 def test_integration(
@@ -1251,6 +1287,7 @@ def test_integration(
         template = AUTO_FUNCTION
 
     (Path(app.srcdir) / "index.rst").write_text(template.format(val.__name__))
+    app.config.__dict__.update(val.OPTIONS)
     monkeypatch.setitem(sys.modules, "mod", sys.modules[__name__])
     app.build()
     assert "build succeeded" in status.getvalue()  # Build succeeded
