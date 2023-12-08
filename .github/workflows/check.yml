@@ -25,7 +25,7 @@ jobs:
           - "3.8"
     steps:
       - name: Setup python for tox
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
       - name: Install tox
@@ -34,7 +34,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Setup python for test ${{ matrix.py }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.py }}
       - name: Pick environment to run
@@ -74,7 +74,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
       - name: Install tox
@@ -113,7 +113,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Setup Python "3.11"
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
       - name: Install tox
