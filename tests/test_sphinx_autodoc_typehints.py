@@ -34,6 +34,7 @@ import pytest
 import typing_extensions
 from sphinx.application import Sphinx
 from sphinx.config import Config
+
 from sphinx_autodoc_typehints import (
     _resolve_type_guarded_imports,
     backfill_type_hints,
@@ -80,17 +81,20 @@ class A:
     def get_type(self) -> type:
         return type(self)
 
-    class Inner: ...
+    class Inner:
+        ...
 
 
 class B(Generic[T]):
     name = "Foo"  # This is set to make sure the correct class name ("B") is picked up
 
 
-class C(B[str]): ...
+class C(B[str]):
+    ...
 
 
-class D(typing_extensions.Protocol): ...
+class D(typing_extensions.Protocol):
+    ...
 
 
 class E(typing_extensions.Protocol[T]):  # type: ignore[misc]
@@ -101,7 +105,8 @@ class Slotted:
     __slots__ = ()
 
 
-class Metaclass(type): ...
+class Metaclass(type):
+    ...
 
 
 class HintedMethods:

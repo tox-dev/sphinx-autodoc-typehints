@@ -17,7 +17,7 @@ class SomeClass:
     @classmethod
     def from_str(cls, input_value: str) -> SomeClass:  # noqa: ANN102
         """
-        Initialise from string
+        Initialize from string
 
         :param input_value: Input
         :return: result
@@ -27,7 +27,7 @@ class SomeClass:
     @classmethod
     def from_date(cls, input_value: datetime.date) -> SomeClass:  # noqa: ANN102
         """
-        Initialise from date
+        Initialize from date
 
         :param input_value: Input
         :return: result
@@ -37,7 +37,7 @@ class SomeClass:
     @classmethod
     def from_time(cls, input_value: datetime.time) -> SomeClass:  # noqa: ANN102
         """
-        Initialise from time
+        Initialize from time
 
         :param input_value: Input
         :return: result
