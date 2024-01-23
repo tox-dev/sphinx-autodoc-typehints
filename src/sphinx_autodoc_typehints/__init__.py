@@ -215,10 +215,10 @@ def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901, PL
     formatted_args: str | None = ""
 
     always_use_bars_union: bool = getattr(config, "always_use_bars_union", False)
-    isbarsunion = full_name == "types.UnionType" or (
+    is_bars_union = full_name == "types.UnionType" or (
         always_use_bars_union and type(annotation).__qualname__ == "_UnionGenericAlias"
     )
-    if isbarsunion:
+    if is_bars_union:
         full_name = ""
 
     # Some types require special handling
@@ -254,7 +254,7 @@ def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901, PL
         formatted_args = f"\\[\\[{', '.join(fmt[:-1])}], {fmt[-1]}]"
     elif full_name == "typing.Literal":
         formatted_args = f"\\[{', '.join(f'``{arg!r}``' for arg in args)}]"
-    elif isbarsunion:
+    elif is_bars_union:
         return " | ".join([format_annotation(arg, config) for arg in args])
 
     if args and not formatted_args:
