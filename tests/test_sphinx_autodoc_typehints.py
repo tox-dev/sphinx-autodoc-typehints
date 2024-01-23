@@ -417,6 +417,25 @@ def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str
             assert m.group("role") == expected_role
 
 
+@pytest.mark.parametrize(
+    ("annotation", "expected_result"),
+    [
+        (int | float, ":py:class:`int` | :py:class:`float`"),
+        (int | float | None, ":py:class:`int` | :py:class:`float` | :py:obj:`None`"),
+        (Union[int, float], ":py:class:`int` | :py:class:`float`"),
+        (Union[int, float, None], ":py:class:`int` | :py:class:`float` | :py:obj:`None`"),
+        (Optional[int | float], ":py:class:`int` | :py:class:`float` | :py:obj:`None`"),
+        (Optional[Union[int, float]], ":py:class:`int` | :py:class:`float` | :py:obj:`None`"),
+        (Union[int | float, str], ":py:class:`int` | :py:class:`float` | :py:class:`str`"),
+        (Union[int, float] | str, ":py:class:`int` | :py:class:`float` | :py:class:`str`"),
+    ],
+)
+def test_always_use_bars_union(annotation: Any, expected_result: str) -> None:
+    conf = create_autospec(Config, always_use_bars_union=True)
+    result = format_annotation(annotation, conf)
+    assert result == expected_result
+
+
 @pytest.mark.parametrize("library", [typing, typing_extensions], ids=["typing", "typing_extensions"])
 @pytest.mark.parametrize(
     ("annotation", "params", "expected_result"),
