@@ -7,10 +7,10 @@ from unittest.mock import patch
 
 import sphinx.domains.python
 import sphinx.ext.autodoc
-from docutils.parsers.rst import Parser as RstParser
-from docutils.utils import new_document
 from sphinx.domains.python import PyAttribute
 from sphinx.ext.autodoc import AttributeDocumenter
+
+from .parser import parse
 
 if TYPE_CHECKING:
     from optparse import Values
@@ -62,8 +62,7 @@ def patch_attribute_documenter(app: Sphinx) -> None:
 
 def rst_to_docutils(settings: Values, rst: str) -> Any:
     """Convert rst to a sequence of docutils nodes."""
-    doc = new_document("", settings)
-    RstParser().parse(rst, doc)
+    doc = parse(rst, settings)
     # Remove top level paragraph node so that there is no line break.
     return doc.children[0].children
 

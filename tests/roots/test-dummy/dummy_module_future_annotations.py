@@ -10,7 +10,7 @@ def function_with_py310_annotations(
     """
     Method docstring.
 
-    :param x: foo
+    :param x: `foo`
     :param y: bar
     :param z: baz
     """
