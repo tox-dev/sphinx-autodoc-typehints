@@ -9,11 +9,13 @@ from sphinx.parsers import RSTParser
 from sphinx.util.docutils import sphinx_domains
 
 if TYPE_CHECKING:
+    import optparse
+
     from docutils import nodes
     from docutils.frontend import Values
 
 
-def parse(inputstr: str, settings: Values) -> nodes.document:
+def parse(inputstr: str, settings: Values | optparse.Values) -> nodes.document:
     """Parse inputstr and return a docutils document."""
     doc = new_document("", settings=settings)
     with sphinx_domains(settings.env):

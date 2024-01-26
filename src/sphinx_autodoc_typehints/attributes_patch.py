@@ -63,7 +63,7 @@ def rst_to_docutils(settings: Values, rst: str) -> Any:
     """Convert rst to a sequence of docutils nodes."""
     doc = parse(rst, settings)
     # Remove top level paragraph node so that there is no line break.
-    return doc.children[0].children  # type:ignore[attr-defined]
+    return doc.children[0].children
 
 
 def patched_parse_annotation(settings: Values, typ: str, env: Any) -> Any:
