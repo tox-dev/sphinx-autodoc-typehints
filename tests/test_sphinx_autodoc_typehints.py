@@ -573,7 +573,7 @@ def test_sphinx_output_default_role(app: SphinxTestApp, status: StringIO) -> Non
     set_python_path()
 
     app.config.master_doc = "simple_default_role"  # type: ignore[attr-defined] # create flag
-    app.config.default_role = "literal"
+    app.config.default_role = "literal"  # type: ignore[attr-defined]
     app.build()
 
     assert "build succeeded" in status.getvalue()  # Build succeeded

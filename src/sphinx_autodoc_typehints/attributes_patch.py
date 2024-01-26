@@ -13,8 +13,7 @@ from sphinx.ext.autodoc import AttributeDocumenter
 from .parser import parse
 
 if TYPE_CHECKING:
-    from optparse import Values
-
+    from docutils.frontend import Values
     from sphinx.addnodes import desc_signature
     from sphinx.application import Sphinx
 
@@ -64,7 +63,7 @@ def rst_to_docutils(settings: Values, rst: str) -> Any:
     """Convert rst to a sequence of docutils nodes."""
     doc = parse(rst, settings)
     # Remove top level paragraph node so that there is no line break.
-    return doc.children[0].children
+    return doc.children[0].children  # type:ignore[attr-defined]
 
 
 def patched_parse_annotation(settings: Values, typ: str, env: Any) -> Any:
