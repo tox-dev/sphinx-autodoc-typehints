@@ -567,6 +567,38 @@ def test_sphinx_output_future_annotations(app: SphinxTestApp, status: StringIO) 
     assert contents == expected_contents
 
 
+@pytest.mark.sphinx("pseudoxml", testroot="dummy")
+@patch("sphinx.writers.text.MAXWIDTH", 2000)
+def test_sphinx_output_default_role(app: SphinxTestApp, status: StringIO) -> None:
+    set_python_path()
+
+    app.config.master_doc = "simple_default_role"  # type: ignore[attr-defined] # create flag
+    app.config.default_role = "literal"  # type: ignore[attr-defined]
+    app.build()
+
+    assert "build succeeded" in status.getvalue()  # Build succeeded
+
+    contents_lines = (Path(app.srcdir) / "_build/pseudoxml/simple_default_role.pseudoxml").read_text().splitlines()
+    list_item_idxs = [i for i, line in enumerate(contents_lines) if line.strip() == "<list_item>"]
+    foo_param = dedent("\n".join(contents_lines[list_item_idxs[0] : list_item_idxs[1]]))
+    expected_foo_param = """\
+    <list_item>
+        <paragraph>
+            <literal_strong>
+                x
+             (
+            <inline classes="sphinx_autodoc_typehints-type">
+                <literal classes="xref py py-class">
+                    bool
+            )
+             \N{EN DASH}\N{SPACE}
+            <literal>
+                foo
+    """.rstrip()
+    expected_foo_param = dedent(expected_foo_param)
+    assert foo_param == expected_foo_param
+
+
 @pytest.mark.parametrize(
     ("defaults_config_val", "expected"),
     [

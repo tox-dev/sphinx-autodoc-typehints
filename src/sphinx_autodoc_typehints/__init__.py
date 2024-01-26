@@ -13,14 +13,13 @@ from typing import TYPE_CHECKING, Any, AnyStr, Callable, ForwardRef, NewType, Ty
 
 from docutils import nodes
 from docutils.frontend import OptionParser
-from docutils.parsers.rst import Parser as RstParser
-from docutils.parsers.rst import states
-from docutils.utils import new_document
 from sphinx.ext.autodoc.mock import mock
+from sphinx.parsers import RSTParser
 from sphinx.util import logging, rst
 from sphinx.util.inspect import signature as sphinx_signature
 from sphinx.util.inspect import stringify_signature
 
+from .parser import parse
 from .patches import install_patches
 from .version import __version__
 
@@ -28,6 +27,7 @@ if TYPE_CHECKING:
     from ast import FunctionDef, Module, stmt
 
     from docutils.nodes import Node
+    from docutils.parsers.rst import states
     from sphinx.application import Sphinx
     from sphinx.config import Config
     from sphinx.environment import BuildEnvironment
@@ -793,10 +793,9 @@ def get_insert_index(app: Sphinx, lines: list[str]) -> InsertIndexInfo | None:
 
     # 3. Insert after the parameters.
     # To find the parameters, parse as a docutils tree.
-    settings = OptionParser(components=(RstParser,)).get_default_values()
+    settings = OptionParser(components=(RSTParser,)).get_default_values()
     settings.env = app.env
-    doc = new_document("", settings=settings)
-    RstParser().parse("\n".join(lines), doc)
+    doc = parse("\n".join(lines), settings)
 
     # Find a top level child which is a field_list that contains a field whose
     # name starts with one of the PARAM_SYNONYMS. This is the parameter list. We
@@ -915,8 +914,7 @@ def sphinx_autodoc_typehints_type_role(
     """
     unescaped = unescape(text)
     # the typestubs for docutils don't have any info about Inliner
-    doc = new_document("", inliner.document.settings)  # type: ignore[attr-defined]
-    RstParser().parse(unescaped, doc)
+    doc = parse(unescaped, inliner.document.settings)  # type: ignore[attr-defined]
     n = nodes.inline(text)
     n["classes"].append("sphinx_autodoc_typehints-type")
     n += doc.children[0].children
