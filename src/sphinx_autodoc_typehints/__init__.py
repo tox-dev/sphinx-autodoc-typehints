@@ -1,4 +1,5 @@
 """Sphinx autodoc type hints."""
+
 from __future__ import annotations
 
 import ast

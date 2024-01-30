@@ -1,4 +1,5 @@
 """Module demonstrating imports that are type guarded"""
+
 from __future__ import annotations
 
 import typing
@@ -54,8 +55,7 @@ class SomeClass:
             """
 
 
-def func(_x: Literal) -> None:
-    ...
+def func(_x: Literal) -> None: ...
 
 
 __all__ = [
