@@ -710,7 +710,7 @@ def _inject_signature(  # noqa: C901
     lines: list[str],
 ) -> None:
     for arg_name in signature.parameters:
-        annotation = type_hints.get(arg_name, None)
+        annotation = type_hints.get(arg_name)
 
         default = signature.parameters[arg_name].default
 
