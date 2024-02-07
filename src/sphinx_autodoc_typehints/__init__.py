@@ -214,7 +214,7 @@ def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901, PL
     args_format = "\\[{}]"
     formatted_args: str | None = ""
 
-    always_use_bars_union: bool = getattr(config, "always_use_bars_union", False)
+    always_use_bars_union: bool = getattr(config, "always_use_bars_union", True)
     is_bars_union = full_name == "types.UnionType" or (
         always_use_bars_union and type(annotation).__qualname__ == "_UnionGenericAlias"
     )
