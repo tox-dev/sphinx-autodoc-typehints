@@ -1,4 +1,5 @@
 """Module demonstrating imports that are type guarded"""
+
 from __future__ import annotations
 
 import datetime

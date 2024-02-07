@@ -625,13 +625,11 @@ def func_with_examples() -> int:
 
 
 @overload
-def func_with_overload(a: int, b: int) -> None:
-    ...
+def func_with_overload(a: int, b: int) -> None: ...
 
 
 @overload
-def func_with_overload(a: str, b: str) -> None:
-    ...
+def func_with_overload(a: str, b: str) -> None: ...
 
 
 @expected(
