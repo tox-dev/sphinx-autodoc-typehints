@@ -429,7 +429,7 @@ def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str
 @pytest.mark.skipif(not PY310_PLUS, reason="| union doesn't work before py310")
 def test_always_use_bars_union(annotation: str, expected_result: str) -> None:
     conf = create_autospec(Config, always_use_bars_union=True)
-    result = format_annotation(eval(annotation), conf)
+    result = format_annotation(eval(annotation), conf)  # noqa: S307
     assert result == expected_result
 
 
