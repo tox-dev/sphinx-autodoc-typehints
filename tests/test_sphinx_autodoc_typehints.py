@@ -420,19 +420,20 @@ def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str
 @pytest.mark.parametrize(
     ("annotation", "expected_result"),
     [
-        (int | float, ":py:class:`int` | :py:class:`float`"),
-        (int | float | None, ":py:class:`int` | :py:class:`float` | :py:obj:`None`"),
-        (Union[int, float], ":py:class:`int` | :py:class:`float`"),
-        (Union[int, float, None], ":py:class:`int` | :py:class:`float` | :py:obj:`None`"),
-        (Optional[int | float], ":py:class:`int` | :py:class:`float` | :py:obj:`None`"),
-        (Optional[Union[int, float]], ":py:class:`int` | :py:class:`float` | :py:obj:`None`"),
-        (Union[int | float, str], ":py:class:`int` | :py:class:`float` | :py:class:`str`"),
-        (Union[int, float] | str, ":py:class:`int` | :py:class:`float` | :py:class:`str`"),
+        ("int | float", ":py:class:`int` | :py:class:`float`"),
+        ("int | float | None", ":py:class:`int` | :py:class:`float` | :py:obj:`None`"),
+        ("Union[int, float]", ":py:class:`int` | :py:class:`float`"),
+        ("Union[int, float, None]", ":py:class:`int` | :py:class:`float` | :py:obj:`None`"),
+        ("Optional[int | float]", ":py:class:`int` | :py:class:`float` | :py:obj:`None`"),
+        ("Optional[Union[int, float]]", ":py:class:`int` | :py:class:`float` | :py:obj:`None`"),
+        ("Union[int | float, str]", ":py:class:`int` | :py:class:`float` | :py:class:`str`"),
+        ("Union[int, float] | str", ":py:class:`int` | :py:class:`float` | :py:class:`str`"),
     ],
 )
-def test_always_use_bars_union(annotation: Any, expected_result: str) -> None:
+@pytest.mark.skipif(not PY310_PLUS, reason="| union doesn't work before py310")
+def test_always_use_bars_union(annotation: str, expected_result: str) -> None:
     conf = create_autospec(Config, always_use_bars_union=True)
-    result = format_annotation(annotation, conf)
+    result = format_annotation(eval(annotation), conf)
     assert result == expected_result
 
 
@@ -542,12 +543,13 @@ def test_always_document_param_types(
 
 
 def maybe_fix_py310(expected_contents: str) -> str:
+    if sys.version_info >= (3, 11):
+        return expected_contents
     if not PY310_PLUS:
         return expected_contents.replace('"', "")
 
     for old, new in [
-        ("bool | None", '"Optional"["bool"]'),
-        ("str | None", '"Optional"["str"]'),
+        ('"str" | "None"', '"Optional"["str"]'),
     ]:
         expected_contents = expected_contents.replace(old, new)
     return expected_contents
@@ -573,15 +575,16 @@ def test_sphinx_output_future_annotations(app: SphinxTestApp, status: StringIO) 
        Method docstring.
 
        Parameters:
-          * **x** (bool | None) -- foo
+          * **x** ("bool" | "None") -- foo
 
           * **y** ("int" | "str" | "float") -- bar
 
-          * **z** (str | None) -- baz
+          * **z** ("str" | "None") -- baz
 
        Return type:
           "str"
     """
+    expected_contents = dedent(expected_contents)
     expected_contents = maybe_fix_py310(dedent(expected_contents))
     assert contents == expected_contents
 
