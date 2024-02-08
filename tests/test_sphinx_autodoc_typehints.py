@@ -365,7 +365,7 @@ if nptyping is not None:
 
 @pytest.mark.parametrize(("annotation", "expected_result"), _CASES)
 def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str) -> None:
-    conf = create_autospec(Config, _annotation_globals=globals())
+    conf = create_autospec(Config, _annotation_globals=globals(), always_use_bars_union=False)
     result = format_annotation(annotation, conf)
     assert result == expected_result
 
@@ -377,7 +377,12 @@ def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str
         # encapsulate Union in typing.Optional
         expected_result_not_simplified = ":py:data:`~typing.Optional`\\ \\[" + expected_result_not_simplified
         expected_result_not_simplified += "]"
-        conf = create_autospec(Config, simplify_optional_unions=False, _annotation_globals=globals())
+        conf = create_autospec(
+            Config,
+            simplify_optional_unions=False,
+            _annotation_globals=globals(),
+            always_use_bars_union=False,
+        )
         assert format_annotation(annotation, conf) == expected_result_not_simplified
 
         # Test with the "fully_qualified" flag turned on
@@ -397,7 +402,12 @@ def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str
         expected_result = expected_result.replace("~nptyping", "nptyping")
         expected_result = expected_result.replace("~numpy", "numpy")
         expected_result = expected_result.replace("~" + __name__, __name__)
-        conf = create_autospec(Config, typehints_fully_qualified=True, _annotation_globals=globals())
+        conf = create_autospec(
+            Config,
+            typehints_fully_qualified=True,
+            _annotation_globals=globals(),
+            always_use_bars_union=False,
+        )
         assert format_annotation(annotation, conf) == expected_result
 
     # Test for the correct role (class vs data) using the official Sphinx inventory
@@ -411,6 +421,26 @@ def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str
                 expected_role = "func"
 
             assert m.group("role") == expected_role
+
+
+@pytest.mark.parametrize(
+    ("annotation", "expected_result"),
+    [
+        ("int | float", ":py:class:`int` | :py:class:`float`"),
+        ("int | float | None", ":py:class:`int` | :py:class:`float` | :py:obj:`None`"),
+        ("Union[int, float]", ":py:class:`int` | :py:class:`float`"),
+        ("Union[int, float, None]", ":py:class:`int` | :py:class:`float` | :py:obj:`None`"),
+        ("Optional[int | float]", ":py:class:`int` | :py:class:`float` | :py:obj:`None`"),
+        ("Optional[Union[int, float]]", ":py:class:`int` | :py:class:`float` | :py:obj:`None`"),
+        ("Union[int | float, str]", ":py:class:`int` | :py:class:`float` | :py:class:`str`"),
+        ("Union[int, float] | str", ":py:class:`int` | :py:class:`float` | :py:class:`str`"),
+    ],
+)
+@pytest.mark.skipif(not PY310_PLUS, reason="| union doesn't work before py310")
+def test_always_use_bars_union(annotation: str, expected_result: str) -> None:
+    conf = create_autospec(Config, always_use_bars_union=True)
+    result = format_annotation(eval(annotation), conf)  # noqa: S307
+    assert result == expected_result
 
 
 @pytest.mark.parametrize("library", [typing, typing_extensions], ids=["typing", "typing_extensions"])
@@ -519,12 +549,13 @@ def test_always_document_param_types(
 
 
 def maybe_fix_py310(expected_contents: str) -> str:
+    if sys.version_info >= (3, 11):
+        return expected_contents
     if not PY310_PLUS:
         return expected_contents.replace('"', "")
 
     for old, new in [
-        ("bool | None", '"Optional"["bool"]'),
-        ("str | None", '"Optional"["str"]'),
+        ('"str" | "None"', '"Optional"["str"]'),
     ]:
         expected_contents = expected_contents.replace(old, new)
     return expected_contents
@@ -550,15 +581,16 @@ def test_sphinx_output_future_annotations(app: SphinxTestApp, status: StringIO) 
        Method docstring.
 
        Parameters:
-          * **x** (bool | None) -- foo
+          * **x** ("bool" | "None") -- foo
 
           * **y** ("int" | "str" | "float") -- bar
 
-          * **z** (str | None) -- baz
+          * **z** ("str" | "None") -- baz
 
        Return type:
           "str"
     """
+    expected_contents = dedent(expected_contents)
     expected_contents = maybe_fix_py310(dedent(expected_contents))
     assert contents == expected_contents
 

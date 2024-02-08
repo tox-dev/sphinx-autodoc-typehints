@@ -215,6 +215,13 @@ def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901, PL
     args_format = "\\[{}]"
     formatted_args: str | None = ""
 
+    always_use_bars_union: bool = getattr(config, "always_use_bars_union", True)
+    is_bars_union = full_name == "types.UnionType" or (
+        always_use_bars_union and type(annotation).__qualname__ == "_UnionGenericAlias"
+    )
+    if is_bars_union:
+        full_name = ""
+
     # Some types require special handling
     if full_name == "typing.NewType":
         args_format = f"\\(``{annotation.__name__}``, {{}})"
@@ -248,7 +255,7 @@ def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901, PL
         formatted_args = f"\\[\\[{', '.join(fmt[:-1])}], {fmt[-1]}]"
     elif full_name == "typing.Literal":
         formatted_args = f"\\[{', '.join(f'``{arg!r}``' for arg in args)}]"
-    elif full_name == "types.UnionType":
+    elif is_bars_union:
         return " | ".join([format_annotation(arg, config) for arg in args])
 
     if args and not formatted_args:
@@ -929,6 +936,7 @@ def setup(app: Sphinx) -> dict[str, bool]:
     app.add_config_value("typehints_use_rtype", True, "env")  # noqa: FBT003
     app.add_config_value("typehints_defaults", None, "env")
     app.add_config_value("simplify_optional_unions", True, "env")  # noqa: FBT003
+    app.add_config_value("always_use_bars_union", False, "env")  # noqa: FBT003
     app.add_config_value("typehints_formatter", None, "env")
     app.add_config_value("typehints_use_signature", False, "env")  # noqa: FBT003
     app.add_config_value("typehints_use_signature_return", False, "env")  # noqa: FBT003
