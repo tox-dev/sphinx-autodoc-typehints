@@ -377,7 +377,9 @@ def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str
         # encapsulate Union in typing.Optional
         expected_result_not_simplified = ":py:data:`~typing.Optional`\\ \\[" + expected_result_not_simplified
         expected_result_not_simplified += "]"
-        conf = create_autospec(Config, simplify_optional_unions=False, _annotation_globals=globals(), always_use_bars_union=False)
+        conf = create_autospec(
+            Config, simplify_optional_unions=False, _annotation_globals=globals(), always_use_bars_union=False
+        )
         assert format_annotation(annotation, conf) == expected_result_not_simplified
 
         # Test with the "fully_qualified" flag turned on
@@ -397,7 +399,9 @@ def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str
         expected_result = expected_result.replace("~nptyping", "nptyping")
         expected_result = expected_result.replace("~numpy", "numpy")
         expected_result = expected_result.replace("~" + __name__, __name__)
-        conf = create_autospec(Config, typehints_fully_qualified=True, _annotation_globals=globals(), always_use_bars_union=False)
+        conf = create_autospec(
+            Config, typehints_fully_qualified=True, _annotation_globals=globals(), always_use_bars_union=False
+        )
         assert format_annotation(annotation, conf) == expected_result
 
     # Test for the correct role (class vs data) using the official Sphinx inventory
