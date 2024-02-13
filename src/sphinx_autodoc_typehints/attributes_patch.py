@@ -45,7 +45,7 @@ orig_handle_signature = PyAttribute.handle_signature
 def _stringify_annotation(app: Sphinx, annotation: Any, mode: str = "") -> str:  # noqa: ARG001
     # Format the annotation with sphinx-autodoc-typehints and inject our magic prefix to tell our patched
     # PyAttribute.handle_signature to treat it as rst.
-    from . import format_annotation
+    from . import format_annotation  # noqa: PLC0415
 
     return TYPE_IS_RST_LABEL + format_annotation(annotation, app.config)
 

@@ -175,7 +175,7 @@ class Class:
         :param x: foo
         """
 
-    def __magic_custom_method__(self, x: str) -> str:
+    def __magic_custom_method__(self, x: str) -> str:  # noqa: PLW3201
         """
         Magic dunder method docstring.
 
@@ -183,7 +183,7 @@ class Class:
         """
 
     @classmethod
-    def a_classmethod(cls, x: bool, y: int, z: Optional[str] = None) -> str:  # noqa: ANN102, UP007
+    def a_classmethod(cls, x: bool, y: int, z: Optional[str] = None) -> str:  # noqa: UP007
         """
         Classmethod docstring.
 
@@ -415,7 +415,7 @@ class ClassWithTypehints:
         # type: (...) -> None
         pass
 
-    def foo(  # noqa: ANN201
+    def foo(  # noqa: ANN201, PLR6301
         self,
         x,  # type: str  # noqa: ANN001, ARG002
     ):
@@ -427,7 +427,7 @@ class ClassWithTypehints:
         """
         return 42
 
-    def method_without_typehint(self, x):  # noqa: ANN001, ANN201, ARG002
+    def method_without_typehint(self, x):  # noqa: ANN001, ANN201, ARG002, PLR6301
         """
         Method docstring.
         """
@@ -510,7 +510,7 @@ class ClassWithTypehintsNotInline:
     def __init__(self, x=None) -> None:  # type: (Optional[Callable[[int, bytes], int]]) -> None  # noqa: ANN001
         pass
 
-    def foo(self, x=1):  # type: (Callable[[int, bytes], int]) -> int  # noqa: ANN001, ANN201
+    def foo(self, x=1):  # type: (Callable[[int, bytes], int]) -> int  # noqa: ANN001, ANN201, PLR6301
         """
         Method docstring.
 
@@ -520,7 +520,7 @@ class ClassWithTypehintsNotInline:
 
     @classmethod
     def mk(  # noqa: ANN206
-        cls,  # noqa: ANN102
+        cls,
         x=None,  # noqa: ANN001
     ):  # type: (Optional[Callable[[int, bytes], int]]) -> ClassWithTypehintsNotInline
         """
@@ -625,13 +625,11 @@ def func_with_examples() -> int:
 
 
 @overload
-def func_with_overload(a: int, b: int) -> None:
-    ...
+def func_with_overload(a: int, b: int) -> None: ...
 
 
 @overload
-def func_with_overload(a: str, b: str) -> None:
-    ...
+def func_with_overload(a: str, b: str) -> None: ...
 
 
 @expected(

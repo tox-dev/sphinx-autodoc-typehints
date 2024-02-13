@@ -28,13 +28,13 @@ def fix_autodoc_typehints_for_overloaded_methods() -> None:
 
     See https://github.com/tox-dev/sphinx-autodoc-typehints/issues/296
     """
-    from sphinx.ext.autodoc import FunctionDocumenter, MethodDocumenter
+    from sphinx.ext.autodoc import FunctionDocumenter, MethodDocumenter  # noqa: PLC0415
 
     del FunctionDocumenter.format_signature
     del MethodDocumenter.format_signature
 
 
-def napoleon_numpy_docstring_return_type_processor(  # noqa: PLR0913
+def napoleon_numpy_docstring_return_type_processor(  # noqa: PLR0913, PLR0917
     app: Sphinx,
     what: str,
     name: str,  # noqa: ARG001
@@ -43,7 +43,7 @@ def napoleon_numpy_docstring_return_type_processor(  # noqa: PLR0913
     lines: list[str],
 ) -> None:
     """Insert a : under Returns: to tell napoleon not to look for a return type."""
-    if what not in ["function", "method"]:
+    if what not in {"function", "method"}:
         return
     if not getattr(app.config, "napoleon_numpy_docstring", False):
         return
@@ -52,7 +52,7 @@ def napoleon_numpy_docstring_return_type_processor(  # noqa: PLR0913
     # Returns:
     # --------
     for pos, line in enumerate(lines[:-2]):
-        if line.lower().strip(":") not in ["return", "returns"]:
+        if line.lower().strip(":") not in {"return", "returns"}:
             continue
         # Underline detection.
         chars = set(lines[pos + 1].strip())
