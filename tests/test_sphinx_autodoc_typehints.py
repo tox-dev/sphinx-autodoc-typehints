@@ -81,20 +81,17 @@ class A:
     def get_type(self) -> type:
         return type(self)
 
-    class Inner:
-        ...
+    class Inner: ...
 
 
 class B(Generic[T]):
     name = "Foo"  # This is set to make sure the correct class name ("B") is picked up
 
 
-class C(B[str]):
-    ...
+class C(B[str]): ...
 
 
-class D(typing_extensions.Protocol):
-    ...
+class D(typing_extensions.Protocol): ...
 
 
 class E(typing_extensions.Protocol[T]):  # type: ignore[misc]
@@ -105,8 +102,7 @@ class Slotted:
     __slots__ = ()
 
 
-class Metaclass(type):
-    ...
+class Metaclass(type): ...
 
 
 class HintedMethods:
@@ -843,7 +839,7 @@ def test_resolve_typing_guard_attrs_imports(app: SphinxTestApp, status: StringIO
 
 
 def test_no_source_code_type_guard() -> None:
-    from csv import Error
+    from csv import Error  # noqa: PLC0415
 
     _resolve_type_guarded_imports([], Error)
 

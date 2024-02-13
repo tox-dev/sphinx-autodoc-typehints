@@ -15,7 +15,7 @@ class SomeClass:
     """Date to handle"""
 
     @classmethod
-    def from_str(cls, input_value: str) -> SomeClass:  # noqa: ANN102
+    def from_str(cls, input_value: str) -> SomeClass:
         """
         Initialize from string
 
@@ -25,7 +25,7 @@ class SomeClass:
         return cls(input_value)
 
     @classmethod
-    def from_date(cls, input_value: datetime.date) -> SomeClass:  # noqa: ANN102
+    def from_date(cls, input_value: datetime.date) -> SomeClass:
         """
         Initialize from date
 
@@ -35,7 +35,7 @@ class SomeClass:
         return cls(input_value)
 
     @classmethod
-    def from_time(cls, input_value: datetime.time) -> SomeClass:  # noqa: ANN102
+    def from_time(cls, input_value: datetime.time) -> SomeClass:
         """
         Initialize from time
 
@@ -44,7 +44,7 @@ class SomeClass:
         """
         return cls(input_value)
 
-    def calculate_thing(self, number: float) -> datetime.timedelta:
+    def calculate_thing(self, number: float) -> datetime.timedelta:  # noqa: PLR6301
         """
         Calculate a thing
 

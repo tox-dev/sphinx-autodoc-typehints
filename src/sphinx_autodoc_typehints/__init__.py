@@ -67,7 +67,7 @@ def get_annotation_module(annotation: Any) -> str:
     if (
         is_new_type
         or isinstance(annotation, TypeVar)
-        or type(annotation).__name__ in ("ParamSpec", "ParamSpecArgs", "ParamSpecKwargs")
+        or type(annotation).__name__ in {"ParamSpec", "ParamSpecArgs", "ParamSpecKwargs"}
     ):
         return "typing"
     if hasattr(annotation, "__module__"):
@@ -107,7 +107,7 @@ def get_annotation_class_name(annotation: Any, module: str) -> str:  # noqa: C90
         return annotation.__qualname__  # type: ignore[no-any-return]
     if getattr(annotation, "_name", None):  # Required for generic aliases on Python 3.7+
         return annotation._name  # type: ignore[no-any-return]  # noqa: SLF001
-    if module in ("typing", "typing_extensions") and isinstance(getattr(annotation, "name", None), str):
+    if module in {"typing", "typing_extensions"} and isinstance(getattr(annotation, "name", None), str):
         # Required for at least Pattern and Match
         return annotation.name  # type: ignore[no-any-return]
 
@@ -140,7 +140,7 @@ def get_annotation_args(annotation: Any, module: str, class_name: str) -> tuple[
             return ()  # This is the original, not parametrized type
 
     # Special cases
-    if class_name in ("Pattern", "Match") and hasattr(annotation, "type_var"):  # Python < 3.7
+    if class_name in {"Pattern", "Match"} and hasattr(annotation, "type_var"):  # Python < 3.7
         return (annotation.type_var,)
     if class_name == "ClassVar" and hasattr(annotation, "__type__"):  # ClassVar on Python < 3.7
         return (annotation.__type__,)
@@ -169,7 +169,7 @@ def format_internal_tuple(t: tuple[Any, ...], config: Config) -> str:
     return f"({', '.join(fmt)})"
 
 
-def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901, PLR0911, PLR0912, PLR0915
+def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901, PLR0911, PLR0912, PLR0915, PLR0914
     """
     Format the annotation.
 
@@ -238,7 +238,7 @@ def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901, PL
         formatted_args = None if args else args_format
     elif full_name == "typing.Optional":
         args = tuple(x for x in args if x is not type(None))
-    elif full_name in ("typing.Union", "types.UnionType") and type(None) in args:
+    elif full_name in {"typing.Union", "types.UnionType"} and type(None) in args:
         if len(args) == 2:  # noqa: PLR2004
             full_name = "typing.Optional"
             role = "data"
@@ -250,7 +250,7 @@ def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901, PL
                 role = "data"
                 args_format = f"\\[:py:data:`{prefix}typing.Union`\\[{{}}]]"
                 args = tuple(x for x in args if x is not type(None))
-    elif full_name in ("typing.Callable", "collections.abc.Callable") and args and args[0] is not ...:
+    elif full_name in {"typing.Callable", "collections.abc.Callable"} and args and args[0] is not ...:
         fmt = [format_annotation(arg, config) for arg in args]
         formatted_args = f"\\[\\[{', '.join(fmt[:-1])}], {fmt[-1]}]"
     elif full_name == "typing.Literal":
@@ -316,7 +316,7 @@ def normalize_source_lines(source_lines: str) -> str:
     return "\n".join(aligned_prefix + aligned_suffix)
 
 
-def process_signature(  # noqa: C901, PLR0913
+def process_signature(  # noqa: C901, PLR0913, PLR0917
     app: Sphinx,
     what: str,
     name: str,
@@ -541,7 +541,7 @@ def backfill_type_hints(obj: Any, name: str) -> dict[str, Any]:  # noqa: C901, P
     comment_args = split_type_comment_args(comment_args_str)
     is_inline = len(comment_args) == 1 and comment_args[0] == "..."
     if not is_inline:
-        if args and args[0].arg in ("self", "cls") and len(comment_args) != len(args):
+        if args and args[0].arg in {"self", "cls"} and len(comment_args) != len(args):
             comment_args.insert(0, None)  # self/cls may be omitted in type comments, insert blank
 
         if len(args) != len(comment_args):
@@ -590,9 +590,9 @@ def split_type_comment_args(comment: str) -> list[str | None]:
 
     brackets, start_arg_at, at = 0, 0, 0
     for at, char in enumerate(comment):
-        if char in ("[", "("):
+        if char in {"[", "("}:
             brackets += 1
-        elif char in ("]", ")"):
+        elif char in {"]", ")"}:
             brackets -= 1
         elif char == "," and brackets == 0:
             add(comment[start_arg_at:at])
@@ -616,7 +616,7 @@ def format_default(app: Sphinx, default: Any, is_annotated: bool) -> str | None:
     return f"default: ``{formatted}``"
 
 
-def process_docstring(  # noqa: PLR0913
+def process_docstring(  # noqa: PLR0913, PLR0917, PLR0917
     app: Sphinx,
     what: str,
     name: str,
@@ -695,7 +695,7 @@ def _line_is_param_line_for_arg(line: str, arg_name: str) -> bool:
     return any(doc_name == prefix + arg_name for prefix in ("", "\\*", "\\**", "\\*\\*"))
 
 
-def _inject_types_to_docstring(  # noqa: PLR0913
+def _inject_types_to_docstring(  # noqa: PLR0913, PLR0917
     type_hints: dict[str, Any],
     signature: inspect.Signature | None,
     original_obj: Any,
@@ -826,7 +826,7 @@ def get_insert_index(app: Sphinx, lines: list[str]) -> InsertIndexInfo | None:
 
     # 4. Insert before examples
     for child in doc.children:
-        if tag_name(child) in ["literal_block", "paragraph", "field_list"]:
+        if tag_name(child) in {"literal_block", "paragraph", "field_list"}:
             continue
         line_no = node_line_no(child)
         at = line_no - 2 if line_no else len(lines)
@@ -836,7 +836,7 @@ def get_insert_index(app: Sphinx, lines: list[str]) -> InsertIndexInfo | None:
     return InsertIndexInfo(insert_index=len(lines))
 
 
-def _inject_rtype(  # noqa: PLR0913
+def _inject_rtype(  # noqa: PLR0913, PLR0917
     type_hints: dict[str, Any],
     original_obj: Any,
     app: Sphinx,
@@ -950,6 +950,7 @@ def setup(app: Sphinx) -> dict[str, bool]:
 
 __all__ = [
     "__version__",
+    "backfill_type_hints",
     "format_annotation",
     "get_annotation_args",
     "get_annotation_class_name",
@@ -957,5 +958,4 @@ __all__ = [
     "normalize_source_lines",
     "process_docstring",
     "process_signature",
-    "backfill_type_hints",
 ]

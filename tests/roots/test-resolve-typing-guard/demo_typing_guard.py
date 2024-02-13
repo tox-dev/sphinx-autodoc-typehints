@@ -55,14 +55,13 @@ class SomeClass:
             """
 
 
-def func(_x: Literal) -> None:
-    ...
+def func(_x: Literal) -> None: ...
 
 
 __all__ = [
-    "a",
-    "ValueError",
-    "cmp_to_key",
-    "SomeClass",
     "AnotherClass",
+    "SomeClass",
+    "ValueError",
+    "a",
+    "cmp_to_key",
 ]
