@@ -625,11 +625,13 @@ def func_with_examples() -> int:
 
 
 @overload
-def func_with_overload(a: int, b: int) -> None: ...
+def func_with_overload(a: int, b: int) -> None:
+    ...
 
 
 @overload
-def func_with_overload(a: str, b: str) -> None: ...
+def func_with_overload(a: str, b: str) -> None:
+    ...
 
 
 @expected(
@@ -1094,7 +1096,7 @@ def docstring_with_bullet_list_after_params(param: int) -> None:  # noqa: ARG001
           maybe multiple lines
 
        Next Term
-          Somethign about it
+          Something about it
 
     """,
 )
@@ -1110,7 +1112,7 @@ def docstring_with_definition_list_after_params(param: int) -> None:  # noqa: AR
         maybe multiple lines
 
     Next Term
-        Somethign about it
+        Something about it
     """
 
 
@@ -1162,7 +1164,7 @@ def docstring_with_enum_list_after_params(param: int) -> None:  # noqa: ARG001
           maybe multiple lines
 
        Next Term
-          Somethign about it
+          Something about it
 
        -[ Example ]-
     """,
@@ -1179,7 +1181,7 @@ def docstring_with_definition_list_after_params_no_blank_line(param: int) -> Non
         maybe multiple lines
 
     Next Term
-        Somethign about it
+        Something about it
     .. rubric:: Example
     """
 

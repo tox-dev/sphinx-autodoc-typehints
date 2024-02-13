@@ -55,7 +55,8 @@ class SomeClass:
             """
 
 
-def func(_x: Literal) -> None: ...
+def func(_x: Literal) -> None:
+    ...
 
 
 __all__ = [
