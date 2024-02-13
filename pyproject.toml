@@ -2,7 +2,7 @@
 build-backend = "hatchling.build"
 requires = [
   "hatch-vcs>=0.4",
-  "hatchling>=1.18",
+  "hatchling>=1.21.1",
 ]
 
 [project]
@@ -41,19 +41,19 @@ dependencies = [
   "Sphinx>=7.1.2",
 ]
 optional-dependencies.docs = [
-  "furo>=2023.9.10",
+  "furo>=2024.1.29",
 ]
 optional-dependencies.numpy = [
   "nptyping>=2.5",
 ]
 optional-dependencies.testing = [
   "covdefaults>=2.3",
-  "coverage>=7.3.2",
-  "diff-cover>=8.0.1",
-  "pytest>=7.4.3",
+  "coverage>=7.4.2",
+  "diff-cover>=8.0.3",
+  "pytest>=8.0.1",
   "pytest-cov>=4.1",
   "sphobjinv>=2.3.1",
-  "typing-extensions>=4.8",
+  "typing-extensions>=4.9",
 ]
 urls.Changelog = "https://github.com/tox-dev/sphinx-autodoc-typehints/blob/main/CHANGELOG.md"
 urls.Homepage = "https://github.com/tox-dev/sphinx-autodoc-typehints"
@@ -69,7 +69,7 @@ line-length = 120
 
 [tool.ruff]
 line-length = 120
-target-version = "py37"
+target-version = "py38"
 lint.select = ["ALL"]
 lint.isort = { known-first-party = [
   "sphinx_autodoc_typehints",
@@ -118,9 +118,12 @@ html.show_contexts = true
 html.skip_covered = false
 paths.source = [
   "src",
-  ".tox*/*/lib/python*/site-packages",
-  ".tox*/pypy*/site-packages",
-  ".tox*\\*\\Lib\\site-packages",
+  ".tox/*/lib/python*/site-packages",
+  ".tox/pypy*/site-packages",
+  ".tox\\*\\Lib\\site-packages",
+  ".tox/*/.venv/lib/python*/site-packages",
+  ".tox/pypy*/.venv/site-packages",
+  ".tox\\*\\.venv\\Lib\\site-packages",
   "*/src",
   "*\\src",
 ]
