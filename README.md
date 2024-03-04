@@ -85,6 +85,12 @@ The following configuration options are accepted:
   code or `None` to fall back to the default formatter.
 - `typehints_use_signature` (default: `False`): If `True`, typehints for parameters in the signature are shown.
 - `typehints_use_signature_return` (default: `False`): If `True`, return annotations in the signature are shown.
+- `suppress_warnings`: sphinx-autodoc-typehints supports to suppress warning messages via Sphinx's `suppress_warnings`. It allows following additional warning types:
+  - `sphinx_autodoc_typehints`
+  - `sphinx_autodoc_typehints.comment`
+  - `sphinx_autodoc_typehints.forward_reference`
+  - `sphinx_autodoc_typehints.guarded_import`
+  - `sphinx_autodoc_typehints.local_function`
 
 ## How it works
 
