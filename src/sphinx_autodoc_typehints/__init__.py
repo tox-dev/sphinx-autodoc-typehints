@@ -407,7 +407,12 @@ def process_signature(  # noqa: C901, PLR0913, PLR0917
         elif what == "method":
             # bail if it is a local method as we cannot determine if first argument needs to be deleted or not
             if "<locals>" in obj.__qualname__ and not _is_dataclass(name, what, obj.__qualname__):
-                _LOGGER.warning('Cannot handle as a local function: "%s" (use @functools.wraps)', name, type='sphinx_autodoc_typehints', subtype='local_function')
+                _LOGGER.warning(
+                    'Cannot handle as a local function: "%s" (use @functools.wraps)',
+                    name,
+                    type="sphinx_autodoc_typehints",
+                    subtype="local_function",
+                )
                 return None
             outer = inspect.getmodule(obj)
             for class_name in obj.__qualname__.split(".")[:-1]:
@@ -500,7 +505,9 @@ def _execute_guarded_code(autodoc_mock_imports: list[str], obj: Any, module_code
                     with mock(autodoc_mock_imports):
                         exec(guarded_code, getattr(obj, "__globals__", obj.__dict__))  # noqa: S102
         except Exception as exc:  # noqa: BLE001
-            _LOGGER.warning("Failed guarded type import with %r", exc, type='sphinx_autodoc_typehints', subtype='guarded_import')
+            _LOGGER.warning(
+                "Failed guarded type import with %r", exc, type="sphinx_autodoc_typehints", subtype="guarded_import"
+            )
 
 
 def _resolve_type_guarded_imports(autodoc_mock_imports: list[str], obj: Any) -> None:
@@ -536,7 +543,13 @@ def _get_type_hint(
         else:
             result = {}
     except NameError as exc:
-        _LOGGER.warning('Cannot resolve forward reference in type annotations of "%s": %s', name, exc, type='sphinx_autodoc_typehints', subtype='forward_reference')
+        _LOGGER.warning(
+            'Cannot resolve forward reference in type annotations of "%s": %s',
+            name,
+            exc,
+            type="sphinx_autodoc_typehints",
+            subtype="forward_reference",
+        )
         result = obj.__annotations__
     return result
 
@@ -554,7 +567,12 @@ def backfill_type_hints(obj: Any, name: str) -> dict[str, Any]:  # noqa: C901, P
     def _one_child(module: Module) -> stmt | None:
         children = module.body  # use the body to ignore type comments
         if len(children) != 1:
-            _LOGGER.warning('Did not get exactly one node from AST for "%s", got %s', name, len(children), type='sphinx_autodoc_typehints')
+            _LOGGER.warning(
+                'Did not get exactly one node from AST for "%s", got %s',
+                name,
+                len(children),
+                type="sphinx_autodoc_typehints",
+            )
             return None
         return children[0]
 
@@ -579,7 +597,12 @@ def backfill_type_hints(obj: Any, name: str) -> dict[str, Any]:  # noqa: C901, P
     try:
         comment_args_str, comment_returns = type_comment.split(" -> ")
     except ValueError:
-        _LOGGER.warning('Unparseable type hint comment for "%s": Expected to contain ` -> `', name, type='sphinx_autodoc_typehints', subtype='comment')
+        _LOGGER.warning(
+            'Unparseable type hint comment for "%s": Expected to contain ` -> `',
+            name,
+            type="sphinx_autodoc_typehints",
+            subtype="comment",
+        )
         return {}
 
     rv = {}
@@ -594,7 +617,9 @@ def backfill_type_hints(obj: Any, name: str) -> dict[str, Any]:  # noqa: C901, P
             comment_args.insert(0, None)  # self/cls may be omitted in type comments, insert blank
 
         if len(args) != len(comment_args):
-            _LOGGER.warning('Not enough type comments found on "%s"', name, type='sphinx_autodoc_typehints', subtype='comment')
+            _LOGGER.warning(
+                'Not enough type comments found on "%s"', name, type="sphinx_autodoc_typehints", subtype="comment"
+            )
             return rv
 
     for at, arg in enumerate(args):
