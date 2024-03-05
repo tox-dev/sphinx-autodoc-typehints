@@ -921,8 +921,7 @@ def sphinx_autodoc_typehints_type_role(
     result in <span class="sphinx_autodoc_typehints-type"> </span>
     """
     unescaped = unescape(text)
-    # the typestubs for docutils don't have any info about Inliner
-    doc = parse(unescaped, inliner.document.settings)  # type: ignore[attr-defined]
+    doc = parse(unescaped, inliner.document.settings)
     n = nodes.inline(text)
     n["classes"].append("sphinx_autodoc_typehints-type")
     n += doc.children[0].children
