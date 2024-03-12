@@ -13,13 +13,20 @@ if TYPE_CHECKING:
 
     from docutils import nodes
     from docutils.frontend import Values
+    from docutils.statemachine import StringList
+
+
+class _RstSnippetParser(RSTParser):
+    @staticmethod
+    def decorate(_content: StringList) -> None:
+        """Skip adding pro- or epilogue."""
 
 
 def parse(inputstr: str, settings: Values | optparse.Values) -> nodes.document:
     """Parse inputstr and return a docutils document."""
     doc = new_document("", settings=settings)
     with sphinx_domains(settings.env):
-        parser = RSTParser()
+        parser = _RstSnippetParser()
         parser.set_application(settings.env.app)
         parser.parse(inputstr, doc)
     return doc
