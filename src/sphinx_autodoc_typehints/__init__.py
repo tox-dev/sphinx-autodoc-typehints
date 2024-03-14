@@ -876,7 +876,7 @@ def _inject_rtype(  # noqa: PLR0913, PLR0917
             lines.insert(insert_index + 1, "")
     else:
         line = lines[insert_index]
-        lines[insert_index] = f":return: {formatted_annotation} --{line[line.find(' '):]}"
+        lines[insert_index] = f":return: {formatted_annotation} --{line[line.find(' ') :]}"
 
 
 def validate_config(app: Sphinx, env: BuildEnvironment, docnames: list[str]) -> None:  # noqa: ARG001
