@@ -364,8 +364,13 @@ def process_signature(  # noqa: C901, PLR0913, PLR0917
                 _LOGGER.warning('Cannot handle as a local function: "%s" (use @functools.wraps)', name)
                 return None
             outer = inspect.getmodule(obj)
-            for class_name in obj.__qualname__.split(".")[:-1]:
-                outer = getattr(outer, class_name)
+            try:
+                for class_name in obj.__qualname__.split(".")[:-1]:
+                    outer = getattr(outer, class_name)
+            except AttributeError:
+                # Was not able to find the class. Use the name instead of qualname as fallback.
+                for class_name in name.split(".")[:-1]:
+                    outer = getattr(outer, class_name)
             method_name = obj.__name__
             if method_name.startswith("__") and not method_name.endswith("__"):
                 # when method starts with double underscore Python applies mangling -> prepend the class name
