@@ -779,6 +779,9 @@ def node_line_no(node: Node) -> int | None:
     docutils rst parser source code. An example where the node doesn't have a line number but the first child does is
     all `definition_list` nodes. It seems like bullet_list and option_list get line numbers, but enum_list also doesn't.
     """
+    if node is None:
+        return None
+
     while node.line is None and node.children:
         node = node.children[0]
     return node.line

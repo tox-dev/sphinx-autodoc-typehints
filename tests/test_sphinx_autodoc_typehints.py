@@ -607,7 +607,9 @@ def test_sphinx_output_default_role(app: SphinxTestApp, status: StringIO) -> Non
 
     assert "build succeeded" in status.getvalue()  # Build succeeded
 
-    contents_lines = (Path(app.srcdir) / "_build/pseudoxml/simple_default_role.pseudoxml").read_text().splitlines()
+    contents_lines = (
+        (Path(app.srcdir) / "_build/pseudoxml/simple_default_role.pseudoxml").read_text(encoding="utf-8").splitlines()
+    )
     list_item_idxs = [i for i, line in enumerate(contents_lines) if line.strip() == "<list_item>"]
     foo_param = dedent("\n".join(contents_lines[list_item_idxs[0] : list_item_idxs[1]]))
     expected_foo_param = """\
