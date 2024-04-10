@@ -1268,14 +1268,100 @@ def typehints_use_signature(a: AsyncGenerator) -> AsyncGenerator:
     return a
 
 
+prolog = """
+.. |test_node_start| replace:: {test_node_start}
+""".format(test_node_start="test_start")
+
+
+@expected(
+    """
+    mod.docstring_with_multiline_note_after_params_prolog_replace(param)
+
+       Do something.
+
+       Parameters:
+          **param** ("int") -- A parameter.
+
+       Return type:
+          "None"
+
+       Note:
+
+         Some notes. test_start More notes
+
+    """,
+    rst_prolog=prolog,
+)
+def docstring_with_multiline_note_after_params_prolog_replace(param: int) -> None:  # noqa: ARG001
+    """Do something.
+
+    Args:
+        param: A parameter.
+
+    Note:
+
+        Some notes. |test_node_start|
+        More notes
+    """
+
+
+epilog = """
+.. |test_node_end| replace:: {test_node_end}
+""".format(test_node_end="test_end")
+
+
+@expected(
+    """
+    mod.docstring_with_multiline_note_after_params_epilog_replace(param)
+
+       Do something.
+
+       Parameters:
+          **param** ("int") -- A parameter.
+
+       Return type:
+          "None"
+
+       Note:
+
+         Some notes. test_end More notes
+
+    """,
+    rst_epilog=epilog,
+)
+def docstring_with_multiline_note_after_params_epilog_replace(param: int) -> None:  # noqa: ARG001
+    """Do something.
+
+    Args:
+        param: A parameter.
+
+    Note:
+
+        Some notes. |test_node_end|
+        More notes
+    """
+
+
+# Config settings for each test run.
+# Config Name: Sphinx Options as Dict.
+configs = {
+    "default_conf": {},
+    "prolog_conf": {"rst_prolog": prolog},
+    "epilog_conf": {
+        "rst_epilog": epilog,
+    },
+    "bothlog_conf": {
+        "rst_prolog": prolog,
+        "rst_epilog": epilog,
+    },
+}
+
+
 @pytest.mark.parametrize("val", [x for x in globals().values() if hasattr(x, "EXPECTED")])
+@pytest.mark.parametrize("conf_run", ["default_conf", "prolog_conf", "epilog_conf", "bothlog_conf"])
 @pytest.mark.sphinx("text", testroot="integration")
 def test_integration(
-    app: SphinxTestApp,
-    status: StringIO,
-    warning: StringIO,
-    monkeypatch: pytest.MonkeyPatch,
-    val: Any,
+    app: SphinxTestApp, status: StringIO, warning: StringIO, monkeypatch: pytest.MonkeyPatch, val: Any, conf_run: str
 ) -> None:
     if isclass(val) and issubclass(val, BaseException):
         template = AUTO_EXCEPTION
@@ -1285,6 +1371,7 @@ def test_integration(
         template = AUTO_FUNCTION
 
     (Path(app.srcdir) / "index.rst").write_text(template.format(val.__name__))
+    app.config.__dict__.update(configs[conf_run])
     app.config.__dict__.update(val.OPTIONS)
     monkeypatch.setitem(sys.modules, "mod", sys.modules[__name__])
     app.build()
