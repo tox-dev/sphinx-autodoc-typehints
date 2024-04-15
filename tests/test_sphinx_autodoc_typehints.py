@@ -376,7 +376,7 @@ def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str
         # subsequent tests
         expected_result_not_simplified = expected_result.replace(", ``None``", "")
         # encapsulate Union in typing.Optional
-        expected_result_not_simplified = ":py:data:`~typing.Optional`\\ \\[" + expected_result_not_simplified
+        expected_result_not_simplified += ":py:data:`~typing.Optional`\\ \\["
         expected_result_not_simplified += "]"
         conf = create_autospec(
             Config,

@@ -267,7 +267,7 @@ def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901, PL
             fmt = [format_annotation(arg, config) for arg in args]
         formatted_args = args_format.format(", ".join(fmt))
     if formatted_args:
-        formatted_args = "\\ " + formatted_args
+        formatted_args += "\\ "
 
     return f":py:{role}:`{prefix}{full_name}`{formatted_args}"
 
