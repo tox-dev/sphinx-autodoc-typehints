@@ -59,7 +59,7 @@ def napoleon_numpy_docstring_return_type_processor(  # noqa: PLR0913, PLR0917
         # Napoleon allows the underline to consist of a bunch of weirder things...
         if len(chars) != 1 or next(iter(chars)) not in "=-~_*+#":
             continue
-        pos = pos + 2  # noqa: PLW2901
+        pos += 2  # noqa: PLW2901
         break
     else:
         return
