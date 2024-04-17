@@ -10,7 +10,7 @@ from io import StringIO
 from pathlib import Path
 from textwrap import dedent, indent
 from types import FunctionType, ModuleType
-from typing import (
+from typing import (  # noqa: UP035
     IO,
     Any,
     AnyStr,
@@ -72,9 +72,9 @@ P_bound = typing_extensions.ParamSpec("P_bound", bound=str)  # type: ignore[misc
 
 # Mypy does not support recursive type aliases, but
 # other type checkers do.
-RecList = Union[int, List["RecList"]]
-MutualRecA = Union[bool, List["MutualRecB"]]
-MutualRecB = Union[str, List["MutualRecA"]]
+RecList = Union[int, List["RecList"]]  # noqa: UP006
+MutualRecA = Union[bool, List["MutualRecB"]]  # noqa: UP006
+MutualRecB = Union[str, List["MutualRecA"]]  # noqa: UP006
 
 
 class A:
@@ -117,7 +117,7 @@ class HintedMethods:
 PY310_PLUS = sys.version_info >= (3, 10)
 PY312_PLUS = sys.version_info >= (3, 12)
 
-if sys.version_info >= (3, 9):
+if sys.version_info >= (3, 9):  # noqa: UP036
     AbcCallable = collections.abc.Callable  # type: ignore[type-arg]
 else:
     # We could also set AbcCallable = typing.Callable and x fail the tests that
@@ -145,11 +145,11 @@ else:
         pytest.param(types.CoroutineType, "types", "CoroutineType", (), id="CoroutineType"),
         pytest.param(Any, "typing", "Any", (), id="Any"),
         pytest.param(AnyStr, "typing", "AnyStr", (), id="AnyStr"),
-        pytest.param(Dict, "typing", "Dict", (), id="Dict"),
-        pytest.param(Dict[str, int], "typing", "Dict", (str, int), id="Dict_parametrized"),
-        pytest.param(Dict[T, int], "typing", "Dict", (T, int), id="Dict_typevar"),  # type: ignore[valid-type]
-        pytest.param(Tuple, "typing", "Tuple", (), id="Tuple"),
-        pytest.param(Tuple[str, int], "typing", "Tuple", (str, int), id="Tuple_parametrized"),
+        pytest.param(Dict, "typing", "Dict", (), id="Dict"),  # noqa: UP006
+        pytest.param(Dict[str, int], "typing", "Dict", (str, int), id="Dict_parametrized"),  # noqa: UP006
+        pytest.param(Dict[T, int], "typing", "Dict", (T, int), id="Dict_typevar"),  # type: ignore[valid-type]  # noqa: UP006
+        pytest.param(Tuple, "typing", "Tuple", (), id="Tuple"),  # noqa: UP006
+        pytest.param(Tuple[str, int], "typing", "Tuple", (str, int), id="Tuple_parametrized"),  # noqa: UP006
         pytest.param(Union[str, int], "typing", "Union", (str, int), id="Union"),
         pytest.param(Callable, "typing", "Callable", (), id="Callable"),
         pytest.param(Callable[..., str], "typing", "Callable", (..., str), id="Callable_returntype"),
@@ -189,131 +189,191 @@ def test_parse_annotation(annotation: Any, module: str, class_name: str, args: t
 
 
 _CASES = [
-    (str, ":py:class:`str`"),
-    (int, ":py:class:`int`"),
-    (StringIO, ":py:class:`~io.StringIO`"),
-    (FunctionType, ":py:class:`~types.FunctionType`"),
-    (ModuleType, ":py:class:`~types.ModuleType`"),
-    (type(None), ":py:obj:`None`"),
-    (type, ":py:class:`type`"),
-    (collections.abc.Callable, ":py:class:`~collections.abc.Callable`"),
-    (Type, ":py:class:`~typing.Type`"),
-    (Type[A], r":py:class:`~typing.Type`\ \[:py:class:`~%s.A`]" % __name__),
-    (Any, ":py:data:`~typing.Any`"),
-    (AnyStr, ":py:data:`~typing.AnyStr`"),
-    (Generic[T], r":py:class:`~typing.Generic`\ \[:py:class:`~typing.TypeVar`\ \(``T``)]"),
-    (Mapping, ":py:class:`~typing.Mapping`"),
-    (
+    pytest.param(str, ":py:class:`str`", id="str"),
+    pytest.param(int, ":py:class:`int`", id="int"),
+    pytest.param(StringIO, ":py:class:`~io.StringIO`", id="StringIO"),
+    pytest.param(FunctionType, ":py:class:`~types.FunctionType`", id="FunctionType"),
+    pytest.param(ModuleType, ":py:class:`~types.ModuleType`", id="ModuleType"),
+    pytest.param(type(None), ":py:obj:`None`", id="type None"),
+    pytest.param(type, ":py:class:`type`", id="type"),
+    pytest.param(collections.abc.Callable, ":py:class:`~collections.abc.Callable`", id="abc-Callable"),
+    pytest.param(Type, ":py:class:`~typing.Type`", id="typing-Type"),  # noqa: UP006
+    pytest.param(Type[A], r":py:class:`~typing.Type`\ \[:py:class:`~%s.A`]" % __name__, id="typing-A"),  # noqa: UP006
+    pytest.param(Any, ":py:data:`~typing.Any`", id="Any"),
+    pytest.param(AnyStr, ":py:data:`~typing.AnyStr`", id="AnyStr"),
+    pytest.param(Generic[T], r":py:class:`~typing.Generic`\ \[:py:class:`~typing.TypeVar`\ \(``T``)]", id="Generic"),
+    pytest.param(Mapping, ":py:class:`~typing.Mapping`", id="Mapping"),
+    pytest.param(
         Mapping[T, int],  # type: ignore[valid-type]
         r":py:class:`~typing.Mapping`\ \[:py:class:`~typing.TypeVar`\ \(``T``), :py:class:`int`]",
+        id="Mapping-T-int",
     ),
-    (
+    pytest.param(
         Mapping[str, V_contra],  # type: ignore[valid-type]
         r":py:class:`~typing.Mapping`\ \[:py:class:`str`, :py:class:`~typing.TypeVar`\ \("
         "``V_contra``, contravariant=True)]",
+        id="Mapping-T-int-contra",
     ),
-    (
+    pytest.param(
         Mapping[T, U_co],  # type: ignore[valid-type]
         r":py:class:`~typing.Mapping`\ \[:py:class:`~typing.TypeVar`\ \(``T``), "
         r":py:class:`~typing.TypeVar`\ \(``U_co``, covariant=True)]",
+        id="Mapping-T-int-co",
     ),
-    (Mapping[str, bool], r":py:class:`~typing.Mapping`\ \[:py:class:`str`, :py:class:`bool`]"),
-    (Dict, ":py:class:`~typing.Dict`"),
-    (
-        Dict[T, int],  # type: ignore[valid-type]
+    pytest.param(
+        Mapping[str, bool],
+        r":py:class:`~typing.Mapping`\ \[:py:class:`str`, :py:class:`bool`]",
+        id="Mapping-str-bool",
+    ),
+    pytest.param(Dict, ":py:class:`~typing.Dict`", id="Dict"),  # noqa: UP006
+    pytest.param(
+        Dict[T, int],  # type: ignore[valid-type]  # noqa: UP006
         r":py:class:`~typing.Dict`\ \[:py:class:`~typing.TypeVar`\ \(``T``), :py:class:`int`]",
+        id="Dict-T-int",
     ),
-    (
-        Dict[str, V_contra],  # type: ignore[valid-type]
-        r":py:class:`~typing.Dict`\ \[:py:class:`str`, :py:class:`~typing.TypeVar`\ \(``V_contra``, contravariant=True)]",  # noqa: E501
+    pytest.param(
+        Dict[str, V_contra],  # type: ignore[valid-type]  # noqa: UP006
+        r":py:class:`~typing.Dict`\ \[:py:class:`str`, :py:class:`~typing.TypeVar`\ \(``V_contra``, "
+        r"contravariant=True)]",
+        id="Dict-T-int-contra",
     ),
-    (
-        Dict[T, U_co],  # type: ignore[valid-type]
+    pytest.param(
+        Dict[T, U_co],  # type: ignore[valid-type]  # noqa: UP006
         r":py:class:`~typing.Dict`\ \[:py:class:`~typing.TypeVar`\ \(``T``),"
         r" :py:class:`~typing.TypeVar`\ \(``U_co``, covariant=True)]",
+        id="Dict-T-int-co",
     ),
-    (Dict[str, bool], r":py:class:`~typing.Dict`\ \[:py:class:`str`, :py:class:`bool`]"),
-    (Tuple, ":py:data:`~typing.Tuple`"),
-    (Tuple[str, bool], r":py:data:`~typing.Tuple`\ \[:py:class:`str`, :py:class:`bool`]"),
-    (Tuple[int, int, int], r":py:data:`~typing.Tuple`\ \[:py:class:`int`, :py:class:`int`, :py:class:`int`]"),
-    (Tuple[str, ...], r":py:data:`~typing.Tuple`\ \[:py:class:`str`, :py:data:`...<Ellipsis>`]"),
-    (Union, ":py:data:`~typing.Union`"),
-    (Union[str, bool], r":py:data:`~typing.Union`\ \[:py:class:`str`, :py:class:`bool`]"),
-    (Union[str, bool, None], r":py:data:`~typing.Union`\ \[:py:class:`str`, :py:class:`bool`, :py:obj:`None`]"),
-    pytest.param(Union[str, Any], r":py:data:`~typing.Union`\ \[:py:class:`str`, :py:data:`~typing.Any`]"),
-    (Optional[str], r":py:data:`~typing.Optional`\ \[:py:class:`str`]"),
-    (Union[str, None], r":py:data:`~typing.Optional`\ \[:py:class:`str`]"),
-    (
+    pytest.param(
+        Dict[str, bool],  # noqa: UP006
+        r":py:class:`~typing.Dict`\ \[:py:class:`str`, :py:class:`bool`]",
+        id="Dict-str-bool",  # noqa: RUF100, UP006
+    ),
+    pytest.param(Tuple, ":py:data:`~typing.Tuple`", id="Tuple"),  # noqa: UP006
+    pytest.param(
+        Tuple[str, bool],  # noqa: UP006
+        r":py:data:`~typing.Tuple`\ \[:py:class:`str`, :py:class:`bool`]",
+        id="Tuple-str-bool",  # noqa: RUF100, UP006
+    ),
+    pytest.param(
+        Tuple[int, int, int],  # noqa: UP006
+        r":py:data:`~typing.Tuple`\ \[:py:class:`int`, :py:class:`int`, :py:class:`int`]",
+        id="Tuple-int-int-int",
+    ),
+    pytest.param(
+        Tuple[str, ...],  # noqa: UP006
+        r":py:data:`~typing.Tuple`\ \[:py:class:`str`, :py:data:`...<Ellipsis>`]",
+        id="Tuple-str-Ellipsis",
+    ),
+    pytest.param(Union, ":py:data:`~typing.Union`", id="Union"),
+    pytest.param(
+        Union[str, bool], r":py:data:`~typing.Union`\ \[:py:class:`str`, :py:class:`bool`]", id="Union-str-bool"
+    ),
+    pytest.param(
+        Union[str, bool, None],
+        r":py:data:`~typing.Union`\ \[:py:class:`str`, :py:class:`bool`, :py:obj:`None`]",
+        id="Union-str-bool-None",
+    ),
+    pytest.param(
+        Union[str, Any], r":py:data:`~typing.Union`\ \[:py:class:`str`, :py:data:`~typing.Any`]", id="Union-str-Any"
+    ),
+    pytest.param(Optional[str], r":py:data:`~typing.Optional`\ \[:py:class:`str`]", id="Optional-str"),
+    pytest.param(Union[str, None], r":py:data:`~typing.Optional`\ \[:py:class:`str`]", id="Optional-str-None"),
+    pytest.param(
         Optional[Union[str, bool]],
         r":py:data:`~typing.Union`\ \[:py:class:`str`, :py:class:`bool`, :py:obj:`None`]",
+        id="Optional-Union-str-bool",
     ),
-    (Callable, ":py:data:`~typing.Callable`"),
-    (Callable[..., int], r":py:data:`~typing.Callable`\ \[:py:data:`...<Ellipsis>`, :py:class:`int`]"),
-    (Callable[[int], int], r":py:data:`~typing.Callable`\ \[\[:py:class:`int`], :py:class:`int`]"),
-    (
+    pytest.param(Callable, ":py:data:`~typing.Callable`", id="Callable"),
+    pytest.param(
+        Callable[..., int],
+        r":py:data:`~typing.Callable`\ \[:py:data:`...<Ellipsis>`, :py:class:`int`]",
+        id="Callable-Ellipsis-int",
+    ),
+    pytest.param(
+        Callable[[int], int],
+        r":py:data:`~typing.Callable`\ \[\[:py:class:`int`], :py:class:`int`]",
+        id="Callable-int-int",
+    ),
+    pytest.param(
         Callable[[int, str], bool],
         r":py:data:`~typing.Callable`\ \[\[:py:class:`int`, :py:class:`str`], :py:class:`bool`]",
+        id="Callable-int-str-bool",
     ),
-    (
+    pytest.param(
         Callable[[int, str], None],
         r":py:data:`~typing.Callable`\ \[\[:py:class:`int`, :py:class:`str`], :py:obj:`None`]",
+        id="Callable-int-str",
     ),
-    (
+    pytest.param(
         Callable[[T], T],
         r":py:data:`~typing.Callable`\ \[\[:py:class:`~typing.TypeVar`\ \(``T``)],"
         r" :py:class:`~typing.TypeVar`\ \(``T``)]",
+        id="Callable-T-T",
     ),
-    (
+    pytest.param(
         AbcCallable[[int, str], bool],  # type: ignore[valid-type,misc,type-arg]
         r":py:class:`~collections.abc.Callable`\ \[\[:py:class:`int`, :py:class:`str`], :py:class:`bool`]",
+        id="AbcCallable-int-str-bool",
     ),
-    (Pattern, ":py:class:`~typing.Pattern`"),
-    (Pattern[str], r":py:class:`~typing.Pattern`\ \[:py:class:`str`]"),
-    (IO, ":py:class:`~typing.IO`"),
-    (IO[str], r":py:class:`~typing.IO`\ \[:py:class:`str`]"),
-    (Metaclass, ":py:class:`~%s.Metaclass`" % __name__),
-    (A, ":py:class:`~%s.A`" % __name__),
-    (B, ":py:class:`~%s.B`" % __name__),
-    (B[int], r":py:class:`~%s.B`\ \[:py:class:`int`]" % __name__),
-    (C, ":py:class:`~%s.C`" % __name__),
-    (D, ":py:class:`~%s.D`" % __name__),
-    (E, ":py:class:`~%s.E`" % __name__),
-    (E[int], r":py:class:`~%s.E`\ \[:py:class:`int`]" % __name__),
-    (W, rf":py:{'class' if PY310_PLUS else 'func'}:`~typing.NewType`\ \(``W``, :py:class:`str`)"),
-    (T, r":py:class:`~typing.TypeVar`\ \(``T``)"),
-    (U_co, r":py:class:`~typing.TypeVar`\ \(``U_co``, covariant=True)"),
-    (V_contra, r":py:class:`~typing.TypeVar`\ \(``V_contra``, contravariant=True)"),
-    (X, r":py:class:`~typing.TypeVar`\ \(``X``, :py:class:`str`, :py:class:`int`)"),
-    (Y, r":py:class:`~typing.TypeVar`\ \(``Y``, bound= :py:class:`str`)"),
-    (Z, r":py:class:`~typing.TypeVar`\ \(``Z``, bound= A)"),
-    (S, r":py:class:`~typing.TypeVar`\ \(``S``, bound= miss)"),
+    pytest.param(Pattern, ":py:class:`~typing.Pattern`", id="Pattern"),
+    pytest.param(Pattern[str], r":py:class:`~typing.Pattern`\ \[:py:class:`str`]", id="Pattern-str"),
+    pytest.param(IO, ":py:class:`~typing.IO`", id="IO"),
+    pytest.param(IO[str], r":py:class:`~typing.IO`\ \[:py:class:`str`]", id="IO-str"),
+    pytest.param(Metaclass, ":py:class:`~%s.Metaclass`" % __name__, id="Metaclass"),
+    pytest.param(A, ":py:class:`~%s.A`" % __name__, id="A"),
+    pytest.param(B, ":py:class:`~%s.B`" % __name__, id="B"),
+    pytest.param(B[int], r":py:class:`~%s.B`\ \[:py:class:`int`]" % __name__, id="B-int"),
+    pytest.param(C, ":py:class:`~%s.C`" % __name__, id="C"),
+    pytest.param(D, ":py:class:`~%s.D`" % __name__, id="D"),
+    pytest.param(E, ":py:class:`~%s.E`" % __name__, id="E"),
+    pytest.param(E[int], r":py:class:`~%s.E`\ \[:py:class:`int`]" % __name__, id="E-int"),
+    pytest.param(W, rf":py:{'class' if PY310_PLUS else 'func'}:`~typing.NewType`\ \(``W``, :py:class:`str`)", id="W"),
+    pytest.param(T, r":py:class:`~typing.TypeVar`\ \(``T``)", id="T"),
+    pytest.param(U_co, r":py:class:`~typing.TypeVar`\ \(``U_co``, covariant=True)", id="U-co"),
+    pytest.param(V_contra, r":py:class:`~typing.TypeVar`\ \(``V_contra``, contravariant=True)", id="V-contra"),
+    pytest.param(X, r":py:class:`~typing.TypeVar`\ \(``X``, :py:class:`str`, :py:class:`int`)", id="X"),
+    pytest.param(Y, r":py:class:`~typing.TypeVar`\ \(``Y``, bound= :py:class:`str`)", id="Y"),
+    pytest.param(Z, r":py:class:`~typing.TypeVar`\ \(``Z``, bound= A)", id="Z"),
+    pytest.param(S, r":py:class:`~typing.TypeVar`\ \(``S``, bound= miss)", id="S"),
     # ParamSpec should behave like TypeVar, except for missing constraints
-    (P, rf":py:class:`~typing.ParamSpec`\ \(``P``{', bound= :py:obj:`None`' if PY312_PLUS else ''})"),
-    (
+    pytest.param(
+        P, rf":py:class:`~typing.ParamSpec`\ \(``P``{', bound= :py:obj:`None`' if PY312_PLUS else ''})", id="P"
+    ),
+    pytest.param(
         P_co,
         rf":py:class:`~typing.ParamSpec`\ \(``P_co``{', bound= :py:obj:`None`' if PY312_PLUS else ''}, covariant=True)",
+        id="P_co",
     ),
-    (
+    pytest.param(
         P_contra,
         rf":py:class:`~typing.ParamSpec`\ \(``P_contra``{', bound= :py:obj:`None`' if PY312_PLUS else ''}"
         ", contravariant=True)",
+        id="P-contra",
     ),
-    (P_bound, r":py:class:`~typing.ParamSpec`\ \(``P_bound``, bound= :py:class:`str`)"),
+    pytest.param(P_bound, r":py:class:`~typing.ParamSpec`\ \(``P_bound``, bound= :py:class:`str`)", id="P-bound"),
     # ## These test for correct internal tuple rendering, even if not all are valid Tuple types
     # Zero-length tuple remains
-    (Tuple[()], ":py:data:`~typing.Tuple`"),
+    pytest.param(Tuple[()], ":py:data:`~typing.Tuple`", id="Tuple-p"),  # noqa: UP006
     # Internal single tuple with simple types is flattened in the output
-    (Tuple[(int,)], r":py:data:`~typing.Tuple`\ \[:py:class:`int`]"),
-    (Tuple[(int, int)], r":py:data:`~typing.Tuple`\ \[:py:class:`int`, :py:class:`int`]"),
-    # Ellipsis in single tuple also gets flattened
-    (Tuple[(int, ...)], r":py:data:`~typing.Tuple`\ \[:py:class:`int`, :py:data:`...<Ellipsis>`]"),
-    (
-        RecList,
-        r":py:data:`~typing.Union`\ \[:py:class:`int`, :py:class:`~typing.List`\ \[RecList]]",
+    pytest.param(Tuple[(int,)], r":py:data:`~typing.Tuple`\ \[:py:class:`int`]", id="Tuple-p-int"),  # noqa: UP006
+    pytest.param(
+        Tuple[(int, int)],  # noqa: UP006
+        r":py:data:`~typing.Tuple`\ \[:py:class:`int`, :py:class:`int`]",
+        id="Tuple-p-int-int",  # noqa: RUF100, UP006
     ),
-    (
+    # Ellipsis in single tuple also gets flattened
+    pytest.param(
+        Tuple[(int, ...)],  # noqa: UP006
+        r":py:data:`~typing.Tuple`\ \[:py:class:`int`, :py:data:`...<Ellipsis>`]",
+        id="Tuple-p-Ellipsis",
+    ),
+    pytest.param(
+        RecList, r":py:data:`~typing.Union`\ \[:py:class:`int`, :py:class:`~typing.List`\ \[RecList]]", id="RecList"
+    ),
+    pytest.param(
         MutualRecA,
         r":py:data:`~typing.Union`\ \[:py:class:`bool`, :py:class:`~typing.List`\ \[MutualRecB]]",
+        id="MutualRecA",
     ),
 ]
 
@@ -321,44 +381,50 @@ if nptyping is not None:
     _CASES.extend(
         [  # Internal tuple with following additional type cannot be flattened (specific to nptyping?)
             # These cases will fail if nptyping restructures its internal module hierarchy
-            (
+            pytest.param(
                 nptyping.NDArray[nptyping.Shape["*"], nptyping.Float],
                 (
                     ":py:class:`~nptyping.ndarray.NDArray`\\ \\[:py:class:`~nptyping.base_meta_classes.Shape`\\ \\[*], "
                     ":py:class:`~numpy.float64`]"
                 ),
+                id="NDArray-star-float",
             ),
-            (
+            pytest.param(
                 nptyping.NDArray[nptyping.Shape["64"], nptyping.Float],
                 (
                     ":py:class:`~nptyping.ndarray.NDArray`\\ \\[:py:class:`~nptyping.base_meta_classes.Shape`\\ \\[64],"
                     " :py:class:`~numpy.float64`]"
                 ),
+                id="NDArray-64-float",
             ),
-            (
+            pytest.param(
                 nptyping.NDArray[nptyping.Shape["*, *"], nptyping.Float],
                 (
                     ":py:class:`~nptyping.ndarray.NDArray`\\ \\[:py:class:`~nptyping.base_meta_classes.Shape`\\ \\[*, "
                     "*], :py:class:`~numpy.float64`]"
                 ),
+                id="NDArray-star-star-float",
             ),
-            (
+            pytest.param(
                 nptyping.NDArray[nptyping.Shape["*, ..."], nptyping.Float],
                 ":py:class:`~nptyping.ndarray.NDArray`\\ \\[:py:data:`~typing.Any`, :py:class:`~numpy.float64`]",
+                id="NDArray-star-Ellipsis-float",
             ),
-            (
+            pytest.param(
                 nptyping.NDArray[nptyping.Shape["*, 3"], nptyping.Float],
                 (
                     ":py:class:`~nptyping.ndarray.NDArray`\\ \\[:py:class:`~nptyping.base_meta_classes.Shape`\\ \\[*, 3"
                     "], :py:class:`~numpy.float64`]"
                 ),
+                id="NDArray-star-3-float",
             ),
-            (
+            pytest.param(
                 nptyping.NDArray[nptyping.Shape["3, ..."], nptyping.Float],
                 (
                     ":py:class:`~nptyping.ndarray.NDArray`\\ \\[:py:class:`~nptyping.base_meta_classes.Shape`\\ \\[3, "
                     "...], :py:class:`~numpy.float64`]"
                 ),
+                id="NDArray-3-Ellipsis-float",
             ),
         ],
     )
@@ -376,7 +442,7 @@ def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str
         # subsequent tests
         expected_result_not_simplified = expected_result.replace(", ``None``", "")
         # encapsulate Union in typing.Optional
-        expected_result_not_simplified = ":py:data:`~typing.Optional`\\ \\[" + expected_result_not_simplified
+        expected_result_not_simplified += ":py:data:`~typing.Optional`\\ \\["
         expected_result_not_simplified += "]"
         conf = create_autospec(
             Config,
@@ -448,11 +514,11 @@ def test_always_use_bars_union(annotation: str, expected_result: str) -> None:
 @pytest.mark.parametrize(
     ("annotation", "params", "expected_result"),
     [
-        ("ClassVar", int, ":py:data:`~typing.ClassVar`\\ \\[:py:class:`int`]"),
-        ("NoReturn", None, ":py:data:`~typing.NoReturn`"),
-        ("Literal", ("a", 1), ":py:data:`~typing.Literal`\\ \\[``'a'``, ``1``]"),
-        ("Type", None, ":py:class:`~typing.Type`"),
-        ("Type", (A,), rf":py:class:`~typing.Type`\ \[:py:class:`~{__name__}.A`]"),
+        pytest.param("ClassVar", int, ":py:data:`~typing.ClassVar`\\ \\[:py:class:`int`]", id="ClassVar"),
+        pytest.param("NoReturn", None, ":py:data:`~typing.NoReturn`", id="NoReturn"),
+        pytest.param("Literal", ("a", 1), ":py:data:`~typing.Literal`\\ \\[``'a'``, ``1``]", id="Literal"),
+        pytest.param("Type", None, ":py:class:`~typing.Type`", id="Type-none"),
+        pytest.param("Type", (A,), rf":py:class:`~typing.Type`\ \[:py:class:`~{__name__}.A`]", id="Type-A"),
     ],
 )
 def test_format_annotation_both_libs(library: ModuleType, annotation: str, params: Any, expected_result: str) -> None:
@@ -526,7 +592,7 @@ def test_always_document_param_types(
     for indentation_level in range(2):
         key = f"undoc_params_{indentation_level}"
         if always_document_param_types:
-            format_args[key] = indent('\n\n   Parameters:\n      **x** ("int") --', "   " * indentation_level)
+            format_args[key] = indent('\n\n   Parameters:\n      **x** ("int")', "   " * indentation_level)
         else:
             format_args[key] = ""
 
@@ -814,6 +880,7 @@ def test_syntax_error_backfill() -> None:
     # fmt: off
     def func(x):  # type: ignore[no-untyped-def]  # noqa: ANN001, ANN202
         return x
+
     # fmt: on
     backfill_type_hints(func, "func")
 

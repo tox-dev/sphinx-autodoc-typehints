@@ -266,10 +266,9 @@ def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901, PL
         else:
             fmt = [format_annotation(arg, config) for arg in args]
         formatted_args = args_format.format(", ".join(fmt))
-    if formatted_args:
-        formatted_args = "\\ " + formatted_args
 
-    return f":py:{role}:`{prefix}{full_name}`{formatted_args}"
+    escape = "\\ " if formatted_args else ""
+    return f":py:{role}:`{prefix}{full_name}`{escape}{formatted_args}"
 
 
 # reference: https://github.com/pytorch/pytorch/pull/46548/files
