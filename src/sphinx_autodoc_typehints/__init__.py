@@ -615,7 +615,7 @@ def format_default(app: Sphinx, default: Any, is_annotated: bool) -> str | None:
     return f"default: ``{formatted}``"
 
 
-def process_docstring(  # noqa: PLR0913, PLR0917, PLR0917
+def process_docstring(  # noqa: PLR0913, PLR0917
     app: Sphinx,
     what: str,
     name: str,
