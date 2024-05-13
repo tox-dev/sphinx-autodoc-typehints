@@ -17,8 +17,12 @@ keywords = [
   "virtual",
 ]
 license = "MIT"
-maintainers = [{ name = "Bernát Gábor", email = "gaborjbernat@gmail.com" }]
-authors = [{ name = "Bernát Gábor", email = "gaborjbernat@gmail.com" }]
+maintainers = [
+  { name = "Bernát Gábor", email = "gaborjbernat@gmail.com" },
+]
+authors = [
+  { name = "Bernát Gábor", email = "gaborjbernat@gmail.com" },
+]
 requires-python = ">=3.9"
 classifiers = [
   "Development Status :: 5 - Production/Stable",
@@ -37,7 +41,7 @@ dynamic = [
   "version",
 ]
 dependencies = [
-  "Sphinx>=7.3.5",
+  "sphinx>=7.3.5",
 ]
 optional-dependencies.docs = [
   "furo>=2024.1.29",
@@ -48,7 +52,7 @@ optional-dependencies.numpy = [
 optional-dependencies.testing = [
   "covdefaults>=2.3",
   "coverage>=7.4.4",
-  "defusedxml>=0.7.1", # required by sphinx.testing
+  "defusedxml>=0.7.1",       # required by sphinx.testing
   "diff-cover>=9",
   "pytest>=8.1.1",
   "pytest-cov>=5",
@@ -70,7 +74,9 @@ line-length = 120
 [tool.ruff]
 line-length = 120
 target-version = "py39"
-lint.select = ["ALL"]
+lint.select = [
+  "ALL",
+]
 lint.isort = { known-first-party = [
   "sphinx_autodoc_typehints",
   "tests",
@@ -111,7 +117,9 @@ write-changes = true
 count = true
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = [
+  "tests",
+]
 
 [tool.coverage]
 html.show_contexts = true
@@ -128,12 +136,19 @@ paths.source = [
   "*\\src",
 ]
 report.fail_under = 85
-report.omit = []
+report.omit = [
+]
 run.parallel = true
-run.plugins = ["covdefaults"]
+run.plugins = [
+  "covdefaults",
+]
 
 [tool.mypy]
 python_version = "3.10"
 strict = true
 exclude = "^(.*/roots/.*)|(tests/test_integration.py)$"
-overrides = [{ module = ["sphobjinv.*"], ignore_missing_imports = true }]
+overrides = [
+  { module = [
+    "sphobjinv.*",
+  ], ignore_missing_imports = true },
+]
