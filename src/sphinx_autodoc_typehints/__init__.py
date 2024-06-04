@@ -491,7 +491,7 @@ def _get_type_hint(autodoc_mock_imports: list[str], name: str, obj: Any) -> dict
     return result
 
 
-def backfill_type_hints(obj: Any, name: str) -> dict[str, Any]:  # noqa: C901, PLR0911, PLR0912
+def backfill_type_hints(obj: Any, name: str) -> dict[str, Any]:  # noqa: C901, PLR0911
     """
     Backfill type hints.
 
