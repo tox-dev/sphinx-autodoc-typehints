@@ -4,7 +4,7 @@ import re
 import sys
 from pathlib import Path
 from textwrap import dedent, indent
-from typing import TYPE_CHECKING, Any, Callable, NewType, TypeVar, Literal  # no type comments
+from typing import TYPE_CHECKING, Any, Callable, Literal, NewType, TypeVar  # no type comments
 
 import pytest
 
@@ -33,7 +33,9 @@ def warns(pattern: str) -> Callable[[T], T]:
 
     return dec
 
-ArrayLike = Literal['test']
+
+ArrayLike = Literal["test"]
+
 
 @expected(
     """\
