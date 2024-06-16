@@ -4,14 +4,13 @@ import re
 import sys
 from pathlib import Path
 from textwrap import dedent, indent
-from typing import TYPE_CHECKING, Any, Callable, NewType, TypeVar  # no type comments
+from typing import TYPE_CHECKING, Any, Callable, NewType, TypeVar, Literal  # no type comments
 
 import pytest
 
 if TYPE_CHECKING:
     from io import StringIO
 
-    from numpy.typing import ArrayLike
     from sphinx.testing.util import SphinxTestApp
 
 T = TypeVar("T")
@@ -34,6 +33,7 @@ def warns(pattern: str) -> Callable[[T], T]:
 
     return dec
 
+ArrayLike = Literal['test']
 
 @expected(
     """\
