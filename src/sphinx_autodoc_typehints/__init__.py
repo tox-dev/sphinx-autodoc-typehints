@@ -715,9 +715,8 @@ def _inject_signature(  # noqa: C901
     app: Sphinx,
     lines: list[str],
 ) -> None:
-    
     type_aliases = app.config.autodoc_type_aliases
-    
+
     for arg_name, arg_type in signature.parameters.items():
         annotation = arg_type._annotation if arg_type._annotation in type_aliases else type_hints.get(arg_name)
 

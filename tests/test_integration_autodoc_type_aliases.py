@@ -6,13 +6,12 @@ from pathlib import Path
 from textwrap import dedent, indent
 from typing import TYPE_CHECKING, Any, Callable, NewType, TypeVar  # no type comments
 
-from numpy.typing import ArrayLike
-
 import pytest
 
 if TYPE_CHECKING:
     from io import StringIO
 
+    from numpy.typing import ArrayLike
     from sphinx.testing.util import SphinxTestApp
 
 T = TypeVar("T")
@@ -52,7 +51,7 @@ mod.function(x)
       bytes
 """,
 )
-def function(x: ArrayLike) -> str:  # noqa: ARG001, UP007
+def function(x: ArrayLike) -> str:  # noqa: ARG001
     """
     Function docstring.
 
@@ -69,16 +68,12 @@ LT_PY310 = sys.version_info < (3, 10)
 
 prolog = """
 .. |test_node_start| replace:: {test_node_start}
-""".format(
-    test_node_start="test_start"
-)
+""".format(test_node_start="test_start")
 
 
 epilog = """
 .. |test_node_end| replace:: {test_node_end}
-""".format(
-    test_node_end="test_end"
-)
+""".format(test_node_end="test_end")
 
 
 # Config settings for each test run.
