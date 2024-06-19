@@ -145,7 +145,7 @@ run.plugins = [
 [tool.mypy]
 python_version = "3.10"
 strict = true
-exclude = "^(.*/roots/.*)|(tests/test_integration*.py)$"
+exclude = "^(.*/roots/.*)|(tests/test_integration.*.py)$"
 overrides = [
   { module = [
     "sphobjinv.*",
