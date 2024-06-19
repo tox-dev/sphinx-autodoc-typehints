@@ -63,21 +63,6 @@ def function(x: ArrayLike) -> str:  # noqa: ARG001
     """
 
 
-AUTO_FUNCTION = ".. autofunction:: mod.{}"
-
-LT_PY310 = sys.version_info < (3, 10)
-
-
-prolog = """
-.. |test_node_start| replace:: {test_node_start}
-""".format(test_node_start="test_start")
-
-
-epilog = """
-.. |test_node_end| replace:: {test_node_end}
-""".format(test_node_end="test_end")
-
-
 # Config settings for each test run.
 # Config Name: Sphinx Options as Dict.
 configs = {
@@ -95,7 +80,7 @@ configs = {
 def test_integration(
     app: SphinxTestApp, status: StringIO, warning: StringIO, monkeypatch: pytest.MonkeyPatch, val: Any, conf_run: str
 ) -> None:
-    template = AUTO_FUNCTION
+    template = ".. autofunction:: mod.{}"
 
     (Path(app.srcdir) / "index.rst").write_text(template.format(val.__name__))
     app.config.__dict__.update(configs[conf_run])
@@ -115,7 +100,7 @@ def test_integration(
     result = (Path(app.srcdir) / "_build/text/index.txt").read_text()
 
     expected = val.EXPECTED
-    if LT_PY310:
+    if sys.version_info < (3, 10):
         expected = expected.replace("NewType", "NewType()")
     try:
         assert result.strip() == dedent(expected).strip()
