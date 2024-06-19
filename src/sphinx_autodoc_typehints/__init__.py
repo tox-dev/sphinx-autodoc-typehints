@@ -345,7 +345,7 @@ def process_signature(  # noqa: C901, PLR0913, PLR0917
         return None
 
     obj = inspect.unwrap(obj)
-    sph_signature = sphinx_signature(obj)
+    sph_signature = sphinx_signature(obj, type_aliases=app.config["autodoc_type_aliases"])
 
     if app.config.typehints_use_signature:
         parameters = list(sph_signature.parameters.values())
@@ -642,7 +642,7 @@ def process_docstring(  # noqa: PLR0913, PLR0917
     obj = inspect.unwrap(obj)
 
     try:
-        signature = sphinx_signature(obj)
+        signature = sphinx_signature(obj, type_aliases=app.config["autodoc_type_aliases"])
     except (ValueError, TypeError):
         signature = None
     type_hints = get_all_type_hints(app.config.autodoc_mock_imports, obj, name)
@@ -715,8 +715,10 @@ def _inject_signature(  # noqa: C901
     app: Sphinx,
     lines: list[str],
 ) -> None:
-    for arg_name in signature.parameters:
-        annotation = type_hints.get(arg_name)
+    type_aliases = app.config["autodoc_type_aliases"]
+
+    for arg_name, arg_type in signature.parameters.items():
+        annotation = arg_type.annotation if arg_type.annotation in type_aliases else type_hints.get(arg_name)
 
         default = signature.parameters[arg_name].default
 
