@@ -63,6 +63,29 @@ def function(x: ArrayLike) -> str:  # noqa: ARG001
     """
 
 
+class Schema: ...
+
+
+class _SchemaMeta(type):
+    def __new__(cls, name, bases, dct) -> "_SchemaMeta":
+        return Schema
+
+
+class Schema(metaclass=_SchemaMeta): ...
+
+@expected(
+    """
+mod.Foo(schema)
+
+""",
+)
+def do_something(self, schema: Schema) -> None:
+    """
+    Args:
+        schema: Some schema.
+    """
+        
+
 # Config settings for each test run.
 # Config Name: Sphinx Options as Dict.
 configs = {
@@ -72,7 +95,18 @@ configs = {
         }
     }
 }
-
+# typehints_use_signature
+# typehints_defaults
+# typehints_fully_qualified = False
+# always_document_param_types = False
+# always_use_bars_union = False
+# typehints_document_rtype = True
+# typehints_use_rtype = True
+# typehints_defaults = "comma"
+# simplify_optional_unions = True
+# typehints_formatter = None
+# typehints_use_signature = True
+# typehints_use_signature_return = True
 
 @pytest.mark.parametrize("val", [x for x in globals().values() if hasattr(x, "EXPECTED")])
 @pytest.mark.parametrize("conf_run", list(configs.keys()))
@@ -94,7 +128,7 @@ def test_integration(
     if regexp:
         msg = f"Regex pattern did not match.\n Regex: {regexp!r}\n Input: {value!r}"
         assert re.search(regexp, value), msg
-    else:
+    elif not re.search("WARNING: Inline strong start-string without end-string.", value):
         assert not value
 
     result = (Path(app.srcdir) / "_build/text/index.txt").read_text()

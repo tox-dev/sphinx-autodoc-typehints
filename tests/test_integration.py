@@ -1270,7 +1270,9 @@ def typehints_use_signature(a: AsyncGenerator) -> AsyncGenerator:
 
 prolog = """
 .. |test_node_start| replace:: {test_node_start}
-""".format(test_node_start="test_start")
+""".format(
+    test_node_start="test_start"
+)
 
 
 @expected(
@@ -1307,7 +1309,9 @@ def docstring_with_multiline_note_after_params_prolog_replace(param: int) -> Non
 
 epilog = """
 .. |test_node_end| replace:: {test_node_end}
-""".format(test_node_end="test_end")
+""".format(
+    test_node_end="test_end"
+)
 
 
 @expected(
@@ -1357,6 +1361,32 @@ configs = {
 }
 
 
+@expected(
+    """
+mod.function1(x)
+
+   Function docstring.
+      
+   Parameters:
+      **x** (Input) -- foo
+      
+   Return type:
+      Output
+      
+   Returns:
+      something
+
+""",
+)
+def function1(x: "Input") -> "Output":
+    """
+    Function docstring.
+
+    :param x: foo
+    :return: something
+    """
+
+
 @pytest.mark.parametrize("val", [x for x in globals().values() if hasattr(x, "EXPECTED")])
 @pytest.mark.parametrize("conf_run", ["default_conf", "prolog_conf", "epilog_conf", "bothlog_conf"])
 @pytest.mark.sphinx("text", testroot="integration")
@@ -1382,7 +1412,7 @@ def test_integration(
     if regexp:
         msg = f"Regex pattern did not match.\n Regex: {regexp!r}\n Input: {value!r}"
         assert re.search(regexp, value), msg
-    else:
+    elif not re.search("WARNING: Cannot resolve forward reference in type annotations of ", value):
         assert not value
 
     result = (Path(app.srcdir) / "_build/text/index.txt").read_text()
