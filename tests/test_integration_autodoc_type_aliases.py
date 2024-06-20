@@ -34,57 +34,72 @@ def warns(pattern: str) -> Callable[[T], T]:
     return dec
 
 
-ArrayLike = Literal["test"]
+from numpy.typing import ArrayLike
+
+# ArrayLike = Literal["test"]
+
+
+class _SchemaMeta(type):
+    def __eq__(cls, other: Any) -> bool:
+        return True
+
+
+class Schema(metaclass=_SchemaMeta):
+    pass
+
+
+@expected(
+    """
+mod.f(s)
+
+   Do something.
+
+   Parameters:
+      **s** ("Schema") -- Some schema.
+
+   Return type:
+      "Schema"
+"""
+)
+def f(s: Schema) -> Schema:
+    """
+    Do something.
+
+    Args:
+        s: Some schema.
+    """
+    return s
 
 
 @expected(
     """\
-mod.function(x)
+mod.function(x, y)
 
    Function docstring.
 
    Parameters:
-      **x** (ArrayLike) -- foo
+      * **x** (ArrayLike) -- foo
+
+      * **y** ("Schema") -- boo
 
    Returns:
       something
 
    Return type:
       bytes
+
 """,
 )
-def function(x: ArrayLike) -> str:  # noqa: ARG001
+def function(x: ArrayLike, y: Schema) -> str:  # noqa: ARG001
     """
     Function docstring.
 
     :param x: foo
+    :param y: boo
     :return: something
     :rtype: bytes
     """
 
-
-class Schema: ...
-
-
-class _SchemaMeta(type):
-    def __new__(cls, name, bases, dct) -> "_SchemaMeta":
-        return Schema
-
-
-class Schema(metaclass=_SchemaMeta): ...
-
-@expected(
-    """
-mod.Foo(schema)
-
-""",
-)
-def do_something(self, schema: Schema) -> None:
-    """
-    Args:
-        schema: Some schema.
-    """
-        
 
 # Config settings for each test run.
 # Config Name: Sphinx Options as Dict.
@@ -107,6 +122,7 @@ configs = {
 # typehints_formatter = None
 # typehints_use_signature = True
 # typehints_use_signature_return = True
+
 
 @pytest.mark.parametrize("val", [x for x in globals().values() if hasattr(x, "EXPECTED")])
 @pytest.mark.parametrize("conf_run", list(configs.keys()))
