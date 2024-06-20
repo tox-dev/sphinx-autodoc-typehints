@@ -718,7 +718,11 @@ def _inject_signature(  # noqa: C901
     type_aliases = app.config["autodoc_type_aliases"]
 
     for arg_name, arg_type in signature.parameters.items():
-        annotation = arg_type.annotation if arg_type.annotation in type_aliases else type_hints.get(arg_name)
+        annotation = (
+            ForwardRef(arg_type.annotation, is_argument=True, is_class=False)
+            if arg_type.annotation in type_aliases
+            else type_hints.get(arg_name)
+        )
 
         default = signature.parameters[arg_name].default
 
