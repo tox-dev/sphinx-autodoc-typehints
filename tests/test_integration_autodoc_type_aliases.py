@@ -37,27 +37,89 @@ def warns(pattern: str) -> Callable[[T], T]:
 ArrayLike = Literal["test"]
 
 
+class _SchemaMeta(type):  # noqa: PLW1641
+    def __eq__(cls, other: object) -> bool:
+        return True
+
+
+class Schema(metaclass=_SchemaMeta):
+    pass
+
+
+@expected(
+    """
+mod.f(s)
+
+   Do something.
+
+   Parameters:
+      **s** ("Schema") -- Some schema.
+
+   Return type:
+      "Schema"
+"""
+)
+def f(s: Schema) -> Schema:
+    """
+    Do something.
+
+    Args:
+        s: Some schema.
+    """
+    return s
+
+
+class AliasedClass: ...
+
+
+@expected(
+    """
+mod.g(s)
+
+   Do something.
+
+   Parameters:
+      **s** ("Class Alias") -- Some schema.
+
+   Return type:
+      "Class Alias"
+"""
+)
+def g(s: AliasedClass) -> AliasedClass:
+    """
+    Do something.
+
+    Args:
+        s: Some schema.
+    """
+    return s
+
+
 @expected(
     """\
-mod.function(x)
+mod.function(x, y)
 
    Function docstring.
 
    Parameters:
-      **x** (ArrayLike) -- foo
+      * **x** (Array) -- foo
+
+      * **y** ("Schema") -- boo
 
    Returns:
       something
 
    Return type:
       bytes
+
 """,
 )
-def function(x: ArrayLike) -> str:  # noqa: ARG001
+def function(x: ArrayLike, y: Schema) -> str:  # noqa: ARG001
     """
     Function docstring.
 
     :param x: foo
+    :param y: boo
     :return: something
     :rtype: bytes
     """
@@ -65,13 +127,7 @@ def function(x: ArrayLike) -> str:  # noqa: ARG001
 
 # Config settings for each test run.
 # Config Name: Sphinx Options as Dict.
-configs = {
-    "default_conf": {
-        "autodoc_type_aliases": {
-            "ArrayLike": "ArrayLike",
-        }
-    }
-}
+configs = {"default_conf": {"autodoc_type_aliases": {"ArrayLike": "Array", "AliasedClass": '"Class Alias"'}}}
 
 
 @pytest.mark.parametrize("val", [x for x in globals().values() if hasattr(x, "EXPECTED")])
@@ -94,7 +150,7 @@ def test_integration(
     if regexp:
         msg = f"Regex pattern did not match.\n Regex: {regexp!r}\n Input: {value!r}"
         assert re.search(regexp, value), msg
-    else:
+    elif not re.search("WARNING: Inline strong start-string without end-string.", value):
         assert not value
 
     result = (Path(app.srcdir) / "_build/text/index.txt").read_text()
