@@ -1270,9 +1270,7 @@ def typehints_use_signature(a: AsyncGenerator) -> AsyncGenerator:
 
 prolog = """
 .. |test_node_start| replace:: {test_node_start}
-""".format(
-    test_node_start="test_start"
-)
+""".format(test_node_start="test_start")
 
 
 @expected(
@@ -1309,9 +1307,7 @@ def docstring_with_multiline_note_after_params_prolog_replace(param: int) -> Non
 
 epilog = """
 .. |test_node_end| replace:: {test_node_end}
-""".format(
-    test_node_end="test_end"
-)
+""".format(test_node_end="test_end")
 
 
 @expected(
@@ -1366,19 +1362,19 @@ configs = {
 mod.function1(x)
 
    Function docstring.
-      
+
    Parameters:
       **x** (Input) -- foo
-      
+
    Return type:
       Output
-      
+
    Returns:
       something
 
 """,
 )
-def function1(x: "Input") -> "Output":
+def function1(x: Input) -> Output:
     """
     Function docstring.
 

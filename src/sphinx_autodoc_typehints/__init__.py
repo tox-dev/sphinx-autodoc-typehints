@@ -17,11 +17,8 @@ from docutils.frontend import OptionParser
 from sphinx.ext.autodoc.mock import mock
 from sphinx.parsers import RSTParser
 from sphinx.util import logging, rst
+from sphinx.util.inspect import TypeAliasForwardRef, TypeAliasNamespace, stringify_signature
 from sphinx.util.inspect import signature as sphinx_signature
-from sphinx.util.inspect import stringify_signature
-
-from typing import get_type_hints
-from sphinx.util.inspect import TypeAliasNamespace, TypeAliasForwardRef
 
 from .parser import parse
 from .patches import install_patches
@@ -413,7 +410,6 @@ def _future_annotations_imported(obj: Any) -> bool:
 def get_all_type_hints(
     autodoc_mock_imports: list[str], obj: Any, name: str, localns: TypeAliasNamespace
 ) -> dict[str, Any]:
-
     result = _get_type_hint(autodoc_mock_imports, name, obj, localns)
     if not result:
         result = backfill_type_hints(obj, name)
@@ -728,8 +724,7 @@ def _inject_signature(  # noqa: C901
     app: Sphinx,
     lines: list[str],
 ) -> None:
-
-    for arg_name, arg_type in signature.parameters.items():
+    for arg_name in signature.parameters:
         annotation = type_hints.get(arg_name)
 
         default = signature.parameters[arg_name].default

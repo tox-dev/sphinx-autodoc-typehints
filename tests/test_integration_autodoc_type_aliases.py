@@ -38,7 +38,7 @@ ArrayLike = Literal["test"]
 
 
 class _SchemaMeta(type):
-    def __eq__(cls, other: Any) -> bool:
+    def __eq__(cls, other: object) -> bool:
         return True
 
 
