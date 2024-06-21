@@ -34,9 +34,7 @@ def warns(pattern: str) -> Callable[[T], T]:
     return dec
 
 
-from numpy.typing import ArrayLike
-
-# ArrayLike = Literal["test"]
+ArrayLike = Literal["test"]
 
 
 class _SchemaMeta(type):
@@ -71,6 +69,32 @@ def f(s: Schema) -> Schema:
     return s
 
 
+class AliasedClass: ...
+
+
+@expected(
+    """
+mod.g(s)
+
+   Do something.
+
+   Parameters:
+      **s** ("Class Alias") -- Some schema.
+
+   Return type:
+      "Class Alias"
+"""
+)
+def g(s: AliasedClass) -> AliasedClass:
+    """
+    Do something.
+
+    Args:
+        s: Some schema.
+    """
+    return s
+
+
 @expected(
     """\
 mod.function(x, y)
@@ -78,7 +102,7 @@ mod.function(x, y)
    Function docstring.
 
    Parameters:
-      * **x** (ArrayLike) -- foo
+      * **x** (Array) -- foo
 
       * **y** ("Schema") -- boo
 
@@ -103,25 +127,7 @@ def function(x: ArrayLike, y: Schema) -> str:  # noqa: ARG001
 
 # Config settings for each test run.
 # Config Name: Sphinx Options as Dict.
-configs = {
-    "default_conf": {
-        "autodoc_type_aliases": {
-            "ArrayLike": "ArrayLike",
-        }
-    }
-}
-# typehints_use_signature
-# typehints_defaults
-# typehints_fully_qualified = False
-# always_document_param_types = False
-# always_use_bars_union = False
-# typehints_document_rtype = True
-# typehints_use_rtype = True
-# typehints_defaults = "comma"
-# simplify_optional_unions = True
-# typehints_formatter = None
-# typehints_use_signature = True
-# typehints_use_signature_return = True
+configs = {"default_conf": {"autodoc_type_aliases": {"ArrayLike": "Array", "AliasedClass": '"Class Alias"'}}}
 
 
 @pytest.mark.parametrize("val", [x for x in globals().values() if hasattr(x, "EXPECTED")])
