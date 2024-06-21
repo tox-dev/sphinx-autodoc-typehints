@@ -479,9 +479,7 @@ def _resolve_type_guarded_imports(autodoc_mock_imports: list[str], obj: Any) -> 
             _execute_guarded_code(autodoc_mock_imports, obj, module_code)
 
 
-def _get_type_hint(
-    autodoc_mock_imports: list[str], name: str, obj: Any, localns: TypeAliasForwardRef
-) -> dict[str, Any]:
+def _get_type_hint(autodoc_mock_imports: list[str], name: str, obj: Any, localns: TypeAliasNamespace) -> dict[str, Any]:
     _resolve_type_guarded_imports(autodoc_mock_imports, obj)
     try:
         result = get_type_hints(obj, None, localns)
