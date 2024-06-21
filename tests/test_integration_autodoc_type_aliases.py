@@ -37,7 +37,7 @@ def warns(pattern: str) -> Callable[[T], T]:
 ArrayLike = Literal["test"]
 
 
-class _SchemaMeta(type): # noqa: PLW1641
+class _SchemaMeta(type):  # noqa: PLW1641
     def __eq__(cls, other: object) -> bool:
         return True
 
