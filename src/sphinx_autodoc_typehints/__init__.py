@@ -762,13 +762,13 @@ def _append_default(
         # (terminated by a line with no indentation)
         # append default to the last nonempty line
         nlines = len(lines)
-        i = insert_index + 1
-        j = insert_index  # last nonempty line
-        while i < nlines and (not lines[i] or lines[i].startswith(" ")):
-            if lines[i]:
-                j = i
-            i += 1
-        lines[j] += formatted_default
+        next_index = insert_index + 1
+        append_index = insert_index  # last nonempty line
+        while next_index < nlines and (not lines[next_index] or lines[next_index].startswith(" ")):
+            if lines[next_index]:
+                append_index = next_index
+            next_index += 1
+        lines[append_index] += formatted_default
 
     else:  # add to last param doc line
         type_annotation += formatted_default
