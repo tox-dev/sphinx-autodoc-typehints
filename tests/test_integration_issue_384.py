@@ -52,7 +52,7 @@ mod.function(x=5)
       bytes
 """,
 )
-def function(x: int = 5, y: int = 10, z: int = 5) -> str:  # noqa: ARG001
+def function1(x: int, y: int, z: int) -> str:  # noqa: ARG001
     """
     Function docstring.
 
@@ -61,8 +61,37 @@ def function(x: int = 5, y: int = 10, z: int = 5) -> str:  # noqa: ARG001
     :param y: another optional specifier for how to handle complex data types. See
               ``ivy.func_wrapper.handle_complex_input`` for more detail.
 
-    :param y: yet another optional specifier for how to handle complex data types. See
+    :param z: yet another optional specifier for how to handle complex data types. See
               ``ivy.func_wrapper.handle_complex_input`` for more detail.
+    :return: something
+    :rtype: bytes
+    """
+
+@expected(
+    """\
+mod.function(x=5)
+
+   Function docstring.
+
+   Parameters:
+      **x** ("int") -- optional specifier for how to handle complex
+      data types. See "ivy.func_wrapper.handle_complex_input" for more
+      detail.
+            
+   Returns:
+      something
+
+   Return type:
+      bytes
+""",
+)
+def function(x: int = 5, y: int = 10, z: int = 5) -> str:  # noqa: ARG001
+    """
+    Function docstring.
+
+    :param x: optional specifier 
+              line 2
+
     :return: something
     :rtype: bytes
     """

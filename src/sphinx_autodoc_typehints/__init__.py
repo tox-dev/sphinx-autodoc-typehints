@@ -741,11 +741,6 @@ def _inject_signature(  # noqa: C901
 
         if insert_index is not None:
 
-            # advance index to the end of paragraph
-            # nlines = len(lines)
-            # while insert_index < nlines and (lines[insert_index + 1] == "" or lines[insert_index + 1].startswith(" ")):
-            #     insert_index += 1
-
             if annotation is None:
                 type_annotation = f":type {arg_name}: "
             else:
@@ -756,11 +751,19 @@ def _inject_signature(  # noqa: C901
                 formatted_default = format_default(app, default, annotation is not None)
                 if formatted_default:
                     if app.config.typehints_defaults.endswith("after"):
-                        lines[insert_index] += formatted_default
+
+                        # advance index to the end of the :param: paragraph
+                        nlines = len(lines)
+                        i = insert_index
+                        while i < nlines and (lines[i + 1] == "" or lines[i + 1].startswith(" ")):
+                            i = i + 1
+
+                        lines[i] += formatted_default
+
                     else:  # add to last param doc line
                         type_annotation += formatted_default
 
-            lines.insert(insert_index + 1, type_annotation)
+            lines.insert(insert_index, type_annotation)
 
 
 @dataclass
