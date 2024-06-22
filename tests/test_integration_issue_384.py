@@ -4,7 +4,7 @@ import re
 import sys
 from pathlib import Path
 from textwrap import dedent, indent
-from typing import TYPE_CHECKING, Any, Callable, Literal, NewType, TypeVar  # no type comments
+from typing import TYPE_CHECKING, Any, Callable, NewType, TypeVar  # no type comments
 
 import pytest
 
@@ -36,61 +36,42 @@ def warns(pattern: str) -> Callable[[T], T]:
 
 @expected(
     """\
-mod.function(x=5)
+mod.function(x=5, y=10, z=15)
 
    Function docstring.
 
    Parameters:
-      **x** ("int") -- optional specifier for how to handle complex
-      data types. See "ivy.func_wrapper.handle_complex_input" for more
-      detail.
-            
+      * **x** ("int") -- optional specifier line 2 (default: "5")
+
+      * **y** ("int") --
+
+        another optional line 4
+
+        second paragraph for y (default: "10")
+
+      * **z** ("int") -- yet another optional s line 6 (default: "15")
+
    Returns:
       something
 
    Return type:
       bytes
+
 """,
 )
-def function1(x: int, y: int, z: int) -> str:  # noqa: ARG001
+def function(x: int = 5, y: int = 10, z: int = 15) -> str:  # noqa: ARG001
     """
     Function docstring.
 
-    :param x: optional specifier for how to handle complex data types. See
-              ``ivy.func_wrapper.handle_complex_input`` for more detail.
-    :param y: another optional specifier for how to handle complex data types. See
-              ``ivy.func_wrapper.handle_complex_input`` for more detail.
-
-    :param z: yet another optional specifier for how to handle complex data types. See
-              ``ivy.func_wrapper.handle_complex_input`` for more detail.
-    :return: something
-    :rtype: bytes
-    """
-
-@expected(
-    """\
-mod.function(x=5)
-
-   Function docstring.
-
-   Parameters:
-      **x** ("int") -- optional specifier for how to handle complex
-      data types. See "ivy.func_wrapper.handle_complex_input" for more
-      detail.
-            
-   Returns:
-      something
-
-   Return type:
-      bytes
-""",
-)
-def function(x: int = 5, y: int = 10, z: int = 5) -> str:  # noqa: ARG001
-    """
-    Function docstring.
-
-    :param x: optional specifier 
+    :param x: optional specifier
               line 2
+    :param y: another optional
+              line 4
+
+              second paragraph for y
+
+    :param z: yet another optional s
+              line 6
 
     :return: something
     :rtype: bytes

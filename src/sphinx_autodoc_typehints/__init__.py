@@ -750,20 +750,31 @@ def _inject_signature(  # noqa: C901
             if app.config.typehints_defaults:
                 formatted_default = format_default(app, default, annotation is not None)
                 if formatted_default:
-                    if app.config.typehints_defaults.endswith("after"):
-
-                        # advance index to the end of the :param: paragraph
-                        nlines = len(lines)
-                        i = insert_index
-                        while i < nlines and (lines[i + 1] == "" or lines[i + 1].startswith(" ")):
-                            i = i + 1
-
-                        lines[i] += formatted_default
-
-                    else:  # add to last param doc line
-                        type_annotation += formatted_default
+                    type_annotation = _append_default(app, lines, insert_index, type_annotation, formatted_default)
 
             lines.insert(insert_index, type_annotation)
+
+
+def _append_default(
+    app: Sphinx, lines: list[str], insert_index: int, type_annotation: str, formatted_default: str
+) -> str:
+    if app.config.typehints_defaults.endswith("after"):
+        # advance the index to the end of the :param: paragraphs
+        # (terminated by a line with no indentation)
+        # append default to the last nonempty line
+        nlines = len(lines)
+        i = insert_index + 1
+        j = insert_index  # last nonempty line
+        while i < nlines and (not lines[i] or lines[i].startswith(" ")):
+            if lines[i]:
+                j = i
+            i += 1
+        lines[j] += formatted_default
+
+    else:  # add to last param doc line
+        type_annotation += formatted_default
+
+    return type_annotation
 
 
 @dataclass
