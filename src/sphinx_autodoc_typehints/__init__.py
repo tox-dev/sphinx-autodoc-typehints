@@ -709,7 +709,7 @@ def _inject_types_to_docstring(  # noqa: PLR0913, PLR0917
         _inject_rtype(type_hints, original_obj, app, what, name, lines)
 
 
-def _inject_signature(  # noqa: C901
+def _inject_signature(
     type_hints: dict[str, Any],
     signature: inspect.Signature,
     app: Sphinx,
@@ -740,7 +740,6 @@ def _inject_signature(  # noqa: C901
             insert_index = len(lines)
 
         if insert_index is not None:
-
             if annotation is None:
                 type_annotation = f":type {arg_name}: "
             else:
