@@ -716,7 +716,7 @@ def _inject_types_to_docstring(  # noqa: PLR0913, PLR0917
         _inject_rtype(type_hints, original_obj, app, what, name, lines)
 
 
-def _inject_signature(  # noqa: C901
+def _inject_signature(
     type_hints: dict[str, Any],
     signature: inspect.Signature,
     app: Sphinx,
@@ -754,12 +754,31 @@ def _inject_signature(  # noqa: C901
             if app.config.typehints_defaults:
                 formatted_default = format_default(app, default, annotation is not None)
                 if formatted_default:
-                    if app.config.typehints_defaults.endswith("after"):
-                        lines[insert_index] += formatted_default
-                    else:  # add to last param doc line
-                        type_annotation += formatted_default
+                    type_annotation = _append_default(app, lines, insert_index, type_annotation, formatted_default)
 
             lines.insert(insert_index, type_annotation)
+
+
+def _append_default(
+    app: Sphinx, lines: list[str], insert_index: int, type_annotation: str, formatted_default: str
+) -> str:
+    if app.config.typehints_defaults.endswith("after"):
+        # advance the index to the end of the :param: paragraphs
+        # (terminated by a line with no indentation)
+        # append default to the last nonempty line
+        nlines = len(lines)
+        next_index = insert_index + 1
+        append_index = insert_index  # last nonempty line
+        while next_index < nlines and (not lines[next_index] or lines[next_index].startswith(" ")):
+            if lines[next_index]:
+                append_index = next_index
+            next_index += 1
+        lines[append_index] += formatted_default
+
+    else:  # add to last param doc line
+        type_annotation += formatted_default
+
+    return type_annotation
 
 
 @dataclass
