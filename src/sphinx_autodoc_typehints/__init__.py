@@ -849,7 +849,7 @@ def get_insert_index(app: Sphinx, lines: list[str]) -> InsertIndexInfo | None:
         # at end. (I don't know of any input where this happens.)
         next_sibling = child.next_node(descend=False, siblings=True)
         line_no = node_line_no(next_sibling) if next_sibling else None
-        at = line_no - 2 if line_no else len(lines)
+        at = max(line_no - 2, 0) if line_no else len(lines)
         return InsertIndexInfo(insert_index=at, found_param=True)
 
     # 4. Insert before examples
@@ -857,7 +857,7 @@ def get_insert_index(app: Sphinx, lines: list[str]) -> InsertIndexInfo | None:
         if tag_name(child) in {"literal_block", "paragraph", "field_list"}:
             continue
         line_no = node_line_no(child)
-        at = line_no - 2 if line_no else len(lines)
+        at = max(line_no - 2, 0) if line_no else len(lines)
         return InsertIndexInfo(insert_index=at, found_directive=True)
 
     # 5. Otherwise, insert at end
