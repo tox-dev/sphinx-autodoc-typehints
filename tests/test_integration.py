@@ -1342,6 +1342,24 @@ def docstring_with_multiline_note_after_params_epilog_replace(param: int) -> Non
     """
 
 
+@expected(
+    """
+    mod.docstring_with_see_also()
+
+       Return type:
+          "str"
+
+       See also: more info at <https://example.com>`_.
+
+    """
+)
+def docstring_with_see_also() -> str:
+    """
+    .. seealso:: more info at <https://example.com>`_.
+    """
+    return ""
+
+
 # Config settings for each test run.
 # Config Name: Sphinx Options as Dict.
 configs = {
