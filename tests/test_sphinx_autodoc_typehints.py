@@ -565,8 +565,8 @@ def test_always_document_param_types(
 ) -> None:
     set_python_path()
 
-    app.config.always_document_param_types = always_document_param_types  # type: ignore[attr-defined] # create flag
-    app.config.autodoc_mock_imports = ["mailbox"]  # type: ignore[attr-defined] # create flag
+    app.config.always_document_param_types = always_document_param_types  # create flag
+    app.config.autodoc_mock_imports = ["mailbox"]  # create flag
 
     # Prevent "document isn't included in any toctree" warnings
     for f in Path(app.srcdir).glob("*.rst"):
@@ -633,7 +633,7 @@ def maybe_fix_py310(expected_contents: str) -> str:
 def test_sphinx_output_future_annotations(app: SphinxTestApp, status: StringIO) -> None:
     set_python_path()
 
-    app.config.master_doc = "future_annotations"  # type: ignore[attr-defined] # create flag
+    app.config.master_doc = "future_annotations"  # create flag
     app.build()
 
     assert "build succeeded" in status.getvalue()  # Build succeeded
@@ -667,8 +667,8 @@ def test_sphinx_output_future_annotations(app: SphinxTestApp, status: StringIO) 
 def test_sphinx_output_default_role(app: SphinxTestApp, status: StringIO) -> None:
     set_python_path()
 
-    app.config.master_doc = "simple_default_role"  # type: ignore[attr-defined] # create flag
-    app.config.default_role = "literal"  # type: ignore[attr-defined]
+    app.config.master_doc = "simple_default_role"  # create flag
+    app.config.default_role = "literal"
     app.build()
 
     assert "build succeeded" in status.getvalue()  # Build succeeded
@@ -716,8 +716,8 @@ def test_sphinx_output_defaults(
 ) -> None:
     set_python_path()
 
-    app.config.master_doc = "simple"  # type: ignore[attr-defined] # create flag
-    app.config.typehints_defaults = defaults_config_val  # type: ignore[attr-defined] # create flag
+    app.config.master_doc = "simple"  # create flag
+    app.config.typehints_defaults = defaults_config_val  # create flag
     if isinstance(expected, Exception):
         with pytest.raises(Exception, match=re.escape(str(expected))):
             app.build()
@@ -763,8 +763,8 @@ def test_sphinx_output_formatter(
 ) -> None:
     set_python_path()
 
-    app.config.master_doc = "simple"  # type: ignore[attr-defined] # create flag
-    app.config.typehints_formatter = formatter_config_val  # type: ignore[attr-defined] # create flag
+    app.config.master_doc = "simple"  # create flag
+    app.config.typehints_formatter = formatter_config_val  # create flag
     if isinstance(expected, Exception):
         with pytest.raises(Exception, match=re.escape(str(expected))):
             app.build()
@@ -888,7 +888,7 @@ def test_syntax_error_backfill() -> None:
 @pytest.mark.sphinx("text", testroot="resolve-typing-guard")
 def test_resolve_typing_guard_imports(app: SphinxTestApp, status: StringIO, warning: StringIO) -> None:
     set_python_path()
-    app.config.autodoc_mock_imports = ["viktor"]  # type: ignore[attr-defined] # create flag
+    app.config.autodoc_mock_imports = ["viktor"]  # create flag
     app.build()
     out = status.getvalue()
     assert "build succeeded" in out
@@ -917,8 +917,8 @@ def test_no_source_code_type_guard() -> None:
 @patch("sphinx.writers.text.MAXWIDTH", 2000)
 def test_sphinx_output_formatter_no_use_rtype(app: SphinxTestApp, status: StringIO) -> None:
     set_python_path()
-    app.config.master_doc = "simple_no_use_rtype"  # type: ignore[attr-defined]  # create flag
-    app.config.typehints_use_rtype = False  # type: ignore[attr-defined]
+    app.config.master_doc = "simple_no_use_rtype"  # create flag
+    app.config.typehints_use_rtype = False
     app.build()
     assert "build succeeded" in status.getvalue()
     text_path = Path(app.srcdir) / "_build" / "text" / "simple_no_use_rtype.txt"
@@ -982,8 +982,8 @@ def test_sphinx_output_formatter_no_use_rtype(app: SphinxTestApp, status: String
 @patch("sphinx.writers.text.MAXWIDTH", 2000)
 def test_sphinx_output_with_use_signature(app: SphinxTestApp, status: StringIO) -> None:
     set_python_path()
-    app.config.master_doc = "simple"  # type: ignore[attr-defined] # create flag
-    app.config.typehints_use_signature = True  # type: ignore[attr-defined]
+    app.config.master_doc = "simple"  # create flag
+    app.config.typehints_use_signature = True
     app.build()
     assert "build succeeded" in status.getvalue()
     text_path = Path(app.srcdir) / "_build" / "text" / "simple.txt"
@@ -1011,8 +1011,8 @@ def test_sphinx_output_with_use_signature(app: SphinxTestApp, status: StringIO) 
 @patch("sphinx.writers.text.MAXWIDTH", 2000)
 def test_sphinx_output_with_use_signature_return(app: SphinxTestApp, status: StringIO) -> None:
     set_python_path()
-    app.config.master_doc = "simple"  # type: ignore[attr-defined] # create flag
-    app.config.typehints_use_signature_return = True  # type: ignore[attr-defined]
+    app.config.master_doc = "simple"  # create flag
+    app.config.typehints_use_signature_return = True
     app.build()
     assert "build succeeded" in status.getvalue()
     text_path = Path(app.srcdir) / "_build" / "text" / "simple.txt"
@@ -1040,9 +1040,9 @@ def test_sphinx_output_with_use_signature_return(app: SphinxTestApp, status: Str
 @patch("sphinx.writers.text.MAXWIDTH", 2000)
 def test_sphinx_output_with_use_signature_and_return(app: SphinxTestApp, status: StringIO) -> None:
     set_python_path()
-    app.config.master_doc = "simple"  # type: ignore[attr-defined] # create flag
-    app.config.typehints_use_signature = True  # type: ignore[attr-defined]
-    app.config.typehints_use_signature_return = True  # type: ignore[attr-defined]
+    app.config.master_doc = "simple"  # create flag
+    app.config.typehints_use_signature = True
+    app.config.typehints_use_signature_return = True
     app.build()
     assert "build succeeded" in status.getvalue()
     text_path = Path(app.srcdir) / "_build" / "text" / "simple.txt"
@@ -1070,8 +1070,8 @@ def test_sphinx_output_with_use_signature_and_return(app: SphinxTestApp, status:
 @patch("sphinx.writers.text.MAXWIDTH", 2000)
 def test_default_annotation_without_typehints(app: SphinxTestApp, status: StringIO) -> None:
     set_python_path()
-    app.config.master_doc = "without_complete_typehints"  # type: ignore[attr-defined]# create flag
-    app.config.typehints_defaults = "comma"  # type: ignore[attr-defined]
+    app.config.master_doc = "without_complete_typehints"  # create flag
+    app.config.typehints_defaults = "comma"
     app.build()
     assert "build succeeded" in status.getvalue()
     text_path = Path(app.srcdir) / "_build" / "text" / "without_complete_typehints.txt"
