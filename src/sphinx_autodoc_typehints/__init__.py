@@ -653,7 +653,7 @@ def process_docstring(  # noqa: PLR0913, PLR0917
 
     localns = TypeAliasNamespace(app.config["autodoc_type_aliases"])
     type_hints = get_all_type_hints(app.config.autodoc_mock_imports, obj, name, localns)
-    app.config._annotation_globals = getattr(obj, "__globals__", {})  # type: ignore[attr-defined]  # noqa: SLF001
+    app.config._annotation_globals = getattr(obj, "__globals__", {})  # noqa: SLF001
     try:
         _inject_types_to_docstring(type_hints, signature, original_obj, app, what, name, lines)
     finally:
