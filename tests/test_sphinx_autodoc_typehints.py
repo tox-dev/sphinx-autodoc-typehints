@@ -355,15 +355,15 @@ _CASES = [
     # Zero-length tuple remains
     pytest.param(Tuple[()], ":py:data:`~typing.Tuple`", id="Tuple-p"),  # noqa: UP006
     # Internal single tuple with simple types is flattened in the output
-    pytest.param(Tuple[(int,)], r":py:data:`~typing.Tuple`\ \[:py:class:`int`]", id="Tuple-p-int"),  # noqa: UP006
+    pytest.param(Tuple[int,], r":py:data:`~typing.Tuple`\ \[:py:class:`int`]", id="Tuple-p-int"),  # noqa: UP006
     pytest.param(
-        Tuple[(int, int)],  # noqa: UP006
+        Tuple[int, int],  # noqa: UP006
         r":py:data:`~typing.Tuple`\ \[:py:class:`int`, :py:class:`int`]",
         id="Tuple-p-int-int",  # noqa: RUF100, UP006
     ),
     # Ellipsis in single tuple also gets flattened
     pytest.param(
-        Tuple[(int, ...)],  # noqa: UP006
+        Tuple[int, ...],  # noqa: UP006
         r":py:data:`~typing.Tuple`\ \[:py:class:`int`, :py:data:`...<Ellipsis>`]",
         id="Tuple-p-Ellipsis",
     ),
