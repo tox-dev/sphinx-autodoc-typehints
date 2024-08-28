@@ -1123,3 +1123,25 @@ def test_default_annotation_without_typehints(app: SphinxTestApp, status: String
           "str"
     """
     assert text_contents == dedent(expected_contents)
+
+
+@pytest.mark.sphinx("text", testroot="dummy")
+@patch("sphinx.writers.text.MAXWIDTH", 2000)
+def test_wrong_module_path(app: SphinxTestApp, status: StringIO, warning: StringIO) -> None:
+    set_python_path()
+
+    app.config.master_doc = "wrong_module_path"  # create flag
+    app.config.default_role = "literal"
+    app.config.nitpicky = True
+
+    def fixup_module_name(mod: str) -> str:
+        if not mod.startswith("wrong_module_path"):
+            return mod
+        return "export_module" + mod.removeprefix("wrong_module_path")
+
+    app.config.suppress_warnings = ["config.cache"]
+    app.config.typehints_fixup_module_name = fixup_module_name
+    app.build()
+
+    assert "build succeeded" in status.getvalue()  # Build succeeded
+    assert not warning.getvalue().strip()

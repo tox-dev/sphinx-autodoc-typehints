@@ -1373,6 +1373,7 @@ def test_integration(
     (Path(app.srcdir) / "index.rst").write_text(template.format(val.__name__))
     app.config.__dict__.update(configs[conf_run])
     app.config.__dict__.update(val.OPTIONS)
+    app.config.nitpicky = True
     monkeypatch.setitem(sys.modules, "mod", sys.modules[__name__])
     app.build()
     assert "build succeeded" in status.getvalue()  # Build succeeded
