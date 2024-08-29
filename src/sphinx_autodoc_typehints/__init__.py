@@ -170,7 +170,7 @@ def format_internal_tuple(t: tuple[Any, ...], config: Config) -> str:
 
 
 def fixup_module_name(config: Config, module: str) -> str:
-    if config.typehints_fixup_module_name:
+    if getattr(config, "typehints_fixup_module_name", None):
         module = config.typehints_fixup_module_name(module)
 
     if module == "typing_extensions":
