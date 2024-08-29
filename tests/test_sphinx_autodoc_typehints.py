@@ -1133,6 +1133,9 @@ def test_wrong_module_path(app: SphinxTestApp, status: StringIO, warning: String
     app.config.master_doc = "wrong_module_path"  # create flag
     app.config.default_role = "literal"
     app.config.nitpicky = True
+    app.config.nitpick_ignore = {
+        ("py:data", "typing.Optional")
+    }
 
     def fixup_module_name(mod: str) -> str:
         if not mod.startswith("wrong_module_path"):
