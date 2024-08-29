@@ -45,7 +45,7 @@ def _remove_sphinx_projects(sphinx_test_tempdir: path) -> None:
             pass
 
 
-@pytest.fixture()
+@pytest.fixture
 def rootdir() -> path:
     return path(str(Path(__file__).parent) or ".").abspath() / "roots"
 
