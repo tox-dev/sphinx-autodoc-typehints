@@ -1,3 +1,5 @@
+:orphan:
+
 Dummy Module
 ============
 

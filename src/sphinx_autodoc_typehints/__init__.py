@@ -169,6 +169,18 @@ def format_internal_tuple(t: tuple[Any, ...], config: Config) -> str:
     return f"({', '.join(fmt)})"
 
 
+def fixup_module_name(config: Config, module: str) -> str:
+    if getattr(config, "typehints_fixup_module_name", None):
+        module = config.typehints_fixup_module_name(module)
+
+    if module == "typing_extensions":
+        module = "typing"
+
+    if module == "_io":
+        module = "io"
+    return module
+
+
 def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901, PLR0911, PLR0912, PLR0915, PLR0914
     """
     Format the annotation.
@@ -204,13 +216,7 @@ def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901, PL
     except ValueError:
         return str(annotation).strip("'")
 
-    # Redirect all typing_extensions types to the stdlib typing module
-    if module == "typing_extensions":
-        module = "typing"
-
-    if module == "_io":
-        module = "io"
-
+    module = fixup_module_name(config, module)
     full_name = f"{module}.{class_name}" if module != "builtins" else class_name
     fully_qualified: bool = getattr(config, "typehints_fully_qualified", False)
     prefix = "" if fully_qualified or full_name == class_name else "~"
@@ -967,6 +973,7 @@ def setup(app: Sphinx) -> dict[str, bool]:
     app.add_config_value("typehints_formatter", None, "env")
     app.add_config_value("typehints_use_signature", False, "env")  # noqa: FBT003
     app.add_config_value("typehints_use_signature_return", False, "env")  # noqa: FBT003
+    app.add_config_value("typehints_fixup_module_name", None, "env")
     app.add_role("sphinx_autodoc_typehints_type", sphinx_autodoc_typehints_type_role)
     app.connect("env-before-read-docs", validate_config)  # config may be changed after “config-inited” event
     app.connect("autodoc-process-signature", process_signature)
