@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 
-def function_no_returns(x: bool, y: int = 1) -> str:  # noqa: ARG001
+def function_no_returns(x: bool, y: int = 1) -> str:
     """
     Function docstring.
 
@@ -10,7 +10,7 @@ def function_no_returns(x: bool, y: int = 1) -> str:  # noqa: ARG001
     """
 
 
-def function_returns_with_type(x: bool, y: int = 1) -> str:  # noqa: ARG001
+def function_returns_with_type(x: bool, y: int = 1) -> str:
     """
     Function docstring.
 
@@ -20,7 +20,7 @@ def function_returns_with_type(x: bool, y: int = 1) -> str:  # noqa: ARG001
     """
 
 
-def function_returns_with_compound_type(x: bool, y: int = 1) -> str:  # noqa: ARG001
+def function_returns_with_compound_type(x: bool, y: int = 1) -> str:
     """
     Function docstring.
 
@@ -30,7 +30,7 @@ def function_returns_with_compound_type(x: bool, y: int = 1) -> str:  # noqa: AR
     """
 
 
-def function_returns_without_type(x: bool, y: int = 1) -> str:  # noqa: ARG001
+def function_returns_without_type(x: bool, y: int = 1) -> str:
     """
     Function docstring.
 

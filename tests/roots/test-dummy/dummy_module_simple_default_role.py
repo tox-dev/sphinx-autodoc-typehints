@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 
-def function(x: bool, y: int) -> str:  # noqa: ARG001
+def function(x: bool, y: int) -> str:
     """
     Function docstring.
 

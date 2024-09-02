@@ -114,7 +114,7 @@ mod.function(x, y)
 
 """,
 )
-def function(x: ArrayLike, y: Schema) -> str:  # noqa: ARG001
+def function(x: ArrayLike, y: Schema) -> str:
     """
     Function docstring.
 

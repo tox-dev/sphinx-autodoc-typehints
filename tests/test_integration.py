@@ -50,7 +50,7 @@ def warns(pattern: str) -> Callable[[T], T]:
 
 @expected("mod.get_local_function()")
 def get_local_function():  # noqa: ANN201
-    def wrapper(self) -> str:  # noqa: ANN001, ARG001
+    def wrapper(self) -> str:  # noqa: ANN001
         """
         Wrapper
         """
@@ -271,7 +271,7 @@ mod.function(x, y, z_=None)
       bytes
 """,
 )
-def function(x: bool, y: int, z_: Optional[str] = None) -> str:  # noqa: ARG001, UP007
+def function(x: bool, y: int, z_: Optional[str] = None) -> str:  # noqa: UP007
     """
     Function docstring.
 
@@ -299,7 +299,7 @@ mod.function_with_starred_documentation_param_names(*args, **kwargs)
       * ****kwargs** ("str") -- bar
 """,
 )
-def function_with_starred_documentation_param_names(*args: int, **kwargs: str):  # noqa: ANN201, ARG001
+def function_with_starred_documentation_param_names(*args: int, **kwargs: str):  # noqa: ANN201
     r"""
     Function docstring.
 
@@ -322,7 +322,7 @@ mod.function_with_escaped_default(x='\\\\x08')
       **x** ("str") -- foo
 """,
 )
-def function_with_escaped_default(x: str = "\b"):  # noqa: ANN201, ARG001
+def function_with_escaped_default(x: str = "\b"):  # noqa: ANN201
     """
     Function docstring.
 
@@ -341,7 +341,7 @@ mod.function_with_unresolvable_annotation(x)
       **x** (a.b.c) -- foo
 """,
 )
-def function_with_unresolvable_annotation(x: a.b.c):  # noqa: ANN201, ARG001, F821
+def function_with_unresolvable_annotation(x: a.b.c):  # noqa: ANN201, F821
     """
     Function docstring.
 
@@ -365,8 +365,8 @@ mod.function_with_typehint_comment(x, y)
 """,
 )
 def function_with_typehint_comment(  # noqa: ANN201
-    x,  # type: int  # noqa: ANN001, ARG001
-    y,  # type: str  # noqa: ANN001, ARG001
+    x,  # type: int  # noqa: ANN001
+    y,  # type: str  # noqa: ANN001
 ):
     # type: (...) -> None
     """
@@ -457,7 +457,7 @@ mod.function_with_typehint_comment_not_inline(x=None, *y, z, **kwargs)
       "None"
 """,
 )
-def function_with_typehint_comment_not_inline(x=None, *y, z, **kwargs):  # noqa: ANN001, ANN002, ANN003, ANN201, ARG001
+def function_with_typehint_comment_not_inline(x=None, *y, z, **kwargs):  # noqa: ANN001, ANN002, ANN003, ANN201
     # type: (Union[str, bytes, None], *str, bytes, **int) -> None
     """
     Function docstring.
@@ -592,7 +592,7 @@ mod.mocked_import(x)
       **x** ("Mailbox") -- function
 """,
 )
-def mocked_import(x: Mailbox):  # noqa: ANN201, ARG001
+def mocked_import(x: Mailbox):  # noqa: ANN201
     """
     A docstring.
 
@@ -648,7 +648,7 @@ mod.func_with_overload(a, b)
       "None"
 """,
 )
-def func_with_overload(a: Union[int, str], b: Union[int, str]) -> None:  # noqa: ARG001, UP007
+def func_with_overload(a: Union[int, str], b: Union[int, str]) -> None:  # noqa: UP007
     """
     f does the thing. The arguments can either be ints or strings but they must
     both have the same type.
@@ -727,7 +727,7 @@ mod.func_with_parameters_and_stuff_after(a, b)
    More info about the function here.
 """,
 )
-def func_with_parameters_and_stuff_after(a: int, b: int) -> int:  # noqa: ARG001
+def func_with_parameters_and_stuff_after(a: int, b: int) -> int:
     """A func
 
     :param a: a tells us something
@@ -761,7 +761,7 @@ mod.func_with_rtype_in_weird_spot(a, b)
       int
 """,
 )
-def func_with_rtype_in_weird_spot(a: int, b: int) -> int:  # noqa: ARG001
+def func_with_rtype_in_weird_spot(a: int, b: int) -> int:
     """A func
 
     :param a: a tells us something
@@ -809,7 +809,7 @@ mod.empty_line_between_parameters(a, b)
    More stuff here.
 """,
 )
-def empty_line_between_parameters(a: int, b: int) -> int:  # noqa: ARG001
+def empty_line_between_parameters(a: int, b: int) -> int:
     """A func
 
     :param a: One of the following possibilities:
@@ -1002,7 +1002,7 @@ def napoleon_returns() -> CodeType:
 
     """,
 )
-def google_docstrings(arg1: CodeType, arg2: ModuleType) -> CodeType:  # noqa: ARG001
+def google_docstrings(arg1: CodeType, arg2: ModuleType) -> CodeType:
     """Summary line.
 
     Extended description of function.
@@ -1034,7 +1034,7 @@ def google_docstrings(arg1: CodeType, arg2: ModuleType) -> CodeType:  # noqa: AR
 
     """,
 )
-def docstring_with_multiline_note_after_params(param: int) -> None:  # noqa: ARG001
+def docstring_with_multiline_note_after_params(param: int) -> None:
     """Do something.
 
     Args:
@@ -1065,7 +1065,7 @@ def docstring_with_multiline_note_after_params(param: int) -> None:  # noqa: ARG
 
     """,
 )
-def docstring_with_bullet_list_after_params(param: int) -> None:  # noqa: ARG001
+def docstring_with_bullet_list_after_params(param: int) -> None:
     """Do something.
 
     Args:
@@ -1098,7 +1098,7 @@ def docstring_with_bullet_list_after_params(param: int) -> None:  # noqa: ARG001
 
     """,
 )
-def docstring_with_definition_list_after_params(param: int) -> None:  # noqa: ARG001
+def docstring_with_definition_list_after_params(param: int) -> None:
     """Do something.
 
     Args:
@@ -1132,7 +1132,7 @@ def docstring_with_definition_list_after_params(param: int) -> None:  # noqa: AR
 
     """,
 )
-def docstring_with_enum_list_after_params(param: int) -> None:  # noqa: ARG001
+def docstring_with_enum_list_after_params(param: int) -> None:
     """Do something.
 
     Args:
@@ -1167,7 +1167,7 @@ def docstring_with_enum_list_after_params(param: int) -> None:  # noqa: ARG001
        -[ Example ]-
     """,
 )
-def docstring_with_definition_list_after_params_no_blank_line(param: int) -> None:  # noqa: ARG001
+def docstring_with_definition_list_after_params_no_blank_line(param: int) -> None:
     """Do something.
 
     Args:
@@ -1292,7 +1292,7 @@ prolog = """
     """,
     rst_prolog=prolog,
 )
-def docstring_with_multiline_note_after_params_prolog_replace(param: int) -> None:  # noqa: ARG001
+def docstring_with_multiline_note_after_params_prolog_replace(param: int) -> None:
     """Do something.
 
     Args:
@@ -1329,7 +1329,7 @@ epilog = """
     """,
     rst_epilog=epilog,
 )
-def docstring_with_multiline_note_after_params_epilog_replace(param: int) -> None:  # noqa: ARG001
+def docstring_with_multiline_note_after_params_epilog_replace(param: int) -> None:
     """Do something.
 
     Args:
