@@ -4,11 +4,12 @@ import re
 import sys
 from pathlib import Path
 from textwrap import dedent, indent
-from typing import TYPE_CHECKING, Any, Callable, Literal, NewType, TypeVar  # no type comments
+from typing import TYPE_CHECKING, Any, Literal, NewType, TypeVar
 
 import pytest
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from io import StringIO
 
     from sphinx.testing.util import SphinxTestApp
@@ -156,8 +157,6 @@ def test_integration(
     result = (Path(app.srcdir) / "_build/text/index.txt").read_text()
 
     expected = val.EXPECTED
-    if sys.version_info < (3, 10):
-        expected = expected.replace("NewType", "NewType()")
     try:
         assert result.strip() == dedent(expected).strip()
     except Exception:

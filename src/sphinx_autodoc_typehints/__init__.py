@@ -10,7 +10,7 @@ import sys
 import textwrap
 import types
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, AnyStr, Callable, ForwardRef, NewType, TypeVar, get_type_hints
+from typing import TYPE_CHECKING, Any, AnyStr, ForwardRef, NewType, TypeVar, get_type_hints
 
 from docutils import nodes
 from docutils.frontend import OptionParser
@@ -26,6 +26,7 @@ from .version import __version__
 
 if TYPE_CHECKING:
     from ast import FunctionDef, Module, stmt
+    from collections.abc import Callable
 
     from docutils.nodes import Node
     from docutils.parsers.rst import states
@@ -79,8 +80,6 @@ def get_annotation_module(annotation: Any) -> str:
 
 
 def _is_newtype(annotation: Any) -> bool:
-    if sys.version_info < (3, 10):
-        return inspect.isfunction(annotation) and hasattr(annotation, "__supertype__")
     return isinstance(annotation, NewType)
 
 
@@ -379,7 +378,7 @@ def process_signature(  # noqa: C901, PLR0913, PLR0917
                 # when method starts with double underscore Python applies mangling -> prepend the class name
                 method_name = f"_{obj.__qualname__.split('.')[-2]}{method_name}"
             method_object = outer.__dict__[method_name] if outer else obj
-            if not isinstance(method_object, (classmethod, staticmethod)):
+            if not isinstance(method_object, classmethod | staticmethod):
                 start = 1
 
     sph_signature = sph_signature.replace(parameters=parameters[start:])

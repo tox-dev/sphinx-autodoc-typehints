@@ -72,9 +72,9 @@ P_bound = typing_extensions.ParamSpec("P_bound", bound=str)  # type: ignore[misc
 
 # Mypy does not support recursive type aliases, but
 # other type checkers do.
-RecList = Union[int, List["RecList"]]  # noqa: UP006
-MutualRecA = Union[bool, List["MutualRecB"]]  # noqa: UP006
-MutualRecB = Union[str, List["MutualRecA"]]  # noqa: UP006
+RecList = Union[int, List["RecList"]]  # noqa: UP006, UP007
+MutualRecA = Union[bool, List["MutualRecB"]]  # noqa: UP006, UP007
+MutualRecB = Union[str, List["MutualRecA"]]  # noqa: UP006, UP007
 
 
 class A:
@@ -150,7 +150,7 @@ else:
         pytest.param(Dict[T, int], "typing", "Dict", (T, int), id="Dict_typevar"),  # type: ignore[valid-type]  # noqa: UP006
         pytest.param(Tuple, "typing", "Tuple", (), id="Tuple"),  # noqa: UP006
         pytest.param(Tuple[str, int], "typing", "Tuple", (str, int), id="Tuple_parametrized"),  # noqa: UP006
-        pytest.param(Union[str, int], "typing", "Union", (str, int), id="Union"),
+        pytest.param(Union[str, int], "typing", "Union", (str, int), id="Union"),  # noqa: UP007
         pytest.param(Callable, "typing", "Callable", (), id="Callable"),
         pytest.param(Callable[..., str], "typing", "Callable", (..., str), id="Callable_returntype"),
         pytest.param(Callable[[int, str], str], "typing", "Callable", (int, str, str), id="Callable_all_types"),
@@ -266,20 +266,32 @@ _CASES = [
     ),
     pytest.param(Union, ":py:data:`~typing.Union`", id="Union"),
     pytest.param(
-        Union[str, bool], r":py:data:`~typing.Union`\ \[:py:class:`str`, :py:class:`bool`]", id="Union-str-bool"
+        Union[str, bool],  # noqa: UP007
+        r":py:data:`~typing.Union`\ \[:py:class:`str`, :py:class:`bool`]",
+        id="Union-str-bool",
     ),
     pytest.param(
-        Union[str, bool, None],
+        Union[str, bool, None],  # noqa: UP007
         r":py:data:`~typing.Union`\ \[:py:class:`str`, :py:class:`bool`, :py:obj:`None`]",
         id="Union-str-bool-None",
     ),
     pytest.param(
-        Union[str, Any], r":py:data:`~typing.Union`\ \[:py:class:`str`, :py:data:`~typing.Any`]", id="Union-str-Any"
+        Union[str, Any],  # noqa: UP007
+        r":py:data:`~typing.Union`\ \[:py:class:`str`, :py:data:`~typing.Any`]",
+        id="Union-str-Any",
     ),
-    pytest.param(Optional[str], r":py:data:`~typing.Optional`\ \[:py:class:`str`]", id="Optional-str"),
-    pytest.param(Union[str, None], r":py:data:`~typing.Optional`\ \[:py:class:`str`]", id="Optional-str-None"),
     pytest.param(
-        Optional[Union[str, bool]],
+        Optional[str],  # noqa: UP007
+        r":py:data:`~typing.Optional`\ \[:py:class:`str`]",
+        id="Optional-str",
+    ),
+    pytest.param(
+        Union[str, None],  # noqa: UP007
+        r":py:data:`~typing.Optional`\ \[:py:class:`str`]",
+        id="Optional-str-None",
+    ),
+    pytest.param(
+        Optional[str | bool],  # noqa: UP007
         r":py:data:`~typing.Union`\ \[:py:class:`str`, :py:class:`bool`, :py:obj:`None`]",
         id="Optional-Union-str-bool",
     ),

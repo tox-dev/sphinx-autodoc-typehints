@@ -9,7 +9,6 @@ from textwrap import dedent, indent
 from typing import (  # no type comments
     TYPE_CHECKING,
     Any,
-    Callable,
     NewType,
     Optional,
     TypeVar,
@@ -20,7 +19,7 @@ from typing import (  # no type comments
 import pytest
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator
+    from collections.abc import AsyncGenerator, Callable
     from io import StringIO
     from mailbox import Mailbox
     from types import CodeType, ModuleType

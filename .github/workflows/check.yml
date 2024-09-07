@@ -24,7 +24,6 @@ jobs:
           - "3.12"
           - "3.11"
           - "3.10"
-          - "3.9"
     steps:
       - name: Setup python for tox
         uses: actions/setup-python@v5
@@ -48,11 +47,6 @@ jobs:
           PYTEST_ADDOPTS: "-vv --durations=20"
           CI_RUN: "yes"
           DIFF_AGAINST: HEAD
-      - name: Rename coverage report file
-        run:
-          import os; import sys; os.rename(f".tox/.coverage.{os.environ['TOXENV']}",
-          f".tox/.coverage.{os.environ['TOXENV']}-{sys.platform}")
-        shell: python
       - name: Upload coverage data
         uses: actions/upload-artifact@v3
         with:
