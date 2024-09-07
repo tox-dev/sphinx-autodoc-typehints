@@ -11,7 +11,7 @@ import sphinx.ext.autodoc
 from sphinx.domains.python import PyAttribute
 from sphinx.ext.autodoc import AttributeDocumenter
 
-from .parser import parse
+from ._parser import parse
 
 if TYPE_CHECKING:
     from docutils.frontend import Values

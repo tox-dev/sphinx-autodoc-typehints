@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import typing
-from builtins import ValueError  # handle does not have __module__
+from builtins import ValueError  # handle does not have __module__  # noqa: A004
 from functools import cmp_to_key  # has __module__ but cannot get module as is builtin
 from typing import TYPE_CHECKING
 

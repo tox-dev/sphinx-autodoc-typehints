@@ -20,7 +20,7 @@ from sphinx.util import logging, rst
 from sphinx.util.inspect import TypeAliasForwardRef, TypeAliasNamespace, stringify_signature
 from sphinx.util.inspect import signature as sphinx_signature
 
-from .parser import parse
+from ._parser import parse
 from .patches import install_patches
 from .version import __version__
 

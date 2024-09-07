@@ -2,7 +2,7 @@
 build-backend = "hatchling.build"
 requires = [
   "hatch-vcs>=0.4",
-  "hatchling>=1.24",
+  "hatchling>=1.25",
 ]
 
 [project]
@@ -35,29 +35,30 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Topic :: Documentation :: Sphinx",
 ]
 dynamic = [
   "version",
 ]
 dependencies = [
-  "sphinx>=7.3.5",
+  "sphinx>=8.0.2",
 ]
 optional-dependencies.docs = [
-  "furo>=2024.1.29",
+  "furo>=2024.8.6",
 ]
 optional-dependencies.numpy = [
   "nptyping>=2.5",
 ]
 optional-dependencies.testing = [
   "covdefaults>=2.3",
-  "coverage>=7.4.4",
-  "defusedxml>=0.7.1",       # required by sphinx.testing
-  "diff-cover>=9",
-  "pytest>=8.1.1",
+  "coverage>=7.6.1",
+  "defusedxml>=0.7.1",         # required by sphinx.testing
+  "diff-cover>=9.1.1",
+  "pytest>=8.3.2",
   "pytest-cov>=5",
-  "sphobjinv>=2.3.1",
-  "typing-extensions>=4.11",
+  "sphobjinv>=2.3.1.1",
+  "typing-extensions>=4.12.2",
 ]
 urls.Changelog = "https://github.com/tox-dev/sphinx-autodoc-typehints/blob/main/CHANGELOG.md"
 urls.Homepage = "https://github.com/tox-dev/sphinx-autodoc-typehints"
@@ -67,9 +68,6 @@ urls.Tracker = "https://github.com/tox-dev/sphinx-autodoc-typehints/issues"
 [tool.hatch]
 build.hooks.vcs.version-file = "src/sphinx_autodoc_typehints/version.py"
 version.source = "vcs"
-
-[tool.black]
-line-length = 120
 
 [tool.ruff]
 target-version = "py39"
@@ -87,18 +85,19 @@ lint.ignore = [
   "CPY",    # No copyright statements
   "D203",   # `one-blank-line-before-class` (D203) and `no-blank-line-before-class` (D211) are incompatible
   "D212",   # `multi-line-summary-first-line` (D212) and `multi-line-summary-second-line` (D213) are incompatible
+  "DOC",    # no sphinx support
   "ISC001", # Conflict with formatter
   "S104",   # Possible binding to all interface
 ]
 lint.per-file-ignores."tests/**/*.py" = [
   "D",       # don't care about documentation in tests
-  "FBT",     # don"t care about booleans as positional arguments in tests
+  "FBT",     # don't care about booleans as positional arguments in tests
   "INP001",  # no implicit namespace
   "PLC2701", # private imports
   "PLR0913", # any number of arguments in tests
   "PLR0917", # any number of arguments in tests
   "PLR2004", # Magic value used in comparison, consider replacing with a constant variable
-  "S101",    # asserts allowed in tests...
+  "S101",    # asserts allowed in tests
   "S603",    # `subprocess` call: check for execution of untrusted input
 ]
 lint.isort = { known-first-party = [
@@ -114,6 +113,9 @@ builtin = "clear,usage,en-GB_to_en-US"
 ignore-words = "ignore-words.txt"
 write-changes = true
 count = true
+
+[tool.pyproject-fmt]
+max_supported_python = "3.13"
 
 [tool.pytest.ini_options]
 testpaths = [

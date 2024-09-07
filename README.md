@@ -63,8 +63,8 @@ The following configuration options are accepted:
 - `always_document_param_types` (default: `False`): If `False`, do not add type info for undocumented parameters. If
   `True`, add stub documentation for undocumented parameters to be able to add type info.
 - `always_use_bars_union ` (default: `False`): If `True`, display Union's using the | operator described in PEP 604.
-   (e.g `X` | `Y` or `int` | `None`). If `False`, Unions will display with the typing in brackets. (e.g. `Union[X, Y]`
-   or `Optional[int]`)
+  (e.g `X` | `Y` or `int` | `None`). If `False`, Unions will display with the typing in brackets. (e.g. `Union[X, Y]`
+  or `Optional[int]`)
 - `typehints_document_rtype` (default: `True`): If `False`, never add an `:rtype:` directive. If `True`, add the
   `:rtype:` directive if no existing `:rtype:` is found.
 - `typehints_use_rtype` (default: `True`): Controls behavior when `typehints_document_rtype` is set to `True`. If
