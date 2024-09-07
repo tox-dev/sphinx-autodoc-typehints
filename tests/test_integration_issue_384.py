@@ -59,7 +59,7 @@ mod.function(x=5, y=10, z=15)
 
 """,
 )
-def function(x: int = 5, y: int = 10, z: int = 15) -> str:  # noqa: ARG001
+def function(x: int = 5, y: int = 10, z: int = 15) -> str:
     """
     Function docstring.
 
