@@ -1359,6 +1359,32 @@ def docstring_with_see_also() -> str:
     return ""
 
 
+@expected(
+    """
+    mod.has_doctest1()
+
+       Test that we place the return type correctly when the function has
+       a doctest.
+
+       Return type:
+          "None"
+
+       >>> this is a fake doctest
+       a
+       >>> more doctest
+       b
+    """
+)
+def has_doctest1() -> None:
+    r"""Test that we place the return type correctly when the function has a doctest.
+
+    >>> this is a fake doctest
+    a
+    >>> more doctest
+    b
+    """
+
+
 # Config settings for each test run.
 # Config Name: Sphinx Options as Dict.
 configs = {

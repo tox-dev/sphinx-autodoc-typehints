@@ -5,8 +5,9 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any
 
+from docutils import nodes
 from docutils.parsers.rst.directives.admonitions import BaseAdmonition
-from docutils.parsers.rst.states import Text
+from docutils.parsers.rst.states import Body, Text
 from sphinx.ext.napoleon.docstring import GoogleDocstring
 
 from .attributes_patch import patch_attribute_handling
@@ -110,6 +111,17 @@ def _patched_text_indent(self: Text, *args: Any) -> Any:
     return result
 
 
+def _patched_body_doctest(
+    self: Body, _match: None, _context: None, next_state: str | None
+) -> tuple[list[Any], str | None, list[Any]]:
+    line = self.document.current_line + 1
+    data = "\n".join(self.state_machine.get_text_block())
+    n = nodes.doctest_block(data, data)
+    n.line = line
+    self.parent += n
+    return [], next_state, []
+
+
 def _patch_line_numbers() -> None:
     """
     Make the rst parser put line numbers on more nodes.
@@ -118,6 +130,7 @@ def _patch_line_numbers() -> None:
     """
     Text.indent = _patched_text_indent
     BaseAdmonition.run = _patched_base_admonition_run
+    Body.doctest = _patched_body_doctest
 
 
 def install_patches(app: Sphinx) -> None:
