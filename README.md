@@ -4,7 +4,7 @@
 [![Supported Python
 versions](https://img.shields.io/pypi/pyversions/sphinx-autodoc-typehints.svg)](https://pypi.org/project/sphinx-autodoc-typehints/)
 [![Downloads](https://pepy.tech/badge/sphinx-autodoc-typehints/month)](https://pepy.tech/project/sphinx-autodoc-typehints)
-[![check](https://github.com/tox-dev/sphinx-autodoc-typehints/actions/workflows/check.yml/badge.svg)](https://github.com/tox-dev/sphinx-autodoc-typehints/actions/workflows/check.yml)
+[![check](https://github.com/tox-dev/sphinx-autodoc-typehints/actions/workflows/check.yaml/badge.svg)](https://github.com/tox-dev/sphinx-autodoc-typehints/actions/workflows/check.yaml)
 
 This extension allows you to use Python 3 annotations for documenting acceptable argument types and return value types
 of functions. See an example of the Sphinx render at the
