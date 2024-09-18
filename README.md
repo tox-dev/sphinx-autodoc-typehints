@@ -8,7 +8,7 @@ versions](https://img.shields.io/pypi/pyversions/sphinx-autodoc-typehints.svg)](
 
 This extension allows you to use Python 3 annotations for documenting acceptable argument types and return value types
 of functions. See an example of the Sphinx render at the
-[pyproject-api docs](https://pyproject-api.readthedocs.io/latest/).
+[pyproject-api docs](https://pyproject-api.readthedocs.io/latest/api.html).
 
 This allows you to use type hints in a very natural fashion, allowing you to migrate from this:
 
