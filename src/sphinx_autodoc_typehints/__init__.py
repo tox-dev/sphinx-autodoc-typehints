@@ -778,8 +778,11 @@ def _append_default(
             if lines[next_index]:
                 append_index = next_index
             next_index += 1
-        lines[append_index] += formatted_default
-
+        if append_index >= nlines:
+            # When append_index is greater than nlines, simply append the line to the end of lines
+            lines.append(formatted_default)
+        else:
+            lines[append_index] += formatted_default
     else:  # add to last param doc line
         type_annotation += formatted_default
 
@@ -895,6 +898,9 @@ def _inject_rtype(  # noqa: PLR0913, PLR0917
 
     formatted_annotation = add_type_css_class(format_annotation(type_hints["return"], app.config))
 
+    if app.config.typehints_rtype_after_returns and r.found_return:
+        insert_index += 1
+
     if r.found_param and insert_index < len(lines) and lines[insert_index].strip():
         insert_index -= 1
 
@@ -966,6 +972,7 @@ def setup(app: Sphinx) -> dict[str, bool]:
     app.add_config_value("typehints_fully_qualified", False, "env")  # noqa: FBT003
     app.add_config_value("typehints_document_rtype", True, "env")  # noqa: FBT003
     app.add_config_value("typehints_use_rtype", True, "env")  # noqa: FBT003
+    app.add_config_value("typehints_rtype_after_returns", False, "env")  # noqa: FBT003
     app.add_config_value("typehints_defaults", None, "env")
     app.add_config_value("simplify_optional_unions", True, "env")  # noqa: FBT003
     app.add_config_value("always_use_bars_union", False, "env")  # noqa: FBT003
