@@ -129,7 +129,7 @@ def _patch_line_numbers() -> None:
     When the line numbers are missing, we have a hard time placing the :rtype:.
     """
     Text.indent = _patched_text_indent
-    BaseAdmonition.run = _patched_base_admonition_run
+    BaseAdmonition.run = _patched_base_admonition_run  # type: ignore[method-assign,assignment]
     Body.doctest = _patched_body_doctest
 
 
