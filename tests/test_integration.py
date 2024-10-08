@@ -1385,6 +1385,41 @@ def has_doctest1() -> None:
     """
 
 
+Unformatted = TypeVar("Unformatted")
+
+@warns("cannot cache unpickable configuration value: 'typehints_formatter'")
+@expected(
+    """
+    mod.typehints_formatter_applied_to_signature(param: Formatted) -> Formatted
+
+       Do nothing
+
+       Parameters:
+          **param** (Formatted) -- A parameter
+
+       Return type:
+          Formatted
+
+       Returns:
+          The return value
+    """,
+    typehints_use_signature=True,
+    typehints_use_signature_return=True,
+    typehints_formatter=lambda ann, cfg=None: "Formatted",
+)
+def typehints_formatter_applied_to_signature(param: Unformatted) -> Unformatted:
+    """
+    Do nothing
+
+    Args:
+        param: A parameter
+
+    Returns:
+        The return value
+    """
+    return param
+
+
 # Config settings for each test run.
 # Config Name: Sphinx Options as Dict.
 configs = {

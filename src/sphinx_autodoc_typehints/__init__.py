@@ -354,9 +354,19 @@ def process_signature(  # noqa: C901, PLR0913, PLR0917
 
     obj = inspect.unwrap(obj)
     sph_signature = sphinx_signature(obj, type_aliases=app.config["autodoc_type_aliases"])
+    typehints_formatter: Callable[..., str | None] | None = getattr(app.config, "typehints_formatter", None)
+
+    def _get_formatted_annotation(annotation):
+        if typehints_formatter is None:
+            return annotation
+        formatted_name = typehints_formatter(annotation)
+        return annotation if not isinstance(formatted_name, str) else TypeVar(formatted_name)
+
+    if app.config.typehints_use_signature_return:
+        sph_signature = sph_signature.replace(return_annotation=_get_formatted_annotation(sph_signature.return_annotation))
 
     if app.config.typehints_use_signature:
-        parameters = list(sph_signature.parameters.values())
+        parameters = [param.replace(annotation=_get_formatted_annotation(param.annotation)) for param in sph_signature.parameters.values()]
     else:
         parameters = [param.replace(annotation=inspect.Parameter.empty) for param in sph_signature.parameters.values()]
 
