@@ -363,10 +363,15 @@ def process_signature(  # noqa: C901, PLR0913, PLR0917
         return annotation if not isinstance(formatted_name, str) else TypeVar(formatted_name)
 
     if app.config.typehints_use_signature_return:
-        sph_signature = sph_signature.replace(return_annotation=_get_formatted_annotation(sph_signature.return_annotation))
+        sph_signature = sph_signature.replace(
+            return_annotation=_get_formatted_annotation(sph_signature.return_annotation)
+        )
 
     if app.config.typehints_use_signature:
-        parameters = [param.replace(annotation=_get_formatted_annotation(param.annotation)) for param in sph_signature.parameters.values()]
+        parameters = [
+            param.replace(annotation=_get_formatted_annotation(param.annotation))
+            for param in sph_signature.parameters.values()
+        ]
     else:
         parameters = [param.replace(annotation=inspect.Parameter.empty) for param in sph_signature.parameters.values()]
 

@@ -1387,6 +1387,7 @@ def has_doctest1() -> None:
 
 Unformatted = TypeVar("Unformatted")
 
+
 @warns("cannot cache unpickable configuration value: 'typehints_formatter'")
 @expected(
     """
