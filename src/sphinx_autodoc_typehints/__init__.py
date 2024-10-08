@@ -356,7 +356,7 @@ def process_signature(  # noqa: C901, PLR0913, PLR0917
     sph_signature = sphinx_signature(obj, type_aliases=app.config["autodoc_type_aliases"])
     typehints_formatter: Callable[..., str | None] | None = getattr(app.config, "typehints_formatter", None)
 
-    def _get_formatted_annotation(annotation):
+    def _get_formatted_annotation(annotation: TypeVar) -> TypeVar:
         if typehints_formatter is None:
             return annotation
         formatted_name = typehints_formatter(annotation)
