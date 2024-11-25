@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, AnyStr, ForwardRef, NewType, TypeVar, get_type_hints
 
 from docutils import nodes
-from docutils.frontend import OptionParser
+from docutils.frontend import get_default_settings
 from sphinx.ext.autodoc.mock import mock
 from sphinx.parsers import RSTParser
 from sphinx.util import logging, rst
@@ -849,7 +849,7 @@ def get_insert_index(app: Sphinx, lines: list[str]) -> InsertIndexInfo | None:
 
     # 3. Insert after the parameters.
     # To find the parameters, parse as a docutils tree.
-    settings = OptionParser(components=(RSTParser,)).get_default_values()
+    settings = get_default_settings(RSTParser)
     settings.env = app.env
     doc = parse("\n".join(lines), settings)
 
