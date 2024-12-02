@@ -491,7 +491,7 @@ def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str
 
     # Test for the correct role (class vs data) using the official Sphinx inventory
     if "typing" in expected_result:
-        m = re.match("^:py:(?P<role>class|data|func):`~(?P<name>[^`]+)`", result)
+        m = re.match(r"^:py:(?P<role>class|data|func):`~(?P<name>[^`]+)`", result)
         assert m, "No match"
         name = m.group("name")
         expected_role = next((o.role for o in inv.objects if o.name == name), None)
@@ -905,7 +905,7 @@ def test_resolve_typing_guard_imports(app: SphinxTestApp, status: StringIO, warn
     out = status.getvalue()
     assert "build succeeded" in out
     err = warning.getvalue()
-    r = re.compile("WARNING: Failed guarded type import")
+    r = re.compile(r"WARNING: Failed guarded type import")
     assert len(r.findall(err)) == 1
     pat = r'WARNING: Failed guarded type import with ImportError\("cannot import name \'missing\' from \'functools\''
     assert re.search(pat, err)
