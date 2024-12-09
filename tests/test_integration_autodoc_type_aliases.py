@@ -151,7 +151,7 @@ def test_integration(
     if regexp:
         msg = f"Regex pattern did not match.\n Regex: {regexp!r}\n Input: {value!r}"
         assert re.search(regexp, value), msg
-    elif not re.search("WARNING: Inline strong start-string without end-string.", value):
+    elif not re.search(r"WARNING: Inline strong start-string without end-string.", value):
         assert not value
 
     result = (Path(app.srcdir) / "_build/text/index.txt").read_text()

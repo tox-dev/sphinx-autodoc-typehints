@@ -417,14 +417,14 @@ def _is_dataclass(name: str, what: str, qualname: str) -> bool:
 
 
 def _future_annotations_imported(obj: Any) -> bool:
-    _annotations = getattr(inspect.getmodule(obj), "annotations", None)
-    if _annotations is None:
+    annotations_ = getattr(inspect.getmodule(obj), "annotations", None)
+    if annotations_ is None:
         return False
 
     # Make sure that annotations is imported from __future__ - defined in cpython/Lib/__future__.py
     # annotations become strings at runtime
     future_annotations = 0x100000 if sys.version_info[0:2] == (3, 7) else 0x1000000
-    return bool(_annotations.compiler_flag == future_annotations)
+    return bool(annotations_.compiler_flag == future_annotations)
 
 
 def get_all_type_hints(
