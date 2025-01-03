@@ -1239,8 +1239,6 @@ AUTO_EXCEPTION = """\
    :members:
 """
 
-LT_PY310 = sys.version_info < (3, 10)
-
 
 @expected(
     """
@@ -1467,8 +1465,6 @@ def test_integration(
     result = (Path(app.srcdir) / "_build/text/index.txt").read_text()
 
     expected = val.EXPECTED
-    if LT_PY310:
-        expected = expected.replace("NewType", "NewType()")
     try:
         assert result.strip() == dedent(expected).strip()
     except Exception:
