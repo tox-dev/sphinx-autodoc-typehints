@@ -10,8 +10,8 @@ from typing import TYPE_CHECKING
 from demo_typing_guard_dummy import AnotherClass
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
     from decimal import Decimal
-    from typing import Sequence  # noqa: UP035
 
     from demo_typing_guard_dummy import Literal  # guarded by another `if TYPE_CHECKING` in demo_typing_guard_dummy
 

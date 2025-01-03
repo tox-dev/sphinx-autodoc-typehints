@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import collections.abc
 import re
 import sys
 import types
 import typing
+from collections.abc import Callable, Mapping
 from functools import cmp_to_key
 from io import StringIO
 from pathlib import Path
@@ -14,15 +14,11 @@ from typing import (  # noqa: UP035
     IO,
     Any,
     AnyStr,
-    Callable,
     Dict,
     Generic,
     List,
-    Mapping,
-    Match,
     NewType,
     Optional,
-    Pattern,
     Tuple,
     Type,
     TypeVar,
@@ -49,11 +45,6 @@ from sphinx_autodoc_typehints import (
 if typing.TYPE_CHECKING:
     from sphinx.testing.util import SphinxTestApp
     from sphobjinv import Inventory
-
-try:
-    import nptyping
-except ImportError:
-    nptyping = None  # type: ignore[assignment]
 
 T = TypeVar("T")
 U_co = TypeVar("U_co", covariant=True)
@@ -114,24 +105,7 @@ class HintedMethods:
         ...
 
 
-PY310_PLUS = sys.version_info >= (3, 10)
 PY312_PLUS = sys.version_info >= (3, 12)
-
-if sys.version_info >= (3, 9):  # noqa: UP036
-    AbcCallable = collections.abc.Callable  # type: ignore[type-arg]
-else:
-    # We could also set AbcCallable = typing.Callable and x fail the tests that
-    # use AbcCallable when in versions less than 3.9.
-    class MyGenericAlias(typing._VariadicGenericAlias, _root=True):  # noqa: SLF001
-        def __getitem__(self, params):  # noqa: ANN001, ANN204
-            result = super().__getitem__(params)
-            # Make a copy so we don't change the name of a cached annotation
-            result = result.copy_with(result.__args__)
-            result.__module__ = "collections.abc"
-            return result
-
-    AbcCallable = MyGenericAlias(collections.abc.Callable, (), special=True)
-    AbcCallable.__module__ = "collections.abc"
 
 
 @pytest.mark.parametrize(
@@ -151,20 +125,22 @@ else:
         pytest.param(Tuple, "typing", "Tuple", (), id="Tuple"),  # noqa: UP006
         pytest.param(Tuple[str, int], "typing", "Tuple", (str, int), id="Tuple_parametrized"),  # noqa: UP006
         pytest.param(Union[str, int], "typing", "Union", (str, int), id="Union"),  # noqa: UP007
-        pytest.param(Callable, "typing", "Callable", (), id="Callable"),
-        pytest.param(Callable[..., str], "typing", "Callable", (..., str), id="Callable_returntype"),
-        pytest.param(Callable[[int, str], str], "typing", "Callable", (int, str, str), id="Callable_all_types"),
+        pytest.param(Callable, "collections.abc", "Callable", (), id="Callable"),
+        pytest.param(Callable[..., str], "collections.abc", "Callable", (..., str), id="Callable_returntype"),
         pytest.param(
-            AbcCallable[[int, str], str],  # type: ignore[type-arg,misc,valid-type]
+            Callable[[int, str], str], "collections.abc", "Callable", (int, str, str), id="Callable_all_types"
+        ),
+        pytest.param(
+            Callable[[int, str], str],
             "collections.abc",
             "Callable",
             (int, str, str),
             id="collections.abc.Callable_all_types",
         ),
-        pytest.param(Pattern, "typing", "Pattern", (), id="Pattern"),
-        pytest.param(Pattern[str], "typing", "Pattern", (str,), id="Pattern_parametrized"),
-        pytest.param(Match, "typing", "Match", (), id="Match"),
-        pytest.param(Match[str], "typing", "Match", (str,), id="Match_parametrized"),
+        pytest.param(re.Pattern, "re", "Pattern", (), id="Pattern"),
+        pytest.param(re.Pattern[str], "re", "Pattern", (str,), id="Pattern_parametrized"),
+        pytest.param(re.Match, "re", "Match", (), id="Match"),
+        pytest.param(re.Match[str], "re", "Match", (str,), id="Match_parametrized"),
         pytest.param(IO, "typing", "IO", (), id="IO"),
         pytest.param(W, "typing", "NewType", (str,), id="W"),
         pytest.param(P, "typing", "ParamSpec", (), id="P"),
@@ -196,33 +172,33 @@ _CASES = [
     pytest.param(ModuleType, ":py:class:`~types.ModuleType`", id="ModuleType"),
     pytest.param(type(None), ":py:obj:`None`", id="type None"),
     pytest.param(type, ":py:class:`type`", id="type"),
-    pytest.param(collections.abc.Callable, ":py:class:`~collections.abc.Callable`", id="abc-Callable"),
+    pytest.param(Callable, ":py:class:`~collections.abc.Callable`", id="abc-Callable"),
     pytest.param(Type, ":py:class:`~typing.Type`", id="typing-Type"),  # noqa: UP006
     pytest.param(Type[A], rf":py:class:`~typing.Type`\ \[:py:class:`~{__name__}.A`]", id="typing-A"),  # noqa: UP006
     pytest.param(Any, ":py:data:`~typing.Any`", id="Any"),
     pytest.param(AnyStr, ":py:data:`~typing.AnyStr`", id="AnyStr"),
     pytest.param(Generic[T], r":py:class:`~typing.Generic`\ \[:py:class:`~typing.TypeVar`\ \(``T``)]", id="Generic"),
-    pytest.param(Mapping, ":py:class:`~typing.Mapping`", id="Mapping"),
+    pytest.param(Mapping, ":py:class:`~collections.abc.Mapping`", id="Mapping"),
     pytest.param(
         Mapping[T, int],  # type: ignore[valid-type]
-        r":py:class:`~typing.Mapping`\ \[:py:class:`~typing.TypeVar`\ \(``T``), :py:class:`int`]",
+        r":py:class:`~collections.abc.Mapping`\ \[:py:class:`~typing.TypeVar`\ \(``T``), :py:class:`int`]",
         id="Mapping-T-int",
     ),
     pytest.param(
         Mapping[str, V_contra],  # type: ignore[valid-type]
-        r":py:class:`~typing.Mapping`\ \[:py:class:`str`, :py:class:`~typing.TypeVar`\ \("
+        r":py:class:`~collections.abc.Mapping`\ \[:py:class:`str`, :py:class:`~typing.TypeVar`\ \("
         "``V_contra``, contravariant=True)]",
         id="Mapping-T-int-contra",
     ),
     pytest.param(
         Mapping[T, U_co],  # type: ignore[valid-type]
-        r":py:class:`~typing.Mapping`\ \[:py:class:`~typing.TypeVar`\ \(``T``), "
+        r":py:class:`~collections.abc.Mapping`\ \[:py:class:`~typing.TypeVar`\ \(``T``), "
         r":py:class:`~typing.TypeVar`\ \(``U_co``, covariant=True)]",
         id="Mapping-T-int-co",
     ),
     pytest.param(
         Mapping[str, bool],
-        r":py:class:`~typing.Mapping`\ \[:py:class:`str`, :py:class:`bool`]",
+        r":py:class:`~collections.abc.Mapping`\ \[:py:class:`str`, :py:class:`bool`]",
         id="Mapping-str-bool",
     ),
     pytest.param(Dict, ":py:class:`~typing.Dict`", id="Dict"),  # noqa: UP006
@@ -295,40 +271,40 @@ _CASES = [
         r":py:data:`~typing.Union`\ \[:py:class:`str`, :py:class:`bool`, :py:obj:`None`]",
         id="Optional-Union-str-bool",
     ),
-    pytest.param(Callable, ":py:data:`~typing.Callable`", id="Callable"),
+    pytest.param(Callable, ":py:class:`~collections.abc.Callable`", id="Callable"),
     pytest.param(
         Callable[..., int],
-        r":py:data:`~typing.Callable`\ \[:py:data:`...<Ellipsis>`, :py:class:`int`]",
+        r":py:class:`~collections.abc.Callable`\ \[:py:data:`...<Ellipsis>`, :py:class:`int`]",
         id="Callable-Ellipsis-int",
     ),
     pytest.param(
         Callable[[int], int],
-        r":py:data:`~typing.Callable`\ \[\[:py:class:`int`], :py:class:`int`]",
+        r":py:class:`~collections.abc.Callable`\ \[\[:py:class:`int`], :py:class:`int`]",
         id="Callable-int-int",
     ),
     pytest.param(
         Callable[[int, str], bool],
-        r":py:data:`~typing.Callable`\ \[\[:py:class:`int`, :py:class:`str`], :py:class:`bool`]",
+        r":py:class:`~collections.abc.Callable`\ \[\[:py:class:`int`, :py:class:`str`], :py:class:`bool`]",
         id="Callable-int-str-bool",
     ),
     pytest.param(
         Callable[[int, str], None],
-        r":py:data:`~typing.Callable`\ \[\[:py:class:`int`, :py:class:`str`], :py:obj:`None`]",
+        r":py:class:`~collections.abc.Callable`\ \[\[:py:class:`int`, :py:class:`str`], :py:obj:`None`]",
         id="Callable-int-str",
     ),
     pytest.param(
         Callable[[T], T],
-        r":py:data:`~typing.Callable`\ \[\[:py:class:`~typing.TypeVar`\ \(``T``)],"
+        r":py:class:`~collections.abc.Callable`\ \[\[:py:class:`~typing.TypeVar`\ \(``T``)],"
         r" :py:class:`~typing.TypeVar`\ \(``T``)]",
         id="Callable-T-T",
     ),
     pytest.param(
-        AbcCallable[[int, str], bool],  # type: ignore[valid-type,misc,type-arg]
+        Callable[[int, str], bool],
         r":py:class:`~collections.abc.Callable`\ \[\[:py:class:`int`, :py:class:`str`], :py:class:`bool`]",
-        id="AbcCallable-int-str-bool",
+        id="Callable-int-str-bool",
     ),
-    pytest.param(Pattern, ":py:class:`~typing.Pattern`", id="Pattern"),
-    pytest.param(Pattern[str], r":py:class:`~typing.Pattern`\ \[:py:class:`str`]", id="Pattern-str"),
+    pytest.param(re.Pattern, ":py:class:`~re.Pattern`", id="Pattern"),
+    pytest.param(re.Pattern[str], r":py:class:`~re.Pattern`\ \[:py:class:`str`]", id="Pattern-str"),
     pytest.param(IO, ":py:class:`~typing.IO`", id="IO"),
     pytest.param(IO[str], r":py:class:`~typing.IO`\ \[:py:class:`str`]", id="IO-str"),
     pytest.param(Metaclass, f":py:class:`~{__name__}.Metaclass`", id="Metaclass"),
@@ -339,7 +315,7 @@ _CASES = [
     pytest.param(D, f":py:class:`~{__name__}.D`", id="D"),
     pytest.param(E, f":py:class:`~{__name__}.E`", id="E"),
     pytest.param(E[int], rf":py:class:`~{__name__}.E`\ \[:py:class:`int`]", id="E-int"),
-    pytest.param(W, rf":py:{'class' if PY310_PLUS else 'func'}:`~typing.NewType`\ \(``W``, :py:class:`str`)", id="W"),
+    pytest.param(W, r":py:class:`~typing.NewType`\ \(``W``, :py:class:`str`)", id="W"),
     pytest.param(T, r":py:class:`~typing.TypeVar`\ \(``T``)", id="T"),
     pytest.param(U_co, r":py:class:`~typing.TypeVar`\ \(``U_co``, covariant=True)", id="U-co"),
     pytest.param(V_contra, r":py:class:`~typing.TypeVar`\ \(``V_contra``, contravariant=True)", id="V-contra"),
@@ -389,58 +365,6 @@ _CASES = [
     ),
 ]
 
-if nptyping is not None:
-    _CASES.extend(
-        [  # Internal tuple with following additional type cannot be flattened (specific to nptyping?)
-            # These cases will fail if nptyping restructures its internal module hierarchy
-            pytest.param(
-                nptyping.NDArray[nptyping.Shape["*"], nptyping.Float],
-                (
-                    ":py:class:`~nptyping.ndarray.NDArray`\\ \\[:py:class:`~nptyping.base_meta_classes.Shape`\\ \\[*], "
-                    ":py:class:`~numpy.float64`]"
-                ),
-                id="NDArray-star-float",
-            ),
-            pytest.param(
-                nptyping.NDArray[nptyping.Shape["64"], nptyping.Float],
-                (
-                    ":py:class:`~nptyping.ndarray.NDArray`\\ \\[:py:class:`~nptyping.base_meta_classes.Shape`\\ \\[64],"
-                    " :py:class:`~numpy.float64`]"
-                ),
-                id="NDArray-64-float",
-            ),
-            pytest.param(
-                nptyping.NDArray[nptyping.Shape["*, *"], nptyping.Float],
-                (
-                    ":py:class:`~nptyping.ndarray.NDArray`\\ \\[:py:class:`~nptyping.base_meta_classes.Shape`\\ \\[*, "
-                    "*], :py:class:`~numpy.float64`]"
-                ),
-                id="NDArray-star-star-float",
-            ),
-            pytest.param(
-                nptyping.NDArray[nptyping.Shape["*, ..."], nptyping.Float],
-                ":py:class:`~nptyping.ndarray.NDArray`\\ \\[:py:data:`~typing.Any`, :py:class:`~numpy.float64`]",
-                id="NDArray-star-Ellipsis-float",
-            ),
-            pytest.param(
-                nptyping.NDArray[nptyping.Shape["*, 3"], nptyping.Float],
-                (
-                    ":py:class:`~nptyping.ndarray.NDArray`\\ \\[:py:class:`~nptyping.base_meta_classes.Shape`\\ \\[*, 3"
-                    "], :py:class:`~numpy.float64`]"
-                ),
-                id="NDArray-star-3-float",
-            ),
-            pytest.param(
-                nptyping.NDArray[nptyping.Shape["3, ..."], nptyping.Float],
-                (
-                    ":py:class:`~nptyping.ndarray.NDArray`\\ \\[:py:class:`~nptyping.base_meta_classes.Shape`\\ \\[3, "
-                    "...], :py:class:`~numpy.float64`]"
-                ),
-                id="NDArray-3-Ellipsis-float",
-            ),
-        ],
-    )
-
 
 @pytest.mark.parametrize(("annotation", "expected_result"), _CASES)
 def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str) -> None:
@@ -476,9 +400,9 @@ def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str
             assert format_annotation(annotation, conf) == expected_result_not_simplified
 
     # Test with the "fully_qualified" flag turned on
-    if "typing" in expected_result or "nptyping" in expected_result or __name__ in expected_result:
+    if "typing" in expected_result or __name__ in expected_result:
         expected_result = expected_result.replace("~typing", "typing")
-        expected_result = expected_result.replace("~nptyping", "nptyping")
+        expected_result = expected_result.replace("~collections.abc", "collections.abc")
         expected_result = expected_result.replace("~numpy", "numpy")
         expected_result = expected_result.replace("~" + __name__, __name__)
         conf = create_autospec(
@@ -515,7 +439,6 @@ def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str
         ("Union[int, float] | str", ":py:class:`int` | :py:class:`float` | :py:class:`str`"),
     ],
 )
-@pytest.mark.skipif(not PY310_PLUS, reason="| union doesn't work before py310")
 def test_always_use_bars_union(annotation: str, expected_result: str) -> None:
     conf = create_autospec(Config, always_use_bars_union=True)
     result = format_annotation(eval(annotation), conf)  # noqa: S307
@@ -630,8 +553,6 @@ def test_always_document_param_types(
 def maybe_fix_py310(expected_contents: str) -> str:
     if sys.version_info >= (3, 11):
         return expected_contents
-    if not PY310_PLUS:
-        return expected_contents.replace('"', "")
 
     for old, new in [
         ('"str" | "None"', '"Optional"["str"]'),

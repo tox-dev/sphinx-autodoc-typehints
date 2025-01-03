@@ -64,7 +64,7 @@ def get_annotation_module(annotation: Any) -> str:
         return "builtins"
     if _get_types_type(annotation) is not None:
         return "types"
-    is_new_type = sys.version_info >= (3, 10) and isinstance(annotation, NewType)
+    is_new_type = isinstance(annotation, NewType)
     if (
         is_new_type
         or isinstance(annotation, TypeVar)
@@ -157,7 +157,7 @@ def get_annotation_args(annotation: Any, module: str, class_name: str) -> tuple[
 
 
 def format_internal_tuple(t: tuple[Any, ...], config: Config) -> str:
-    # An annotation can be a tuple, e.g., for nptyping:
+    # An annotation can be a tuple, e.g., for numpy.typing:
     # In this case, format_annotation receives:
     # This solution should hopefully be general for *any* type that allows tuples in annotations
     fmt = [format_annotation(a, config) for a in t]
@@ -233,7 +233,7 @@ def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901, PL
     # Some types require special handling
     if full_name == "typing.NewType":
         args_format = f"\\(``{annotation.__name__}``, {{}})"
-        role = "class" if sys.version_info >= (3, 10) else "func"
+        role = "class"
     elif full_name in {"typing.TypeVar", "typing.ParamSpec"}:
         params = {k: getattr(annotation, f"__{k}__") for k in ("bound", "covariant", "contravariant")}
         params = {k: v for k, v in params.items() if v}
@@ -423,8 +423,7 @@ def _future_annotations_imported(obj: Any) -> bool:
 
     # Make sure that annotations is imported from __future__ - defined in cpython/Lib/__future__.py
     # annotations become strings at runtime
-    future_annotations = 0x100000 if sys.version_info[0:2] == (3, 7) else 0x1000000
-    return bool(annotations_.compiler_flag == future_annotations)
+    return bool(annotations_.compiler_flag == 0x1000000)  # pragma: no cover # noqa: PLR2004
 
 
 def get_all_type_hints(
