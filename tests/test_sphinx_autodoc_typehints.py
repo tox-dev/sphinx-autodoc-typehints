@@ -9,7 +9,7 @@ from functools import cmp_to_key
 from io import StringIO
 from pathlib import Path
 from textwrap import dedent, indent
-from types import FunctionType, ModuleType
+from types import EllipsisType, FrameType, FunctionType, ModuleType, NotImplementedType, TracebackType
 from typing import (  # noqa: UP035
     IO,
     Any,
@@ -168,8 +168,12 @@ _CASES = [
     pytest.param(str, ":py:class:`str`", id="str"),
     pytest.param(int, ":py:class:`int`", id="int"),
     pytest.param(StringIO, ":py:class:`~io.StringIO`", id="StringIO"),
-    pytest.param(FunctionType, ":py:class:`~types.FunctionType`", id="FunctionType"),
+    pytest.param(EllipsisType, ":py:data:`~types.EllipsisType`", id="EllipsisType"),
+    pytest.param(FunctionType, ":py:data:`~types.FunctionType`", id="FunctionType"),
+    pytest.param(FrameType, ":py:data:`~types.FrameType`", id="FrameType"),
     pytest.param(ModuleType, ":py:class:`~types.ModuleType`", id="ModuleType"),
+    pytest.param(NotImplementedType, ":py:data:`~types.NotImplementedType`", id="NotImplementedType"),
+    pytest.param(TracebackType, ":py:class:`~types.TracebackType`", id="TracebackType"),
     pytest.param(type(None), ":py:obj:`None`", id="type None"),
     pytest.param(type, ":py:class:`type`", id="type"),
     pytest.param(Callable, ":py:class:`~collections.abc.Callable`", id="abc-Callable"),
@@ -414,7 +418,7 @@ def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str
         assert format_annotation(annotation, conf) == expected_result
 
     # Test for the correct role (class vs data) using the official Sphinx inventory
-    if "typing" in expected_result:
+    if any(modname in expected_result for modname in ("typing", "types")):
         m = re.match(r"^:py:(?P<role>class|data|func):`~(?P<name>[^`]+)`", result)
         assert m, "No match"
         name = m.group("name")

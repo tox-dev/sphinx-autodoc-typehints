@@ -36,7 +36,23 @@ if TYPE_CHECKING:
     from sphinx.ext.autodoc import Options
 
 _LOGGER = logging.getLogger(__name__)
-_PYDATA_ANNOTATIONS = {"Any", "AnyStr", "Callable", "ClassVar", "Literal", "NoReturn", "Optional", "Tuple", "Union"}
+_PYDATA_ANNOTS_TYPING = {"Any", "AnyStr", "Callable", "ClassVar", "Literal", "NoReturn", "Optional", "Tuple", "Union"}
+_PYDATA_ANNOTS_TYPES = {
+    *("AsyncGeneratorType", "BuiltinFunctionType", "BuiltinMethodType"),
+    *("CellType", "ClassMethodDescriptorType", "CoroutineType"),
+    "EllipsisType",
+    *("FrameType", "FunctionType"),
+    *("GeneratorType", "GetSetDescriptorType"),
+    "LambdaType",
+    *("MemberDescriptorType", "MethodDescriptorType", "MethodType", "MethodWrapperType"),
+    # NoneType is special, but included here for completeness' sake
+    *("NoneType", "NotImplementedType"),
+    "WrapperDescriptorType",
+}
+_PYDATA_ANNOTATIONS = {
+    *(("typing", n) for n in _PYDATA_ANNOTS_TYPING),
+    *(("types", n) for n in _PYDATA_ANNOTS_TYPES),
+}
 
 # types has a bunch of things like ModuleType where ModuleType.__module__ is
 # "builtins" and ModuleType.__name__ is "module", so we have to check for this.
@@ -219,7 +235,7 @@ def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901, PL
     full_name = f"{module}.{class_name}" if module != "builtins" else class_name
     fully_qualified: bool = getattr(config, "typehints_fully_qualified", False)
     prefix = "" if fully_qualified or full_name == class_name else "~"
-    role = "data" if module == "typing" and class_name in _PYDATA_ANNOTATIONS else "class"
+    role = "data" if (module, class_name) in _PYDATA_ANNOTATIONS else "class"
     args_format = "\\[{}]"
     formatted_args: str | None = ""
 
