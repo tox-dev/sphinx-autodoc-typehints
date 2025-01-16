@@ -148,10 +148,10 @@ class Class:
     :param z: baz
     """
 
-    def __init__(self, x: bool, y: int, z: Optional[str] = None) -> None:  # noqa: UP007
+    def __init__(self, x: bool, y: int, z: Optional[str] = None) -> None:  # noqa: UP045
         pass
 
-    def a_method(self, x: bool, y: int, z: Optional[str] = None) -> str:  # noqa: UP007
+    def a_method(self, x: bool, y: int, z: Optional[str] = None) -> str:  # noqa: UP045
         """
         Method docstring.
 
@@ -182,7 +182,7 @@ class Class:
         """
 
     @classmethod
-    def a_classmethod(cls, x: bool, y: int, z: Optional[str] = None) -> str:  # noqa: UP007
+    def a_classmethod(cls, x: bool, y: int, z: Optional[str] = None) -> str:  # noqa: UP045
         """
         Classmethod docstring.
 
@@ -192,7 +192,7 @@ class Class:
         """
 
     @staticmethod
-    def a_staticmethod(x: bool, y: int, z: Optional[str] = None) -> str:  # noqa: UP007
+    def a_staticmethod(x: bool, y: int, z: Optional[str] = None) -> str:  # noqa: UP045
         """
         Staticmethod docstring.
 
@@ -270,7 +270,7 @@ mod.function(x, y, z_=None)
       bytes
 """,
 )
-def function(x: bool, y: int, z_: Optional[str] = None) -> str:  # noqa: UP007
+def function(x: bool, y: int, z_: Optional[str] = None) -> str:  # noqa: UP045
     """
     Function docstring.
 
@@ -675,7 +675,7 @@ class mod.TestClassAttributeDocs
 class TestClassAttributeDocs:
     """A class"""
 
-    code: Optional[CodeType]  # noqa: UP007
+    code: Optional[CodeType]  # noqa: UP045
     """An attribute"""
 
 
