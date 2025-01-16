@@ -168,7 +168,7 @@ _CASES = [
     pytest.param(str, ":py:class:`str`", id="str"),
     pytest.param(int, ":py:class:`int`", id="int"),
     pytest.param(StringIO, ":py:class:`~io.StringIO`", id="StringIO"),
-    pytest.param(FunctionType, ":py:class:`~types.FunctionType`", id="FunctionType"),
+    pytest.param(FunctionType, ":py:data:`~types.FunctionType`", id="FunctionType"),
     pytest.param(ModuleType, ":py:class:`~types.ModuleType`", id="ModuleType"),
     pytest.param(type(None), ":py:obj:`None`", id="type None"),
     pytest.param(type, ":py:class:`type`", id="type"),
@@ -257,7 +257,7 @@ _CASES = [
         id="Union-str-Any",
     ),
     pytest.param(
-        Optional[str],  # noqa: UP007
+        Optional[str],
         r":py:data:`~typing.Optional`\ \[:py:class:`str`]",
         id="Optional-str",
     ),
@@ -267,7 +267,7 @@ _CASES = [
         id="Optional-str-None",
     ),
     pytest.param(
-        Optional[str | bool],  # noqa: UP007
+        Optional[str | bool],
         r":py:data:`~typing.Union`\ \[:py:class:`str`, :py:class:`bool`, :py:obj:`None`]",
         id="Optional-Union-str-bool",
     ),
@@ -414,7 +414,7 @@ def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str
         assert format_annotation(annotation, conf) == expected_result
 
     # Test for the correct role (class vs data) using the official Sphinx inventory
-    if "typing" in expected_result:
+    if any(modname in expected_result for modname in ("typing", "types")):
         m = re.match(r"^:py:(?P<role>class|data|func):`~(?P<name>[^`]+)`", result)
         assert m, "No match"
         name = m.group("name")
