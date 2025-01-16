@@ -148,10 +148,10 @@ class Class:
     :param z: baz
     """
 
-    def __init__(self, x: bool, y: int, z: Optional[str] = None) -> None:  # noqa: UP045
+    def __init__(self, x: bool, y: int, z: Optional[str] = None) -> None:
         pass
 
-    def a_method(self, x: bool, y: int, z: Optional[str] = None) -> str:  # noqa: UP045
+    def a_method(self, x: bool, y: int, z: Optional[str] = None) -> str:
         """
         Method docstring.
 
@@ -182,7 +182,7 @@ class Class:
         """
 
     @classmethod
-    def a_classmethod(cls, x: bool, y: int, z: Optional[str] = None) -> str:  # noqa: UP045
+    def a_classmethod(cls, x: bool, y: int, z: Optional[str] = None) -> str:
         """
         Classmethod docstring.
 
@@ -192,7 +192,7 @@ class Class:
         """
 
     @staticmethod
-    def a_staticmethod(x: bool, y: int, z: Optional[str] = None) -> str:  # noqa: UP045
+    def a_staticmethod(x: bool, y: int, z: Optional[str] = None) -> str:
         """
         Staticmethod docstring.
 
@@ -270,7 +270,7 @@ mod.function(x, y, z_=None)
       bytes
 """,
 )
-def function(x: bool, y: int, z_: Optional[str] = None) -> str:  # noqa: UP045
+def function(x: bool, y: int, z_: Optional[str] = None) -> str:
     """
     Function docstring.
 
@@ -647,7 +647,7 @@ mod.func_with_overload(a, b)
       "None"
 """,
 )
-def func_with_overload(a: Union[int, str], b: Union[int, str]) -> None:  # noqa: UP007
+def func_with_overload(a: Union[int, str], b: Union[int, str]) -> None:
     """
     f does the thing. The arguments can either be ints or strings but they must
     both have the same type.
@@ -675,7 +675,7 @@ class mod.TestClassAttributeDocs
 class TestClassAttributeDocs:
     """A class"""
 
-    code: Optional[CodeType]  # noqa: UP045
+    code: Optional[CodeType]
     """An attribute"""
 
 
