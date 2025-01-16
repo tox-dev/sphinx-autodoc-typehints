@@ -9,7 +9,7 @@ from functools import cmp_to_key
 from io import StringIO
 from pathlib import Path
 from textwrap import dedent, indent
-from types import FunctionType, ModuleType
+from types import EllipsisType, FrameType, FunctionType, ModuleType, NotImplementedType, TracebackType
 from typing import (  # noqa: UP035
     IO,
     Any,
@@ -168,8 +168,12 @@ _CASES = [
     pytest.param(str, ":py:class:`str`", id="str"),
     pytest.param(int, ":py:class:`int`", id="int"),
     pytest.param(StringIO, ":py:class:`~io.StringIO`", id="StringIO"),
+    pytest.param(EllipsisType, ":py:data:`~types.EllipsisType`", id="EllipsisType"),
     pytest.param(FunctionType, ":py:data:`~types.FunctionType`", id="FunctionType"),
+    pytest.param(FrameType, ":py:data:`~types.FrameType`", id="FrameType"),
     pytest.param(ModuleType, ":py:class:`~types.ModuleType`", id="ModuleType"),
+    pytest.param(NotImplementedType, ":py:data:`~types.NotImplementedType`", id="NotImplementedType"),
+    pytest.param(TracebackType, ":py:class:`~types.TracebackType`", id="TracebackType"),
     pytest.param(type(None), ":py:obj:`None`", id="type None"),
     pytest.param(type, ":py:class:`type`", id="type"),
     pytest.param(Callable, ":py:class:`~collections.abc.Callable`", id="abc-Callable"),

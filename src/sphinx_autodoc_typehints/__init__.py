@@ -45,6 +45,7 @@ _PYDATA_ANNOTS_TYPES = {
     *("GeneratorType", "GetSetDescriptorType"),
     "LambdaType",
     *("MemberDescriptorType", "MethodDescriptorType", "MethodType", "MethodWrapperType"),
+    # NoneType is special, but included here for completeness' sake
     *("NoneType", "NotImplementedType"),
     "WrapperDescriptorType",
 }
