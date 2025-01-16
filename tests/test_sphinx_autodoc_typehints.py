@@ -257,7 +257,7 @@ _CASES = [
         id="Union-str-Any",
     ),
     pytest.param(
-        Optional[str],
+        Optional[str],  # noqa: UP007
         r":py:data:`~typing.Optional`\ \[:py:class:`str`]",
         id="Optional-str",
     ),
@@ -267,7 +267,7 @@ _CASES = [
         id="Optional-str-None",
     ),
     pytest.param(
-        Optional[str | bool],
+        Optional[str | bool],  # noqa: UP007
         r":py:data:`~typing.Union`\ \[:py:class:`str`, :py:class:`bool`, :py:obj:`None`]",
         id="Optional-Union-str-bool",
     ),
