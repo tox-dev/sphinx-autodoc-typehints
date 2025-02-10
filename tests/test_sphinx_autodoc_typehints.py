@@ -98,10 +98,10 @@ class Metaclass(type): ...
 
 class HintedMethods:
     @classmethod
-    def from_magic(cls: type[T]) -> T:  # type: ignore[empty-body]
+    def from_magic(cls) -> typing_extensions.Self:  # type: ignore[empty-body]
         ...
 
-    def method(self: T) -> T:  # type: ignore[empty-body]
+    def method(self) -> typing_extensions.Self:  # type: ignore[empty-body]
         ...
 
 
