@@ -41,7 +41,7 @@ dynamic = [
   "version",
 ]
 dependencies = [
-  "sphinx>=8.1.3",
+  "sphinx>=8.2",
 ]
 optional-dependencies.docs = [
   "furo>=2024.8.6",
