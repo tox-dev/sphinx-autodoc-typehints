@@ -42,12 +42,12 @@ orig_add_directive_header = AttributeDocumenter.add_directive_header
 orig_handle_signature = PyAttribute.handle_signature
 
 
-def _stringify_annotation(app: Sphinx, annotation: Any, *args: Any, **kwargs: Any) -> str:  # noqa: ARG001
+def _stringify_annotation(app: Sphinx, annotation: Any, *args: Any, short_literals: bool = False, **kwargs: Any) -> str:  # noqa: ARG001
     # Format the annotation with sphinx-autodoc-typehints and inject our magic prefix to tell our patched
     # PyAttribute.handle_signature to treat it as rst.
     from . import format_annotation  # noqa: PLC0415
 
-    return TYPE_IS_RST_LABEL + format_annotation(annotation, app.config)
+    return TYPE_IS_RST_LABEL + format_annotation(annotation, app.config, short_literals=short_literals)
 
 
 def patch_attribute_documenter(app: Sphinx) -> None:

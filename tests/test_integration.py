@@ -9,6 +9,7 @@ from textwrap import dedent, indent
 from typing import (  # no type comments
     TYPE_CHECKING,
     Any,
+    Literal,
     NewType,
     Optional,
     TypeVar,
@@ -658,6 +659,59 @@ def func_with_overload(a: Union[int, str], b: Union[int, str]) -> None:
         The first thing
     b:
         The second thing
+    """
+
+
+@expected(
+    """\
+mod.func_literals_long_format(a, b)
+
+   A docstring.
+
+   Parameters:
+      * **a** ("Literal"["'arg1'", "'arg2'"]) -- Argument that can
+        take either of two literal values.
+
+      * **b** ("Literal"["'arg1'", "'arg2'"]) -- Argument that can
+        take either of two literal values.
+
+   Return type:
+      "None"
+""",
+)
+def func_literals_long_format(a: Literal["arg1", "arg2"], b: Literal["arg1", "arg2"]) -> None:
+    """
+    A docstring.
+
+    :param a: Argument that can take either of two literal values.
+    :param b: Argument that can take either of two literal values.
+    """
+
+
+@expected(
+    """\
+mod.func_literals_short_format(a, b)
+
+   A docstring.
+
+   Parameters:
+      * **a** ("'arg1'" | "'arg2'") -- Argument that can take either
+        of two literal values.
+
+      * **b** ("'arg1'" | "'arg2'") -- Argument that can take either
+        of two literal values.
+
+   Return type:
+      "None"
+""",
+    python_display_short_literal_types=True,
+)
+def func_literals_short_format(a: Literal["arg1", "arg2"], b: Literal["arg1", "arg2"]) -> None:
+    """
+    A docstring.
+
+    :param a: Argument that can take either of two literal values.
+    :param b: Argument that can take either of two literal values.
     """
 
 
