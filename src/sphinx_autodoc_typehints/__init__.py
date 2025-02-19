@@ -222,7 +222,7 @@ def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901, PL
         return format_internal_tuple(annotation, config)
 
     if isinstance(annotation, TypeAliasForwardRef):
-        return str(annotation)
+        return annotation.name
 
     try:
         module = get_annotation_module(annotation)
