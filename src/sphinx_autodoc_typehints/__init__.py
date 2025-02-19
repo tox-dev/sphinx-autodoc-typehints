@@ -172,11 +172,11 @@ def get_annotation_args(annotation: Any, module: str, class_name: str) -> tuple[
     return () if len(result) == 1 and result[0] == () else result  # type: ignore[misc]
 
 
-def format_internal_tuple(t: tuple[Any, ...], config: Config) -> str:
+def format_internal_tuple(t: tuple[Any, ...], config: Config, *, short_literals: bool = False) -> str:
     # An annotation can be a tuple, e.g., for numpy.typing:
     # In this case, format_annotation receives:
     # This solution should hopefully be general for *any* type that allows tuples in annotations
-    fmt = [format_annotation(a, config) for a in t]
+    fmt = [format_annotation(a, config, short_literals=short_literals) for a in t]
     if len(fmt) == 0:
         return "()"
     if len(fmt) == 1:
@@ -196,12 +196,13 @@ def fixup_module_name(config: Config, module: str) -> str:
     return module
 
 
-def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901, PLR0911, PLR0912, PLR0915, PLR0914
+def format_annotation(annotation: Any, config: Config, *, short_literals: bool = False) -> str:  # noqa: C901, PLR0911, PLR0912, PLR0915, PLR0914
     """
     Format the annotation.
 
     :param annotation:
     :param config:
+    :param short_literals: Render :py:class:`Literals` in PEP 604 style (``|``).
     :return:
     """
     typehints_formatter: Callable[..., str] | None = getattr(config, "typehints_formatter", None)
@@ -222,7 +223,7 @@ def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901, PL
         return format_internal_tuple(annotation, config)
 
     if isinstance(annotation, TypeAliasForwardRef):
-        return str(annotation)
+        return annotation.name
 
     try:
         module = get_annotation_module(annotation)
@@ -254,7 +255,7 @@ def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901, PL
         params = {k: getattr(annotation, f"__{k}__") for k in ("bound", "covariant", "contravariant")}
         params = {k: v for k, v in params.items() if v}
         if "bound" in params:
-            params["bound"] = f" {format_annotation(params['bound'], config)}"
+            params["bound"] = f" {format_annotation(params['bound'], config, short_literals=short_literals)}"
         args_format = f"\\(``{annotation.__name__}``{', {}' if args else ''}"
         if params:
             args_format += "".join(f", {k}={v}" for k, v in params.items())
@@ -275,20 +276,22 @@ def format_annotation(annotation: Any, config: Config) -> str:  # noqa: C901, PL
                 args_format = f"\\[:py:data:`{prefix}typing.Union`\\[{{}}]]"
                 args = tuple(x for x in args if x is not type(None))
     elif full_name in {"typing.Callable", "collections.abc.Callable"} and args and args[0] is not ...:
-        fmt = [format_annotation(arg, config) for arg in args]
+        fmt = [format_annotation(arg, config, short_literals=short_literals) for arg in args]
         formatted_args = f"\\[\\[{', '.join(fmt[:-1])}], {fmt[-1]}]"
     elif full_name == "typing.Literal":
+        if short_literals:
+            return f"\\{' | '.join(f'``{arg!r}``' for arg in args)}"
         formatted_args = f"\\[{', '.join(f'``{arg!r}``' for arg in args)}]"
     elif is_bars_union:
-        return " | ".join([format_annotation(arg, config) for arg in args])
+        return " | ".join([format_annotation(arg, config, short_literals=short_literals) for arg in args])
 
     if args and not formatted_args:
         try:
             iter(args)
         except TypeError:
-            fmt = [format_annotation(args, config)]
+            fmt = [format_annotation(args, config, short_literals=short_literals)]
         else:
-            fmt = [format_annotation(arg, config) for arg in args]
+            fmt = [format_annotation(arg, config, short_literals=short_literals) for arg in args]
         formatted_args = args_format.format(", ".join(fmt))
 
     escape = "\\ " if formatted_args else ""
@@ -783,7 +786,10 @@ def _inject_signature(
             if annotation is None:
                 type_annotation = f":type {arg_name}: "
             else:
-                formatted_annotation = add_type_css_class(format_annotation(annotation, app.config))
+                short_literals = app.config.python_display_short_literal_types
+                formatted_annotation = add_type_css_class(
+                    format_annotation(annotation, app.config, short_literals=short_literals)
+                )
                 type_annotation = f":type {arg_name}: {formatted_annotation}"
 
             if app.config.typehints_defaults:
@@ -923,7 +929,10 @@ def _inject_rtype(  # noqa: PLR0913, PLR0917
     if not app.config.typehints_use_rtype and r.found_return and " -- " in lines[insert_index]:
         return
 
-    formatted_annotation = add_type_css_class(format_annotation(type_hints["return"], app.config))
+    short_literals = app.config.python_display_short_literal_types
+    formatted_annotation = add_type_css_class(
+        format_annotation(type_hints["return"], app.config, short_literals=short_literals)
+    )
 
     if r.found_param and insert_index < len(lines) and lines[insert_index].strip():
         insert_index -= 1

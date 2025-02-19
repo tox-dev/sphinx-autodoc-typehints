@@ -554,17 +554,6 @@ def test_always_document_param_types(
     assert contents == expected_contents
 
 
-def maybe_fix_py310(expected_contents: str) -> str:
-    if sys.version_info >= (3, 11):
-        return expected_contents
-
-    for old, new in [
-        ('"str" | "None"', '"Optional"["str"]'),
-    ]:
-        expected_contents = expected_contents.replace(old, new)
-    return expected_contents
-
-
 @pytest.mark.sphinx("text", testroot="dummy")
 @patch("sphinx.writers.text.MAXWIDTH", 2000)
 def test_sphinx_output_future_annotations(app: SphinxTestApp, status: StringIO) -> None:
@@ -595,7 +584,7 @@ def test_sphinx_output_future_annotations(app: SphinxTestApp, status: StringIO) 
           "str"
     """
     expected_contents = dedent(expected_contents)
-    expected_contents = maybe_fix_py310(dedent(expected_contents))
+    expected_contents = dedent(expected_contents)
     assert contents == expected_contents
 
 
