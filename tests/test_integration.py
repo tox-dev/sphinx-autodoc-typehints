@@ -1386,7 +1386,7 @@ def has_doctest1() -> None:
 Unformatted = TypeVar("Unformatted")
 
 
-@warns("cannot cache unpickable configuration value: 'typehints_formatter'")
+@warns("cannot cache unpickleable configuration value: 'typehints_formatter'")
 @expected(
     """
     mod.typehints_formatter_applied_to_signature(param: Formatted) -> Formatted
