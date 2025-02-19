@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 import shutil
 import sys
+from contextlib import suppress
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -36,11 +37,9 @@ def _remove_sphinx_projects(sphinx_test_tempdir: Path) -> None:
     # the temporary directory area.
     # See https://github.com/sphinx-doc/sphinx/issues/4040
     for entry in sphinx_test_tempdir.iterdir():
-        try:
+        with suppress(PermissionError):
             if entry.is_dir() and Path(entry, "_build").exists():
                 shutil.rmtree(str(entry))
-        except PermissionError:  # noqa: PERF203
-            pass
 
 
 @pytest.fixture
