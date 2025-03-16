@@ -55,7 +55,7 @@ optional-dependencies.testing = [
   "sphobjinv>=2.3.1.2",
   "typing-extensions>=4.12.2",
 ]
-urls.Changelog = "https://github.com/tox-dev/sphinx-autodoc-typehints/blob/main/CHANGELOG.md"
+urls.Changelog = "https://github.com/tox-dev/sphinx-autodoc-typehints/releases"
 urls.Homepage = "https://github.com/tox-dev/sphinx-autodoc-typehints"
 urls.Source = "https://github.com/tox-dev/sphinx-autodoc-typehints"
 urls.Tracker = "https://github.com/tox-dev/sphinx-autodoc-typehints/issues"
