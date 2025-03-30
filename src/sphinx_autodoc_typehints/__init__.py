@@ -17,7 +17,7 @@ from docutils.frontend import get_default_settings
 from sphinx.ext.autodoc.mock import mock
 from sphinx.parsers import RSTParser
 from sphinx.util import logging, rst
-from sphinx.util.inspect import TypeAliasForwardRef, TypeAliasNamespace, stringify_signature
+from sphinx.util.inspect import stringify_signature
 from sphinx.util.inspect import signature as sphinx_signature
 
 from ._parser import parse
@@ -221,9 +221,6 @@ def format_annotation(annotation: Any, config: Config, *, short_literals: bool =
 
     if isinstance(annotation, tuple):
         return format_internal_tuple(annotation, config)
-
-    if isinstance(annotation, TypeAliasForwardRef):
-        return annotation.name
 
     try:
         module = get_annotation_module(annotation)
@@ -446,7 +443,7 @@ def _future_annotations_imported(obj: Any) -> bool:
 
 
 def get_all_type_hints(
-    autodoc_mock_imports: list[str], obj: Any, name: str, localns: TypeAliasNamespace
+    autodoc_mock_imports: list[str], obj: Any, name: str, localns: dict[str, ForwardRef]
 ) -> dict[str, Any]:
     result = _get_type_hint(autodoc_mock_imports, name, obj, localns)
     if not result:
@@ -517,7 +514,7 @@ def _resolve_type_guarded_imports(autodoc_mock_imports: list[str], obj: Any) -> 
             _execute_guarded_code(autodoc_mock_imports, obj, module_code)
 
 
-def _get_type_hint(autodoc_mock_imports: list[str], name: str, obj: Any, localns: TypeAliasNamespace) -> dict[str, Any]:
+def _get_type_hint(autodoc_mock_imports: list[str], name: str, obj: Any, localns: dict[str, ForwardRef]) -> dict[str, Any]:
     _resolve_type_guarded_imports(autodoc_mock_imports, obj)
     try:
         result = get_type_hints(obj, None, localns)
@@ -689,7 +686,7 @@ def process_docstring(  # noqa: PLR0913, PLR0917
     except (ValueError, TypeError):
         signature = None
 
-    localns = TypeAliasNamespace(app.config["autodoc_type_aliases"])
+    localns = {key: ForwardRef(value) for key, value in app.config["autodoc_type_aliases"].items()}
     type_hints = get_all_type_hints(app.config.autodoc_mock_imports, obj, name, localns)
     app.config._annotation_globals = getattr(obj, "__globals__", {})  # noqa: SLF001
     try:
