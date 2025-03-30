@@ -451,7 +451,7 @@ def _future_annotations_imported(obj: Any) -> bool:
 
 
 def get_all_type_hints(
-    autodoc_mock_imports: list[str], obj: Any, name: str, localns: dict[str, TypeAliasForwardRef]
+    autodoc_mock_imports: list[str], obj: Any, name: str, localns: dict[Any, TypeAliasForwardRef]
 ) -> dict[str, Any]:
     result = _get_type_hint(autodoc_mock_imports, name, obj, localns)
     if not result:
@@ -523,7 +523,7 @@ def _resolve_type_guarded_imports(autodoc_mock_imports: list[str], obj: Any) -> 
 
 
 def _get_type_hint(
-    autodoc_mock_imports: list[str], name: str, obj: Any, localns: dict[str, TypeAliasForwardRef]
+    autodoc_mock_imports: list[str], name: str, obj: Any, localns: dict[Any, TypeAliasForwardRef]
 ) -> dict[str, Any]:
     _resolve_type_guarded_imports(autodoc_mock_imports, obj)
     try:
