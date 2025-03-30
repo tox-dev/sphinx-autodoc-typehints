@@ -103,7 +103,7 @@ mod.function(x, y)
    Function docstring.
 
    Parameters:
-      * **x** (Array) -- foo
+      * **x** ("Optional"[Array]) -- foo
 
       * **y** ("Schema") -- boo
 
@@ -115,7 +115,7 @@ mod.function(x, y)
 
 """,
 )
-def function(x: ArrayLike, y: Schema) -> str:
+def function(x: ArrayLike | None, y: Schema) -> str:
     """
     Function docstring.
 
