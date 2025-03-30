@@ -17,8 +17,8 @@ from docutils.frontend import get_default_settings
 from sphinx.ext.autodoc.mock import mock
 from sphinx.parsers import RSTParser
 from sphinx.util import logging, rst
-from sphinx.util.inspect import stringify_signature
 from sphinx.util.inspect import signature as sphinx_signature
+from sphinx.util.inspect import stringify_signature
 
 from ._parser import parse
 from .patches import install_patches
@@ -514,7 +514,9 @@ def _resolve_type_guarded_imports(autodoc_mock_imports: list[str], obj: Any) -> 
             _execute_guarded_code(autodoc_mock_imports, obj, module_code)
 
 
-def _get_type_hint(autodoc_mock_imports: list[str], name: str, obj: Any, localns: dict[str, ForwardRef]) -> dict[str, Any]:
+def _get_type_hint(
+    autodoc_mock_imports: list[str], name: str, obj: Any, localns: dict[str, ForwardRef]
+) -> dict[str, Any]:
     _resolve_type_guarded_imports(autodoc_mock_imports, obj)
     try:
         result = get_type_hints(obj, None, localns)
