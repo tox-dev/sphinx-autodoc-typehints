@@ -62,7 +62,7 @@ _TYPES_DICT[types.FunctionType] = "FunctionType"
 
 
 class MyTypeAliasForwardRef(TypeAliasForwardRef):
-    def __or__(self, value: Any) -> types.UnionType:
+    def __or__(self, value: Any) -> Any:
         return Union[self, value]  # noqa: UP007
 
 
