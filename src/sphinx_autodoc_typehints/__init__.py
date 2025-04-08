@@ -10,14 +10,14 @@ import sys
 import textwrap
 import types
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, AnyStr, ForwardRef, NewType, TypeVar, get_type_hints
+from typing import TYPE_CHECKING, Any, AnyStr, ForwardRef, NewType, TypeVar, Union, get_type_hints
 
 from docutils import nodes
 from docutils.frontend import get_default_settings
 from sphinx.ext.autodoc.mock import mock
 from sphinx.parsers import RSTParser
 from sphinx.util import logging, rst
-from sphinx.util.inspect import TypeAliasForwardRef, TypeAliasNamespace, stringify_signature
+from sphinx.util.inspect import TypeAliasForwardRef, stringify_signature
 from sphinx.util.inspect import signature as sphinx_signature
 
 from ._parser import parse
@@ -59,6 +59,11 @@ _PYDATA_ANNOTATIONS = {
 _TYPES_DICT = {getattr(types, name): name for name in types.__all__}
 # Prefer FunctionType to LambdaType (they are synonymous)
 _TYPES_DICT[types.FunctionType] = "FunctionType"
+
+
+class MyTypeAliasForwardRef(TypeAliasForwardRef):
+    def __or__(self, value: Any) -> Any:
+        return Union[self, value]  # noqa: UP007
 
 
 def _get_types_type(obj: Any) -> str | None:
@@ -446,7 +451,7 @@ def _future_annotations_imported(obj: Any) -> bool:
 
 
 def get_all_type_hints(
-    autodoc_mock_imports: list[str], obj: Any, name: str, localns: TypeAliasNamespace
+    autodoc_mock_imports: list[str], obj: Any, name: str, localns: dict[Any, MyTypeAliasForwardRef]
 ) -> dict[str, Any]:
     result = _get_type_hint(autodoc_mock_imports, name, obj, localns)
     if not result:
@@ -517,7 +522,9 @@ def _resolve_type_guarded_imports(autodoc_mock_imports: list[str], obj: Any) -> 
             _execute_guarded_code(autodoc_mock_imports, obj, module_code)
 
 
-def _get_type_hint(autodoc_mock_imports: list[str], name: str, obj: Any, localns: TypeAliasNamespace) -> dict[str, Any]:
+def _get_type_hint(
+    autodoc_mock_imports: list[str], name: str, obj: Any, localns: dict[Any, MyTypeAliasForwardRef]
+) -> dict[str, Any]:
     _resolve_type_guarded_imports(autodoc_mock_imports, obj)
     try:
         result = get_type_hints(obj, None, localns)
@@ -689,7 +696,7 @@ def process_docstring(  # noqa: PLR0913, PLR0917
     except (ValueError, TypeError):
         signature = None
 
-    localns = TypeAliasNamespace(app.config["autodoc_type_aliases"])
+    localns = {key: MyTypeAliasForwardRef(value) for key, value in app.config["autodoc_type_aliases"].items()}
     type_hints = get_all_type_hints(app.config.autodoc_mock_imports, obj, name, localns)
     app.config._annotation_globals = getattr(obj, "__globals__", {})  # noqa: SLF001
     try:
