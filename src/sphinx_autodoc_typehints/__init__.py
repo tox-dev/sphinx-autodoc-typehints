@@ -919,6 +919,8 @@ def _inject_rtype(  # noqa: PLR0913, PLR0917
         return
     if not app.config.typehints_document_rtype:
         return
+    if not app.config.typehints_document_rtype_none and type_hints["return"] is types.NoneType:
+        return
 
     r = get_insert_index(app, lines)
     if r is None:
@@ -1004,6 +1006,7 @@ def setup(app: Sphinx) -> dict[str, bool]:
     app.add_config_value("always_document_param_types", False, "html")  # noqa: FBT003
     app.add_config_value("typehints_fully_qualified", False, "env")  # noqa: FBT003
     app.add_config_value("typehints_document_rtype", True, "env")  # noqa: FBT003
+    app.add_config_value("typehints_document_rtype_none", True, "env")  # noqa: FBT003
     app.add_config_value("typehints_use_rtype", True, "env")  # noqa: FBT003
     app.add_config_value("typehints_defaults", None, "env")
     app.add_config_value("simplify_optional_unions", True, "env")  # noqa: FBT003
