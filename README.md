@@ -67,6 +67,7 @@ The following configuration options are accepted:
   or `Optional[int]`)
 - `typehints_document_rtype` (default: `True`): If `False`, never add an `:rtype:` directive. If `True`, add the
   `:rtype:` directive if no existing `:rtype:` is found.
+- `typehints_document_rtype_none` (default: `True`): If `False`, never add an `:rtype: None` directive. If `True`, add the `:rtype: None`.
 - `typehints_use_rtype` (default: `True`): Controls behavior when `typehints_document_rtype` is set to `True`. If
   `True`, document return type in the `:rtype:` directive. If `False`, document return type as part of the `:return:`
   directive, if present, otherwise fall back to using `:rtype:`. Use in conjunction with

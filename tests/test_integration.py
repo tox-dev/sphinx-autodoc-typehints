@@ -1319,6 +1319,19 @@ def typehints_use_signature(a: AsyncGenerator) -> AsyncGenerator:
     return a
 
 
+@expected(
+    """
+    mod.typehints_no_rtype_none()
+
+       Do something.
+
+    """,
+    typehints_document_rtype_none=False,
+)
+def typehints_no_rtype_none() -> None:
+    """Do something."""
+
+
 prolog = """
 .. |test_node_start| replace:: {test_node_start}
 """.format(test_node_start="test_start")
