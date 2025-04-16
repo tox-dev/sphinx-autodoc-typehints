@@ -899,6 +899,8 @@ def get_insert_index(app: Sphinx, lines: list[str]) -> InsertIndexInfo | None:
             continue
         line_no = node_line_no(child)
         at = max(line_no - 2, 0) if line_no else len(lines)
+        if lines[at - 1]:  # skip if something on this line
+            break
         return InsertIndexInfo(insert_index=at, found_directive=True)
 
     # 5. Otherwise, insert at end
