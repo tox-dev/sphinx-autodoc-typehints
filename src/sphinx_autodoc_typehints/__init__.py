@@ -905,7 +905,7 @@ def get_insert_index(app: Sphinx, lines: list[str]) -> InsertIndexInfo | None:
     return InsertIndexInfo(insert_index=len(lines))
 
 
-def _inject_rtype(  # noqa: PLR0913, PLR0917
+def _inject_rtype(  # noqa: C901, PLR0913, PLR0917
     type_hints: dict[str, Any],
     original_obj: Any,
     app: Sphinx,
