@@ -912,7 +912,7 @@ def get_insert_index(app: Sphinx, lines: list[str]) -> InsertIndexInfo | None:
     return InsertIndexInfo(insert_index=len(lines))
 
 
-def _inject_rtype(  # noqa: PLR0913, PLR0917
+def _inject_rtype(  # noqa: C901, PLR0913, PLR0917
     type_hints: dict[str, Any],
     original_obj: Any,
     app: Sphinx,
@@ -925,6 +925,8 @@ def _inject_rtype(  # noqa: PLR0913, PLR0917
     if what == "method" and name.endswith(".__init__"):  # avoid adding a return type for data class __init__
         return
     if not app.config.typehints_document_rtype:
+        return
+    if not app.config.typehints_document_rtype_none and type_hints["return"] is types.NoneType:
         return
 
     r = get_insert_index(app, lines)
@@ -1011,6 +1013,7 @@ def setup(app: Sphinx) -> dict[str, bool]:
     app.add_config_value("always_document_param_types", False, "html")  # noqa: FBT003
     app.add_config_value("typehints_fully_qualified", False, "env")  # noqa: FBT003
     app.add_config_value("typehints_document_rtype", True, "env")  # noqa: FBT003
+    app.add_config_value("typehints_document_rtype_none", True, "env")  # noqa: FBT003
     app.add_config_value("typehints_use_rtype", True, "env")  # noqa: FBT003
     app.add_config_value("typehints_defaults", None, "env")
     app.add_config_value("simplify_optional_unions", True, "env")  # noqa: FBT003
