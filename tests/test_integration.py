@@ -1410,15 +1410,19 @@ def docstring_with_multiline_note_after_params_epilog_replace(param: int) -> Non
     """
     mod.docstring_with_see_also()
 
-       Return type:
-          "str"
+       Test
 
        See also: more info at <https://example.com>`_.
+
+       Return type:
+          "str"
 
     """
 )
 def docstring_with_see_also() -> str:
     """
+    Test
+
     .. seealso:: more info at <https://example.com>`_.
     """
     return ""
