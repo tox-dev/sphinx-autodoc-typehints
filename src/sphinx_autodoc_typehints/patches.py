@@ -103,7 +103,7 @@ orig_text_indent = Text.indent
 
 def _patched_text_indent(self: Text, *args: Any) -> Any:
     _, line = self.state_machine.get_source_and_line()
-    result = orig_text_indent(self, *args)
+    result = orig_text_indent(self, *args)  # type: ignore[no-untyped-call]
     node = self.parent[-1]
     if node.tagname == "system_message":
         node = self.parent[-2]
@@ -114,6 +114,7 @@ def _patched_text_indent(self: Text, *args: Any) -> Any:
 def _patched_body_doctest(
     self: Body, _match: None, _context: None, next_state: str | None
 ) -> tuple[list[Any], str | None, list[Any]]:
+    assert self.document.current_line is not None  # noqa: S101
     line = self.document.current_line + 1
     data = "\n".join(self.state_machine.get_text_block())
     n = nodes.doctest_block(data, data)
@@ -128,9 +129,9 @@ def _patch_line_numbers() -> None:
 
     When the line numbers are missing, we have a hard time placing the :rtype:.
     """
-    Text.indent = _patched_text_indent
+    Text.indent = _patched_text_indent  # type: ignore[method-assign]
     BaseAdmonition.run = _patched_base_admonition_run  # type: ignore[method-assign,assignment]
-    Body.doctest = _patched_body_doctest
+    Body.doctest = _patched_body_doctest  # type: ignore[method-assign]
 
 
 def install_patches(app: Sphinx) -> None:
