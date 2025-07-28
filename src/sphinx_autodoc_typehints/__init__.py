@@ -1011,7 +1011,7 @@ def sphinx_autodoc_typehints_type_role(
     return [n], []
 
 
-def setup(app: Sphinx) -> dict[str, bool]:
+def setup(app: Sphinx) -> dict[str, bool | str]:
     app.add_config_value("always_document_param_types", False, "html")  # noqa: FBT003
     app.add_config_value("typehints_fully_qualified", False, "env")  # noqa: FBT003
     app.add_config_value("typehints_document_rtype", True, "env")  # noqa: FBT003
@@ -1029,7 +1029,11 @@ def setup(app: Sphinx) -> dict[str, bool]:
     app.connect("autodoc-process-signature", process_signature)
     app.connect("autodoc-process-docstring", process_docstring)
     install_patches(app)
-    return {"parallel_read_safe": True, "parallel_write_safe": True}
+    return {
+        "version": __version__,
+        "parallel_read_safe": True,
+        "parallel_write_safe": True,
+    }
 
 
 __all__ = [
