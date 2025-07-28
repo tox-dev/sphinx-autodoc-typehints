@@ -1,12 +1,20 @@
 from __future__ import annotations
 
 import inspect
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, create_autospec, patch
 
 from conftest import make_docstring_app, make_sig_app
+from sphinx.application import Sphinx
+from sphinx.config import Config
 
 import sphinx_autodoc_typehints as sat
-from sphinx_autodoc_typehints import _inject_overload_signatures, process_docstring, process_signature
+from sphinx_autodoc_typehints import (
+    __version__,
+    _inject_overload_signatures,
+    process_docstring,
+    process_signature,
+    setup,
+)
 from sphinx_autodoc_typehints._resolver._util import get_obj_location
 from sphinx_autodoc_typehints.patches import _OVERLOADS_CACHE
 
@@ -288,3 +296,13 @@ def test_process_docstring_strips_complex_inline_param_type() -> None:
     type_lines = [line for line in lines if line.startswith(":type fp:")]
     assert len(type_lines) == 1
     assert "int" in type_lines[0]
+
+
+def test_setup_returns_version() -> None:
+    """setup() returns metadata dict with version from __version__."""
+    app = create_autospec(Sphinx)
+    app.config = create_autospec(Config)
+    result = setup(app)
+    assert result["version"] == __version__
+    assert result["parallel_read_safe"] is True
+    assert result["parallel_write_safe"] is True
