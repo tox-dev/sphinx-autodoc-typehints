@@ -877,7 +877,7 @@ def get_insert_index(app: Sphinx, lines: list[str]) -> InsertIndexInfo | None:
 
     # 3. Insert after the parameters.
     # To find the parameters, parse as a docutils tree.
-    settings = get_default_settings(RSTParser)
+    settings = get_default_settings(RSTParser)  # type: ignore[arg-type]
     settings.env = app.env
     doc = parse("\n".join(lines), settings)
 
