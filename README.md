@@ -95,6 +95,7 @@ The following configuration options are accepted:
   - `sphinx_autodoc_typehints.forward_reference`
   - `sphinx_autodoc_typehints.guarded_import`
   - `sphinx_autodoc_typehints.local_function`
+  - `sphinx_autodoc_typehints.multiple_ast_nodes`
 
 ## How it works
 

@@ -572,6 +572,7 @@ def backfill_type_hints(obj: Any, name: str) -> dict[str, Any]:  # noqa: C901, P
                 name,
                 len(children),
                 type="sphinx_autodoc_typehints",
+                subtype="multiple_ast_nodes",
             )
             return None
         return children[0]
