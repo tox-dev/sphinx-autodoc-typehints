@@ -31,6 +31,28 @@ T = TypeVar("T")
 W = NewType("W", str)
 
 
+@dataclass
+class WarningInfo:
+    """Properties and assertion methods for warnings."""
+
+    regexp: str
+    type: str
+
+    def assert_regexp(self, message: str) -> None:
+        regexp = self.regexp
+        msg = f"Regex pattern did not match.\n Regex: {regexp!r}\n Input: {message!r}"
+        assert re.search(regexp, message), msg
+
+    def assert_type(self, message: str) -> None:
+        expected = f"[{self.type}]"
+        msg = f"Warning did not contain type and subtype.\n Expected: {expected}\n Input: {message}"
+        assert expected in message, msg
+
+    def assert_warning(self, message: str) -> None:
+        self.assert_regexp(message)
+        self.assert_type(message)
+
+
 def expected(expected: str, **options: dict[str, Any]) -> Callable[[T], T]:
     def dec(val: T) -> T:
         val.EXPECTED = expected
@@ -40,9 +62,9 @@ def expected(expected: str, **options: dict[str, Any]) -> Callable[[T], T]:
     return dec
 
 
-def warns(pattern: str) -> Callable[[T], T]:
+def warns(info: WarningInfo) -> Callable[[T], T]:
     def dec(val: T) -> T:
-        val.WARNING = pattern
+        val.WARNING = info
         return val
 
     return dec
@@ -58,7 +80,7 @@ def get_local_function():  # noqa: ANN201
     return wrapper
 
 
-@warns("Cannot handle as a local function")
+@warns(WarningInfo(regexp="Cannot handle as a local function", type="sphinx_autodoc_typehints.local_function"))
 @expected(
     """\
 class mod.Class(x, y, z=None)
@@ -330,7 +352,11 @@ def function_with_escaped_default(x: str = "\b"):  # noqa: ANN201
     """
 
 
-@warns("Cannot resolve forward reference in type annotations")
+@warns(
+    WarningInfo(
+        regexp="Cannot resolve forward reference in type annotations", type="sphinx_autodoc_typehints.forward_reference"
+    )
+)
 @expected(
     """\
 mod.function_with_unresolvable_annotation(x)
@@ -1196,7 +1222,7 @@ def docstring_with_enum_list_after_params(param: int) -> None:
     """
 
 
-@warns("Definition list ends without a blank line")
+@warns(WarningInfo(regexp="Definition list ends without a blank line", type="docutils"))
 @expected(
     """
     mod.docstring_with_definition_list_after_params_no_blank_line(param)
@@ -1457,7 +1483,7 @@ def has_doctest1() -> None:
 Unformatted = TypeVar("Unformatted")
 
 
-@warns("cannot cache unpickleable configuration value: 'typehints_formatter'")
+@warns(WarningInfo(regexp="cannot cache unpickleable configuration value: 'typehints_formatter'", type="config.cache"))
 @expected(
     """
     mod.typehints_formatter_applied_to_signature(param: Formatted) -> Formatted
@@ -1525,11 +1551,10 @@ def test_integration(
     app.build()
     assert "build succeeded" in status.getvalue()  # Build succeeded
 
-    regexp = getattr(val, "WARNING", None)
+    warning_info: Union[WarningInfo, None] = getattr(val, "WARNING", None)
     value = warning.getvalue().strip()
-    if regexp:
-        msg = f"Regex pattern did not match.\n Regex: {regexp!r}\n Input: {value!r}"
-        assert re.search(regexp, value), msg
+    if warning_info:
+        warning_info.assert_warning(value)
     else:
         assert not value
 
