@@ -181,7 +181,7 @@ _CASES = [
     pytest.param(Type[A], rf":py:class:`~typing.Type`\ \[:py:class:`~{__name__}.A`]", id="typing-A"),
     pytest.param(Any, ":py:data:`~typing.Any`", id="Any"),
     pytest.param(AnyStr, ":py:data:`~typing.AnyStr`", id="AnyStr"),
-    pytest.param(Generic[T], r":py:class:`~typing.Generic`\ \[:py:class:`~typing.TypeVar`\ \(``T``)]", id="Generic"),
+    pytest.param(Generic[T], r":py:class:`~typing.Generic`\ \[:py:class:`~typing.TypeVar`\ \(``T``)]", id="Generic"),  # type: ignore[index]
     pytest.param(Mapping, ":py:class:`~collections.abc.Mapping`", id="Mapping"),
     pytest.param(
         Mapping[T, int],  # type: ignore[valid-type]
@@ -244,36 +244,62 @@ _CASES = [
         r":py:data:`~typing.Tuple`\ \[:py:class:`str`, :py:data:`...<Ellipsis>`]",
         id="Tuple-str-Ellipsis",
     ),
-    pytest.param(Union, ":py:data:`~typing.Union`", id="Union"),
+    pytest.param(Union, "" if sys.version_info >= (3, 14) else ":py:data:`~typing.Union`", id="Union"),
     pytest.param(
         Union[str, bool],
-        r":py:data:`~typing.Union`\ \[:py:class:`str`, :py:class:`bool`]",
+        ":py:class:`str` | :py:class:`bool`"
+        if sys.version_info >= (3, 14)
+        else r":py:data:`~typing.Union`\ \[:py:class:`str`, :py:class:`bool`]",
         id="Union-str-bool",
     ),
     pytest.param(
         Union[str, bool, None],
-        r":py:data:`~typing.Union`\ \[:py:class:`str`, :py:class:`bool`, :py:obj:`None`]",
+        ":py:class:`str` | :py:class:`bool` | :py:obj:`None`"
+        if sys.version_info >= (3, 14)
+        else r":py:data:`~typing.Union`\ \[:py:class:`str`, :py:class:`bool`, :py:obj:`None`]",
         id="Union-str-bool-None",
     ),
     pytest.param(
         Union[str, Any],
-        r":py:data:`~typing.Union`\ \[:py:class:`str`, :py:data:`~typing.Any`]",
+        ":py:class:`str` | :py:data:`~typing.Any`"
+        if sys.version_info >= (3, 14)
+        else r":py:data:`~typing.Union`\ \[:py:class:`str`, :py:data:`~typing.Any`]",
         id="Union-str-Any",
     ),
     pytest.param(
         Optional[str],
-        r":py:data:`~typing.Optional`\ \[:py:class:`str`]",
+        ":py:class:`str` | :py:obj:`None`"
+        if sys.version_info >= (3, 14)
+        else r":py:data:`~typing.Optional`\ \[:py:class:`str`]",
         id="Optional-str",
     ),
     pytest.param(
         Union[str, None],
-        r":py:data:`~typing.Optional`\ \[:py:class:`str`]",
+        ":py:class:`str` | :py:obj:`None`"
+        if sys.version_info >= (3, 14)
+        else r":py:data:`~typing.Optional`\ \[:py:class:`str`]",
         id="Optional-str-None",
     ),
     pytest.param(
         Optional[str | bool],
-        r":py:data:`~typing.Union`\ \[:py:class:`str`, :py:class:`bool`, :py:obj:`None`]",
+        ":py:class:`str` | :py:class:`bool` | :py:obj:`None`"
+        if sys.version_info >= (3, 14)
+        else r":py:data:`~typing.Union`\ \[:py:class:`str`, :py:class:`bool`, :py:obj:`None`]",
         id="Optional-Union-str-bool",
+    ),
+    pytest.param(
+        RecList,
+        ":py:class:`int` | :py:class:`~typing.List`\\ \\[RecList]"
+        if sys.version_info >= (3, 14)
+        else r":py:data:`~typing.Union`\ \[:py:class:`int`, :py:class:`~typing.List`\ \[RecList]]",
+        id="RecList",
+    ),
+    pytest.param(
+        MutualRecA,
+        ":py:class:`bool` | :py:class:`~typing.List`\\ \\[MutualRecB]"
+        if sys.version_info >= (3, 14)
+        else r":py:data:`~typing.Union`\ \[:py:class:`bool`, :py:class:`~typing.List`\ \[MutualRecB]]",
+        id="MutualRecA",
     ),
     pytest.param(Callable, ":py:class:`~collections.abc.Callable`", id="Callable"),
     pytest.param(
@@ -359,14 +385,6 @@ _CASES = [
         r":py:data:`~typing.Tuple`\ \[:py:class:`int`, :py:data:`...<Ellipsis>`]",
         id="Tuple-p-Ellipsis",
     ),
-    pytest.param(
-        RecList, r":py:data:`~typing.Union`\ \[:py:class:`int`, :py:class:`~typing.List`\ \[RecList]]", id="RecList"
-    ),
-    pytest.param(
-        MutualRecA,
-        r":py:data:`~typing.Union`\ \[:py:class:`bool`, :py:class:`~typing.List`\ \[MutualRecB]]",
-        id="MutualRecA",
-    ),
 ]
 
 
@@ -418,7 +436,9 @@ def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str
         assert format_annotation(annotation, conf) == expected_result
 
     # Test for the correct role (class vs data) using the official Sphinx inventory
-    if any(modname in expected_result for modname in ("typing", "types")):
+    if any(modname in expected_result for modname in ("typing", "types")) and not (
+        sys.version_info >= (3, 14) and isinstance(annotation, Union)
+    ):
         m = re.match(r"^:py:(?P<role>class|data|func):`~(?P<name>[^`]+)`", result)
         assert m, "No match"
         name = m.group("name")

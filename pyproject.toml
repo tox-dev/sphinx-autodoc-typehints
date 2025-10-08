@@ -1,7 +1,7 @@
 [build-system]
 build-backend = "hatchling.build"
 requires = [
-  "hatch-vcs>=0.4",
+  "hatch-vcs>=0.5",
   "hatchling>=1.27",
 ]
 
@@ -40,20 +40,20 @@ dynamic = [
   "version",
 ]
 dependencies = [
-  "sphinx>=8.2",
+  "sphinx>=8.2.3",
 ]
 optional-dependencies.docs = [
-  "furo>=2024.8.6",
+  "furo>=2025.9.25",
 ]
 optional-dependencies.testing = [
   "covdefaults>=2.3",
-  "coverage>=7.6.12",
-  "defusedxml>=0.7.1",         # required by sphinx.testing
-  "diff-cover>=9.2.3",
-  "pytest>=8.3.4",
-  "pytest-cov>=6",
-  "sphobjinv>=2.3.1.2",
-  "typing-extensions>=4.12.2",
+  "coverage>=7.10.7",
+  "defusedxml>=0.7.1",       # required by sphinx.testing
+  "diff-cover>=9.7.1",
+  "pytest>=8.4.2",
+  "pytest-cov>=7",
+  "sphobjinv>=2.3.1.3",
+  "typing-extensions>=4.15",
 ]
 urls.Changelog = "https://github.com/tox-dev/sphinx-autodoc-typehints/releases"
 urls.Homepage = "https://github.com/tox-dev/sphinx-autodoc-typehints"
