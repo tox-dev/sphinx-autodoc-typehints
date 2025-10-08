@@ -97,13 +97,13 @@ def g(s: AliasedClass) -> AliasedClass:
 
 
 @expected(
-    """\
+    f"""\
 mod.function(x, y)
 
    Function docstring.
 
    Parameters:
-      * **x** ("Optional"[Array]) -- foo
+      * **x** ({'Array | "None"' if sys.version_info >= (3, 14) else '"Optional"[Array]'}) -- foo
 
       * **y** ("Schema") -- boo
 

@@ -64,7 +64,8 @@ The following configuration options are accepted:
   `True`, add stub documentation for undocumented parameters to be able to add type info.
 - `always_use_bars_union ` (default: `False`): If `True`, display Union's using the | operator described in PEP 604.
   (e.g `X` | `Y` or `int` | `None`). If `False`, Unions will display with the typing in brackets. (e.g. `Union[X, Y]`
-  or `Optional[int]`)
+  or `Optional[int]`). Note that on 3.14 and later this will always be `True` and not configurable due the interpreter
+  no longer differentiating between the two types, and we have no way to determine what the user used.
 - `typehints_document_rtype` (default: `True`): If `False`, never add an `:rtype:` directive. If `True`, add the
   `:rtype:` directive if no existing `:rtype:` is found.
 - `typehints_document_rtype_none` (default: `True`): If `False`, never add an `:rtype: None` directive. If `True`, add the `:rtype: None`.
@@ -74,7 +75,6 @@ The following configuration options are accepted:
   [napoleon_use_rtype](https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html#confval-napoleon_use_rtype)
   to avoid generation of duplicate or redundant return type information.
 - `typehints_defaults` (default: `None`): If `None`, defaults are not added. Otherwise, adds a default annotation:
-
   - `'comma'` adds it after the type, changing Sphinx’ default look to “**param** (_int_, default: `1`) -- text”.
   - `'braces'` adds `(default: ...)` after the type (useful for numpydoc like styles).
   - `'braces-after'` adds `(default: ...)` at the end of the parameter documentation text instead.

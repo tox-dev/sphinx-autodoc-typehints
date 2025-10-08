@@ -92,7 +92,7 @@ class mod.Class(x, y, z=None)
 
       * **y** ("int") -- bar
 
-      * **z** ("Optional"["str"]) -- baz
+      * **z** ("str" | "None") -- baz
 
    class InnerClass
 
@@ -117,7 +117,7 @@ class mod.Class(x, y, z=None)
 
          * **y** ("int") -- bar
 
-         * **z** ("Optional"["str"]) -- baz
+         * **z** ("str" | "None") -- baz
 
       Return type:
          "str"
@@ -131,7 +131,7 @@ class mod.Class(x, y, z=None)
 
          * **y** ("int") -- bar
 
-         * **z** ("Optional"["str"]) -- baz
+         * **z** ("str" | "None") -- baz
 
       Return type:
          "str"
@@ -149,7 +149,7 @@ class mod.Class(x, y, z=None)
 
          * **y** ("int") -- bar
 
-         * **z** ("Optional"["str"]) -- baz
+         * **z** ("str" | "None") -- baz
 
       Return type:
          "str"
@@ -284,7 +284,7 @@ mod.function(x, y, z_=None)
 
       * **y** ("int") -- bar
 
-      * **z_** ("Optional"["str"]) -- baz
+      * **z_** ("str" | "None") -- baz
 
    Returns:
       something
@@ -471,7 +471,7 @@ mod.function_with_typehint_comment_not_inline(x=None, *y, z, **kwargs)
    Function docstring.
 
    Parameters:
-      * **x** ("Union"["str", "bytes", "None"]) -- foo
+      * **x** ("str" | "bytes" | "None") -- foo
 
       * **y** ("str") -- bar
 
@@ -502,7 +502,7 @@ class mod.ClassWithTypehintsNotInline(x=None)
    Class docstring.
 
    Parameters:
-      **x** ("Optional"["Callable"[["int", "bytes"], "int"]]) -- foo
+      **x** ("Callable"[["int", "bytes"], "int"] | "None") -- foo
 
    foo(x=1)
 
@@ -519,8 +519,7 @@ class mod.ClassWithTypehintsNotInline(x=None)
       Method docstring.
 
       Parameters:
-         **x** ("Optional"["Callable"[["int", "bytes"], "int"]]) --
-         foo
+         **x** ("Callable"[["int", "bytes"], "int"] | "None") -- foo
 
       Return type:
          "ClassWithTypehintsNotInline"
@@ -666,9 +665,9 @@ mod.func_with_overload(a, b)
    they must both have the same type.
 
    Parameters:
-      * **a** ("Union"["int", "str"]) -- The first thing
+      * **a** ("int" | "str") -- The first thing
 
-      * **b** ("Union"["int", "str"]) -- The second thing
+      * **b** ("int" | "str") -- The second thing
 
    Return type:
       "None"
@@ -747,7 +746,7 @@ class mod.TestClassAttributeDocs
 
    A class
 
-   code: "Optional"["CodeType"]
+   code: "CodeType" | "None"
 
       An attribute
 """,
@@ -1547,6 +1546,7 @@ def test_integration(
     (Path(app.srcdir) / "index.rst").write_text(template.format(val.__name__))
     app.config.__dict__.update(configs[conf_run])
     app.config.__dict__.update(val.OPTIONS)
+    app.config.always_use_bars_union = True
     monkeypatch.setitem(sys.modules, "mod", sys.modules[__name__])
     app.build()
     assert "build succeeded" in status.getvalue()  # Build succeeded
