@@ -27,7 +27,7 @@ repos:
     rev: "v0.14.0"
     hooks:
       - id: ruff-format
-      - id: ruff
+      - id: ruff-check
         args: ["--fix", "--unsafe-fixes", "--exit-non-zero-on-fix"]
   - repo: https://github.com/rbubley/mirrors-prettier
     rev: "v3.6.2" # Use the sha / tag you want to point at

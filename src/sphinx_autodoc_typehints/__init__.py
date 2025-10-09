@@ -300,6 +300,8 @@ def format_annotation(annotation: Any, config: Config, *, short_literals: bool =
             return f"\\{' | '.join(f'``{arg!r}``' for arg in args)}"
         formatted_args = f"\\[{', '.join(f'``{arg!r}``' for arg in args)}]"
     elif is_bars_union:
+        if not args:
+            return f":py:{'class' if sys.version_info >= (3, 14) else 'data'}:`{prefix}typing.Union`"
         return " | ".join([format_annotation(arg, config, short_literals=short_literals) for arg in args])
 
     if args and not formatted_args:
