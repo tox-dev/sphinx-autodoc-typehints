@@ -244,7 +244,10 @@ _CASES = [
         r":py:data:`~typing.Tuple`\ \[:py:class:`str`, :py:data:`...<Ellipsis>`]",
         id="Tuple-str-Ellipsis",
     ),
-    pytest.param(Union, "" if sys.version_info >= (3, 14) else ":py:data:`~typing.Union`", id="Union"),
+    pytest.param(Union, f":py:{'class' if sys.version_info >= (3, 14) else 'data'}:`~typing.Union`", id="Union"),
+    pytest.param(
+        types.UnionType, f":py:{'class' if sys.version_info >= (3, 14) else 'data'}:`~typing.Union`", id="UnionType"
+    ),
     pytest.param(
         Union[str, bool],
         ":py:class:`str` | :py:class:`bool`"
@@ -279,6 +282,12 @@ _CASES = [
         if sys.version_info >= (3, 14)
         else r":py:data:`~typing.Optional`\ \[:py:class:`str`]",
         id="Optional-str-None",
+    ),
+    pytest.param(
+        type[T] | types.UnionType,
+        ":py:class:`type`\\ \\[:py:class:`~typing.TypeVar`\\ \\(``T``)] | "
+        f":py:{'class' if sys.version_info >= (3, 14) else 'data'}:`~typing.Union`",
+        id="typevar union bar uniontype",
     ),
     pytest.param(
         Optional[str | bool],
@@ -436,18 +445,16 @@ def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str
         assert format_annotation(annotation, conf) == expected_result
 
     # Test for the correct role (class vs data) using the official Sphinx inventory
-    if any(modname in expected_result for modname in ("typing", "types")) and not (
-        sys.version_info >= (3, 14) and isinstance(annotation, Union)
+    if (
+        result.count(":py:") == 1
+        and ("typing" in result or "types" in result)
+        and (match := re.match(r"^:py:(?P<role>class|data|func):`~(?P<name>[^`]+)`", result))
     ):
-        m = re.match(r"^:py:(?P<role>class|data|func):`~(?P<name>[^`]+)`", result)
-        assert m, "No match"
-        name = m.group("name")
+        name = match.group("name")
         expected_role = next((o.role for o in inv.objects if o.name == name), None)
-        if expected_role:
-            if expected_role == "function":
-                expected_role = "func"
-
-            assert m.group("role") == expected_role
+        if expected_role and expected_role == "function":
+            expected_role = "func"
+        assert match.group("role") == expected_role
 
 
 @pytest.mark.parametrize(
