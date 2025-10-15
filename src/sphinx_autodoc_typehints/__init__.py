@@ -808,43 +808,63 @@ def _inject_signature(
     lines: list[str],
 ) -> None:
     for arg_name in signature.parameters:
-        annotation = type_hints.get(arg_name)
+        _inject_arg_signature(type_hints, signature, app, lines, arg_name)
 
-        default = signature.parameters[arg_name].default
 
-        if arg_name.endswith("_"):
-            arg_name = f"{arg_name[:-1]}\\_"  # noqa: PLW2901
+def _inject_arg_signature(
+    type_hints: dict[str, Any],
+    signature: inspect.Signature,
+    app: Sphinx,
+    lines: list[str],
+    arg_name: str,
+) -> None:
+    annotation = type_hints.get(arg_name)
 
-        insert_index = None
-        for at, line in enumerate(lines):
-            if _line_is_param_line_for_arg(line, arg_name):
-                # Get the arg_name from the doc to match up for type in case it has a star prefix.
-                # Line is in the correct format so this is guaranteed to return tuple[str, str].
-                func = _get_sphinx_line_keyword_and_argument
-                _, arg_name = func(line)  # type: ignore[assignment, misc] # noqa: PLW2901
-                insert_index = at
-                break
+    default = signature.parameters[arg_name].default
 
-        if annotation is not None and insert_index is None and app.config.always_document_param_types:
-            lines.append(f":param {arg_name}:")
-            insert_index = len(lines)
+    if arg_name.endswith("_"):
+        arg_name = f"{arg_name[:-1]}\\_"
 
-        if insert_index is not None:
-            if annotation is None:
-                type_annotation = f":type {arg_name}: "
-            else:
-                short_literals = app.config.python_display_short_literal_types
-                formatted_annotation = add_type_css_class(
-                    format_annotation(annotation, app.config, short_literals=short_literals)
-                )
-                type_annotation = f":type {arg_name}: {formatted_annotation}"
+    insert_index = None
+    for at, line in enumerate(lines):
+        if _line_is_param_line_for_arg(line, arg_name):
+            # Get the arg_name from the doc to match up for type in case it has a star prefix.
+            # Line is in the correct format so this is guaranteed to return tuple[str, str].
+            _, arg_name = _get_sphinx_line_keyword_and_argument(line)  # type: ignore[assignment, misc]
+            insert_index = at
+            break
 
-            if app.config.typehints_defaults:
-                formatted_default = format_default(app, default, annotation is not None)
-                if formatted_default:
-                    type_annotation = _append_default(app, lines, insert_index, type_annotation, formatted_default)
+    if annotation is not None and insert_index is None and app.config.always_document_param_types:
+        lines.append(f":param {arg_name}:")
+        insert_index = len(lines)
 
-            lines.insert(insert_index, type_annotation)
+    if insert_index is not None:
+        has_preexisting_annotation = False
+
+        if annotation is None:
+            type_annotation, has_preexisting_annotation = _find_preexisting_type_annotation(lines, arg_name)
+        else:
+            short_literals = app.config.python_display_short_literal_types
+            formatted_annotation = add_type_css_class(
+                format_annotation(annotation, app.config, short_literals=short_literals)
+            )
+            type_annotation = f":type {arg_name}: {formatted_annotation}"
+
+        if app.config.typehints_defaults:
+            formatted_default = format_default(app, default, annotation is not None or has_preexisting_annotation)
+            if formatted_default:
+                type_annotation = _append_default(app, lines, insert_index, type_annotation, formatted_default)
+
+        lines.insert(insert_index, type_annotation)
+
+
+def _find_preexisting_type_annotation(lines: list[str], arg_name: str) -> tuple[str, bool]:
+    """Find a type entry in the input docstring that matches the given arg name."""
+    type_annotation = f":type {arg_name}: "
+    for line in lines:
+        if line.startswith(type_annotation):
+            return line, True
+    return type_annotation, False
 
 
 def _append_default(
