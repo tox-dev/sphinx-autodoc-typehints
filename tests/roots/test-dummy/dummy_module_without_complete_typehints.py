@@ -35,3 +35,14 @@ def function_with_defaults_and_some_typehints(x: int = 0, y=None) -> str:  # noq
     :param x: foo
     :param y: bar
     """
+
+
+def function_with_defaults_and_type_information_in_docstring(x, y=0) -> str:  # noqa: ANN001
+    """
+    Function docstring.
+
+    :type x: int
+    :type y: int
+    :param x: foo
+    :param y: bar
+    """

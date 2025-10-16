@@ -1074,6 +1074,18 @@ def test_default_annotation_without_typehints(app: SphinxTestApp, status: String
 
        Return type:
           "str"
+
+    dummy_module_without_complete_typehints.function_with_defaults_and_type_information_in_docstring(x, y=0)
+
+       Function docstring.
+
+       Parameters:
+          * **x** (*int*) -- foo
+
+          * **y** (int, default: "0") -- bar
+
+       Return type:
+          "str"
     """
     assert text_contents == dedent(expected_contents)
 
