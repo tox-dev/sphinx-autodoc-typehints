@@ -14,3 +14,5 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx_autodoc_typehints",
 ]
+
+autodoc_use_legacy_class_based = True

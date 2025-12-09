@@ -746,7 +746,7 @@ class mod.TestClassAttributeDocs
 
    A class
 
-   code: "CodeType" | "None"
+   code: CodeType | None
 
       An attribute
 """,
@@ -1013,7 +1013,7 @@ def decorator_2(f: Any) -> Any:
        Parameters:
           **blah** ("CodeType") -- Description of parameter blah
 
-       blah: "ModuleType"
+       blah: ModuleType
 
           Description of attribute blah
 
