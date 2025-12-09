@@ -7,9 +7,7 @@ from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import sphinx.domains.python
-import sphinx.ext.autodoc
 from sphinx.domains.python import PyAttribute
-from sphinx.ext.autodoc import AttributeDocumenter
 
 from ._parser import parse
 
@@ -21,43 +19,14 @@ if TYPE_CHECKING:
 # Defensively check for the things we want to patch
 _parse_annotation = getattr(sphinx.domains.python, "_parse_annotation", None)
 
-# We want to patch:
-# * sphinx.ext.autodoc.stringify_typehint (in sphinx < 6.1)
-# * sphinx.ext.autodoc.stringify_annotation (in sphinx >= 6.1)
-STRINGIFY_PATCH_TARGET = ""
-for target in ["stringify_typehint", "stringify_annotation"]:
-    if hasattr(sphinx.ext.autodoc, target):
-        STRINGIFY_PATCH_TARGET = f"sphinx.ext.autodoc.{target}"
-        break
-
-# If we didn't locate both patch targets, we will just do nothing.
-OKAY_TO_PATCH = bool(_parse_annotation and STRINGIFY_PATCH_TARGET)
+# If we didn't locate the patch target, we will just do nothing.
+OKAY_TO_PATCH = bool(_parse_annotation)
 
 # A label we inject to the type string so we know not to try to treat it as a
 # type annotation
 TYPE_IS_RST_LABEL = "--is-rst--"
 
-
-orig_add_directive_header = AttributeDocumenter.add_directive_header
 orig_handle_signature = PyAttribute.handle_signature
-
-
-def _stringify_annotation(app: Sphinx, annotation: Any, *args: Any, short_literals: bool = False, **kwargs: Any) -> str:  # noqa: ARG001
-    # Format the annotation with sphinx-autodoc-typehints and inject our magic prefix to tell our patched
-    # PyAttribute.handle_signature to treat it as rst.
-    from . import format_annotation  # noqa: PLC0415
-
-    return TYPE_IS_RST_LABEL + format_annotation(annotation, app.config, short_literals=short_literals)
-
-
-def patch_attribute_documenter(app: Sphinx) -> None:
-    """Instead of using stringify_typehint in `AttributeDocumenter.add_directive_header`, use `format_annotation`."""
-
-    def add_directive_header(*args: Any, **kwargs: Any) -> Any:
-        with patch(STRINGIFY_PATCH_TARGET, partial(_stringify_annotation, app)):
-            return orig_add_directive_header(*args, **kwargs)
-
-    AttributeDocumenter.add_directive_header = add_directive_header  # type:ignore[method-assign]
 
 
 def rst_to_docutils(settings: Values, rst: str) -> Any:
@@ -84,12 +53,11 @@ def patched_handle_signature(self: PyAttribute, sig: str, signode: desc_signatur
         return orig_handle_signature(self, sig, signode)
 
 
-def patch_attribute_handling(app: Sphinx) -> None:
-    """Use format_signature to format class attribute type annotations."""
+def patch_attribute_handling(app: Sphinx) -> None:  # noqa: ARG001
+    """Patch PyAttribute.handle_signature to format class attribute type annotations."""
     if not OKAY_TO_PATCH:
         return
     PyAttribute.handle_signature = patched_handle_signature  # type:ignore[method-assign]
-    patch_attribute_documenter(app)
 
 
 __all__ = ["patch_attribute_handling"]

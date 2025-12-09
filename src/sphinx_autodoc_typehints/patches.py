@@ -17,26 +17,6 @@ if TYPE_CHECKING:
     from sphinx.ext.autodoc import Options
 
 
-@lru_cache  # A cute way to make sure the function only runs once.
-def fix_autodoc_typehints_for_overloaded_methods() -> None:
-    """
-    sphinx-autodoc-typehints responds to the "autodoc-process-signature" event to remove types from the signature line.
-
-    Normally, `FunctionDocumenter.format_signature` and `MethodDocumenter.format_signature` call
-    `super().format_signature` which ends up going to `Documenter.format_signature`, and this last method emits the
-    `autodoc-process-signature` event. However, if there are overloads, `FunctionDocumenter.format_signature` does
-    something else and the event never occurs.
-
-    We delete the format_signature methods to force using the parent implementation, which emits the event.
-
-    See https://github.com/tox-dev/sphinx-autodoc-typehints/issues/296
-    """
-    from sphinx.ext.autodoc import FunctionDocumenter, MethodDocumenter  # noqa: PLC0415
-
-    # Delete the format_signature methods that add overloads
-    # This forces everything to use Documenter.format_signature which emits the event
-    del FunctionDocumenter.format_signature
-    del MethodDocumenter.format_signature
 
 
 def napoleon_numpy_docstring_return_type_processor(  # noqa: PLR0913, PLR0917
@@ -138,13 +118,41 @@ def _patch_line_numbers() -> None:
     Body.doctest = _patched_body_doctest  # type: ignore[method-assign]
 
 
+@lru_cache
+def fix_directive_based_signature_formatting() -> None:
+    """
+    Patch Sphinx 9's new directive-based autodoc to disable overload detection.
+
+    The new architecture adds overload signatures without emitting autodoc-process-signature
+    for each one. By patching ModuleAnalyzer to clear overloads after analysis, we prevent
+    overload detection while preserving other functionality like attribute discovery.
+    """
+    try:
+        from sphinx.pycode import ModuleAnalyzer  # noqa: PLC0415
+    except ImportError:
+        return  # Not Sphinx 9+
+
+    # Store the original analyze method
+    original_analyze = ModuleAnalyzer.analyze
+
+    def patched_analyze(self: Any) -> None:
+        # Call the original analyze method
+        original_analyze(self)
+        # Then clear the overloads to prevent overload signature generation
+        self.overloads = {}
+
+    # Replace the analyze method
+    ModuleAnalyzer.analyze = patched_analyze  # type: ignore[method-assign]
+
+
 def install_patches(app: Sphinx) -> None:
     """
     Install the patches.
 
     :param app: the Sphinx app
     """
-    fix_autodoc_typehints_for_overloaded_methods()
+    # For Sphinx 9+ directive-based architecture
+    fix_directive_based_signature_formatting()
     patch_attribute_handling(app)
     _patch_google_docstring_lookup_annotation()
     fix_napoleon_numpy_docstring_return_type(app)
