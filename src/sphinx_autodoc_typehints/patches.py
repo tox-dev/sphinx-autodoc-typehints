@@ -25,12 +25,16 @@ def fix_autodoc_typehints_for_overloaded_methods() -> None:
     Normally, `FunctionDocumenter.format_signature` and `MethodDocumenter.format_signature` call
     `super().format_signature` which ends up going to `Documenter.format_signature`, and this last method emits the
     `autodoc-process-signature` event. However, if there are overloads, `FunctionDocumenter.format_signature` does
-    something else and the event never occurs. Here we remove this alternative code path by brute force.
+    something else and the event never occurs.
+
+    We delete the format_signature methods to force using the parent implementation, which emits the event.
 
     See https://github.com/tox-dev/sphinx-autodoc-typehints/issues/296
     """
     from sphinx.ext.autodoc import FunctionDocumenter, MethodDocumenter  # noqa: PLC0415
 
+    # Delete the format_signature methods that add overloads
+    # This forces everything to use Documenter.format_signature which emits the event
     del FunctionDocumenter.format_signature
     del MethodDocumenter.format_signature
 

@@ -13,7 +13,7 @@ repos:
     rev: v2.4.1
     hooks:
       - id: codespell
-        additional_dependencies: ["tomli>=2.2.1"]
+        additional_dependencies: ["tomli>=2.3"]
   - repo: https://github.com/tox-dev/tox-ini-fmt
     rev: "1.7.0"
     hooks:
@@ -24,17 +24,17 @@ repos:
     hooks:
       - id: pyproject-fmt
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.14.6"
+    rev: "v0.14.8"
     hooks:
       - id: ruff-format
       - id: ruff-check
         args: ["--fix", "--unsafe-fixes", "--exit-non-zero-on-fix"]
   - repo: https://github.com/rbubley/mirrors-prettier
-    rev: "v3.6.2" # Use the sha / tag you want to point at
+    rev: "v3.7.4" # Use the sha / tag you want to point at
     hooks:
       - id: prettier
         additional_dependencies:
-          - prettier@3.6.2
+          - prettier@3.7.4
           - "@prettier/plugin-xml@3.4.2"
   - repo: meta
     hooks:

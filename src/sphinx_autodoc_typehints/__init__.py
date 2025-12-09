@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any, AnyStr, ForwardRef, NewType, TypeVar, Uni
 
 from docutils import nodes
 from docutils.frontend import get_default_settings
-from sphinx.ext.autodoc.mock import mock
+from sphinx.ext.autodoc.mock import mock  # type: ignore[attr-defined]
 from sphinx.parsers import RSTParser
 from sphinx.util import logging, rst
 from sphinx.util.inspect import TypeAliasForwardRef, stringify_signature
