@@ -17,8 +17,6 @@ if TYPE_CHECKING:
     from sphinx.ext.autodoc import Options
 
 
-
-
 def napoleon_numpy_docstring_return_type_processor(  # noqa: PLR0913, PLR0917
     app: Sphinx,
     what: str,
