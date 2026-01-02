@@ -268,6 +268,9 @@ def format_annotation(annotation: Any, config: Config, *, short_literals: bool =
     if full_name == "typing.NewType":
         args_format = f"\\(``{annotation.__name__}``, {{}})"
         role = "class"
+    elif full_name == "typing.Annotated":
+        # By default we don't show metadata in Annotated
+        return format_annotation(annotation.__origin__, config, short_literals=short_literals)
     elif full_name in {"typing.TypeVar", "typing.ParamSpec"}:
         params = {k: getattr(annotation, f"__{k}__") for k in ("bound", "covariant", "contravariant")}
         params = {k: v for k, v in params.items() if v}
@@ -548,7 +551,7 @@ def _get_type_hint(
 ) -> dict[str, Any]:
     _resolve_type_guarded_imports(autodoc_mock_imports, obj)
     try:
-        result = get_type_hints(obj, None, localns)
+        result = get_type_hints(obj, None, localns, include_extras=True)
     except (AttributeError, TypeError, RecursionError) as exc:
         # TypeError - slot wrapper, PEP-563 when part of new syntax not supported
         # RecursionError - some recursive type definitions https://github.com/python/typing/issues/574
