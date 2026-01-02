@@ -23,7 +23,7 @@ maintainers = [
 authors = [
   { name = "Bernát Gábor", email = "gaborjbernat@gmail.com" },
 ]
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Framework :: Sphinx :: Extension",
@@ -31,7 +31,6 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
@@ -41,16 +40,16 @@ dynamic = [
   "version",
 ]
 dependencies = [
-  "sphinx>=9.0.4",
+  "sphinx>=9.1",
 ]
 optional-dependencies.docs = [
-  "furo>=2025.9.25",
+  "furo>=2025.12.19",
 ]
 optional-dependencies.testing = [
   "covdefaults>=2.3",
-  "coverage>=7.13",
+  "coverage>=7.13.1",
   "defusedxml>=0.7.1",       # required by sphinx.testing
-  "diff-cover>=9.7.2",
+  "diff-cover>=10.1",
   "pytest>=9.0.2",
   "pytest-cov>=7",
   "sphobjinv>=2.3.1.3",
@@ -142,7 +141,7 @@ run.plugins = [
 ]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 strict = true
 exclude = "^(.*/roots/.*)|(tests/test_integration.*.py)$"
 overrides = [

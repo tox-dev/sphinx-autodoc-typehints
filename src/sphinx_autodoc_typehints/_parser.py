@@ -27,6 +27,5 @@ def parse(inputstr: str, settings: Values | optparse.Values) -> nodes.document:
     doc = new_document("", settings=settings)
     with sphinx_domains(settings.env):
         parser = _RstSnippetParser()
-        parser.set_application(settings.env.app)
         parser.parse(inputstr, doc)
     return doc
