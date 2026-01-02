@@ -78,7 +78,7 @@ class A:
     class Inner: ...
 
 
-class B(Generic[T]):
+class B[T]:
     name = "Foo"  # This is set to make sure the correct class name ("B") is picked up
 
 

@@ -1276,7 +1276,7 @@ def docstring_with_definition_list_after_params_no_blank_line(param: int) -> Non
 
     """,
 )
-def has_typevar(param: T) -> T:
+def has_typevar[T](param: T) -> T:
     """Do something.
 
     Args:
@@ -1502,7 +1502,7 @@ Unformatted = TypeVar("Unformatted")
     typehints_use_signature_return=True,
     typehints_formatter=lambda _, __=None: "Formatted",
 )
-def typehints_formatter_applied_to_signature(param: Unformatted) -> Unformatted:
+def typehints_formatter_applied_to_signature[Unformatted](param: Unformatted) -> Unformatted:
     """
     Do nothing
 
