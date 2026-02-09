@@ -114,8 +114,8 @@ count = true
 [tool.pyproject-fmt]
 max_supported_python = "3.14"
 
-[tool.pytest.ini_options]
-testpaths = [
+[tool.pytest]
+ini_options.testpaths = [
   "tests",
 ]
 
@@ -134,8 +134,7 @@ paths.source = [
   "*\\src",
 ]
 report.fail_under = 88
-report.omit = [
-]
+report.omit = []
 run.parallel = true
 run.plugins = [
   "covdefaults",
