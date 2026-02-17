@@ -357,7 +357,7 @@ _CASES = [
     pytest.param(D, f":py:class:`~{__name__}.D`", id="D"),
     pytest.param(E, f":py:class:`~{__name__}.E`", id="E"),
     pytest.param(E[int], rf":py:class:`~{__name__}.E`\ \[:py:class:`int`]", id="E-int"),
-    pytest.param(W, r":py:class:`~typing.NewType`\ \(``W``, :py:class:`str`)", id="W"),
+    pytest.param(W, r":py:obj:`~typing.NewType`\ \(``W``, :py:class:`str`)", id="W"),
     pytest.param(T, r":py:class:`~typing.TypeVar`\ \(``T``)", id="T"),
     pytest.param(U_co, r":py:class:`~typing.TypeVar`\ \(``U_co``, covariant=True)", id="U-co"),
     pytest.param(V_contra, r":py:class:`~typing.TypeVar`\ \(``V_contra``, contravariant=True)", id="V-contra"),
