@@ -364,7 +364,7 @@ def normalize_source_lines(source_lines: str) -> str:
     return "\n".join(aligned_prefix + aligned_suffix)
 
 
-def process_signature(  # noqa: C901, PLR0913, PLR0917
+def process_signature(  # noqa: C901, PLR0912, PLR0913, PLR0917
     app: Sphinx,
     what: str,
     name: str,
