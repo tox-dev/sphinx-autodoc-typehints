@@ -364,7 +364,7 @@ def normalize_source_lines(source_lines: str) -> str:
     return "\n".join(aligned_prefix + aligned_suffix)
 
 
-def process_signature(  # noqa: C901, PLR0913, PLR0917
+def process_signature(  # noqa: C901, PLR0912, PLR0913, PLR0917
     app: Sphinx,
     what: str,
     name: str,
@@ -393,7 +393,10 @@ def process_signature(  # noqa: C901, PLR0913, PLR0917
     if not getattr(obj, "__annotations__", None):  # when has no annotation we cannot autodoc typehints so bail
         return None
 
-    obj = inspect.unwrap(obj)
+    try:
+        obj = inspect.unwrap(obj)
+    except ValueError:
+        return None
     sph_signature = sphinx_signature(obj, type_aliases=app.config["autodoc_type_aliases"])
     typehints_formatter: Callable[..., str | None] | None = getattr(app.config, "typehints_formatter", None)
 
@@ -732,7 +735,10 @@ def process_docstring(  # noqa: PLR0913, PLR0917
     if not callable(obj):
         return
     obj = obj.__init__ if inspect.isclass(obj) else obj
-    obj = inspect.unwrap(obj)
+    try:
+        obj = inspect.unwrap(obj)
+    except ValueError:
+        return
 
     try:
         signature = sphinx_signature(obj, type_aliases=app.config["autodoc_type_aliases"])

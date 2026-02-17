@@ -33,6 +33,7 @@ import pytest
 import typing_extensions
 from sphinx.application import Sphinx
 from sphinx.config import Config
+from sphinx.ext.autodoc import Options
 
 from sphinx_autodoc_typehints import (
     _resolve_type_guarded_imports,
@@ -43,6 +44,7 @@ from sphinx_autodoc_typehints import (
     get_annotation_module,
     normalize_source_lines,
     process_docstring,
+    process_signature,
 )
 
 if typing.TYPE_CHECKING:
@@ -517,6 +519,58 @@ def test_process_docstring_slot_wrapper() -> None:
     app: Sphinx = create_autospec(Sphinx, config=config)
     process_docstring(app, "class", "SlotWrapper", Slotted, None, lines)
     assert not lines
+
+
+def test_process_docstring_wrapper_loop() -> None:
+    """Regression test for #405: inspect.unwrap raises ValueError on wrapper loops."""
+
+    def func(x: int) -> str:
+        return str(x)
+
+    func.__wrapped__ = func  # type: ignore[attr-defined]  # circular wrapper loop
+
+    lines: list[str] = []
+    config = create_autospec(
+        Config,
+        typehints_fully_qualified=False,
+        simplify_optional_unions=False,
+        typehints_formatter=None,
+        autodoc_mock_imports=[],
+    )
+    app: Sphinx = create_autospec(Sphinx, config=config)
+    # Should not raise ValueError
+    process_docstring(app, "function", "func", func, None, lines)
+
+
+def test_process_signature_wrapper_loop() -> None:
+    """Regression test for #405: inspect.unwrap raises ValueError on wrapper loops."""
+
+    def func(x: int) -> str:
+        return str(x)
+
+    func.__wrapped__ = func  # type: ignore[attr-defined]  # circular wrapper loop
+
+    config = create_autospec(
+        Config,
+        typehints_fully_qualified=False,
+        simplify_optional_unions=False,
+        typehints_formatter=None,
+        typehints_use_signature=False,
+        typehints_use_signature_return=False,
+        autodoc_type_aliases={},
+    )
+    app: Sphinx = create_autospec(Sphinx, config=config)
+    # Should return None instead of raising ValueError
+    result = process_signature(
+        app,
+        "function",
+        "func",
+        func,
+        Options(),
+        "",
+        "",
+    )
+    assert result is None
 
 
 def set_python_path() -> None:
