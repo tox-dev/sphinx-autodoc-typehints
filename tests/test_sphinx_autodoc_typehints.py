@@ -646,7 +646,7 @@ def test_always_document_param_types(
 def test_always_document_param_types_with_defaults_braces_after(
     app: SphinxTestApp,
     status: StringIO,
-    warning: StringIO,
+    warning: StringIO,  # noqa: ARG001
 ) -> None:
     """Regression test for #575: IndexError when combining always_document_param_types with braces-after."""
     set_python_path()
