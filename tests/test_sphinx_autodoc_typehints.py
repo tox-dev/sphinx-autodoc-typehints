@@ -565,9 +565,9 @@ def test_process_signature_wrapper_loop() -> None:
         "function",
         "func",
         func,
-        {},
+        {},  # type: ignore[arg-type]  # options param unused by test
         "",
-        "",  # type: ignore[arg-type]  # options/sig/ret unused by test
+        "",
     )
     assert result is None
 
