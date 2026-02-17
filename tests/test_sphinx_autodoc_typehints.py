@@ -676,16 +676,15 @@ def test_namedtuple_new_no_warning(
     """Regression test for #601: NamedTuple __new__ causes 'NoneType' attribute error."""
     set_python_path()
 
-    for f in Path(app.srcdir).glob("*.rst"):
-        f.unlink()
-    (Path(app.srcdir) / "index.rst").write_text(
-        dedent(
-            """
-            .. autoclass:: dummy_module.MyNamedTuple
-                :special-members: __new__
-            """,
-        ),
+    for rst_file in Path(app.srcdir).glob("*.rst"):
+        rst_file.unlink()
+    index_content = dedent(
+        """
+        .. autoclass:: dummy_module.MyNamedTuple
+            :special-members: __new__
+        """,
     )
+    (Path(app.srcdir) / "index.rst").write_text(index_content)
 
     app.build()
 

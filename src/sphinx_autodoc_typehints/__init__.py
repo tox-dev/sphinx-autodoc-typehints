@@ -438,8 +438,7 @@ def process_signature(  # noqa: C901, PLR0912, PLR0913, PLR0917
             if outer is None:
                 return None
             for class_name in obj.__qualname__.split(".")[:-1]:
-                outer = getattr(outer, class_name, None)
-                if outer is None:
+                if (outer := getattr(outer, class_name, None)) is None:
                     return None
             method_name = obj.__name__
             if method_name.startswith("__") and not method_name.endswith("__"):
