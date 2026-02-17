@@ -33,6 +33,7 @@ import pytest
 import typing_extensions
 from sphinx.application import Sphinx
 from sphinx.config import Config
+from sphinx.ext.autodoc import Options
 
 from sphinx_autodoc_typehints import (
     _resolve_type_guarded_imports,
@@ -565,7 +566,7 @@ def test_process_signature_wrapper_loop() -> None:
         "function",
         "func",
         func,
-        {},  # type: ignore[arg-type]  # options param unused by test
+        Options(),
         "",
         "",
     )
