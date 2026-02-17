@@ -47,9 +47,9 @@ optional-dependencies.docs = [
 ]
 optional-dependencies.testing = [
   "covdefaults>=2.3",
-  "coverage>=7.13.1",
+  "coverage>=7.13.4",
   "defusedxml>=0.7.1",       # required by sphinx.testing
-  "diff-cover>=10.1",
+  "diff-cover>=10.2",
   "pytest>=9.0.2",
   "pytest-cov>=7",
   "sphobjinv>=2.3.1.3",
@@ -120,8 +120,10 @@ ini_options.testpaths = [
 ]
 
 [tool.coverage]
-html.show_contexts = true
-html.skip_covered = false
+run.parallel = true
+run.plugins = [
+  "covdefaults",
+]
 paths.source = [
   "src",
   ".tox/*/lib/python*/site-packages",
@@ -135,10 +137,8 @@ paths.source = [
 ]
 report.fail_under = 88
 report.omit = []
-run.parallel = true
-run.plugins = [
-  "covdefaults",
-]
+html.show_contexts = true
+html.skip_covered = false
 
 [tool.mypy]
 python_version = "3.12"
