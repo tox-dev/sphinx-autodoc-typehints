@@ -267,7 +267,7 @@ def format_annotation(annotation: Any, config: Config, *, short_literals: bool =
     # Some types require special handling
     if full_name == "typing.NewType":
         args_format = f"\\(``{annotation.__name__}``, {{}})"
-        role = "class"
+        role = "obj"
     elif full_name == "typing.Annotated":
         # By default we don't show metadata in Annotated
         return format_annotation(annotation.__origin__, config, short_literals=short_literals)
