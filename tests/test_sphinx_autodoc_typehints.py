@@ -561,7 +561,13 @@ def test_process_signature_wrapper_loop() -> None:
     app: Sphinx = create_autospec(Sphinx, config=config)
     # Should return None instead of raising ValueError
     result = process_signature(
-        app, "function", "func", func, {}, "", ""  # type: ignore[arg-type]  # options/sig/ret unused by test
+        app,
+        "function",
+        "func",
+        func,
+        {},
+        "",
+        "",  # type: ignore[arg-type]  # options/sig/ret unused by test
     )
     assert result is None
 
