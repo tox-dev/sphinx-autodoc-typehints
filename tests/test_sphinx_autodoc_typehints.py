@@ -656,13 +656,10 @@ def test_always_document_param_types_with_defaults_braces_after(
 
     for rst_file in Path(app.srcdir).glob("*.rst"):
         rst_file.unlink()
-    (Path(app.srcdir) / "index.rst").write_text(
-        dedent(
-            """
-            .. autofunction:: dummy_module.undocumented_function_with_defaults
-            """,
-        ),
-    )
+    index_content = """\
+        .. autofunction:: dummy_module.undocumented_function_with_defaults
+    """
+    (Path(app.srcdir) / "index.rst").write_text(dedent(index_content))
 
     app.build()
 
