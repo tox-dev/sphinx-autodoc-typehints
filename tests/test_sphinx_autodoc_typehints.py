@@ -668,6 +668,30 @@ def test_always_document_param_types_with_defaults_braces_after(
 
 @pytest.mark.sphinx("text", testroot="dummy")
 @patch("sphinx.writers.text.MAXWIDTH", 2000)
+def test_namedtuple_new_no_warning(
+    app: SphinxTestApp,
+    status: StringIO,
+    warning: StringIO,
+) -> None:
+    """Regression test for #601: NamedTuple __new__ causes 'NoneType' attribute error."""
+    set_python_path()
+
+    for rst_file in Path(app.srcdir).glob("*.rst"):
+        rst_file.unlink()
+    index_content = """\
+        .. autoclass:: dummy_module.MyNamedTuple
+            :special-members: __new__
+    """
+    (Path(app.srcdir) / "index.rst").write_text(dedent(index_content))
+
+    app.build()
+
+    assert "build succeeded" in status.getvalue()
+    assert "NoneType" not in warning.getvalue()
+
+
+@pytest.mark.sphinx("text", testroot="dummy")
+@patch("sphinx.writers.text.MAXWIDTH", 2000)
 def test_sphinx_output_future_annotations(app: SphinxTestApp, status: StringIO) -> None:
     set_python_path()
 

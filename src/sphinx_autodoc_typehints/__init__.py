@@ -364,7 +364,7 @@ def normalize_source_lines(source_lines: str) -> str:
     return "\n".join(aligned_prefix + aligned_suffix)
 
 
-def process_signature(  # noqa: C901, PLR0912, PLR0913, PLR0917
+def process_signature(  # noqa: C901, PLR0911, PLR0912, PLR0913, PLR0917
     app: Sphinx,
     what: str,
     name: str,
@@ -435,8 +435,11 @@ def process_signature(  # noqa: C901, PLR0912, PLR0913, PLR0917
                 )
                 return None
             outer = inspect.getmodule(obj)
+            if outer is None:
+                return None
             for class_name in obj.__qualname__.split(".")[:-1]:
-                outer = getattr(outer, class_name)
+                if (outer := getattr(outer, class_name, None)) is None:
+                    return None
             method_name = obj.__name__
             if method_name.startswith("__") and not method_name.endswith("__"):
                 # when method starts with double underscore Python applies mangling -> prepend the class name
