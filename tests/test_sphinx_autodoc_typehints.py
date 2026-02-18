@@ -643,6 +643,31 @@ def test_always_document_param_types(
 
 @pytest.mark.sphinx("text", testroot="dummy")
 @patch("sphinx.writers.text.MAXWIDTH", 2000)
+def test_always_document_param_types_with_defaults_braces_after(
+    app: SphinxTestApp,
+    status: StringIO,
+    warning: StringIO,  # noqa: ARG001
+) -> None:
+    """Regression test for #575: IndexError when combining always_document_param_types with braces-after."""
+    set_python_path()
+
+    app.config.always_document_param_types = True
+    app.config.typehints_defaults = "braces-after"
+
+    for rst_file in Path(app.srcdir).glob("*.rst"):
+        rst_file.unlink()
+    index_content = """\
+        .. autofunction:: dummy_module.undocumented_function_with_defaults
+    """
+    (Path(app.srcdir) / "index.rst").write_text(dedent(index_content))
+
+    app.build()
+
+    assert "build succeeded" in status.getvalue()
+
+
+@pytest.mark.sphinx("text", testroot="dummy")
+@patch("sphinx.writers.text.MAXWIDTH", 2000)
 def test_sphinx_output_future_annotations(app: SphinxTestApp, status: StringIO) -> None:
     set_python_path()
 

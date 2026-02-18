@@ -845,7 +845,7 @@ def _inject_arg_signature(
 
     if annotation is not None and insert_index is None and app.config.always_document_param_types:
         lines.append(f":param {arg_name}:")
-        insert_index = len(lines)
+        insert_index = len(lines) - 1
 
     if insert_index is not None:
         has_preexisting_annotation = False
