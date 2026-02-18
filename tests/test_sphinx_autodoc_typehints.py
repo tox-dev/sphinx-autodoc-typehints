@@ -678,14 +678,11 @@ def test_namedtuple_new_no_warning(
 
     for rst_file in Path(app.srcdir).glob("*.rst"):
         rst_file.unlink()
-    (Path(app.srcdir) / "index.rst").write_text(
-        dedent(
-            """
-            .. autoclass:: dummy_module.MyNamedTuple
-                :special-members: __new__
-            """,
-        ),
-    )
+    index_content = """\
+        .. autoclass:: dummy_module.MyNamedTuple
+            :special-members: __new__
+    """
+    (Path(app.srcdir) / "index.rst").write_text(dedent(index_content))
 
     app.build()
 
