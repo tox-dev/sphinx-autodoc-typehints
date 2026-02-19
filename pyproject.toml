@@ -142,8 +142,5 @@ html.skip_covered = false
 
 [tool.ty]
 environment.python-version = "3.14"
-src.exclude = ["tests/roots/"]
-
-[[tool.ty.overrides]]
-include = ["tests/"]
-rules.empty-body = "ignore"
+src.exclude = [ "tests/roots/" ]
+overrides = [ { include = [ "tests/" ], rules.empty-body = "ignore" } ]
