@@ -53,10 +53,10 @@ class WarningInfo:
         self.assert_type(message)
 
 
-def expected(expected: str, **options: dict[str, Any]) -> Callable[[T], T]:
+def expected(expected: str, **options: Any) -> Callable[[T], T]:
     def dec(val: T) -> T:
-        val.EXPECTED = expected
-        val.OPTIONS = options
+        val.EXPECTED = expected  # ty: ignore[unresolved-attribute]
+        val.OPTIONS = options  # ty: ignore[unresolved-attribute]
         return val
 
     return dec
@@ -64,7 +64,7 @@ def expected(expected: str, **options: dict[str, Any]) -> Callable[[T], T]:
 
 def warns(info: WarningInfo) -> Callable[[T], T]:
     def dec(val: T) -> T:
-        val.WARNING = info
+        val.WARNING = info  # ty: ignore[unresolved-attribute]
         return val
 
     return dec
@@ -367,7 +367,7 @@ mod.function_with_unresolvable_annotation(x)
       **x** (a.b.c) -- foo
 """,
 )
-def function_with_unresolvable_annotation(x: a.b.c):  # noqa: ANN201, F821
+def function_with_unresolvable_annotation(x: a.b.c):  # noqa: ANN201, F821  # ty: ignore[unresolved-reference]
     """
     Function docstring.
 
@@ -541,7 +541,7 @@ class ClassWithTypehintsNotInline:
 
         :param x: foo
         """
-        return x(1, b"")
+        return x(1, b"")  # ty: ignore[call-non-callable]
 
     @classmethod
     def mk(  # noqa: ANN206

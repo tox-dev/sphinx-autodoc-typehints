@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any, AnyStr, ForwardRef, NewType, TypeVar, Uni
 
 from docutils import nodes
 from docutils.frontend import get_default_settings
-from sphinx.ext.autodoc.mock import mock  # type: ignore[attr-defined]
+from sphinx.ext.autodoc.mock import mock
 from sphinx.parsers import RSTParser
 from sphinx.util import logging, rst
 from sphinx.util.inspect import TypeAliasForwardRef, stringify_signature
@@ -72,7 +72,7 @@ _TYPES_DICT[types.FunctionType] = "FunctionType"
 
 
 class MyTypeAliasForwardRef(TypeAliasForwardRef):
-    def __or__(self, value: Any) -> Any:
+    def __or__(self, value: Any) -> Any:  # ty: ignore[invalid-method-override]
         return Union[self, value]  # noqa: UP007
 
 
@@ -103,9 +103,9 @@ def get_annotation_module(annotation: Any) -> str:
     ):
         return "typing"
     if hasattr(annotation, "__module__"):
-        return annotation.__module__  # type: ignore[no-any-return]
+        return annotation.__module__
     if hasattr(annotation, "__origin__"):
-        return annotation.__origin__.__module__  # type: ignore[no-any-return]
+        return annotation.__origin__.__module__
     msg = f"Cannot determine the module of {annotation}"
     raise ValueError(msg)
 
@@ -134,19 +134,19 @@ def get_annotation_class_name(annotation: Any, module: str) -> str:  # noqa: C90
         return "NewType"
 
     if getattr(annotation, "__qualname__", None):
-        return annotation.__qualname__  # type: ignore[no-any-return]
+        return annotation.__qualname__
     if getattr(annotation, "_name", None):  # Required for generic aliases on Python 3.7+
-        return annotation._name  # type: ignore[no-any-return]  # noqa: SLF001
+        return annotation._name  # noqa: SLF001
     if module in {"typing", "typing_extensions"} and isinstance(getattr(annotation, "name", None), str):
         # Required for at least Pattern and Match
-        return annotation.name  # type: ignore[no-any-return]
+        return annotation.name
 
     origin = getattr(annotation, "__origin__", None)
     if origin:
         if getattr(origin, "__qualname__", None):  # Required for Protocol subclasses
-            return origin.__qualname__  # type: ignore[no-any-return]
+            return origin.__qualname__
         if getattr(origin, "_name", None):  # Required for Union on Python 3.7+
-            return origin._name  # type: ignore[no-any-return]  # noqa: SLF001
+            return origin._name  # noqa: SLF001
 
     annotation_cls = annotation if inspect.isclass(annotation) else type(annotation)
     return annotation_cls.__qualname__.lstrip("_")
@@ -175,13 +175,13 @@ def get_annotation_args(annotation: Any, module: str, class_name: str) -> tuple[
     if class_name == "ClassVar" and hasattr(annotation, "__type__"):  # ClassVar on Python < 3.7
         return (annotation.__type__,)
     if class_name == "TypeVar" and hasattr(annotation, "__constraints__"):
-        return annotation.__constraints__  # type: ignore[no-any-return]
+        return annotation.__constraints__
     if class_name == "NewType" and hasattr(annotation, "__supertype__"):
         return (annotation.__supertype__,)
     if class_name == "Literal" and hasattr(annotation, "__values__"):
-        return annotation.__values__  # type: ignore[no-any-return]
+        return annotation.__values__
     if class_name == "Generic":
-        return annotation.__parameters__  # type: ignore[no-any-return]
+        return annotation.__parameters__
     result = getattr(annotation, "__args__", ())
     # 3.10 and earlier Tuple[()] returns ((), ) instead of () the tuple does
     return () if len(result) == 1 and result[0] == () else result  # type: ignore[misc]
@@ -394,7 +394,7 @@ def process_signature(  # noqa: C901, PLR0911, PLR0912, PLR0913, PLR0917
         return None
 
     try:
-        obj = inspect.unwrap(obj)
+        obj = inspect.unwrap(obj)  # ty: ignore[invalid-argument-type]
     except ValueError:
         return None
     sph_signature = sphinx_signature(obj, type_aliases=app.config["autodoc_type_aliases"])
@@ -404,7 +404,7 @@ def process_signature(  # noqa: C901, PLR0911, PLR0912, PLR0913, PLR0917
         if typehints_formatter is None:
             return annotation
         formatted_name = typehints_formatter(annotation)
-        return annotation if not isinstance(formatted_name, str) else TypeVar(formatted_name)
+        return annotation if not isinstance(formatted_name, str) else TypeVar(formatted_name)  # ty: ignore[invalid-legacy-type-variable]
 
     if app.config.typehints_use_signature_return:
         sph_signature = sph_signature.replace(
@@ -933,7 +933,7 @@ def node_line_no(node: Node) -> int | None:
 
 
 def tag_name(node: Node) -> str:
-    return node.tagname  # type:ignore[attr-defined,no-any-return]
+    return node.tagname
 
 
 def get_insert_index(app: Sphinx, lines: list[str]) -> InsertIndexInfo | None:

@@ -18,13 +18,13 @@ if TYPE_CHECKING:
 
 class _RstSnippetParser(RSTParser):
     @staticmethod
-    def decorate(_content: StringList) -> None:
+    def decorate(_content: StringList) -> None:  # ty: ignore[invalid-method-override]
         """Override to skip processing rst_epilog/rst_prolog for typing."""
 
 
 def parse(inputstr: str, settings: Values | optparse.Values) -> nodes.document:
     """Parse inputstr and return a docutils document."""
-    doc = new_document("", settings=settings)
+    doc = new_document("", settings=settings)  # ty: ignore[invalid-argument-type]
     with sphinx_domains(settings.env):
         parser = _RstSnippetParser()
         parser.parse(inputstr, doc)

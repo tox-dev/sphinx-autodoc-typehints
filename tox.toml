@@ -63,11 +63,8 @@ commands = [ [ "pre-commit", "run", "--all-files", "--show-diff-on-failure" ] ]
 
 [env.type]
 description = "run type check on code base"
-deps = [
-  "mypy==1.19.1",
-  "types-docutils>=0.22.3.20251115",
-]
-commands = [ [ "mypy", "src" ], [ "mypy", "tests" ] ]
+deps = [ "ty>=0.0.17" ]
+commands = [ [ "ty", "check", "--output-format", "concise", "--error-on-warning", "." ] ]
 
 [env.pkg_meta]
 description = "check that the long description is valid"

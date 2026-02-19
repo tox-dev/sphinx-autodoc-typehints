@@ -18,10 +18,10 @@ T = TypeVar("T")
 W = NewType("W", str)
 
 
-def expected(expected: str, **options: dict[str, Any]) -> Callable[[T], T]:
+def expected(expected: str, **options: Any) -> Callable[[T], T]:
     def dec(val: T) -> T:
-        val.EXPECTED = expected
-        val.OPTIONS = options
+        val.EXPECTED = expected  # ty: ignore[unresolved-attribute]
+        val.OPTIONS = options  # ty: ignore[unresolved-attribute]
         return val
 
     return dec
@@ -29,7 +29,7 @@ def expected(expected: str, **options: dict[str, Any]) -> Callable[[T], T]:
 
 def warns(pattern: str) -> Callable[[T], T]:
     def dec(val: T) -> T:
-        val.WARNING = pattern
+        val.WARNING = pattern  # ty: ignore[unresolved-attribute]
         return val
 
     return dec

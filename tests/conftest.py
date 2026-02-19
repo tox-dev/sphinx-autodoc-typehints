@@ -23,10 +23,10 @@ def inv(pytestconfig: Config) -> Inventory:
     assert pytestconfig.cache is not None
     inv_dict = pytestconfig.cache.get(cache_path, None)
     if inv_dict is not None:
-        return Inventory(inv_dict)
+        return Inventory(inv_dict)  # ty: ignore[too-many-positional-arguments]
 
     url = f"https://docs.python.org/{sys.version_info.major}.{sys.version_info.minor}/objects.inv"
-    inv = Inventory(url=url)
+    inv = Inventory(url=url)  # ty: ignore[unknown-argument]
     pytestconfig.cache.set(cache_path, inv.json_dict())
     return inv
 
@@ -52,6 +52,6 @@ def pytest_ignore_collect(collection_path: Path, config: Config) -> bool | None:
     match = version_re.search(collection_path.name)
     if match:
         version = tuple(int(x) for x in match.groups())
-        if sys.version_info < version:
+        if sys.version_info < version:  # ty: ignore[unsupported-operator]
             return True
     return None

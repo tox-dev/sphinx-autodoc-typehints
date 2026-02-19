@@ -84,11 +84,11 @@ orig_text_indent = Text.indent
 
 
 def _patched_text_indent(self: Text, *args: Any) -> Any:
-    _, line = self.state_machine.get_source_and_line()
-    result = orig_text_indent(self, *args)  # type: ignore[no-untyped-call]
-    node = self.parent[-1]
+    _, line = self.state_machine.get_source_and_line()  # ty: ignore[unresolved-attribute]
+    result = orig_text_indent(self, *args)
+    node = self.parent[-1]  # ty: ignore[not-subscriptable]
     if node.tagname == "system_message":
-        node = self.parent[-2]
+        node = self.parent[-2]  # ty: ignore[not-subscriptable]
     node.line = line
     return result
 
@@ -98,10 +98,10 @@ def _patched_body_doctest(
 ) -> tuple[list[Any], str | None, list[Any]]:
     assert self.document.current_line is not None  # noqa: S101
     line = self.document.current_line + 1
-    data = "\n".join(self.state_machine.get_text_block())
+    data = "\n".join(self.state_machine.get_text_block())  # ty: ignore[unresolved-attribute]
     n = nodes.doctest_block(data, data)
     n.line = line
-    self.parent += n
+    self.parent += n  # ty: ignore[unsupported-operator]
     return [], next_state, []
 
 

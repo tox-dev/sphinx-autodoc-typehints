@@ -60,12 +60,11 @@ Z = TypeVar("Z", bound="A")
 S = TypeVar("S", bound="miss")  # type: ignore[name-defined] # miss not defined on purpose # noqa: F821
 W = NewType("W", str)
 P = typing_extensions.ParamSpec("P")
-P_args = P.args  # type:ignore[attr-defined]
-P_kwargs = P.kwargs  # type:ignore[attr-defined]
-P_co = typing_extensions.ParamSpec("P_co", covariant=True)  # type: ignore[misc]
-P_contra = typing_extensions.ParamSpec("P_contra", contravariant=True)  # type: ignore[misc]
-P_bound = typing_extensions.ParamSpec("P_bound", bound=str)  # type: ignore[misc]
-
+P_args = P.args
+P_kwargs = P.kwargs
+P_co = typing_extensions.ParamSpec("P_co", covariant=True)  # ty: ignore[invalid-paramspec]
+P_contra = typing_extensions.ParamSpec("P_contra", contravariant=True)  # ty: ignore[invalid-paramspec]
+P_bound = typing_extensions.ParamSpec("P_bound", bound=str)  # ty: ignore[invalid-paramspec]
 # Mypy does not support recursive type aliases, but
 # other type checkers do.
 RecList = Union[int, List["RecList"]]
@@ -90,8 +89,7 @@ class C(B[str]): ...
 class D(typing_extensions.Protocol): ...
 
 
-class E(typing_extensions.Protocol[T]):  # type: ignore[misc]
-    ...
+class E(typing_extensions.Protocol[T]): ...
 
 
 class Slotted:
@@ -103,11 +101,9 @@ class Metaclass(type): ...
 
 class HintedMethods:
     @classmethod
-    def from_magic(cls) -> typing_extensions.Self:  # type: ignore[empty-body]
-        ...
+    def from_magic(cls) -> typing_extensions.Self: ...
 
-    def method(self) -> typing_extensions.Self:  # type: ignore[empty-body]
-        ...
+    def method(self) -> typing_extensions.Self: ...
 
 
 PY312_PLUS = sys.version_info >= (3, 12)
@@ -126,7 +122,7 @@ PY312_PLUS = sys.version_info >= (3, 12)
         pytest.param(AnyStr, "typing", "AnyStr", (), id="AnyStr"),
         pytest.param(Dict, "typing", "Dict", (), id="Dict"),
         pytest.param(Dict[str, int], "typing", "Dict", (str, int), id="Dict_parametrized"),
-        pytest.param(Dict[T, int], "typing", "Dict", (T, int), id="Dict_typevar"),  # type: ignore[valid-type]
+        pytest.param(Dict[T, int], "typing", "Dict", (T, int), id="Dict_typevar"),
         pytest.param(Tuple, "typing", "Tuple", (), id="Tuple"),
         pytest.param(Tuple[str, int], "typing", "Tuple", (str, int), id="Tuple_parametrized"),
         pytest.param(Union[str, int], "typing", "Union", (str, int), id="Union"),
@@ -186,21 +182,21 @@ _CASES = [
     pytest.param(Type[A], rf":py:class:`~typing.Type`\ \[:py:class:`~{__name__}.A`]", id="typing-A"),
     pytest.param(Any, ":py:data:`~typing.Any`", id="Any"),
     pytest.param(AnyStr, ":py:data:`~typing.AnyStr`", id="AnyStr"),
-    pytest.param(Generic[T], r":py:class:`~typing.Generic`\ \[:py:class:`~typing.TypeVar`\ \(``T``)]", id="Generic"),  # type: ignore[index]
+    pytest.param(Generic[T], r":py:class:`~typing.Generic`\ \[:py:class:`~typing.TypeVar`\ \(``T``)]", id="Generic"),
     pytest.param(Mapping, ":py:class:`~collections.abc.Mapping`", id="Mapping"),
     pytest.param(
-        Mapping[T, int],  # type: ignore[valid-type]
+        Mapping[T, int],
         r":py:class:`~collections.abc.Mapping`\ \[:py:class:`~typing.TypeVar`\ \(``T``), :py:class:`int`]",
         id="Mapping-T-int",
     ),
     pytest.param(
-        Mapping[str, V_contra],  # type: ignore[valid-type]
+        Mapping[str, V_contra],
         r":py:class:`~collections.abc.Mapping`\ \[:py:class:`str`, :py:class:`~typing.TypeVar`\ \("
         "``V_contra``, contravariant=True)]",
         id="Mapping-T-int-contra",
     ),
     pytest.param(
-        Mapping[T, U_co],  # type: ignore[valid-type]
+        Mapping[T, U_co],
         r":py:class:`~collections.abc.Mapping`\ \[:py:class:`~typing.TypeVar`\ \(``T``), "
         r":py:class:`~typing.TypeVar`\ \(``U_co``, covariant=True)]",
         id="Mapping-T-int-co",
@@ -212,18 +208,18 @@ _CASES = [
     ),
     pytest.param(Dict, ":py:class:`~typing.Dict`", id="Dict"),
     pytest.param(
-        Dict[T, int],  # type: ignore[valid-type]
+        Dict[T, int],
         r":py:class:`~typing.Dict`\ \[:py:class:`~typing.TypeVar`\ \(``T``), :py:class:`int`]",
         id="Dict-T-int",
     ),
     pytest.param(
-        Dict[str, V_contra],  # type: ignore[valid-type]
+        Dict[str, V_contra],
         r":py:class:`~typing.Dict`\ \[:py:class:`str`, :py:class:`~typing.TypeVar`\ \(``V_contra``, "
         r"contravariant=True)]",
         id="Dict-T-int-contra",
     ),
     pytest.param(
-        Dict[T, U_co],  # type: ignore[valid-type]
+        Dict[T, U_co],
         r":py:class:`~typing.Dict`\ \[:py:class:`~typing.TypeVar`\ \(``T``),"
         r" :py:class:`~typing.TypeVar`\ \(``U_co``, covariant=True)]",
         id="Dict-T-int-co",
@@ -940,7 +936,7 @@ def test_bound_class_method(method: FunctionType) -> None:
 def test_syntax_error_backfill() -> None:
     # Regression test for #188
     # fmt: off
-    def func(x):  # type: ignore[no-untyped-def]  # noqa: ANN001, ANN202
+    def func(x):  # noqa: ANN001, ANN202
         return x
 
     # fmt: on
