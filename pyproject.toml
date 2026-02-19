@@ -140,12 +140,10 @@ report.omit = []
 html.show_contexts = true
 html.skip_covered = false
 
-[tool.mypy]
-python_version = "3.12"
-strict = true
-exclude = "^(.*/roots/.*)|(tests/test_integration.*.py)$"
-overrides = [
-  { module = [
-    "sphobjinv.*",
-  ], ignore_missing_imports = true },
-]
+[tool.ty]
+environment.python-version = "3.14"
+src.exclude = ["tests/roots/"]
+
+[[tool.ty.overrides]]
+include = ["tests/"]
+rules.empty-body = "ignore"
