@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import collections.abc
 import importlib
 import inspect
 import re
@@ -1005,7 +1006,7 @@ def get_insert_index(app: Sphinx, lines: list[str]) -> InsertIndexInfo | None:
     return InsertIndexInfo(insert_index=len(lines))
 
 
-def _inject_rtype(  # noqa: C901, PLR0913, PLR0917
+def _inject_rtype(  # noqa: C901, PLR0911, PLR0913, PLR0917
     type_hints: dict[str, Any],
     original_obj: Any,
     app: Sphinx,
@@ -1020,6 +1021,8 @@ def _inject_rtype(  # noqa: C901, PLR0913, PLR0917
     if not app.config.typehints_document_rtype:
         return
     if not app.config.typehints_document_rtype_none and type_hints["return"] is types.NoneType:
+        return
+    if _has_yields_section(lines) and _is_generator_type(type_hints["return"]):
         return
 
     r = get_insert_index(app, lines)
@@ -1052,6 +1055,23 @@ def _inject_rtype(  # noqa: C901, PLR0913, PLR0917
     else:
         line = lines[insert_index]
         lines[insert_index] = f":return: {formatted_annotation} --{line[line.find(' ') :]}"
+
+
+_GENERATOR_TYPES = frozenset({
+    collections.abc.Generator,
+    collections.abc.Iterator,
+    collections.abc.AsyncGenerator,
+    collections.abc.AsyncIterator,
+})
+
+
+def _is_generator_type(annotation: Any) -> bool:
+    origin = getattr(annotation, "__origin__", None)
+    return origin in _GENERATOR_TYPES or annotation in _GENERATOR_TYPES
+
+
+def _has_yields_section(lines: list[str]) -> bool:
+    return any(line.lstrip().startswith((":Yields:", ":yields:", ":yield:")) for line in lines)
 
 
 def validate_config(app: Sphinx, env: BuildEnvironment, docnames: list[str]) -> None:  # noqa: ARG001
