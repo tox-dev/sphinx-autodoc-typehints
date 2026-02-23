@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ast
 import collections.abc
+import enum
 import importlib
 import inspect
 import re
@@ -212,6 +213,17 @@ def fixup_module_name(config: Config, module: str) -> str:
     return module
 
 
+def _format_literal_arg(arg: Any, config: Config) -> str:
+    if isinstance(arg, enum.Enum):
+        enum_cls = type(arg)
+        module = fixup_module_name(config, enum_cls.__module__)
+        fully_qualified = getattr(config, "typehints_fully_qualified", False)
+        qualified = f"{module}.{enum_cls.__qualname__}.{arg.name}" if module else f"{enum_cls.__qualname__}.{arg.name}"
+        prefix = "" if fully_qualified or not module else "~"
+        return f":py:attr:`{prefix}{qualified}`"
+    return f"``{arg!r}``"
+
+
 def format_annotation(annotation: Any, config: Config, *, short_literals: bool = False) -> str:  # noqa: C901, PLR0911, PLR0912, PLR0915, PLR0914
     """
     Format the annotation.
@@ -304,9 +316,10 @@ def format_annotation(annotation: Any, config: Config, *, short_literals: bool =
         fmt = [format_annotation(arg, config, short_literals=short_literals) for arg in args]
         formatted_args = f"\\[\\[{', '.join(fmt[:-1])}], {fmt[-1]}]"
     elif full_name == "typing.Literal":
+        literal_parts = [_format_literal_arg(arg, config) for arg in args]
         if short_literals:
-            return f"\\{' | '.join(f'``{arg!r}``' for arg in args)}"
-        formatted_args = f"\\[{', '.join(f'``{arg!r}``' for arg in args)}]"
+            return f"\\{' | '.join(literal_parts)}"
+        formatted_args = f"\\[{', '.join(literal_parts)}]"
     elif is_bars_union:
         if not args:
             return f":py:{'class' if sys.version_info >= (3, 14) else 'data'}:`{prefix}typing.Union`"

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import enum
 import re
 import sys
 import types
@@ -60,6 +61,12 @@ Y = TypeVar("Y", bound=str)
 Z = TypeVar("Z", bound="A")
 S = TypeVar("S", bound="miss")  # type: ignore[name-defined] # miss not defined on purpose # noqa: F821
 W = NewType("W", str)
+
+
+class SomeEnum(enum.Enum):
+    VALUE = "val"
+
+
 P = typing_extensions.ParamSpec("P")
 P_args = P.args
 P_kwargs = P.kwargs
@@ -488,6 +495,12 @@ def test_always_use_bars_union(annotation: str, expected_result: str) -> None:
         pytest.param("ClassVar", int, ":py:data:`~typing.ClassVar`\\ \\[:py:class:`int`]", id="ClassVar"),
         pytest.param("NoReturn", None, ":py:data:`~typing.NoReturn`", id="NoReturn"),
         pytest.param("Literal", ("a", 1), ":py:data:`~typing.Literal`\\ \\[``'a'``, ``1``]", id="Literal"),
+        pytest.param(
+            "Literal",
+            (SomeEnum.VALUE,),
+            rf":py:data:`~typing.Literal`\ \[:py:attr:`~{__name__}.SomeEnum.VALUE`]",
+            id="Literal-enum",
+        ),
         pytest.param("Type", None, ":py:class:`~typing.Type`", id="Type-none"),
         pytest.param("Type", (A,), rf":py:class:`~typing.Type`\ \[:py:class:`~{__name__}.A`]", id="Type-A"),
     ],
