@@ -23,7 +23,6 @@ def test_guarded_import_missing_name_no_warning(
 ) -> None:
     target_mod = types.ModuleType("target_mod")
     target_mod.__file__ = "/fake/target_mod.py"
-    target_mod.existing_name = "value"
 
     source = dedent("""\
     from __future__ import annotations
