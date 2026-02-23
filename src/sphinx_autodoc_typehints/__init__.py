@@ -552,10 +552,29 @@ def _resolve_type_guarded_imports(autodoc_mock_imports: list[str], obj: Any) -> 
             _execute_guarded_code(autodoc_mock_imports, obj, module_code)
 
 
+def _add_type_params_to_localns(
+    obj: Any, localns: dict[Any, MyTypeAliasForwardRef]
+) -> dict[Any, MyTypeAliasForwardRef]:
+    if type_params := getattr(obj, "__type_params__", None):
+        localns = {**localns, **{p.__name__: p for p in type_params}}
+    qualname = getattr(obj, "__qualname__", "") or ""
+    parts = qualname.rsplit(".", 1)
+    if len(parts) > 1:
+        parent_name = parts[0]
+        ns = getattr(obj, "__globals__", None)
+        if ns is None:
+            module = inspect.getmodule(obj)
+            ns = vars(module) if module else None
+        if ns and (parent := ns.get(parent_name)) and (parent_params := getattr(parent, "__type_params__", None)):
+            localns = {**localns, **{p.__name__: p for p in parent_params}}
+    return localns
+
+
 def _get_type_hint(
     autodoc_mock_imports: list[str], name: str, obj: Any, localns: dict[Any, MyTypeAliasForwardRef]
 ) -> dict[str, Any]:
     _resolve_type_guarded_imports(autodoc_mock_imports, obj)
+    localns = _add_type_params_to_localns(obj, localns)
     try:
         result = get_type_hints(obj, None, localns, include_extras=True)
     except (AttributeError, TypeError, RecursionError) as exc:
