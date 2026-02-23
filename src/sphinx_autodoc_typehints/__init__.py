@@ -444,7 +444,7 @@ def process_signature(  # noqa: C901, PLR0911, PLR0912, PLR0913, PLR0917
             if method_name.startswith("__") and not method_name.endswith("__"):
                 # when method starts with double underscore Python applies mangling -> prepend the class name
                 method_name = f"_{obj.__qualname__.split('.')[-2]}{method_name}"
-            method_object = outer.__dict__[method_name] if outer else obj
+            method_object = outer.__dict__.get(method_name, obj) if outer else obj
             if not isinstance(method_object, classmethod | staticmethod):
                 start = 1
 
