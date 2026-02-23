@@ -3,13 +3,13 @@ requires = [
   "tox-uv>=1.29",
 ]
 env_list = [
-  "fix",
   "3.14",
   "3.13",
   "3.12",
-  "type",
   "3.14t",
+  "fix",
   "pkg_meta",
+  "type",
 ]
 skip_missing_interpreters = true
 
@@ -61,11 +61,6 @@ skip_install = true
 dependency_groups = [ "lint" ]
 commands = [ [ "pre-commit", "run", "--all-files", "--show-diff-on-failure" ] ]
 
-[env.type]
-description = "run type check on code base"
-dependency_groups = [ "type" ]
-commands = [ [ "ty", "check", "--output-format", "concise", "--error-on-warning", "." ] ]
-
 [env.pkg_meta]
 description = "check that the long description is valid"
 skip_install = true
@@ -75,6 +70,11 @@ commands = [
   [ "twine", "check", "{env_tmp_dir}{/}*" ],
   [ "check-wheel-contents", "--no-config", "{env_tmp_dir}" ],
 ]
+
+[env.type]
+description = "run type check on code base"
+dependency_groups = [ "type" ]
+commands = [ [ "ty", "check", "--output-format", "concise", "--error-on-warning", "." ] ]
 
 [env.dev]
 description = "generate a DEV environment"
