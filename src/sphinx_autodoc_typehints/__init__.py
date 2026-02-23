@@ -16,20 +16,25 @@ from typing import TYPE_CHECKING, Any, AnyStr, ForwardRef, NewType, TypeVar, Uni
 
 from docutils import nodes
 from docutils.frontend import get_default_settings
+from docutils.parsers.rst import Directive, directives
+from docutils.utils import new_document
 from sphinx.ext.autodoc.mock import mock
 from sphinx.parsers import RSTParser
 from sphinx.util import logging, rst
+from sphinx.util.docutils import sphinx_domains
 from sphinx.util.inspect import TypeAliasForwardRef, stringify_signature
 from sphinx.util.inspect import signature as sphinx_signature
 
-from ._parser import parse
+from ._parser import _RstSnippetParser, parse
 from .patches import install_patches
 from .version import __version__
 
 if TYPE_CHECKING:
+    import optparse
     from ast import FunctionDef, Module, stmt
     from collections.abc import Callable
 
+    from docutils.frontend import Values
     from docutils.nodes import Node
     from docutils.parsers.rst import states
     from sphinx.application import Sphinx
@@ -38,6 +43,8 @@ if TYPE_CHECKING:
     from sphinx.ext.autodoc import Options
 
 _LOGGER = logging.getLogger(__name__)
+
+_BUILTIN_DIRECTIVES = frozenset(directives._directive_registry)  # noqa: SLF001
 _PYDATA_ANNOTS_TYPING = {
     "Any",
     "AnyStr",
@@ -956,50 +963,23 @@ class InsertIndexInfo:
 PARAM_SYNONYMS = ("param ", "parameter ", "arg ", "argument ", "keyword ", "kwarg ", "kwparam ")
 
 
-def node_line_no(node: Node) -> int | None:
-    """
-    Get the 1-indexed line on which the node starts if possible. If not, return None.
-
-    Descend through the first children until we locate one with a line number or return None if None of them have one.
-
-    I'm not aware of any rst on which this returns None, to find out would require a more detailed analysis of the
-    docutils rst parser source code. An example where the node doesn't have a line number but the first child does is
-    all `definition_list` nodes. It seems like bullet_list and option_list get line numbers, but enum_list also doesn't.
-    """
-    if node is None:
-        return None
-
-    while node.line is None and node.children:
-        node = node.children[0]
-    return node.line
-
-
-def tag_name(node: Node) -> str:
-    return node.tagname
-
-
 def get_insert_index(app: Sphinx, lines: list[str]) -> InsertIndexInfo | None:
     # 1. If there is an existing :rtype: anywhere, don't insert anything.
     if any(line.startswith(":rtype:") for line in lines):
         return None
 
-    # 2. If there is a :returns: anywhere, either modify that line or insert
-    #    just before it.
+    # 2. If there is a :returns: anywhere, either modify that line or insert just before it.
     for at, line in enumerate(lines):
         if line.startswith((":return:", ":returns:")):
             return InsertIndexInfo(insert_index=at, found_return=True)
 
     # 3. Insert after the parameters.
-    # To find the parameters, parse as a docutils tree.
     settings = get_default_settings(RSTParser)  # type: ignore[arg-type]
     settings.env = app.env
-    doc = parse("\n".join(lines), settings)
+    doc = _safe_parse("\n".join(lines), settings)
 
-    # Find a top level child which is a field_list that contains a field whose
-    # name starts with one of the PARAM_SYNONYMS. This is the parameter list. We
-    # hope there is at most of these.
     for child in doc.children:
-        if tag_name(child) != "field_list":
+        if _tag_name(child) != "field_list":
             continue
 
         if not any(c.children[0].astext().startswith(PARAM_SYNONYMS) for c in child.children):
@@ -1010,22 +990,74 @@ def get_insert_index(app: Sphinx, lines: list[str]) -> InsertIndexInfo | None:
         # If there is a next sibling but we can't locate a line number, insert
         # at end. (I don't know of any input where this happens.)
         next_sibling = child.next_node(descend=False, siblings=True)
-        line_no = node_line_no(next_sibling) if next_sibling else None
+        line_no = _node_line_no(next_sibling) if next_sibling else None
         at = max(line_no - 2, 0) if line_no else len(lines)
         return InsertIndexInfo(insert_index=at, found_param=True)
 
     # 4. Insert before examples
     for child in doc.children:
-        if tag_name(child) in {"literal_block", "paragraph", "field_list"}:
+        if _tag_name(child) in {"literal_block", "paragraph", "field_list"}:
             continue
-        line_no = node_line_no(child)
+        line_no = _node_line_no(child)
         at = max(line_no - 2, 0) if line_no else len(lines)
-        if lines[at - 1]:  # skip if something on this line
+        if lines[at - 1]:
             break
         return InsertIndexInfo(insert_index=at, found_directive=True)
 
     # 5. Otherwise, insert at end
     return InsertIndexInfo(insert_index=len(lines))
+
+
+def _safe_parse(inputstr: str, settings: Values | optparse.Values) -> nodes.document:
+    """
+    Parse RST without triggering extension directive side-effects.
+
+    Replaces non-builtin directive lookups with a no-op handler during parsing
+    to prevent duplicate ID registration and other side-effects from third-party
+    extensions like sphinx-needs.
+    """
+    original_lookup = directives.directive
+
+    def _safe_directive_lookup(
+        directive_name: str,
+        language_module: Any,
+        document: Any,
+    ) -> tuple[type[Directive] | None, list[Any]]:
+        cls, messages = original_lookup(directive_name, language_module, document)
+        if cls is not None and directive_name not in _BUILTIN_DIRECTIVES:
+            return _NoOpDirective, messages
+        return cls, messages
+
+    doc = new_document("", settings=settings)  # ty: ignore[invalid-argument-type]
+    with sphinx_domains(settings.env):
+        directives.directive = _safe_directive_lookup  # type: ignore[assignment]
+        try:
+            parser = _RstSnippetParser()
+            parser.parse(inputstr, doc)
+        finally:
+            directives.directive = original_lookup
+    return doc
+
+
+class _NoOpDirective(Directive):
+    has_content = True
+    optional_arguments = 99
+    final_argument_whitespace = True
+
+    def run(self) -> list[nodes.Node]:  # noqa: PLR6301
+        return []
+
+
+def _node_line_no(node: Node) -> int | None:
+    if node is None:
+        return None
+    while node.line is None and node.children:
+        node = node.children[0]
+    return node.line
+
+
+def _tag_name(node: Node) -> str:
+    return node.tagname
 
 
 def _inject_rtype(  # noqa: C901, PLR0911, PLR0913, PLR0917
