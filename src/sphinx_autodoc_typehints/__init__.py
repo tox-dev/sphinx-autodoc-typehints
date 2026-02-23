@@ -267,12 +267,16 @@ def format_annotation(annotation: Any, config: Config, *, short_literals: bool =
 
     # Some types require special handling
     if full_name == "typing.NewType":
-        args_format = f"\\(``{annotation.__name__}``, {{}})"
-        role = "obj"
-    elif full_name == "typing.Annotated":
+        newtype_module = fixup_module_name(config, getattr(annotation, "__module__", ""))
+        newtype_name = annotation.__name__
+        newtype_qualified = f"{newtype_module}.{newtype_name}" if newtype_module else newtype_name
+        newtype_prefix = "" if fully_qualified or not newtype_module else "~"
+        supertype = format_annotation(annotation.__supertype__, config, short_literals=short_literals)
+        return f":py:class:`{newtype_prefix}{newtype_qualified}` ({supertype})"
+    if full_name == "typing.Annotated":
         # By default we don't show metadata in Annotated
         return format_annotation(annotation.__origin__, config, short_literals=short_literals)
-    elif full_name in {"typing.TypeVar", "typing.ParamSpec"}:
+    if full_name in {"typing.TypeVar", "typing.ParamSpec"}:
         params = {k: getattr(annotation, f"__{k}__") for k in ("bound", "covariant", "contravariant")}
         params = {k: v for k, v in params.items() if v}
         if "bound" in params:
