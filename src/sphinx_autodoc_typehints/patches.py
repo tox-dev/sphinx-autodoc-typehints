@@ -116,30 +116,30 @@ def _patch_line_numbers() -> None:
     Body.doctest = _patched_body_doctest  # type: ignore[method-assign]
 
 
+_OVERLOADS_CACHE: dict[str, dict[Any, Any]] = {}
+
+
 @lru_cache
 def fix_directive_based_signature_formatting() -> None:
     """
-    Patch Sphinx 9's new directive-based autodoc to disable overload detection.
+    Patch Sphinx 9's new directive-based autodoc to cache and clear overload detection.
 
-    The new architecture adds overload signatures without emitting autodoc-process-signature
-    for each one. By patching ModuleAnalyzer to clear overloads after analysis, we prevent
-    overload detection while preserving other functionality like attribute discovery.
+    Overloads are cached before being cleared so we can render them in docstrings with
+    proper type formatting instead of in signatures where types can't be cross-referenced.
     """
     try:
         from sphinx.pycode import ModuleAnalyzer  # noqa: PLC0415
     except ImportError:
         return  # Not Sphinx 9+
 
-    # Store the original analyze method
     original_analyze = ModuleAnalyzer.analyze
 
     def patched_analyze(self: Any) -> None:
-        # Call the original analyze method
         original_analyze(self)
-        # Then clear the overloads to prevent overload signature generation
+        if self.overloads:
+            _OVERLOADS_CACHE[self.modname] = dict(self.overloads)
         self.overloads = {}
 
-    # Replace the analyze method
     ModuleAnalyzer.analyze = patched_analyze  # type: ignore[method-assign]
 
 
@@ -157,6 +157,7 @@ def install_patches(app: Sphinx) -> None:
     _patch_line_numbers()
 
 
-___all__ = [
+__all__ = [
+    "_OVERLOADS_CACHE",
     "install_patches",
 ]

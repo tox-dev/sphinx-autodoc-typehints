@@ -26,7 +26,7 @@ from sphinx.util.inspect import TypeAliasForwardRef, stringify_signature
 from sphinx.util.inspect import signature as sphinx_signature
 
 from ._parser import _RstSnippetParser, parse
-from .patches import install_patches
+from .patches import _OVERLOADS_CACHE, install_patches
 from .version import __version__
 
 if TYPE_CHECKING:
@@ -801,9 +801,60 @@ def process_docstring(  # noqa: PLR0913, PLR0917
     type_hints = get_all_type_hints(app.config.autodoc_mock_imports, obj, name, localns)
     app.config._annotation_globals = getattr(obj, "__globals__", {})  # noqa: SLF001
     try:
-        _inject_types_to_docstring(type_hints, signature, original_obj, app, what, name, lines)
+        has_overloads = _inject_overload_signatures(app, what, name, obj, lines)
+        _inject_types_to_docstring(type_hints, signature, original_obj, app, what, name, lines, has_overloads)
     finally:
         delattr(app.config, "_annotation_globals")
+
+
+def _inject_overload_signatures(  # noqa: C901
+    app: Sphinx, what: str, name: str, obj: Any, lines: list[str]  # noqa: ARG001
+) -> bool:
+    if what not in {"function", "method"}:
+        return False
+
+    module_name = getattr(obj, "__module__", None)
+    if not module_name or module_name not in _OVERLOADS_CACHE:
+        return False
+
+    qualname = getattr(obj, "__qualname__", None)
+    if not qualname:
+        return False
+
+    overloads = _OVERLOADS_CACHE[module_name].get(qualname)
+    if not overloads:
+        return False
+
+    short_literals = app.config.python_display_short_literal_types
+    overload_lines = [":Overloads:"]
+    for overload_sig in overloads:
+        params = []
+        for param_name, param in overload_sig.parameters.items():
+            if param.annotation != inspect.Parameter.empty:
+                formatted_type = format_annotation(param.annotation, app.config, short_literals=short_literals)
+                formatted_type = add_type_css_class(formatted_type)
+                params.append(f"**{param_name}** ({formatted_type})")
+            else:
+                params.append(f"**{param_name}**")
+
+        return_annotation = ""
+        if overload_sig.return_annotation != inspect.Signature.empty:
+            formatted_return = format_annotation(
+                overload_sig.return_annotation, app.config, short_literals=short_literals
+            )
+            formatted_return = add_type_css_class(formatted_return)
+            return_annotation = f" \u2192 {formatted_return}"
+
+        sig_line = f"   * {', '.join(params)}{return_annotation}"
+        overload_lines.append(sig_line)
+
+    if len(overload_lines) > 1:
+        overload_lines.append("")
+        for line in reversed(overload_lines):
+            lines.insert(0, line)
+        return True
+
+    return False
 
 
 def _get_sphinx_line_keyword_and_argument(line: str) -> tuple[str, str | None] | None:
@@ -855,10 +906,11 @@ def _inject_types_to_docstring(  # noqa: PLR0913, PLR0917
     what: str,
     name: str,
     lines: list[str],
+    has_overloads: bool = False,  # noqa: FBT001, FBT002
 ) -> None:
     if signature is not None:
         _inject_signature(type_hints, signature, app, lines)
-    if "return" in type_hints:
+    if "return" in type_hints and not has_overloads:
         _inject_rtype(type_hints, original_obj, app, what, name, lines)
 
 
