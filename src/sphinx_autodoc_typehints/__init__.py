@@ -238,7 +238,7 @@ def format_annotation(annotation: Any, config: Config, *, short_literals: bool =
         return format_internal_tuple(annotation, config)
 
     if isinstance(annotation, TypeAliasForwardRef):
-        return annotation.name
+        return f":py:data:`{annotation.name}`"
 
     try:
         module = get_annotation_module(annotation)

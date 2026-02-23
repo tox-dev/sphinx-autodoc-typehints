@@ -35,6 +35,7 @@ from sphinx.application import Sphinx
 from sphinx.config import Config
 from sphinx.ext.autodoc import Options
 
+import sphinx_autodoc_typehints as sat
 from sphinx_autodoc_typehints import (
     _resolve_type_guarded_imports,
     backfill_type_hints,
@@ -478,6 +479,20 @@ def test_always_use_bars_union(annotation: str, expected_result: str) -> None:
     conf = create_autospec(Config, always_use_bars_union=True)
     result = format_annotation(eval(annotation), conf)  # noqa: S307
     assert result == expected_result
+
+
+def test_format_annotation_type_alias_forward_ref() -> None:
+    conf = create_autospec(Config)
+    annotation = sat.MyTypeAliasForwardRef("_Operation")
+
+    assert format_annotation(annotation, conf) == ":py:data:`_Operation`"
+
+
+def test_format_annotation_type_alias_forward_ref_in_union() -> None:
+    conf = create_autospec(Config, always_use_bars_union=True)
+    annotation = sat.MyTypeAliasForwardRef("_Operation") | list[sat.MyTypeAliasForwardRef("_Operation")]
+
+    assert format_annotation(annotation, conf) == r":py:data:`_Operation` | :py:class:`list`\ \[:py:data:`_Operation`]"
 
 
 @pytest.mark.parametrize("library", [typing, typing_extensions], ids=["typing", "typing_extensions"])
