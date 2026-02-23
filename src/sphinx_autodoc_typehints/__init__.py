@@ -1048,7 +1048,6 @@ def _inject_rtype(  # noqa: C901, PLR0911, PLR0913, PLR0917
         insert_index -= 1
 
     if insert_index > 0 and insert_index <= len(lines) and lines[insert_index - 1].strip():
-        # ensure that :rtype: doesn't get joined with a paragraph of text
         lines.insert(insert_index, "")
         insert_index += 1
 
