@@ -1292,10 +1292,10 @@ def has_typevar[T](param: T) -> T:
        Do something.
 
        Parameters:
-          **param** ("NewType"("W", "str")) -- A parameter.
+          **param** ("W" ("str")) -- A parameter.
 
        Return type:
-          "NewType"("W", "str")
+          "W" ("str")
 
     """,
 )
