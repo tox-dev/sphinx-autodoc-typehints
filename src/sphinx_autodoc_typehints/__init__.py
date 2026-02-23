@@ -516,22 +516,27 @@ def _execute_guarded_code(autodoc_mock_imports: list[str], obj: Any, module_code
     for _, part in _TYPE_GUARD_IMPORT_RE.findall(module_code):
         guarded_code = textwrap.dedent(part)
         try:
-            try:
-                with mock(autodoc_mock_imports):
-                    exec(guarded_code, getattr(obj, "__globals__", obj.__dict__))  # noqa: S102
-            except ImportError as exc:
-                # ImportError might have occurred because the module has guarded code as well,
-                # so we recurse on the module.
-                if exc.name:
-                    _resolve_type_guarded_imports(autodoc_mock_imports, importlib.import_module(exc.name))
-
-                    # Retry the guarded code and see if it works now after resolving all nested type guards.
-                    with mock(autodoc_mock_imports):
-                        exec(guarded_code, getattr(obj, "__globals__", obj.__dict__))  # noqa: S102
+            _run_guarded_import(autodoc_mock_imports, obj, guarded_code)
         except Exception as exc:  # noqa: BLE001
             _LOGGER.warning(
                 "Failed guarded type import with %r", exc, type="sphinx_autodoc_typehints", subtype="guarded_import"
             )
+
+
+def _run_guarded_import(autodoc_mock_imports: list[str], obj: Any, guarded_code: str) -> None:
+    ns = getattr(obj, "__globals__", obj.__dict__)
+    try:
+        with mock(autodoc_mock_imports):
+            exec(guarded_code, ns)  # noqa: S102
+    except ImportError as exc:
+        if not exc.name:
+            return
+        _resolve_type_guarded_imports(autodoc_mock_imports, importlib.import_module(exc.name))
+        try:
+            with mock(autodoc_mock_imports):
+                exec(guarded_code, ns)  # noqa: S102
+        except ImportError:
+            pass  # third-party internal import that doesn't exist at runtime
 
 
 def _resolve_type_guarded_imports(autodoc_mock_imports: list[str], obj: Any) -> None:

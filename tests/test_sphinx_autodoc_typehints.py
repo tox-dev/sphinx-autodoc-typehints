@@ -951,11 +951,7 @@ def test_resolve_typing_guard_imports(app: SphinxTestApp, status: StringIO, warn
     app.build()
     out = status.getvalue()
     assert "build succeeded" in out
-    err = warning.getvalue()
-    r = re.compile(r"WARNING: Failed guarded type import")
-    assert len(r.findall(err)) == 1
-    pat = r'WARNING: Failed guarded type import with ImportError\("cannot import name \'missing\' from \'functools\''
-    assert re.search(pat, err)
+    assert "Failed guarded type import" not in warning.getvalue()
 
 
 @pytest.mark.sphinx("text", testroot="resolve-typing-guard-tmp")
