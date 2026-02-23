@@ -35,6 +35,7 @@ from sphinx.application import Sphinx
 from sphinx.config import Config
 from sphinx.ext.autodoc import Options
 
+import sphinx_autodoc_typehints as sat
 from sphinx_autodoc_typehints import (
     _resolve_type_guarded_imports,
     backfill_type_hints,
@@ -1216,3 +1217,57 @@ def test_wrong_module_path(app: SphinxTestApp, status: StringIO, warning: String
 
     assert "build succeeded" in status.getvalue()  # Build succeeded
     assert not warning.getvalue().strip()
+
+
+def test_inject_rtype_inserts_blank_line_before_rtype(monkeypatch: pytest.MonkeyPatch) -> None:
+    def sample() -> str:
+        return "ok"
+
+    config = create_autospec(
+        Config,
+        typehints_document_rtype=True,
+        typehints_document_rtype_none=True,
+        typehints_use_rtype=True,
+        python_display_short_literal_types=False,
+    )
+    app: Sphinx = create_autospec(Sphinx, config=config)
+
+    monkeypatch.setattr(
+        sat,
+        "get_insert_index",
+        lambda _app, _lines: sat.InsertIndexInfo(insert_index=1, found_directive=True),
+    )
+    monkeypatch.setattr(sat, "format_annotation", lambda *_args, **_kwargs: "str")
+    monkeypatch.setattr(sat, "add_type_css_class", lambda value: value)
+
+    lines = ["A paragraph.", ".. note:: hi"]
+    sat._inject_rtype({"return": str}, sample, app, "function", "sample", lines)  # noqa: SLF001
+
+    assert lines == ["A paragraph.", "", ":rtype: str", "", ".. note:: hi"]
+
+
+def test_inject_rtype_does_not_add_extra_blank_line(monkeypatch: pytest.MonkeyPatch) -> None:
+    def sample() -> str:
+        return "ok"
+
+    config = create_autospec(
+        Config,
+        typehints_document_rtype=True,
+        typehints_document_rtype_none=True,
+        typehints_use_rtype=True,
+        python_display_short_literal_types=False,
+    )
+    app: Sphinx = create_autospec(Sphinx, config=config)
+
+    monkeypatch.setattr(
+        sat,
+        "get_insert_index",
+        lambda _app, _lines: sat.InsertIndexInfo(insert_index=1),
+    )
+    monkeypatch.setattr(sat, "format_annotation", lambda *_args, **_kwargs: "str")
+    monkeypatch.setattr(sat, "add_type_css_class", lambda value: value)
+
+    lines = ["", ""]
+    sat._inject_rtype({"return": str}, sample, app, "function", "sample", lines)  # noqa: SLF001
+
+    assert lines == ["", ":rtype: str", ""]

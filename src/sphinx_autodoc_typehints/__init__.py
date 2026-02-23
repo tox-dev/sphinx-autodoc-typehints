@@ -1039,10 +1039,11 @@ def _inject_rtype(  # noqa: C901, PLR0913, PLR0917
     if r.found_param and insert_index < len(lines) and lines[insert_index].strip():
         insert_index -= 1
 
-    if insert_index == len(lines) and not r.found_param:
+    if insert_index > 0 and insert_index <= len(lines) and lines[insert_index - 1].strip():
         # ensure that :rtype: doesn't get joined with a paragraph of text
-        lines.append("")
+        lines.insert(insert_index, "")
         insert_index += 1
+
     if app.config.typehints_use_rtype or not r.found_return:
         line = f":rtype: {formatted_annotation}"
         lines.insert(insert_index, line)
