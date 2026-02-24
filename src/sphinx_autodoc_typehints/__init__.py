@@ -12,6 +12,10 @@ import sys
 import textwrap
 import types
 from dataclasses import dataclass
+
+if sys.version_info >= (3, 14):
+    import annotationlib
+
 from typing import TYPE_CHECKING, Any, AnyStr, ForwardRef, NewType, TypeVar, Union, get_type_hints
 
 from docutils import nodes
@@ -630,7 +634,10 @@ def _get_type_hint(
             type="sphinx_autodoc_typehints",
             subtype="forward_reference",
         )
-        result = obj.__annotations__
+        if sys.version_info >= (3, 14):
+            result = annotationlib.get_annotations(obj, format=annotationlib.Format.FORWARDREF)
+        else:
+            result = obj.__annotations__
     return result
 
 
