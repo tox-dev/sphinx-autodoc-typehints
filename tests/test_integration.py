@@ -661,6 +661,11 @@ def func_with_overload(a: str, b: str) -> None: ...
     """\
 mod.func_with_overload(a, b)
 
+   Overloads:
+      * **a** (int), **b** (int) → None
+
+      * **a** (str), **b** (str) → None
+
    f does the thing. The arguments can either be ints or strings but
    they must both have the same type.
 
@@ -668,9 +673,6 @@ mod.func_with_overload(a, b)
       * **a** ("int" | "str") -- The first thing
 
       * **b** ("int" | "str") -- The second thing
-
-   Return type:
-      "None"
 """,
 )
 def func_with_overload(a: Union[int, str], b: Union[int, str]) -> None:
@@ -685,6 +687,40 @@ def func_with_overload(a: Union[int, str], b: Union[int, str]) -> None:
     b:
         The second thing
     """
+
+
+@overload
+def overload_with_complex_types(x: list[int]) -> dict[str, int]: ...
+
+
+@overload
+def overload_with_complex_types(x: dict[str, int]) -> list[int]: ...
+
+
+@expected(
+    """\
+mod.overload_with_complex_types(x)
+
+   Overloads:
+      * **x** (list[int]) → dict[str, int]
+
+      * **x** (dict[str, int]) → list[int]
+
+   Function with overloaded complex types.
+
+   Parameters:
+      **x** ("list"["int"] | "dict"["str", "int"]) -- Input value
+""",
+)
+def overload_with_complex_types(x: list[int] | dict[str, int]) -> dict[str, int] | list[int]:
+    """Function with overloaded complex types.
+
+    Parameters:
+        x: Input value
+    """
+    if isinstance(x, list):
+        return {str(i): i for i in x}
+    return list(x.values())
 
 
 @expected(
