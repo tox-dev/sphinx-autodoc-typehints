@@ -284,6 +284,7 @@ def _inject_arg_signature(  # noqa: PLR0913, PLR0917
 ) -> None:
     annotation = type_hints.get(arg_name)
     default = signature.parameters[arg_name].default
+    doc_description = _extract_doc_description(annotation) if annotation is not None else None
 
     if arg_name.endswith("_"):
         arg_name = f"{arg_name[:-1]}\\_"
@@ -293,7 +294,10 @@ def _inject_arg_signature(  # noqa: PLR0913, PLR0917
     if insert_index is not None and hasattr(fmt, "get_arg_name_from_line"):
         arg_name = fmt.get_arg_name_from_line(lines[insert_index]) or arg_name
 
-    if annotation is not None and insert_index is None and app.config.always_document_param_types:
+    if insert_index is None and doc_description:
+        lines.append(f":param {arg_name}: {doc_description}")
+        insert_index = len(lines) - 1
+    elif annotation is not None and insert_index is None and app.config.always_document_param_types:
         insert_index = fmt.add_undocumented_param(lines, arg_name)
 
     if insert_index is not None:
@@ -339,6 +343,11 @@ def _inject_rtype(  # noqa: PLR0913, PLR0917
     if _has_yields_section(lines) and _is_generator_type(type_hints["return"]):
         return
 
+    if (return_doc := _extract_doc_description(type_hints["return"])) and not any(
+        line.lstrip().startswith((":return:", ":returns:")) for line in lines
+    ):
+        lines.append(f":return: {return_doc}")
+
     r = fmt.get_rtype_insert_info(app, lines)
     if r is None:
         return
@@ -349,6 +358,15 @@ def _inject_rtype(  # noqa: PLR0913, PLR0917
     )
 
     fmt.inject_rtype(lines, formatted_annotation, r, use_rtype=app.config.typehints_use_rtype)
+
+
+def _extract_doc_description(annotation: Any) -> str | None:
+    if not (hasattr(annotation, "__metadata__") and hasattr(annotation, "__origin__")):
+        return None
+    for meta in annotation.__metadata__:
+        if type(meta).__qualname__ == "Doc" and type(meta).__module__ in {"typing_extensions", "typing"}:
+            return meta.documentation
+    return None
 
 
 def validate_config(app: Sphinx, env: BuildEnvironment, docnames: list[str]) -> None:  # noqa: ARG001
