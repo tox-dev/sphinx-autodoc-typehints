@@ -808,7 +808,11 @@ def process_docstring(  # noqa: PLR0913, PLR0917
 
 
 def _inject_overload_signatures(  # noqa: C901
-    app: Sphinx, what: str, name: str, obj: Any, lines: list[str]  # noqa: ARG001
+    app: Sphinx,
+    what: str,
+    name: str,
+    obj: Any,
+    lines: list[str],
 ) -> bool:
     if what not in {"function", "method"}:
         return False
