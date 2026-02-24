@@ -1,6 +1,6 @@
 requires = [
-  "tox>=4.34.1",
-  "tox-uv>=1.29",
+  "tox>=4.45",
+  "tox-uv>=1.31",
 ]
 env_list = [
   "3.14",

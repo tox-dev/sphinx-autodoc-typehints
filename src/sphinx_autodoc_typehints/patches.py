@@ -127,10 +127,7 @@ def fix_directive_based_signature_formatting() -> None:
     Overloads are cached before being cleared so we can render them in docstrings with
     proper type formatting instead of in signatures where types can't be cross-referenced.
     """
-    try:
-        from sphinx.pycode import ModuleAnalyzer  # noqa: PLC0415
-    except ImportError:
-        return  # Not Sphinx 9+
+    from sphinx.pycode import ModuleAnalyzer  # noqa: PLC0415
 
     original_analyze = ModuleAnalyzer.analyze
 
