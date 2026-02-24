@@ -105,6 +105,9 @@ lint.ignore = [
   "RUF067", # `__init__` module should only contain docstrings and re-exports
   "S104",   # Possible binding to all interface
 ]
+lint.per-file-ignores."tests/roots/test-issue_599/mod_eager.py" = [
+  "I002", # this file intentionally omits `from __future__ import annotations` to test non-deferred annotations
+]
 lint.per-file-ignores."tests/**/*.py" = [
   "D",       # don't care about documentation in tests
   "FBT",     # don't care about booleans as positional arguments in tests

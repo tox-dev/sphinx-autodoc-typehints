@@ -258,6 +258,14 @@ def format_annotation(annotation: Any, config: Config, *, short_literals: bool =
         return format_internal_tuple(annotation, config)
 
     if isinstance(annotation, TypeAliasForwardRef):
+        if (env := getattr(config, "_typehints_env", None)) is not None:
+            py_domain = env.get_domain("py")
+            module_prefix = getattr(config, "_typehints_module_prefix", "")
+            for candidate in (f"{module_prefix}.{annotation.name}", annotation.name):
+                if candidate in py_domain.objects and py_domain.objects[candidate].objtype == "type":
+                    fully_qualified: bool = getattr(config, "typehints_fully_qualified", False)
+                    prefix = "" if fully_qualified else "~"
+                    return f":py:type:`{prefix}{candidate}`"
         return annotation.name
 
     try:
@@ -798,12 +806,73 @@ def process_docstring(  # noqa: PLR0913, PLR0917
         signature = None
 
     localns = {key: MyTypeAliasForwardRef(value) for key, value in app.config["autodoc_type_aliases"].items()}
+    module_prefix = name.rsplit(".", maxsplit=1)[0] if "." in name else ""
+    eager_aliases: dict[int, MyTypeAliasForwardRef] = {}
+    if (env := getattr(app, "env", None)) is not None:
+        deferred, eager_aliases = _collect_documented_type_aliases(obj, module_prefix, env)
+        localns.update(deferred)
     type_hints = get_all_type_hints(app.config.autodoc_mock_imports, obj, name, localns)
+    for param, hint in type_hints.items():
+        if id(hint) in eager_aliases:
+            type_hints[param] = eager_aliases[id(hint)]
     app.config._annotation_globals = getattr(obj, "__globals__", {})  # noqa: SLF001
+    app.config._typehints_env = env  # noqa: SLF001
+    app.config._typehints_module_prefix = module_prefix  # noqa: SLF001
     try:
         _inject_types_to_docstring(type_hints, signature, original_obj, app, what, name, lines)
     finally:
         delattr(app.config, "_annotation_globals")
+        delattr(app.config, "_typehints_env")
+        delattr(app.config, "_typehints_module_prefix")
+
+
+def _collect_documented_type_aliases(
+    obj: Any, module_prefix: str, env: BuildEnvironment
+) -> tuple[dict[str, MyTypeAliasForwardRef], dict[int, MyTypeAliasForwardRef]]:
+    """
+    Find annotation names that reference documented ``.. py:type::`` entries.
+
+    Scans the function's raw ``__annotations__`` to find type names before ``get_type_hints()`` expands them.
+    For deferred annotations (strings), checks the name directly and returns them in ``localns`` for
+    ``get_type_hints()`` to resolve. For already-resolved annotations (no ``from __future__ import annotations``),
+    scans module globals to find variable names pointing to the same type object, and returns them keyed by
+    ``id()`` for post-processing after ``get_type_hints()``.
+
+    :param obj: The callable whose annotations to scan
+    :param module_prefix: The module name to prefix type names with (e.g. "mod")
+    :param env: The Sphinx build environment
+    :return: ``(deferred, eager)`` where deferred maps name to ref for localns, eager maps id to ref for post-processing
+    """
+    raw_annotations = getattr(obj, "__annotations__", {})
+    if not raw_annotations:
+        return {}, {}
+
+    py_objects = env.get_domain("py").objects  # ty: ignore[unresolved-attribute]
+    deferred: dict[str, MyTypeAliasForwardRef] = {}
+    eager: dict[int, MyTypeAliasForwardRef] = {}
+    obj_globals = getattr(obj, "__globals__", {})
+
+    for annotation in raw_annotations.values():
+        if isinstance(annotation, str):
+            if _is_documented_type(annotation, module_prefix, py_objects):
+                deferred[annotation] = MyTypeAliasForwardRef(annotation)
+        else:
+            for var_name, var_value in obj_globals.items():
+                if (
+                    var_value is annotation
+                    and not var_name.startswith("_")
+                    and _is_documented_type(var_name, module_prefix, py_objects)
+                ):
+                    eager[id(annotation)] = MyTypeAliasForwardRef(var_name)
+
+    return deferred, eager
+
+
+def _is_documented_type(name: str, module_prefix: str, py_objects: dict[str, Any]) -> bool:
+    return any(
+        candidate in py_objects and py_objects[candidate].objtype == "type"
+        for candidate in (f"{module_prefix}.{name}", name)
+    )
 
 
 def _get_sphinx_line_keyword_and_argument(line: str) -> tuple[str, str | None] | None:
