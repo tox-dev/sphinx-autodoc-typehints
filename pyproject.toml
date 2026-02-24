@@ -119,6 +119,9 @@ lint.per-file-ignores."tests/**/*.py" = [
   "UP007",   # we test for old Union syntax
   "UP045",   # we test for old Optional syntax
 ]
+lint.per-file-ignores."tests/roots/test-issue_599/mod_eager.py" = [
+  "I002", # this file intentionally omits `from __future__ import annotations` to test non-deferred annotations
+]
 lint.isort = { known-first-party = [
   "sphinx_autodoc_typehints",
   "tests",
