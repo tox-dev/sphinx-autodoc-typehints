@@ -9,6 +9,7 @@ from sphinx.config import Config
 
 import sphinx_autodoc_typehints as sat
 from sphinx_autodoc_typehints import _inject_overload_signatures, process_docstring, process_signature
+from sphinx_autodoc_typehints._resolver import get_obj_location
 from sphinx_autodoc_typehints.patches import _OVERLOADS_CACHE
 
 
@@ -148,6 +149,23 @@ def test_inject_overload_empty_overloads_returns_false() -> None:
         assert _inject_overload_signatures(app, "function", "name", obj, []) is False
     finally:
         _OVERLOADS_CACHE.pop("test_mod2", None)
+
+
+def test_local_function_warning_includes_location() -> None:
+    def fake_method(self: Any, x: int) -> str: ...
+
+    fake_method.__annotations__ = {"x": int, "return": str}
+    fake_method.__qualname__ = "outer.<locals>.inner"
+    fake_method.__module__ = __name__
+
+    app = _make_sig_app()
+    mock_logger = MagicMock()
+    with patch("sphinx_autodoc_typehints._LOGGER", mock_logger):
+        process_signature(app, "method", "test.outer.<locals>.inner", fake_method, MagicMock(), "", "")
+    mock_logger.warning.assert_called_once()
+    kwargs = mock_logger.warning.call_args.kwargs
+    assert "location" in kwargs
+    assert kwargs["location"] == get_obj_location(fake_method)
 
 
 def test_inject_types_no_signature() -> None:

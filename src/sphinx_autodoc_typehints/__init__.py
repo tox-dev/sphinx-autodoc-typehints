@@ -29,6 +29,7 @@ from ._resolver import (
     _collect_documented_type_aliases,
     backfill_type_hints,
     get_all_type_hints,
+    get_obj_location,
     normalize_source_lines,
 )
 from .patches import _OVERLOADS_CACHE, install_patches
@@ -101,6 +102,7 @@ def process_signature(  # noqa: C901, PLR0911, PLR0912, PLR0913, PLR0917
                     name,
                     type="sphinx_autodoc_typehints",
                     subtype="local_function",
+                    location=get_obj_location(obj),
                 )
                 return None
             outer = inspect.getmodule(obj)
