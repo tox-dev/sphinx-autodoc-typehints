@@ -4,7 +4,7 @@ import csv
 from csv import Error
 from textwrap import dedent
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from sphinx_autodoc_typehints import backfill_type_hints, normalize_source_lines
 from sphinx_autodoc_typehints._resolver import (
@@ -14,6 +14,7 @@ from sphinx_autodoc_typehints._resolver import (
     _resolve_type_guarded_imports,
     _run_guarded_import,
     _should_skip_guarded_import_resolution,
+    get_obj_location,
     split_type_comment_args,
 )
 
@@ -235,3 +236,70 @@ def _inline_typed_func(  # noqa: ANN202
 def _mismatched_type_comment(x, y, z):  # noqa: ANN202
     # type: (int) -> bool
     ...
+
+
+def test_get_obj_location_with_function() -> None:
+    location = get_obj_location(_typed_func)
+    assert location is not None
+    assert location.endswith(".py:" + str(_typed_func.__code__.co_firstlineno))
+    assert "test_resolver.py" in location
+
+
+def test_get_obj_location_with_class() -> None:
+    location = get_obj_location(_BackfillClass)
+    assert location is not None
+    assert "test_resolver.py" in location
+
+
+def test_get_obj_location_non_inspectable() -> None:
+    assert get_obj_location(42) is None
+
+
+def test_get_obj_location_no_source_lines() -> None:
+    with patch("sphinx_autodoc_typehints._resolver.inspect.getsourcelines", side_effect=OSError):
+        location = get_obj_location(_typed_func)
+    assert location is not None
+    assert location.endswith(".py")
+    assert ":" not in location.rsplit("/", 1)[-1]
+
+
+def test_forward_ref_warning_includes_module() -> None:
+    def func(x: int) -> str: ...
+
+    func.__module__ = "some_module"
+    func.__annotations__ = {"x": "NonExistent"}
+    mock_logger = MagicMock()
+    with (
+        patch("sphinx_autodoc_typehints._resolver.get_type_hints", side_effect=NameError("NonExistent")),
+        patch("sphinx_autodoc_typehints._resolver._LOGGER", mock_logger),
+    ):
+        _get_type_hint([], "func", func, {})
+    mock_logger.warning.assert_called_once()
+    args = mock_logger.warning.call_args
+    assert "some_module" in str(args)
+    assert "location" in args.kwargs
+
+
+def test_guarded_import_warning_includes_module() -> None:
+    module = type("FakeModule", (), {"__globals__": {}, "__dict__": {}, "__module__": "fake_mod"})()
+    mock_logger = MagicMock()
+    with (
+        patch("sphinx_autodoc_typehints._resolver._run_guarded_import", side_effect=RuntimeError("boom")),
+        patch("sphinx_autodoc_typehints._resolver._LOGGER", mock_logger),
+    ):
+        _execute_guarded_code([], module, "\nif TYPE_CHECKING:\n    import os\nx = 1\n")
+    mock_logger.warning.assert_called_once()
+    args = mock_logger.warning.call_args
+    assert "fake_mod" in str(args)
+
+
+def test_multi_child_ast_warning_includes_location() -> None:
+    mock_logger = MagicMock()
+    with (
+        patch("sphinx_autodoc_typehints._resolver.inspect.getsource", return_value="x = 1\ndef foo(): pass\n"),
+        patch("sphinx_autodoc_typehints._resolver._LOGGER", mock_logger),
+    ):
+        backfill_type_hints(lambda: None, "test")
+    mock_logger.warning.assert_called_once()
+    kwargs = mock_logger.warning.call_args.kwargs
+    assert "location" in kwargs

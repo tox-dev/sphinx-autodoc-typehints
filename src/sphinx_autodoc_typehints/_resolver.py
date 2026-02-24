@@ -32,6 +32,7 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
+
 _TYPE_GUARD_IMPORT_RE = re.compile(
     r"""
     \n                          # leading newline before the guard
@@ -77,11 +78,13 @@ def _get_type_hint(
             result = {}
     except NameError as exc:
         _LOGGER.warning(
-            'Cannot resolve forward reference in type annotations of "%s": %s',
+            'Cannot resolve forward reference in type annotations of "%s" (module %s): %s',
             name,
+            getattr(obj, "__module__", "?"),
             exc,
             type="sphinx_autodoc_typehints",
             subtype="forward_reference",
+            location=get_obj_location(obj),
         )
         if sys.version_info >= (3, 14):
             result = annotationlib.get_annotations(obj, format=annotationlib.Format.FORWARDREF)
@@ -122,8 +125,14 @@ def _execute_guarded_code(autodoc_mock_imports: list[str], obj: Any, module_code
         try:
             _run_guarded_import(autodoc_mock_imports, obj, guarded_code)
         except Exception as exc:  # noqa: BLE001
+            module_name = getattr(obj, "__module__", None) or getattr(obj, "__name__", "?")
             _LOGGER.warning(
-                "Failed guarded type import with %r", exc, type="sphinx_autodoc_typehints", subtype="guarded_import"
+                "Failed guarded type import in %r: %r",
+                module_name,
+                exc,
+                type="sphinx_autodoc_typehints",
+                subtype="guarded_import",
+                location=get_obj_location(obj),
             )
 
 
@@ -180,6 +189,7 @@ def backfill_type_hints(obj: Any, name: str) -> dict[str, Any]:  # noqa: C901, P
                 len(children),
                 type="sphinx_autodoc_typehints",
                 subtype="multiple_ast_nodes",
+                location=get_obj_location(obj),
             )
             return None
         return children[0]
@@ -210,6 +220,7 @@ def backfill_type_hints(obj: Any, name: str) -> dict[str, Any]:  # noqa: C901, P
             name,
             type="sphinx_autodoc_typehints",
             subtype="comment",
+            location=get_obj_location(obj),
         )
         return {}
 
@@ -226,7 +237,11 @@ def backfill_type_hints(obj: Any, name: str) -> dict[str, Any]:  # noqa: C901, P
 
         if len(args) != len(comment_args):
             _LOGGER.warning(
-                'Not enough type comments found on "%s"', name, type="sphinx_autodoc_typehints", subtype="comment"
+                'Not enough type comments found on "%s"',
+                name,
+                type="sphinx_autodoc_typehints",
+                subtype="comment",
+                location=get_obj_location(obj),
             )
             return rv
 
@@ -236,6 +251,19 @@ def backfill_type_hints(obj: Any, name: str) -> dict[str, Any]:  # noqa: C901, P
             rv[arg.arg] = value
 
     return rv
+
+
+def get_obj_location(obj: Any) -> str | None:
+    try:
+        filepath = inspect.getsourcefile(obj) or inspect.getfile(obj)
+    except TypeError:
+        return None
+    try:
+        lineno = inspect.getsourcelines(obj)[1]
+    except (OSError, TypeError):
+        return filepath
+    else:
+        return f"{filepath}:{lineno}"
 
 
 def normalize_source_lines(source_lines: str) -> str:
