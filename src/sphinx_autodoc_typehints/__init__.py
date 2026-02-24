@@ -810,7 +810,7 @@ def process_docstring(  # noqa: PLR0913, PLR0917
 def _inject_overload_signatures(  # noqa: C901
     app: Sphinx,
     what: str,
-    name: str,
+    name: str,  # noqa: ARG001
     obj: Any,
     lines: list[str],
 ) -> bool:
