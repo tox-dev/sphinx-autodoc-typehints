@@ -15,6 +15,7 @@ import re
 import sys
 import textwrap
 import types
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, get_type_hints
 
 from sphinx.ext.autodoc.mock import mock
@@ -26,7 +27,7 @@ if sys.version_info >= (3, 14):
     import annotationlib
 
 if TYPE_CHECKING:
-    from ast import FunctionDef, Module, stmt
+    from ast import AsyncFunctionDef, FunctionDef, Module, stmt
 
     from sphinx.environment import BuildEnvironment
 
@@ -53,6 +54,8 @@ def get_all_type_hints(
     result = _get_type_hint(autodoc_mock_imports, name, obj, localns)
     if not result:
         result = backfill_type_hints(obj, name)
+        if not result:
+            result = _backfill_from_stub(obj)
         try:
             obj.__annotations__ = result
         except (AttributeError, TypeError):
@@ -295,7 +298,7 @@ def normalize_source_lines(source_lines: str) -> str:
     return "\n".join(aligned_prefix + aligned_suffix)
 
 
-def _load_args(obj_ast: FunctionDef) -> list[Any]:
+def _load_args(obj_ast: FunctionDef | AsyncFunctionDef) -> list[Any]:
     func_args = obj_ast.args
     args = []
     pos_only = getattr(func_args, "posonlyargs", None)
@@ -333,6 +336,85 @@ def split_type_comment_args(comment: str) -> list[str | None]:
             start_arg_at = at + 1
 
     add(comment[start_arg_at : at + 1])
+    return result
+
+
+_STUB_AST_CACHE: dict[Path, ast.Module | None] = {}
+
+
+def _backfill_from_stub(obj: Any) -> dict[str, str]:
+    if (stub_path := _find_stub_path(obj)) and (tree := _parse_stub_ast(stub_path)):
+        return _extract_annotations_from_stub(tree, obj)
+    return {}
+
+
+def _find_stub_path(obj: Any) -> Path | None:
+    module = inspect.getmodule(obj)
+    if module is None:
+        return None
+    try:
+        source_file = inspect.getfile(module)
+    except TypeError:
+        return None
+    stub = Path(source_file).with_suffix(".pyi")
+    if stub.is_file():
+        return stub
+    if hasattr(module, "__path__"):
+        for pkg_dir in module.__path__:
+            init_stub = Path(pkg_dir) / "__init__.pyi"
+            if init_stub.is_file():
+                return init_stub
+    return None
+
+
+def _parse_stub_ast(stub_path: Path) -> ast.Module | None:
+    if stub_path not in _STUB_AST_CACHE:
+        try:
+            _STUB_AST_CACHE[stub_path] = ast.parse(stub_path.read_text(encoding="utf-8"))
+        except (OSError, SyntaxError):
+            _STUB_AST_CACHE[stub_path] = None
+    return _STUB_AST_CACHE[stub_path]
+
+
+def _extract_annotations_from_stub(tree: ast.Module, obj: Any) -> dict[str, str]:
+    qualname = getattr(obj, "__qualname__", None)
+    if not qualname:
+        return {}
+    parts = qualname.split(".")
+    if (node := _find_ast_node(tree.body, parts)) is None:
+        return {}
+    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        return _extract_func_annotations(node)
+    if isinstance(node, ast.ClassDef):
+        return _extract_class_annotations(node)
+    return {}
+
+
+def _find_ast_node(body: list[ast.stmt], parts: list[str]) -> ast.stmt | None:
+    target, *rest = parts
+    for node in body:
+        if isinstance(node, ast.ClassDef) and node.name == target:
+            return _find_ast_node(node.body, rest) if rest else node
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == target and not rest:
+            return node
+    return None
+
+
+def _extract_func_annotations(node: ast.FunctionDef | ast.AsyncFunctionDef) -> dict[str, str]:
+    result: dict[str, str] = {}
+    for arg in _load_args(node):
+        if arg.annotation is not None:
+            result[arg.arg] = ast.unparse(arg.annotation)
+    if node.returns is not None:
+        result["return"] = ast.unparse(node.returns)
+    return result
+
+
+def _extract_class_annotations(node: ast.ClassDef) -> dict[str, str]:
+    result: dict[str, str] = {}
+    for child in node.body:
+        if isinstance(child, ast.AnnAssign) and isinstance(child.target, ast.Name):
+            result[child.target.id] = ast.unparse(child.annotation)
     return result
 
 

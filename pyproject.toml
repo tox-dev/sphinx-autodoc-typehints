@@ -127,6 +127,12 @@ lint.per-file-ignores."tests/roots/test-issue_572/mod_forward_ref.py" = [
 lint.per-file-ignores."tests/roots/test-issue_599/mod_eager.py" = [
   "I002", # this file intentionally omits `from __future__ import annotations` to test non-deferred annotations
 ]
+lint.per-file-ignores."tests/roots/test-pyi-stubs/stub_mod.py" = [
+  "ANN",     # intentionally has no type annotations to simulate a C extension
+  "I002",    # intentionally omits `from __future__ import annotations`
+  "PLR6301", # method must be instance method to test stub resolution
+  "RUF029",  # async function must be async to test async stub resolution
+]
 lint.per-file-ignores."tests/test_resolver.py" = [
   "ANN001", # type comment fixtures intentionally omit annotations
   "ARG001", # type comment fixtures have intentionally unused args
