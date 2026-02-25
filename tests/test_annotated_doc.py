@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Annotated
 
 import pytest
+from conftest import normalize_sphinx_text
 from typing_extensions import Doc
 
 from sphinx_autodoc_typehints import _extract_doc_description
@@ -50,7 +51,7 @@ def _load_and_build(
     monkeypatch.setitem(sys.modules, mod_name, module)
     app.build()
     assert "build succeeded" in status.getvalue()
-    return (Path(app.srcdir) / "_build/text/index.txt").read_text()
+    return normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
 
 
 @pytest.mark.parametrize(

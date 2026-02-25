@@ -18,6 +18,7 @@ from typing import (  # no type comments
 )
 
 import pytest
+from conftest import normalize_sphinx_text
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Callable
@@ -1594,9 +1595,9 @@ def test_integration(
     else:
         assert not value
 
-    result = (Path(app.srcdir) / "_build/text/index.txt").read_text()
+    result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
 
-    expected = val.EXPECTED
+    expected = normalize_sphinx_text(val.EXPECTED)
     try:
         assert result.strip() == dedent(expected).strip()
     except Exception:

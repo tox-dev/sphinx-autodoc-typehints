@@ -10,6 +10,7 @@ from unittest.mock import create_autospec, patch
 
 import pytest
 import typing_extensions
+from conftest import normalize_sphinx_text
 from sphinx.application import Sphinx
 from sphinx.config import Config
 from sphinx.ext.autodoc import Options
@@ -143,7 +144,7 @@ def test_always_document_param_types(
         else:
             format_args[key] = ""
 
-    contents = (Path(app.srcdir) / "_build/text/index.txt").read_text()
+    contents = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
     expected_contents = """\
     dummy_module.undocumented_function(x)
 
@@ -158,7 +159,7 @@ def test_always_document_param_types(
 
        __init__(x){undoc_params_1}
     """
-    expected_contents = dedent(expected_contents).format(**format_args)
+    expected_contents = normalize_sphinx_text(dedent(expected_contents).format(**format_args))
     assert contents == expected_contents
 
 
@@ -221,7 +222,7 @@ def test_sphinx_output_future_annotations(app: SphinxTestApp, status: StringIO) 
 
     assert "build succeeded" in status.getvalue()
 
-    contents = (Path(app.srcdir) / "_build/text/future_annotations.txt").read_text()
+    contents = normalize_sphinx_text((Path(app.srcdir) / "_build/text/future_annotations.txt").read_text())
     expected_contents = """\
     Dummy Module
     ************
@@ -240,8 +241,7 @@ def test_sphinx_output_future_annotations(app: SphinxTestApp, status: StringIO) 
        Return type:
           "str"
     """
-    expected_contents = dedent(expected_contents)
-    expected_contents = dedent(expected_contents)
+    expected_contents = normalize_sphinx_text(dedent(expected_contents))
     assert contents == expected_contents
 
 
@@ -308,7 +308,7 @@ def test_sphinx_output_defaults(
     app.build()
     assert "build succeeded" in status.getvalue()
 
-    contents = (Path(app.srcdir) / "_build/text/simple.txt").read_text()
+    contents = normalize_sphinx_text((Path(app.srcdir) / "_build/text/simple.txt").read_text())
     expected_contents = f"""\
     Simple Module
     *************
@@ -325,7 +325,7 @@ def test_sphinx_output_defaults(
        Return type:
           "str"
     """
-    assert contents == dedent(expected_contents)
+    assert contents == normalize_sphinx_text(dedent(expected_contents))
 
 
 @pytest.mark.parametrize(
@@ -355,7 +355,7 @@ def test_sphinx_output_formatter(
     app.build()
     assert "build succeeded" in status.getvalue()
 
-    contents = (Path(app.srcdir) / "_build/text/simple.txt").read_text()
+    contents = normalize_sphinx_text((Path(app.srcdir) / "_build/text/simple.txt").read_text())
     expected_contents = f"""\
     Simple Module
     *************
@@ -372,7 +372,7 @@ def test_sphinx_output_formatter(
        Return type:
           {expected[2]}
     """
-    assert contents == dedent(expected_contents)
+    assert contents == normalize_sphinx_text(dedent(expected_contents))
 
 
 @pytest.mark.parametrize("obj", [cmp_to_key, 1])
@@ -433,7 +433,7 @@ def test_sphinx_output_formatter_no_use_rtype(app: SphinxTestApp, status: String
     app.build()
     assert "build succeeded" in status.getvalue()
     text_path = Path(app.srcdir) / "_build" / "text" / "simple_no_use_rtype.txt"
-    text_contents = text_path.read_text().replace("–", "--")  # noqa: RUF001 # keep ambiguous EN DASH
+    text_contents = normalize_sphinx_text(text_path.read_text())
     expected_contents = """\
     Simple Module
     *************
@@ -486,7 +486,7 @@ def test_sphinx_output_formatter_no_use_rtype(app: SphinxTestApp, status: String
        Returns:
           "str" -- A string
     """
-    assert text_contents == dedent(expected_contents)
+    assert text_contents == normalize_sphinx_text(dedent(expected_contents))
 
 
 @pytest.mark.sphinx("text", testroot="dummy")
@@ -498,7 +498,7 @@ def test_sphinx_output_with_use_signature(app: SphinxTestApp, status: StringIO) 
     app.build()
     assert "build succeeded" in status.getvalue()
     text_path = Path(app.srcdir) / "_build" / "text" / "simple.txt"
-    text_contents = text_path.read_text().replace("–", "--")  # noqa: RUF001 # keep ambiguous EN DASH
+    text_contents = normalize_sphinx_text(text_path.read_text())
     expected_contents = """\
     Simple Module
     *************
@@ -515,7 +515,7 @@ def test_sphinx_output_with_use_signature(app: SphinxTestApp, status: StringIO) 
        Return type:
           "str"
     """
-    assert text_contents == dedent(expected_contents)
+    assert text_contents == normalize_sphinx_text(dedent(expected_contents))
 
 
 @pytest.mark.sphinx("text", testroot="dummy")
@@ -527,7 +527,7 @@ def test_sphinx_output_with_use_signature_return(app: SphinxTestApp, status: Str
     app.build()
     assert "build succeeded" in status.getvalue()
     text_path = Path(app.srcdir) / "_build" / "text" / "simple.txt"
-    text_contents = text_path.read_text().replace("–", "--")  # noqa: RUF001 # keep ambiguous EN DASH
+    text_contents = normalize_sphinx_text(text_path.read_text())
     expected_contents = """\
     Simple Module
     *************
@@ -544,7 +544,7 @@ def test_sphinx_output_with_use_signature_return(app: SphinxTestApp, status: Str
        Return type:
           "str"
     """
-    assert text_contents == dedent(expected_contents)
+    assert text_contents == normalize_sphinx_text(dedent(expected_contents))
 
 
 @pytest.mark.sphinx("text", testroot="dummy")
@@ -557,7 +557,7 @@ def test_sphinx_output_with_use_signature_and_return(app: SphinxTestApp, status:
     app.build()
     assert "build succeeded" in status.getvalue()
     text_path = Path(app.srcdir) / "_build" / "text" / "simple.txt"
-    text_contents = text_path.read_text().replace("–", "--")  # noqa: RUF001 # keep ambiguous EN DASH
+    text_contents = normalize_sphinx_text(text_path.read_text())
     expected_contents = """\
     Simple Module
     *************
@@ -574,7 +574,7 @@ def test_sphinx_output_with_use_signature_and_return(app: SphinxTestApp, status:
        Return type:
           "str"
     """
-    assert text_contents == dedent(expected_contents)
+    assert text_contents == normalize_sphinx_text(dedent(expected_contents))
 
 
 @pytest.mark.sphinx("text", testroot="dummy")
@@ -586,7 +586,7 @@ def test_default_annotation_without_typehints(app: SphinxTestApp, status: String
     app.build()
     assert "build succeeded" in status.getvalue()
     text_path = Path(app.srcdir) / "_build" / "text" / "without_complete_typehints.txt"
-    text_contents = text_path.read_text().replace("–", "--")  # noqa: RUF001 # keep ambiguous EN DASH
+    text_contents = normalize_sphinx_text(text_path.read_text())
     expected_contents = """\
     Simple Module
     *************
@@ -638,14 +638,14 @@ def test_default_annotation_without_typehints(app: SphinxTestApp, status: String
        Function docstring.
 
        Parameters:
-          * **x** (*int*) -- foo
+          * **x** ("int") -- foo
 
           * **y** (int, default: "0") -- bar
 
        Return type:
           "str"
     """
-    assert text_contents == dedent(expected_contents)
+    assert text_contents == normalize_sphinx_text(dedent(expected_contents))
 
 
 @pytest.mark.sphinx("text", testroot="dummy")

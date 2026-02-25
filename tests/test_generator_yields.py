@@ -7,6 +7,7 @@ from textwrap import dedent
 from typing import TYPE_CHECKING
 
 import pytest
+from conftest import normalize_sphinx_text
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, AsyncIterator, Generator, Iterator
@@ -81,7 +82,7 @@ def _build_genclass(app: SphinxTestApp, monkeypatch: pytest.MonkeyPatch) -> str:
     )
     monkeypatch.setitem(sys.modules, "mod", sys.modules[__name__])
     app.build()
-    return (Path(app.srcdir) / "_build/text/index.txt").read_text()
+    return normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
 
 
 @pytest.mark.sphinx("text", testroot="integration")

@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pytest
+from conftest import normalize_sphinx_text
 
 numpydoc = pytest.importorskip("numpydoc")
 
@@ -95,7 +96,7 @@ def _build_and_get_output(
     monkeypatch.setitem(sys.modules, "mod_numpy", sys.modules[__name__])
     app.build()
     assert "build succeeded" in status.getvalue()
-    return (Path(app.srcdir) / "_build/text/index.txt").read_text()
+    return normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
 
 
 @pytest.mark.sphinx("text", testroot="issue_347")

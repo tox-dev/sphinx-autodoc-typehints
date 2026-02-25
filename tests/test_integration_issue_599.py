@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, TypeVar, Union
 from unittest.mock import MagicMock
 
 import pytest
+from conftest import normalize_sphinx_text
 from sphinx.util.inspect import TypeAliasForwardRef
 
 from sphinx_autodoc_typehints import format_annotation
@@ -127,9 +128,9 @@ def test_integration(
     value = warning.getvalue().strip()
     assert not value or "Inline strong start-string without end-string" in value
 
-    result = (Path(app.srcdir) / "_build/text/index.txt").read_text()
+    result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
 
-    expected_text = val.EXPECTED
+    expected_text = normalize_sphinx_text(val.EXPECTED)
     try:
         assert result.strip() == dedent(expected_text).strip()
     except Exception:
@@ -159,7 +160,7 @@ def test_eager_annotations(
     value = warning.getvalue().strip()
     assert not value or "Inline strong start-string without end-string" in value
 
-    result = (Path(app.srcdir) / "_build/text/index.txt").read_text()
+    result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
     assert '"UserId"' in result
 
 

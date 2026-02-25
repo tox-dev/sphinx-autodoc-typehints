@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock, patch
 
 import pytest
+from conftest import normalize_sphinx_text
 
 from sphinx_autodoc_typehints._resolver import (
     _STUB_AST_CACHE,
@@ -235,7 +236,7 @@ def test_sphinx_build_uses_stub_types(app: SphinxTestApp, status: StringIO, warn
     (Path(app.srcdir) / "index.rst").write_text(template)
     app.build()
     assert "build succeeded" in status.getvalue()
-    result = (Path(app.srcdir) / "_build/text/index.txt").read_text()
+    result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
     assert "str" in result
     warn_text = warning.getvalue()
     assert "stub_mod" not in warn_text or "forward reference" not in warn_text
