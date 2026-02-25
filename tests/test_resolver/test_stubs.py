@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from conftest import normalize_sphinx_text
 
-from sphinx_autodoc_typehints._resolver import (
+from sphinx_autodoc_typehints._resolver._stubs import (
     _STUB_AST_CACHE,
     _backfill_from_stub,
     _extract_annotations_from_stub,
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
     from sphinx.testing.util import SphinxTestApp
 
-STUB_ROOT = Path(__file__).parent / "roots" / "test-pyi-stubs"
+STUB_ROOT = Path(__file__).parent.parent / "roots" / "test-pyi-stubs"
 
 
 def _import_stub_mod() -> types.ModuleType:
@@ -59,15 +59,15 @@ def test_find_stub_path_returns_none_for_no_stub() -> None:
 def test_find_stub_path_returns_none_for_no_module() -> None:
     obj = MagicMock(spec=[])
     obj.__module__ = None
-    with patch("sphinx_autodoc_typehints._resolver.inspect.getmodule", return_value=None):
+    with patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getmodule", return_value=None):
         assert _find_stub_path(obj) is None
 
 
 def test_find_stub_path_returns_none_when_getfile_fails() -> None:
     module = types.ModuleType("fake_mod")
     with (
-        patch("sphinx_autodoc_typehints._resolver.inspect.getmodule", return_value=module),
-        patch("sphinx_autodoc_typehints._resolver.inspect.getfile", side_effect=TypeError),
+        patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getmodule", return_value=module),
+        patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getfile", side_effect=TypeError),
     ):
         assert _find_stub_path(lambda: None) is None
 
@@ -76,14 +76,29 @@ def test_find_stub_path_package_init_pyi(tmp_path: Path) -> None:
     pkg_dir = tmp_path / "mypkg"
     pkg_dir.mkdir()
     (pkg_dir / "__init__.py").write_text("")
-    (pkg_dir / "__init__.pyi").write_text("x: int\n")
+    no_stub_dir = tmp_path / "no_stubs"
+    no_stub_dir.mkdir()
+    stub_dir = tmp_path / "stubs"
+    stub_dir.mkdir()
+    (stub_dir / "__init__.pyi").write_text("x: int\n")
     module = types.ModuleType("mypkg")
-    module.__path__ = [str(pkg_dir)]
+    module.__path__ = [str(no_stub_dir), str(stub_dir)]
     module.__file__ = str(pkg_dir / "__init__.py")
-    with patch("sphinx_autodoc_typehints._resolver.inspect.getmodule", return_value=module):
+    with patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getmodule", return_value=module):
         result = _find_stub_path(module)
     assert result is not None
     assert result.name == "__init__.pyi"
+
+
+def test_find_stub_path_package_no_init_pyi(tmp_path: Path) -> None:
+    pkg_dir = tmp_path / "mypkg"
+    pkg_dir.mkdir()
+    (pkg_dir / "__init__.py").write_text("")
+    module = types.ModuleType("mypkg")
+    module.__path__ = [str(pkg_dir)]
+    module.__file__ = str(pkg_dir / "__init__.py")
+    with patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getmodule", return_value=module):
+        assert _find_stub_path(module) is None
 
 
 def test_parse_stub_ast_valid_file() -> None:

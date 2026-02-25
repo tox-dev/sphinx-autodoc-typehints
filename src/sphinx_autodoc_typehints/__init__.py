@@ -26,11 +26,11 @@ from ._formats._numpydoc import _convert_numpydoc_to_sphinx_fields  # noqa: F401
 from ._formats._sphinx import _has_yields_section, _is_generator_type
 from ._parser import parse
 from ._resolver import (
-    _collect_documented_type_aliases,
+    backfill_attrs_annotations,
     backfill_type_hints,
+    collect_documented_type_aliases,
     get_all_type_hints,
     get_obj_location,
-    normalize_source_lines,
 )
 from .patches import _OVERLOADS_CACHE, install_patches
 from .version import __version__
@@ -148,6 +148,8 @@ def process_docstring(  # noqa: PLR0913, PLR0917
     obj = obj.fget if isinstance(obj, property) else obj
     if not callable(obj):
         return
+    if inspect.isclass(obj):
+        backfill_attrs_annotations(obj)
     obj = obj.__init__ if inspect.isclass(obj) else obj
     try:
         obj = inspect.unwrap(obj)
@@ -163,7 +165,7 @@ def process_docstring(  # noqa: PLR0913, PLR0917
     module_prefix = name.rsplit(".", maxsplit=1)[0] if "." in name else ""
     eager_aliases: dict[int, MyTypeAliasForwardRef] = {}
     if (env := getattr(app, "env", None)) is not None:
-        deferred, eager_aliases = _collect_documented_type_aliases(obj, module_prefix, env)
+        deferred, eager_aliases = collect_documented_type_aliases(obj, module_prefix, env)
         localns.update(deferred)
     type_hints = get_all_type_hints(app.config.autodoc_mock_imports, obj, name, localns)
     for param, hint in type_hints.items():
@@ -426,7 +428,6 @@ __all__ = [
     "get_annotation_args",
     "get_annotation_class_name",
     "get_annotation_module",
-    "normalize_source_lines",
     "process_docstring",
     "process_signature",
 ]
