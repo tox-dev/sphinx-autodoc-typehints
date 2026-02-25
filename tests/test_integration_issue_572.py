@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
+from conftest import normalize_sphinx_text
 
 from sphinx_autodoc_typehints._resolver import _get_type_hint
 
@@ -36,7 +37,7 @@ def test_forward_ref_builds_without_errors(
     (Path(app.srcdir) / "index.rst").write_text(template)
     app.build()
     assert "build succeeded" in status.getvalue()
-    result = (Path(app.srcdir) / "_build/text/index.txt").read_text()
+    result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
     assert "Tree" in result
 
 

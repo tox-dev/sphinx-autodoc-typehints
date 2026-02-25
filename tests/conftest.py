@@ -16,6 +16,24 @@ if TYPE_CHECKING:
 pytest_plugins = "sphinx.testing.fixtures"
 collect_ignore = ["roots"]
 
+_SPHINX_EMPHASIS_RE = re.compile(
+    r"""
+    (?<!\*\*)   # not preceded by ** (bold markup)
+    (?<!\*)     # not preceded by * (avoids partial match inside **)
+    \*          # opening *
+    ([^*\s]     # first char: not * or whitespace
+    [^*]*?)     # rest: non-greedy, no * chars
+    \*          # closing *
+    (?!\*)      # not followed by *
+    """,
+    re.VERBOSE,
+)
+
+
+def normalize_sphinx_text(text: str) -> str:
+    text = text.replace("\u2013", "--")
+    return _SPHINX_EMPHASIS_RE.sub(r'"\1"', text)
+
 
 @pytest.fixture(scope="session")
 def inv(pytestconfig: Config) -> Inventory:
