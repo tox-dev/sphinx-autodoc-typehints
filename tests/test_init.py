@@ -9,7 +9,7 @@ from sphinx.config import Config
 
 import sphinx_autodoc_typehints as sat
 from sphinx_autodoc_typehints import _inject_overload_signatures, process_docstring, process_signature
-from sphinx_autodoc_typehints._resolver import get_obj_location
+from sphinx_autodoc_typehints._resolver._util import get_obj_location
 from sphinx_autodoc_typehints.patches import _OVERLOADS_CACHE
 
 

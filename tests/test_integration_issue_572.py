@@ -8,7 +8,7 @@ from unittest.mock import patch
 import pytest
 from conftest import normalize_sphinx_text
 
-from sphinx_autodoc_typehints._resolver import _get_type_hint
+from sphinx_autodoc_typehints._resolver._type_hints import _get_type_hint
 
 if sys.version_info >= (3, 14):
     import annotationlib
@@ -49,7 +49,10 @@ def test_get_type_hint_uses_annotationlib_on_name_error() -> None:
     def dummy() -> None: ...
 
     with (
-        patch("sphinx_autodoc_typehints._resolver.get_type_hints", side_effect=NameError("name 'Foo' is not defined")),
+        patch(
+            "sphinx_autodoc_typehints._resolver._type_hints.get_type_hints",
+            side_effect=NameError("name 'Foo' is not defined"),
+        ),
         patch.object(annotationlib, "get_annotations", return_value=sentinel) as mock_get_ann,
     ):
         result = _get_type_hint([], "dummy", dummy, {})
@@ -64,7 +67,10 @@ def test_get_type_hint_falls_back_to_dunder_annotations_before_314() -> None:  #
 
     def dummy(x: int) -> str: ...
 
-    with patch("sphinx_autodoc_typehints._resolver.get_type_hints", side_effect=NameError("name 'Foo' is not defined")):
+    with patch(
+        "sphinx_autodoc_typehints._resolver._type_hints.get_type_hints",
+        side_effect=NameError("name 'Foo' is not defined"),
+    ):
         result = _get_type_hint([], "dummy", dummy, {})
 
     assert result == dummy.__annotations__
