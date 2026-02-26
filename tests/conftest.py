@@ -99,9 +99,8 @@ def inv(pytestconfig: pytest.Config) -> Inventory:
         inv_dict := pytestconfig.cache.get(cache_path, None)
     ) is None:  # pragma: no cover -- network fetch, CI has cache
         url = f"https://docs.python.org/{sys.version_info.major}.{sys.version_info.minor}/objects.inv"
-        inv = Inventory(url=url)  # ty: ignore[unknown-argument]
-        pytestconfig.cache.set(cache_path, inv.json_dict())
-        return inv
+        inv_dict = Inventory(url=url).json_dict()  # ty: ignore[unknown-argument]
+        pytestconfig.cache.set(cache_path, inv_dict)
     return Inventory(inv_dict)  # ty: ignore[too-many-positional-arguments]
 
 
@@ -121,11 +120,11 @@ def rootdir() -> Path:
 
 
 @pytest.fixture
-def write_rst(app: SphinxTestApp) -> Callable[[str, str], None]:
-    def _write(content: str, name: str = "index") -> None:
+def write_rst(app: SphinxTestApp) -> Callable[[str], None]:
+    def _write(content: str) -> None:
         for rst_file in Path(app.srcdir).glob("*.rst"):
             rst_file.unlink()
-        (Path(app.srcdir) / f"{name}.rst").write_text(dedent(content))
+        (Path(app.srcdir) / "index.rst").write_text(dedent(content))
 
     return _write
 

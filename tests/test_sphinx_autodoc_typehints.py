@@ -80,7 +80,7 @@ def test_always_document_param_types(
     status: StringIO,
     warning: StringIO,
     always_document_param_types: bool,
-    write_rst: Callable[[str, str], None],
+    write_rst: Callable[[str], None],
 ) -> None:
     app.config.always_document_param_types = always_document_param_types  # create flag
     app.config.autodoc_mock_imports = ["mailbox"]  # create flag
@@ -132,7 +132,7 @@ def test_always_document_param_types_with_defaults_braces_after(
     app: SphinxTestApp,
     status: StringIO,
     warning: StringIO,  # noqa: ARG001
-    write_rst: Callable[[str, str], None],
+    write_rst: Callable[[str], None],
 ) -> None:
     """Regression test for #575: IndexError when combining always_document_param_types with braces-after."""
     app.config.always_document_param_types = True
@@ -152,7 +152,7 @@ def test_namedtuple_new_no_warning(
     app: SphinxTestApp,
     status: StringIO,
     warning: StringIO,
-    write_rst: Callable[[str, str], None],
+    write_rst: Callable[[str], None],
 ) -> None:
     """Regression test for #601: NamedTuple __new__ causes 'NoneType' attribute error."""
     write_rst("""\

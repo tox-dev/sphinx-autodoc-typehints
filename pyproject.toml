@@ -160,7 +160,10 @@ ini_options.testpaths = [
   "tests",
 ]
 ini_options.filterwarnings = [
+  "error",
   "ignore:.*rm_rf.*:pytest.PytestWarning",
+  "ignore::sphinx.deprecation.RemovedInSphinx11Warning",  # numpydoc upstream: https://github.com/numpy/numpydoc/issues/679
+  "ignore:urllib3.*doesn't match a supported version",
 ]
 
 [tool.coverage]
