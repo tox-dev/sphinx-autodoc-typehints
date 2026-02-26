@@ -71,7 +71,7 @@ MutualRecB = Union[str, List["MutualRecA"]]
 
 class A:
     def get_type(self) -> type:
-        return type(self)  # pragma: no cover
+        """Get the type."""
 
     class Inner: ...
 
@@ -434,7 +434,7 @@ def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str
     ):
         name = match.group("name")
         expected_role = next((o.role for o in inv.objects if o.name == name), None)
-        if expected_role and expected_role == "function":  # pragma: no cover
+        if expected_role == "function":  # pragma: no cover -- Python docs inventory always uses "func"
             expected_role = "func"
         assert match.group("role") == expected_role
 
@@ -478,7 +478,7 @@ def test_always_use_bars_union(annotation: str, expected_result: str) -> None:
 def test_format_annotation_both_libs(library: ModuleType, annotation: str, params: Any, expected_result: str) -> None:
     try:
         annotation_cls = getattr(library, annotation)
-    except AttributeError:  # pragma: no cover
+    except AttributeError:  # pragma: no cover -- all tested annotations exist in both libs on 3.12+
         pytest.skip(f"{annotation} not available in the {library.__name__} module")
 
     ann = annotation_cls if params is None else annotation_cls[params]

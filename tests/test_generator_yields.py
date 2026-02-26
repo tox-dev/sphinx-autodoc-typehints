@@ -19,9 +19,9 @@ if TYPE_CHECKING:
 class GenClass:
     """A class with generators."""
 
-    def gen_method(  # noqa: PLR6301
+    def gen_method(
         self,
-        arg1: int | None = None,  # noqa: ARG002
+        arg1: int | None = None,
     ) -> Generator[tuple[str, ...], None, None]:
         """Summary.
 
@@ -31,43 +31,37 @@ class GenClass:
         Yields:
             strings of things
         """
-        yield ("test",)
 
-    def iter_method(self) -> Iterator[int]:  # noqa: PLR6301
+    def iter_method(self) -> Iterator[int]:
         """Summary.
 
         Yields:
             integers
         """
-        yield 1
 
-    async def async_gen_method(self) -> AsyncGenerator[str, None]:  # noqa: PLR6301
+    async def async_gen_method(self) -> AsyncGenerator[str, None]:
         """Summary.
 
         Yields:
             strings
         """
-        yield "test"
 
-    async def async_iter_method(self) -> AsyncIterator[int]:  # noqa: PLR6301
+    async def async_iter_method(self) -> AsyncIterator[int]:
         """Summary.
 
         Yields:
             integers
         """
-        yield 1
 
-    def no_yields_method(self) -> Generator[int, None, None]:  # noqa: PLR6301
+    def no_yields_method(self) -> Generator[int, None, None]:
         """Summary without yields section."""
-        yield 1
 
 
 def _extract_section(text: str, method_name: str) -> str:
     pattern = rf"({method_name}\(\).*?)(?=(?:async\s+)?\w+\(\)|$)"
-    if match := re.search(pattern, text, re.DOTALL):
-        return match.group(1)
-    msg = f"Method {method_name} not found in output"
-    raise ValueError(msg)
+    match = re.search(pattern, text, re.DOTALL)
+    assert match is not None, f"Method {method_name} not found in output"
+    return match.group(1)
 
 
 def _build_genclass(app: SphinxTestApp, monkeypatch: pytest.MonkeyPatch) -> str:

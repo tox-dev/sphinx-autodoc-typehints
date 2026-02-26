@@ -5,7 +5,7 @@ import sys
 from dataclasses import dataclass
 from inspect import isclass
 from pathlib import Path
-from textwrap import dedent, indent
+from textwrap import dedent
 from typing import (  # no type comments
     TYPE_CHECKING,
     Any,
@@ -172,8 +172,7 @@ class Class:
     :param z: baz
     """
 
-    def __init__(self, x: bool, y: int, z: Optional[str] = None) -> None:
-        pass
+    def __init__(self, x: bool, y: int, z: Optional[str] = None) -> None: ...
 
     def a_method(self, x: bool, y: int, z: Optional[str] = None) -> str:
         """
@@ -270,8 +269,7 @@ class DummyException(Exception):  # noqa: N818
     :param message: blah
     """
 
-    def __init__(self, message: str) -> None:
-        super().__init__(message)
+    def __init__(self, message: str) -> None: ...
 
 
 @expected(
@@ -440,11 +438,11 @@ class ClassWithTypehints:
         x,  # type: int  # noqa: ANN001
     ) -> None:
         # type: (...) -> None
-        pass
+        ...
 
-    def foo(  # noqa: ANN201, PLR6301
+    def foo(  # noqa: ANN201
         self,
-        x,  # type: str  # noqa: ANN001, ARG002
+        x,  # type: str  # noqa: ANN001
     ):
         # type: (...) -> int
         """
@@ -452,17 +450,11 @@ class ClassWithTypehints:
 
         :arg x: foo
         """
-        return 42
 
-    def method_without_typehint(self, x):  # noqa: ANN001, ANN201, ARG002, PLR6301
+    def method_without_typehint(self, x):  # noqa: ANN001, ANN201
         """
         Method docstring.
         """
-        # test that multiline str can be correctly indented
-        multiline_str = """
-test
-"""
-        return multiline_str  # noqa: RET504
 
 
 @expected(
@@ -534,15 +526,14 @@ class ClassWithTypehintsNotInline:
     """
 
     def __init__(self, x=None) -> None:  # type: (Optional[Callable[[int, bytes], int]]) -> None  # noqa: ANN001
-        pass
+        ...
 
-    def foo(self, x=1):  # type: (Callable[[int, bytes], int]) -> int  # noqa: ANN001, ANN201, PLR6301
+    def foo(self, x=1):  # type: (Callable[[int, bytes], int]) -> int  # noqa: ANN001, ANN201
         """
         Method docstring.
 
         :param x: foo
         """
-        return x(1, b"")  # ty: ignore[call-non-callable]
 
     @classmethod
     def mk(  # noqa: ANN206
@@ -554,7 +545,6 @@ class ClassWithTypehintsNotInline:
 
         :param x: foo
         """
-        return cls(x)
 
 
 @expected(
@@ -569,8 +559,6 @@ mod.undocumented_function(x)
 )
 def undocumented_function(x: int) -> str:
     """Hi"""
-
-    return str(x)
 
 
 @expected(
@@ -604,8 +592,7 @@ class Decorator:
     :param func: function
     """
 
-    def __init__(self, func: Callable[[int, str], str]) -> None:
-        pass
+    def __init__(self, func: Callable[[int, str], str]) -> None: ...
 
 
 @expected(
@@ -719,9 +706,6 @@ def overload_with_complex_types(x: list[int] | dict[str, int]) -> dict[str, int]
     Parameters:
         x: Input value
     """
-    if isinstance(x, list):
-        return {str(i): i for i in x}
-    return list(x.values())
 
 
 @expected(
@@ -1038,7 +1022,6 @@ def decorator_2(f: Any) -> Any:
 
         A
     """
-    assert f is not None
 
 
 @expected(
@@ -1066,8 +1049,7 @@ class ParamAndAttributeHaveSameName:
         Description of parameter blah
     """
 
-    def __init__(self, blah: CodeType) -> None:
-        pass
+    def __init__(self, blah: CodeType) -> None: ...
 
     blah: ModuleType
     """Description of attribute blah"""
@@ -1319,7 +1301,6 @@ def has_typevar[T](param: T) -> T:
     Args:
         param: A parameter.
     """
-    return param
 
 
 @expected(
@@ -1342,7 +1323,6 @@ def has_newtype(param: W) -> W:
     Args:
         param: A parameter.
     """
-    return param
 
 
 AUTO_FUNCTION = ".. autofunction:: mod.{}"
@@ -1378,7 +1358,6 @@ def typehints_use_signature(a: AsyncGenerator) -> AsyncGenerator:
     Args:
         a: blah
     """
-    return a
 
 
 @expected(
@@ -1487,7 +1466,6 @@ def docstring_with_see_also() -> str:
 
     .. seealso:: more info at <https://example.com>`_.
     """
-    return ""
 
 
 @expected(
@@ -1549,7 +1527,6 @@ def typehints_formatter_applied_to_signature[Unformatted](param: Unformatted) ->
     Returns:
         The return value
     """
-    return param
 
 
 # Config settings for each test run.
@@ -1597,10 +1574,5 @@ def test_integration(
 
     result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
 
-    expected = normalize_sphinx_text(val.EXPECTED)
-    try:
-        assert result.strip() == dedent(expected).strip()
-    except Exception:
-        indented = indent(f'"""\n{result}\n"""', " " * 4)
-        print(f"@expected(\n{indented}\n)\n")  # noqa: T201
-        raise
+    expected = dedent(normalize_sphinx_text(val.EXPECTED)).strip()
+    assert result.strip() == expected
