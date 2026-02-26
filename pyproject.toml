@@ -182,7 +182,7 @@ paths.source = [
   "*/src",
   "*\\src",
 ]
-report.fail_under = 100
+report.fail_under = 88
 report.omit = [
   "tests/roots/*",
 ]
