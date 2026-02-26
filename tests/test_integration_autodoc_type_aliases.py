@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import re
 import sys
 from pathlib import Path
-from textwrap import dedent, indent
+from textwrap import dedent
 from typing import TYPE_CHECKING, Any, Literal, NewType, TypeVar
 
 import pytest
@@ -23,14 +22,6 @@ def expected(expected: str, **options: Any) -> Callable[[T], T]:
     def dec(val: T) -> T:
         val.EXPECTED = expected  # ty: ignore[unresolved-attribute]
         val.OPTIONS = options  # ty: ignore[unresolved-attribute]
-        return val
-
-    return dec
-
-
-def warns(pattern: str) -> Callable[[T], T]:
-    def dec(val: T) -> T:
-        val.WARNING = pattern  # ty: ignore[unresolved-attribute]
         return val
 
     return dec
@@ -68,7 +59,6 @@ def f(s: Schema) -> Schema:
     Args:
         s: Some schema.
     """
-    return s
 
 
 class AliasedClass: ...
@@ -94,7 +84,6 @@ def g(s: AliasedClass) -> AliasedClass:
     Args:
         s: Some schema.
     """
-    return s
 
 
 @expected(
@@ -147,20 +136,10 @@ def test_integration(
     app.build()
     assert "build succeeded" in status.getvalue()  # Build succeeded
 
-    regexp = getattr(val, "WARNING", None)
     value = warning.getvalue().strip()
-    if regexp:
-        msg = f"Regex pattern did not match.\n Regex: {regexp!r}\n Input: {value!r}"
-        assert re.search(regexp, value), msg
-    elif not re.search(r"WARNING: Inline strong start-string without end-string.", value):
-        assert not value
+    assert not value or "Inline strong start-string without end-string" in value
 
     result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
 
-    expected = normalize_sphinx_text(val.EXPECTED)
-    try:
-        assert result.strip() == dedent(expected).strip()
-    except Exception:
-        indented = indent(f'"""\n{result}\n"""', " " * 4)
-        print(f"@expected(\n{indented}\n)\n")  # noqa: T201
-        raise
+    expected = dedent(normalize_sphinx_text(val.EXPECTED)).strip()
+    assert result.strip() == expected

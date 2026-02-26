@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import attr
 import attrs
@@ -87,18 +87,6 @@ def test_backfill_classic_attrs_creates_annotations_when_missing() -> None:
     NoAnnotations.__annotations__ = None  # type: ignore[assignment]
     backfill_attrs_annotations(NoAnnotations)
     assert NoAnnotations.__annotations__["x"] is int
-
-
-@pytest.fixture
-def _attrs_mod() -> Any:
-    sys.path.insert(0, str(ATTRS_ROOT))
-    try:
-        import attrs_mod  # noqa: PLC0415  # ty: ignore[unresolved-import]
-
-        yield attrs_mod
-    finally:
-        sys.path.pop(0)
-        sys.modules.pop("attrs_mod", None)
 
 
 @pytest.mark.sphinx("text", testroot="attrs")

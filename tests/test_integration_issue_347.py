@@ -31,7 +31,6 @@ def simple_func(x: int, y: str) -> str:
     result : str
         The combined result.
     """
-    return f"{x}{y}"  # pragma: no cover
 
 
 def raises_func(x: int) -> None:
@@ -68,7 +67,6 @@ def multi_return(x: int) -> tuple[str, int]:
     value : int
         The value.
     """
-    return str(x), x  # pragma: no cover
 
 
 def no_params() -> str:
@@ -80,7 +78,6 @@ def no_params() -> str:
     str
         A greeting.
     """
-    return "hello"  # pragma: no cover
 
 
 def _build_and_get_output(

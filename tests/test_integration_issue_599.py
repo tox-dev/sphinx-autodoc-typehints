@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from textwrap import dedent, indent
+from textwrap import dedent
 from typing import TYPE_CHECKING, Any, TypeVar, Union
 from unittest.mock import MagicMock
 
@@ -65,7 +65,6 @@ def get_user(user_id: UserId) -> str:
     Args:
         user_id: The user identifier
     """
-    return f"User {user_id}"
 
 
 @expected(
@@ -82,14 +81,13 @@ mod.process_request(data)
       "bool"
 """
 )
-def process_request(data: RequestData) -> bool:  # noqa: ARG001
+def process_request(data: RequestData) -> bool:
     """
     Process a request.
 
     Args:
         data: The request data
     """
-    return True
 
 
 configs = {"default_conf": {}}
@@ -130,13 +128,8 @@ def test_integration(
 
     result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
 
-    expected_text = normalize_sphinx_text(val.EXPECTED)
-    try:
-        assert result.strip() == dedent(expected_text).strip()
-    except Exception:
-        indented = indent(f'"""\n{result}\n"""', " " * 4)
-        print(f"@expected(\n{indented}\n)\n")  # noqa: T201
-        raise
+    expected_text = dedent(normalize_sphinx_text(val.EXPECTED)).strip()
+    assert result.strip() == expected_text
 
 
 @pytest.mark.sphinx("text", testroot="issue_599")

@@ -19,15 +19,13 @@ class MyClass:
     @property
     def n_unique_nonzero(self) -> int:
         """Number of unique nonzero elements."""
-        return 0
 
-    def regular_method(self, x: int) -> int:  # noqa: PLR6301
+    def regular_method(self, x: int) -> int:
         """Do something.
 
         Args:
             x: a number
         """
-        return x
 
 
 @pytest.mark.sphinx("text", testroot="integration")

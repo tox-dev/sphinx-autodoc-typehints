@@ -1,23 +1,22 @@
 from __future__ import annotations
 
 import re
-import sys
 from functools import cmp_to_key
 from pathlib import Path
 from textwrap import dedent, indent
 from typing import TYPE_CHECKING, Any
-from unittest.mock import create_autospec, patch
 
 import pytest
 import typing_extensions
-from conftest import normalize_sphinx_text
-from sphinx.application import Sphinx
-from sphinx.config import Config
+from conftest import make_docstring_app, make_sig_app, normalize_sphinx_text
 from sphinx.ext.autodoc import Options
 
 from sphinx_autodoc_typehints import process_docstring, process_signature
 
+pytestmark = pytest.mark.usefixtures("wide_text_output")
+
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from io import StringIO
     from types import FunctionType
 
@@ -37,14 +36,7 @@ class HintedMethods:
 
 def test_process_docstring_slot_wrapper() -> None:
     lines: list[str] = []
-    config = create_autospec(
-        Config,
-        typehints_fully_qualified=False,
-        simplify_optional_unions=False,
-        typehints_formatter=None,
-        autodoc_mock_imports=[],
-    )
-    app: Sphinx = create_autospec(Sphinx, config=config)
+    app = make_docstring_app()
     process_docstring(app, "class", "SlotWrapper", Slotted, None, lines)
     assert not lines
 
@@ -57,14 +49,7 @@ def test_process_docstring_wrapper_loop() -> None:
     func.__wrapped__ = func  # type: ignore[attr-defined]  # circular wrapper loop
 
     lines: list[str] = []
-    config = create_autospec(
-        Config,
-        typehints_fully_qualified=False,
-        simplify_optional_unions=False,
-        typehints_formatter=None,
-        autodoc_mock_imports=[],
-    )
-    app: Sphinx = create_autospec(Sphinx, config=config)
+    app = make_docstring_app()
     process_docstring(app, "function", "func", func, None, lines)
 
 
@@ -75,16 +60,7 @@ def test_process_signature_wrapper_loop() -> None:
 
     func.__wrapped__ = func  # type: ignore[attr-defined]  # circular wrapper loop
 
-    config = create_autospec(
-        Config,
-        typehints_fully_qualified=False,
-        simplify_optional_unions=False,
-        typehints_formatter=None,
-        typehints_use_signature=False,
-        typehints_use_signature_return=False,
-        autodoc_type_aliases={},
-    )
-    app: Sphinx = create_autospec(Sphinx, config=config)
+    app = make_sig_app()
     result = process_signature(
         app,
         "function",
@@ -97,38 +73,26 @@ def test_process_signature_wrapper_loop() -> None:
     assert result is None
 
 
-def set_python_path() -> None:
-    test_path = Path(__file__).parent
-    if str(test_path) not in sys.path:
-        sys.path.insert(0, str(test_path))
-
-
 @pytest.mark.parametrize("always_document_param_types", [True, False], ids=["doc_param_type", "no_doc_param_type"])
 @pytest.mark.sphinx("text", testroot="dummy")
-@patch("sphinx.writers.text.MAXWIDTH", 2000)
 def test_always_document_param_types(
     app: SphinxTestApp,
     status: StringIO,
     warning: StringIO,
     always_document_param_types: bool,
+    write_rst: Callable[[str], None],
 ) -> None:
-    set_python_path()
-
     app.config.always_document_param_types = always_document_param_types  # create flag
     app.config.autodoc_mock_imports = ["mailbox"]  # create flag
 
-    for f in Path(app.srcdir).glob("*.rst"):
-        f.unlink()
-    (Path(app.srcdir) / "index.rst").write_text(
-        dedent(
-            """
-            .. autofunction:: dummy_module.undocumented_function
+    write_rst(
+        """
+        .. autofunction:: dummy_module.undocumented_function
 
-            .. autoclass:: dummy_module.DataClass
-                :undoc-members:
-                :special-members: __init__
-            """,
-        ),
+        .. autoclass:: dummy_module.DataClass
+            :undoc-members:
+            :special-members: __init__
+        """,
     )
 
     app.build()
@@ -164,24 +128,19 @@ def test_always_document_param_types(
 
 
 @pytest.mark.sphinx("text", testroot="dummy")
-@patch("sphinx.writers.text.MAXWIDTH", 2000)
 def test_always_document_param_types_with_defaults_braces_after(
     app: SphinxTestApp,
     status: StringIO,
     warning: StringIO,  # noqa: ARG001
+    write_rst: Callable[[str], None],
 ) -> None:
     """Regression test for #575: IndexError when combining always_document_param_types with braces-after."""
-    set_python_path()
-
     app.config.always_document_param_types = True
     app.config.typehints_defaults = "braces-after"
 
-    for rst_file in Path(app.srcdir).glob("*.rst"):
-        rst_file.unlink()
-    index_content = """\
+    write_rst("""\
         .. autofunction:: dummy_module.undocumented_function_with_defaults
-    """
-    (Path(app.srcdir) / "index.rst").write_text(dedent(index_content))
+    """)
 
     app.build()
 
@@ -189,22 +148,17 @@ def test_always_document_param_types_with_defaults_braces_after(
 
 
 @pytest.mark.sphinx("text", testroot="dummy")
-@patch("sphinx.writers.text.MAXWIDTH", 2000)
 def test_namedtuple_new_no_warning(
     app: SphinxTestApp,
     status: StringIO,
     warning: StringIO,
+    write_rst: Callable[[str], None],
 ) -> None:
     """Regression test for #601: NamedTuple __new__ causes 'NoneType' attribute error."""
-    set_python_path()
-
-    for rst_file in Path(app.srcdir).glob("*.rst"):
-        rst_file.unlink()
-    index_content = """\
+    write_rst("""\
         .. autoclass:: dummy_module.MyNamedTuple
             :special-members: __new__
-    """
-    (Path(app.srcdir) / "index.rst").write_text(dedent(index_content))
+    """)
 
     app.build()
 
@@ -213,10 +167,7 @@ def test_namedtuple_new_no_warning(
 
 
 @pytest.mark.sphinx("text", testroot="dummy")
-@patch("sphinx.writers.text.MAXWIDTH", 2000)
 def test_sphinx_output_future_annotations(app: SphinxTestApp, status: StringIO) -> None:
-    set_python_path()
-
     app.config.master_doc = "future_annotations"  # create flag
     app.build()
 
@@ -246,10 +197,7 @@ def test_sphinx_output_future_annotations(app: SphinxTestApp, status: StringIO) 
 
 
 @pytest.mark.sphinx("pseudoxml", testroot="dummy")
-@patch("sphinx.writers.text.MAXWIDTH", 2000)
 def test_sphinx_output_default_role(app: SphinxTestApp, status: StringIO) -> None:
-    set_python_path()
-
     app.config.master_doc = "simple_default_role"  # create flag
     app.config.default_role = "literal"
     app.build()
@@ -290,15 +238,12 @@ def test_sphinx_output_default_role(app: SphinxTestApp, status: StringIO) -> Non
     ],
 )
 @pytest.mark.sphinx("text", testroot="dummy")
-@patch("sphinx.writers.text.MAXWIDTH", 2000)
 def test_sphinx_output_defaults(
     app: SphinxTestApp,
     status: StringIO,
     defaults_config_val: str,
     expected: str | Exception,
 ) -> None:
-    set_python_path()
-
     app.config.master_doc = "simple"  # create flag
     app.config.typehints_defaults = defaults_config_val  # create flag
     if isinstance(expected, Exception):
@@ -337,15 +282,12 @@ def test_sphinx_output_defaults(
     ],
 )
 @pytest.mark.sphinx("text", testroot="dummy")
-@patch("sphinx.writers.text.MAXWIDTH", 2000)
 def test_sphinx_output_formatter(
     app: SphinxTestApp,
     status: StringIO,
     formatter_config_val: str,
     expected: tuple[str, ...] | Exception,
 ) -> None:
-    set_python_path()
-
     app.config.master_doc = "simple"  # create flag
     app.config.typehints_formatter = formatter_config_val  # create flag
     if isinstance(expected, Exception):
@@ -377,14 +319,7 @@ def test_sphinx_output_formatter(
 
 @pytest.mark.parametrize("obj", [cmp_to_key, 1])
 def test_default_no_signature(obj: Any) -> None:
-    config = create_autospec(
-        Config,
-        typehints_fully_qualified=False,
-        simplify_optional_unions=False,
-        typehints_formatter=None,
-        autodoc_mock_imports=[],
-    )
-    app: Sphinx = create_autospec(Sphinx, config=config)
+    app = make_docstring_app()
     lines: list[str] = []
     process_docstring(app, "what", "name", obj, None, lines)
     assert lines == []
@@ -392,23 +327,16 @@ def test_default_no_signature(obj: Any) -> None:
 
 @pytest.mark.parametrize("method", [HintedMethods.from_magic, HintedMethods().method])
 def test_bound_class_method(method: FunctionType) -> None:
-    config = create_autospec(
-        Config,
-        typehints_fully_qualified=False,
-        simplify_optional_unions=False,
+    app = make_docstring_app(
         typehints_document_rtype=False,
         always_document_param_types=True,
         typehints_defaults=True,
-        typehints_formatter=None,
-        autodoc_mock_imports=[],
     )
-    app: Sphinx = create_autospec(Sphinx, config=config)
     process_docstring(app, "class", method.__qualname__, method, None, [])
 
 
 @pytest.mark.sphinx("text", testroot="resolve-typing-guard")
 def test_resolve_typing_guard_imports(app: SphinxTestApp, status: StringIO, warning: StringIO) -> None:
-    set_python_path()
     app.config.autodoc_mock_imports = ["viktor"]  # create flag
     app.build()
     out = status.getvalue()
@@ -418,16 +346,13 @@ def test_resolve_typing_guard_imports(app: SphinxTestApp, status: StringIO, warn
 
 @pytest.mark.sphinx("text", testroot="resolve-typing-guard-tmp")
 def test_resolve_typing_guard_attrs_imports(app: SphinxTestApp, status: StringIO, warning: StringIO) -> None:
-    set_python_path()
     app.build()
     assert "build succeeded" in status.getvalue()
     assert not warning.getvalue()
 
 
 @pytest.mark.sphinx("text", testroot="dummy")
-@patch("sphinx.writers.text.MAXWIDTH", 2000)
 def test_sphinx_output_formatter_no_use_rtype(app: SphinxTestApp, status: StringIO) -> None:
-    set_python_path()
     app.config.master_doc = "simple_no_use_rtype"  # create flag
     app.config.typehints_use_rtype = False
     app.build()
@@ -490,9 +415,7 @@ def test_sphinx_output_formatter_no_use_rtype(app: SphinxTestApp, status: String
 
 
 @pytest.mark.sphinx("text", testroot="dummy")
-@patch("sphinx.writers.text.MAXWIDTH", 2000)
 def test_sphinx_output_with_use_signature(app: SphinxTestApp, status: StringIO) -> None:
-    set_python_path()
     app.config.master_doc = "simple"  # create flag
     app.config.typehints_use_signature = True
     app.build()
@@ -519,9 +442,7 @@ def test_sphinx_output_with_use_signature(app: SphinxTestApp, status: StringIO) 
 
 
 @pytest.mark.sphinx("text", testroot="dummy")
-@patch("sphinx.writers.text.MAXWIDTH", 2000)
 def test_sphinx_output_with_use_signature_return(app: SphinxTestApp, status: StringIO) -> None:
-    set_python_path()
     app.config.master_doc = "simple"  # create flag
     app.config.typehints_use_signature_return = True
     app.build()
@@ -548,9 +469,7 @@ def test_sphinx_output_with_use_signature_return(app: SphinxTestApp, status: Str
 
 
 @pytest.mark.sphinx("text", testroot="dummy")
-@patch("sphinx.writers.text.MAXWIDTH", 2000)
 def test_sphinx_output_with_use_signature_and_return(app: SphinxTestApp, status: StringIO) -> None:
-    set_python_path()
     app.config.master_doc = "simple"  # create flag
     app.config.typehints_use_signature = True
     app.config.typehints_use_signature_return = True
@@ -578,9 +497,7 @@ def test_sphinx_output_with_use_signature_and_return(app: SphinxTestApp, status:
 
 
 @pytest.mark.sphinx("text", testroot="dummy")
-@patch("sphinx.writers.text.MAXWIDTH", 2000)
 def test_default_annotation_without_typehints(app: SphinxTestApp, status: StringIO) -> None:
-    set_python_path()
     app.config.master_doc = "without_complete_typehints"  # create flag
     app.config.typehints_defaults = "comma"
     app.build()
@@ -649,10 +566,7 @@ def test_default_annotation_without_typehints(app: SphinxTestApp, status: String
 
 
 @pytest.mark.sphinx("text", testroot="dummy")
-@patch("sphinx.writers.text.MAXWIDTH", 2000)
 def test_wrong_module_path(app: SphinxTestApp, status: StringIO, warning: StringIO) -> None:
-    set_python_path()
-
     app.config.master_doc = "wrong_module_path"  # create flag
     app.config.default_role = "literal"
     app.config.nitpicky = True
