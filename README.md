@@ -39,6 +39,7 @@ features above. See [Avoid duplicate types with built-in Sphinx](#avoid-duplicat
   - [Control return type display](#control-return-type-display)
   - [Change how union types look](#change-how-union-types-look)
   - [Show default parameter values](#show-default-parameter-values)
+  - [Control overload signature display](#control-overload-signature-display)
   - [Keep type hints in function signatures](#keep-type-hints-in-function-signatures)
   - [Handle circular imports](#handle-circular-imports)
   - [Resolve types from `TYPE_CHECKING` blocks](#resolve-types-from-type_checking-blocks)
@@ -189,6 +190,31 @@ typehints_defaults = "braces"
 typehints_defaults = "braces-after"
 ```
 
+### Control overload signature display
+
+When a function has [`@overload`](https://docs.python.org/3/library/typing.html#typing.overload) signatures, they are
+rendered automatically in the docstring. To disable this globally:
+
+```python
+typehints_document_overloads = False
+```
+
+To disable overloads for a single function while keeping them everywhere else, add `:no-overloads:` to the docstring:
+
+```python
+@overload
+def f(x: int) -> str: ...
+@overload
+def f(x: str) -> bool: ...
+def f(x):
+    """:no-overloads:
+
+    f accepts int or str, see docs for details.
+    """
+```
+
+The `:no-overloads:` directive is stripped from the rendered output.
+
 ### Keep type hints in function signatures
 
 By default, type hints are removed from function signatures and shown in the parameter list below. To keep them visible
@@ -297,20 +323,21 @@ To suppress only specific warning types, see [Warning categories](#warning-categ
 
 ### Configuration options
 
-| Option                           | Default | Description                                                                                   |
-| -------------------------------- | ------- | --------------------------------------------------------------------------------------------- |
-| `typehints_document_rtype`       | `True`  | Show the return type in docs.                                                                 |
-| `typehints_document_rtype_none`  | `True`  | Show return type when it's `None`.                                                            |
-| `typehints_use_rtype`            | `True`  | Show return type as a separate block. When `False`, it's inlined with the return description. |
-| `always_use_bars_union`          | `False` | Use `X \| Y` instead of `Union[X, Y]`. Always on for Python 3.14+.                            |
-| `simplify_optional_unions`       | `True`  | Flatten `Optional[Union[A, B]]` to `Union[A, B, None]`.                                       |
-| `typehints_defaults`             | `None`  | Show default values: `"comma"`, `"braces"`, or `"braces-after"`.                              |
-| `typehints_use_signature`        | `False` | Keep parameter types in the function signature.                                               |
-| `typehints_use_signature_return` | `False` | Keep the return type in the function signature.                                               |
-| `typehints_fully_qualified`      | `False` | Show full module path for types (e.g., `module.Class` not `Class`).                           |
-| `always_document_param_types`    | `False` | Add types even for parameters that don't have a `:param:` entry in the docstring.             |
-| `typehints_formatter`            | `None`  | A function `(annotation, Config) -> str \| None` for custom type rendering.                   |
-| `typehints_fixup_module_name`    | `None`  | A function `(str) -> str` to rewrite module paths before generating cross-reference links.    |
+| Option                           | Default | Description                                                                                        |
+| -------------------------------- | ------- | -------------------------------------------------------------------------------------------------- |
+| `typehints_document_rtype`       | `True`  | Show the return type in docs.                                                                      |
+| `typehints_document_rtype_none`  | `True`  | Show return type when it's `None`.                                                                 |
+| `typehints_document_overloads`   | `True`  | Show `@overload` signatures in docs. Use `:no-overloads:` in a docstring for per-function control. |
+| `typehints_use_rtype`            | `True`  | Show return type as a separate block. When `False`, it's inlined with the return description.      |
+| `always_use_bars_union`          | `False` | Use `X \| Y` instead of `Union[X, Y]`. Always on for Python 3.14+.                                 |
+| `simplify_optional_unions`       | `True`  | Flatten `Optional[Union[A, B]]` to `Union[A, B, None]`.                                            |
+| `typehints_defaults`             | `None`  | Show default values: `"comma"`, `"braces"`, or `"braces-after"`.                                   |
+| `typehints_use_signature`        | `False` | Keep parameter types in the function signature.                                                    |
+| `typehints_use_signature_return` | `False` | Keep the return type in the function signature.                                                    |
+| `typehints_fully_qualified`      | `False` | Show full module path for types (e.g., `module.Class` not `Class`).                                |
+| `always_document_param_types`    | `False` | Add types even for parameters that don't have a `:param:` entry in the docstring.                  |
+| `typehints_formatter`            | `None`  | A function `(annotation, Config) -> str \| None` for custom type rendering.                        |
+| `typehints_fixup_module_name`    | `None`  | A function `(str) -> str` to rewrite module paths before generating cross-reference links.         |
 
 ### Warning categories
 

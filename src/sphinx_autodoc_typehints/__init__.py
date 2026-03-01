@@ -190,23 +190,38 @@ def _inject_overload_signatures(
     obj: Any,
     lines: list[str],
 ) -> bool:
-    if what not in {"function", "method"}:
+    if what not in {"function", "method"} or not app.config.typehints_document_overloads:
         return False
+    if _strip_no_overloads_directive(lines):
+        return False
+    if (overloads := _resolve_overloads(obj)) is None:
+        return False
+    for line in reversed(_format_overload_lines(overloads, app)):
+        lines.insert(0, line)
+    return True
 
+
+def _strip_no_overloads_directive(lines: list[str]) -> bool:
+    for idx, line in enumerate(lines):
+        if line.strip() == ":no-overloads:":
+            del lines[idx]
+            return True
+    return False
+
+
+def _resolve_overloads(obj: Any) -> list[inspect.Signature] | None:
     module_name = getattr(obj, "__module__", None)
     if not module_name or module_name not in _OVERLOADS_CACHE:
-        return False
-
+        return None
     qualname = getattr(obj, "__qualname__", None)
     if not qualname:
-        return False
+        return None
+    return _OVERLOADS_CACHE[module_name].get(qualname) or None
 
-    overloads = _OVERLOADS_CACHE[module_name].get(qualname)
-    if not overloads:
-        return False
 
+def _format_overload_lines(overloads: list[inspect.Signature], app: Sphinx) -> list[str]:
     short_literals = app.config.python_display_short_literal_types
-    overload_lines = [":Overloads:"]
+    result = [":Overloads:"]
     for overload_sig in overloads:
         params = []
         for param_name, param in overload_sig.parameters.items():
@@ -225,13 +240,9 @@ def _inject_overload_signatures(
             formatted_return = add_type_css_class(formatted_return)
             return_annotation = f" \u2192 {formatted_return}"
 
-        sig_line = f"   * {', '.join(params)}{return_annotation}"
-        overload_lines.append(sig_line)
-
-    overload_lines.append("")
-    for line in reversed(overload_lines):
-        lines.insert(0, line)
-    return True
+        result.append(f"   * {', '.join(params)}{return_annotation}")
+    result.append("")
+    return result
 
 
 def format_default(app: Sphinx, default: Any, is_annotated: bool) -> str | None:  # noqa: FBT001
@@ -410,6 +421,7 @@ def setup(app: Sphinx) -> dict[str, bool]:
     app.add_config_value("simplify_optional_unions", True, "env")  # noqa: FBT003
     app.add_config_value("always_use_bars_union", False, "env")  # noqa: FBT003
     app.add_config_value("typehints_formatter", None, "env")
+    app.add_config_value("typehints_document_overloads", True, "env")  # noqa: FBT003
     app.add_config_value("typehints_use_signature", False, "env")  # noqa: FBT003
     app.add_config_value("typehints_use_signature_return", False, "env")  # noqa: FBT003
     app.add_config_value("typehints_fixup_module_name", None, "env")
