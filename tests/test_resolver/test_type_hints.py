@@ -6,6 +6,7 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 
 from sphinx_autodoc_typehints._resolver._type_hints import (
+    _build_localns,
     _execute_guarded_code,
     _future_annotations_imported,
     _get_type_hint,
@@ -87,3 +88,25 @@ def test_guarded_import_warning_includes_module() -> None:
     mock_logger.warning.assert_called_once()
     args = mock_logger.warning.call_args
     assert "fake_mod" in str(args)
+
+
+def test_build_localns_adds_ancestor_classes() -> None:
+    import tests.roots.test_nested_attrs_localns as mod  # noqa: PLC0415
+
+    assert _build_localns(mod.Outer.Inner.__init__, {})["Outer"] is mod.Outer
+
+
+def test_build_localns_no_qualname() -> None:
+    def func() -> None: ...
+
+    func.__qualname__ = "func"
+    localns: dict[Any, Any] = {"existing": 1}
+    assert _build_localns(func, localns) == {"existing": 1}
+
+
+def test_build_localns_preserves_existing_localns() -> None:
+    import tests.roots.test_nested_attrs_localns as mod  # noqa: PLC0415
+
+    localns: dict[Any, Any] = {"key": "value"}
+    assert (result := _build_localns(mod.Outer.Inner.__init__, localns))["key"] == "value"
+    assert result["Outer"] is mod.Outer
