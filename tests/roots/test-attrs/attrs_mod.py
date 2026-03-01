@@ -27,3 +27,16 @@ class ModernAttrs:
 
     name: str
     age: int
+
+
+class Outer:
+    """A class with nested attrs classes to test forward reference resolution."""
+
+    class Foo:
+        """A nested class referenced by Bar."""
+
+    @attrs.define
+    class Bar:
+        """An attrs class referencing a sibling nested class."""
+
+        foo: Outer.Foo

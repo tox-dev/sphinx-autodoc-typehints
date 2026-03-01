@@ -90,6 +90,24 @@ def test_backfill_classic_attrs_creates_annotations_when_missing() -> None:
 
 
 @pytest.mark.sphinx("text", testroot="attrs")
+def test_sphinx_build_nested_attrs_forward_ref(app: SphinxTestApp, status: StringIO, warning: StringIO) -> None:
+    template = """\
+.. autoclass:: attrs_mod.Outer
+   :members:
+   :undoc-members:
+
+.. autoclass:: attrs_mod.Outer.Bar
+   :members:
+   :undoc-members:
+"""
+    (Path(app.srcdir) / "index.rst").write_text(template)
+    app.build()
+    assert "build succeeded" in status.getvalue()
+    assert "Foo" in normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
+    assert "forward reference" not in warning.getvalue()
+
+
+@pytest.mark.sphinx("text", testroot="attrs")
 def test_sphinx_build_attrs_types(app: SphinxTestApp, status: StringIO, warning: StringIO) -> None:
     template = """\
 .. autoclass:: attrs_mod.ClassicAttrs
