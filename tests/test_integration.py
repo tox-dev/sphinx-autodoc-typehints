@@ -708,6 +708,43 @@ def overload_with_complex_types(x: list[int] | dict[str, int]) -> dict[str, int]
     """
 
 
+@overload
+def func_with_overload_no_overloads(a: int, b: int) -> None: ...
+
+
+@overload
+def func_with_overload_no_overloads(a: str, b: str) -> None: ...
+
+
+@expected(
+    """\
+mod.func_with_overload_no_overloads(a, b)
+
+   Accepts int or str pairs, see docs for details.
+
+   Parameters:
+      * **a** ("int" | "str") -- The first thing
+
+      * **b** ("int" | "str") -- The second thing
+
+   Return type:
+      "None"
+""",
+)
+def func_with_overload_no_overloads(a: Union[int, str], b: Union[int, str]) -> None:
+    """:no-overloads:
+
+    Accepts int or str pairs, see docs for details.
+
+    Parameters
+    ----------
+    a:
+        The first thing
+    b:
+        The second thing
+    """
+
+
 @expected(
     """\
 mod.func_literals_long_format(a, b)

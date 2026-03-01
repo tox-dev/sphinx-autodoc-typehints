@@ -68,6 +68,7 @@ def make_docstring_app(**overrides: object) -> Sphinx:
         "typehints_defaults": None,
         "always_document_param_types": False,
         "python_display_short_literal_types": False,
+        "typehints_document_overloads": True,
     }
     defaults.update(overrides)
     config = create_autospec(Config, **defaults)  # ty: ignore[invalid-argument-type]

@@ -130,6 +130,64 @@ def test_local_function_warning_includes_location() -> None:
     assert kwargs["location"] == get_obj_location(fake_method)
 
 
+def test_inject_overload_global_disable() -> None:
+    obj = MagicMock()
+    obj.__module__ = "test_mod"
+    obj.__qualname__ = "func"
+
+    sig = inspect.Signature(
+        parameters=[inspect.Parameter("x", inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=int)],
+        return_annotation=str,
+    )
+    _OVERLOADS_CACHE["test_mod"] = {"func": [sig]}
+    try:
+        app = make_docstring_app(typehints_document_overloads=False)
+        lines: list[str] = []
+        assert _inject_overload_signatures(app, "function", "name", obj, lines) is False
+        assert lines == []
+    finally:
+        _OVERLOADS_CACHE.pop("test_mod", None)
+
+
+def test_inject_overload_local_no_overloads_directive() -> None:
+    obj = MagicMock()
+    obj.__module__ = "test_mod"
+    obj.__qualname__ = "func"
+
+    sig = inspect.Signature(
+        parameters=[inspect.Parameter("x", inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=int)],
+        return_annotation=str,
+    )
+    _OVERLOADS_CACHE["test_mod"] = {"func": [sig]}
+    try:
+        app = make_docstring_app()
+        lines = [":no-overloads:", "", "Some docstring."]
+        assert _inject_overload_signatures(app, "function", "name", obj, lines) is False
+        assert ":no-overloads:" not in lines
+        assert lines == ["", "Some docstring."]
+    finally:
+        _OVERLOADS_CACHE.pop("test_mod", None)
+
+
+def test_inject_overload_local_directive_with_global_enabled() -> None:
+    obj = MagicMock()
+    obj.__module__ = "test_mod"
+    obj.__qualname__ = "func"
+
+    sig = inspect.Signature(
+        parameters=[inspect.Parameter("x", inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=int)],
+        return_annotation=str,
+    )
+    _OVERLOADS_CACHE["test_mod"] = {"func": [sig]}
+    try:
+        app = make_docstring_app(typehints_document_overloads=True)
+        lines = [":no-overloads:", "", "Docs here."]
+        assert _inject_overload_signatures(app, "function", "name", obj, lines) is False
+        assert ":no-overloads:" not in lines
+    finally:
+        _OVERLOADS_CACHE.pop("test_mod", None)
+
+
 def test_inject_types_no_signature() -> None:
     """Branch 261->263: signature is None skips _inject_signature."""
 
