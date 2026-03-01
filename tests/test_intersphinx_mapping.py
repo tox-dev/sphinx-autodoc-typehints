@@ -11,6 +11,7 @@ from sphinx_autodoc_typehints import format_annotation
 from sphinx_autodoc_typehints._intersphinx import build_type_mapping
 
 if TYPE_CHECKING:
+    import pytest
     from sphinx.environment import BuildEnvironment
 
 
@@ -53,6 +54,15 @@ def test_build_type_mapping_skips_unimportable() -> None:
 def test_build_type_mapping_skips_missing_attr() -> None:
     inventory_data: dict[str, dict[str, Any]] = {
         "py:class": {"threading.NoSuchAttribute": ("", "", "", "")},
+    }
+    assert build_type_mapping(_make_env(inventory_data)) == {}
+
+
+def test_build_type_mapping_skips_no_qualname(monkeypatch: pytest.MonkeyPatch) -> None:
+    obj_no_qualname = SimpleNamespace(__module__="os")
+    monkeypatch.setattr("os.getcwd", obj_no_qualname)
+    inventory_data: dict[str, dict[str, Any]] = {
+        "py:function": {"os.getcwd": ("", "", "", "")},
     }
     assert build_type_mapping(_make_env(inventory_data)) == {}
 

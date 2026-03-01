@@ -31,9 +31,9 @@ def build_type_mapping(env: BuildEnvironment) -> dict[str, str]:
             try:
                 mod = importlib.import_module(mod_path)
                 obj = getattr(mod, attr_name)
+                internal_path = f"{obj.__module__}.{obj.__qualname__}"
             except Exception:  # noqa: BLE001, S112
                 continue
-            internal_path = f"{obj.__module__}.{obj.__qualname__}"
             if internal_path != documented_name:
                 candidates.append((internal_path, documented_name))
 
