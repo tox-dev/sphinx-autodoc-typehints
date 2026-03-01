@@ -16,7 +16,7 @@ def build_type_mapping(env: BuildEnvironment) -> dict[str, str]:
     if not hasattr(env, "intersphinx_inventory"):
         return {}
 
-    inventory_data: dict[str, dict[str, object]] = env.intersphinx_inventory.data  # ty: ignore[unresolved-attribute]
+    inventory_data: dict[str, dict[str, object]] = env.intersphinx_inventory  # ty: ignore[invalid-assignment]
     all_documented: set[str] = set()
     candidates: list[tuple[str, str]] = []
 
