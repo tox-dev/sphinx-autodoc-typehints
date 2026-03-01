@@ -106,6 +106,9 @@ def format_annotation(annotation: Any, config: Config, *, short_literals: bool =
         return str(annotation).strip("'")
 
     module = _fixup_module_name(config, module)
+    internal_path = f"{module}.{class_name}"
+    if (mapping := getattr(config, "_intersphinx_type_mapping", None)) and (mapped := mapping.get(internal_path)):
+        module, _, class_name = mapped.rpartition(".")
     full_name = f"{module}.{class_name}" if module != "builtins" else class_name
     fully_qualified: bool = getattr(config, "typehints_fully_qualified", False)
     prefix = "" if fully_qualified or full_name == class_name else "~"

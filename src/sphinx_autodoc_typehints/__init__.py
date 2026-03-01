@@ -24,6 +24,7 @@ from ._annotations import (
 from ._formats import detect_format
 from ._formats._numpydoc import _convert_numpydoc_to_sphinx_fields  # noqa: F401
 from ._formats._sphinx import _has_yields_section, _is_generator_type
+from ._intersphinx import build_type_mapping
 from ._parser import parse
 from ._resolver import (
     backfill_attrs_annotations,
@@ -381,6 +382,8 @@ def validate_config(app: Sphinx, env: BuildEnvironment, docnames: list[str]) -> 
     if formatter is not None and not callable(formatter):
         msg = f"typehints_formatter needs to be callable or `None`, not {formatter}"
         raise ValueError(msg)
+
+    app.config._intersphinx_type_mapping = build_type_mapping(env)  # noqa: SLF001
 
 
 def sphinx_autodoc_typehints_type_role(

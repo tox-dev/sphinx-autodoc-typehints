@@ -19,6 +19,7 @@ documentation -- so you write types once in code and they appear in your docs wi
   [dataclass](https://docs.python.org/3/library/dataclasses.html) classes
 - Shows default parameter values alongside types
 - Controls union display style (`Union[X, Y]` vs `X | Y`)
+- Automatically fixes cross-references for stdlib types whose runtime module differs from their documented path
 - Supports custom type formatters and module name rewriting
 - Extracts descriptions from [`Annotated[T, Doc(...)]`](https://typing-extensions.readthedocs.io/en/latest/#Doc)
   metadata
@@ -46,6 +47,7 @@ features above. See [Avoid duplicate types with built-in Sphinx](#avoid-duplicat
   - [Write a custom type formatter](#write-a-custom-type-formatter)
   - [Document a `NewType` or `type` alias without expanding it](#document-a-newtype-or-type-alias-without-expanding-it)
   - [Add types for C extensions or packages without annotations](#add-types-for-c-extensions-or-packages-without-annotations)
+  - [Fix cross-reference links for stdlib types](#fix-cross-reference-links-for-stdlib-types)
   - [Fix cross-reference links for renamed modules](#fix-cross-reference-links-for-renamed-modules)
   - [Suppress warnings](#suppress-warnings)
 - [Reference](#reference)
@@ -265,10 +267,37 @@ The extension reads [`.pyi` stub files](https://typing.python.org/en/latest/spec
 automatically. Place a `.pyi` file next to the `.so`/`.pyd` file (or as `__init__.pyi` in the package directory) with
 the type annotations, and they'll be picked up.
 
+### Fix cross-reference links for stdlib types
+
+Many Python stdlib classes have a `__module__` that points to an internal module rather than their public documented
+path. For example, `threading.local` reports its module as `_thread._local`, and `concurrent.futures.Executor` as
+`concurrent.futures._base.Executor`. This produces broken cross-reference links because the extension builds links from
+`__module__.__qualname__`.
+
+When [intersphinx](https://www.sphinx-doc.org/en/master/usage/extensions/intersphinx.html) is enabled, the extension
+automatically fixes this. After intersphinx loads its inventories, it builds a reverse mapping from runtime paths to
+documented paths and applies it during annotation formatting. No configuration is needed — just make sure intersphinx is
+loaded:
+
+```python
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.intersphinx",
+    "sphinx_autodoc_typehints",
+]
+
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+}
+```
+
+With this, a type hint like `threading.local` correctly links to `threading.local` in the Python docs instead of
+producing a broken `_thread._local` reference.
+
 ### Fix cross-reference links for renamed modules
 
-Some libraries expose types under a different module path than where they're documented. For example, GTK types live at
-`gi.repository.Gtk.Window` in Python, but their docs list them as `Gtk.Window`. This causes broken
+Some third-party libraries expose types under a different module path than where they're documented. For example, GTK
+types live at `gi.repository.Gtk.Window` in Python, but their docs list them as `Gtk.Window`. This causes broken
 [intersphinx](https://www.sphinx-doc.org/en/master/usage/extensions/intersphinx.html) links.
 
 Use `typehints_fixup_module_name` to rewrite the module path before links are generated:
