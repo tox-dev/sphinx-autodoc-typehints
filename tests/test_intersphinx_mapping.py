@@ -1,22 +1,23 @@
 from __future__ import annotations
 
 import threading
-from typing import Any
-from unittest.mock import MagicMock, create_autospec
+from types import SimpleNamespace
+from typing import TYPE_CHECKING, Any, cast
+from unittest.mock import create_autospec
 
 from sphinx.config import Config
 
 from sphinx_autodoc_typehints import format_annotation
 from sphinx_autodoc_typehints._intersphinx import build_type_mapping
 
+if TYPE_CHECKING:
+    from sphinx.environment import BuildEnvironment
 
-def _make_env(inventory_data: dict[str, dict[str, object]] | None = None) -> MagicMock:
-    env = MagicMock()
+
+def _make_env(inventory_data: dict[str, dict[str, object]] | None = None) -> BuildEnvironment:
     if inventory_data is None:
-        del env.intersphinx_inventory
-    else:
-        env.intersphinx_inventory.data = inventory_data
-    return env
+        return cast("BuildEnvironment", SimpleNamespace())
+    return cast("BuildEnvironment", SimpleNamespace(intersphinx_inventory=inventory_data))
 
 
 def test_build_type_mapping_threading_local() -> None:
