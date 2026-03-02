@@ -19,20 +19,18 @@ def _backfill_from_stub(obj: Any) -> dict[str, str]:
 
 
 def _find_stub_path(obj: Any) -> Path | None:
-    module = inspect.getmodule(obj)
-    if module is None:
+    if (module := inspect.getmodule(obj)) is None:
         return None
     try:
         source_file = inspect.getfile(module)
     except TypeError:
         return None
-    stub = Path(source_file).with_suffix(".pyi")
-    if stub.is_file():
+    source = Path(source_file)
+    if (stub := source.with_name(f"{source.name.split('.')[0]}.pyi")).is_file():
         return stub
     if hasattr(module, "__path__"):
         for pkg_dir in module.__path__:
-            init_stub = Path(pkg_dir) / "__init__.pyi"
-            if init_stub.is_file():
+            if (init_stub := Path(pkg_dir) / "__init__.pyi").is_file():
                 return init_stub
     return None
 
