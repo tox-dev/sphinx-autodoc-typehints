@@ -19,3 +19,7 @@ class Calculator:
 
 async def fetch(url):
     return url
+
+
+def transform(value):
+    return value

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import ast
+import contextlib
+import importlib
 import inspect
 from pathlib import Path
 from typing import Any
@@ -16,6 +18,37 @@ def _backfill_from_stub(obj: Any) -> dict[str, str]:
     if (stub_path := _find_stub_path(obj)) and (tree := _parse_stub_ast(stub_path)):
         return _extract_annotations_from_stub(tree, obj)
     return {}
+
+
+def _get_stub_localns(obj: Any) -> dict[str, Any]:
+    if (stub_path := _find_stub_path(obj)) and (tree := _parse_stub_ast(stub_path)):
+        return _resolve_stub_imports(tree)
+    return {}
+
+
+def _resolve_stub_imports(tree: ast.Module) -> dict[str, Any]:
+    ns: dict[str, Any] = {}
+    for node in tree.body:
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                with contextlib.suppress(ImportError):
+                    if alias.asname:
+                        ns[alias.asname] = importlib.import_module(alias.name)
+                    else:
+                        top = alias.name.split(".")[0]
+                        ns[top] = importlib.import_module(top)
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            try:
+                mod = importlib.import_module(node.module)
+            except ImportError:
+                continue
+            for alias in node.names:
+                if alias.name == "*":
+                    continue
+                name = alias.asname or alias.name
+                if (val := getattr(mod, alias.name, None)) is not None:
+                    ns[name] = val
+    return ns
 
 
 def _find_stub_path(obj: Any) -> Path | None:
