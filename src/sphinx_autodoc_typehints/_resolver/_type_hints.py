@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, get_type_hints
 from sphinx.ext.autodoc.mock import mock
 from sphinx.util import logging
 
-from ._stubs import _backfill_from_stub
+from ._stubs import _backfill_from_stub, _get_stub_localns
 from ._type_comments import backfill_type_hints
 from ._util import get_obj_location
 
@@ -45,14 +45,17 @@ def get_all_type_hints(
     result = _get_type_hint(autodoc_mock_imports, name, obj, localns)
     if not result:
         result = backfill_type_hints(obj, name)
+        stub_localns: dict[str, Any] = {}
         if not result:
             result = _backfill_from_stub(obj)
+            if result:
+                stub_localns = _get_stub_localns(obj)
         try:
             obj.__annotations__ = result
         except (AttributeError, TypeError):
             pass
         else:
-            result = _get_type_hint(autodoc_mock_imports, name, obj, localns)
+            result = _get_type_hint(autodoc_mock_imports, name, obj, {**localns, **stub_localns})
     return result
 
 

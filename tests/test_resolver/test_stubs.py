@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import ast
+import os
 import sys
 import types
+from collections.abc import Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -18,7 +20,9 @@ from sphinx_autodoc_typehints._resolver._stubs import (
     _extract_func_annotations,
     _find_ast_node,
     _find_stub_path,
+    _get_stub_localns,
     _parse_stub_ast,
+    _resolve_stub_imports,
 )
 
 if TYPE_CHECKING:
@@ -285,6 +289,7 @@ def test_extract_annotations_from_stub_no_qualname() -> None:
         pytest.param("greet", {"name": "str", "greeting": "str", "return": "str"}, id="function"),
         pytest.param("Calculator.Inner.process", {"data": "bytes", "return": "bytes"}, id="nested_class"),
         pytest.param("fetch", {"url": "str", "return": "str"}, id="async_function"),
+        pytest.param("transform", {"value": "Sequence[int]", "return": "list[str]"}, id="typing_imports"),
     ],
 )
 def test_backfill_from_stub(stub_mod: Any, attr: str, expected: dict[str, str]) -> None:
@@ -298,6 +303,36 @@ def test_backfill_from_stub_no_stub() -> None:
     assert _backfill_from_stub(test_backfill_from_stub_no_stub) == {}
 
 
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        pytest.param("import os\nimport sys\n", {"os": os, "sys": sys}, id="basic_import"),
+        pytest.param("import os as operating_system\n", {"operating_system": os}, id="import_as"),
+        pytest.param("import os.path\n", {"os": os}, id="dotted_import"),
+        pytest.param("from typing import Optional, Any\n", {"Optional": Optional, "Any": Any}, id="from_import"),
+        pytest.param("from typing import Optional as Opt\n", {"Opt": Optional}, id="from_import_as"),
+        pytest.param("from typing import *\n", {}, id="star_import_skipped"),
+        pytest.param("import nonexistent_xyz\nfrom nonexistent_abc import Foo\n", {}, id="missing_module_skipped"),
+        pytest.param("from typing import NonExistentThing\n", {}, id="missing_attr_skipped"),
+    ],
+)
+def test_resolve_stub_imports(source: str, expected: dict[str, Any]) -> None:
+    ns = _resolve_stub_imports(ast.parse(source))
+    for key, val in expected.items():
+        assert ns[key] is val
+    if not expected:
+        assert ns == {}
+
+
+def test_get_stub_localns_returns_imports(stub_mod: Any) -> None:
+    ns = _get_stub_localns(stub_mod.transform)
+    assert ns["Sequence"] is Sequence
+
+
+def test_get_stub_localns_returns_empty_for_no_stub() -> None:
+    assert _get_stub_localns(test_get_stub_localns_returns_empty_for_no_stub) == {}
+
+
 @pytest.mark.sphinx("text", testroot="pyi-stubs")
 def test_sphinx_build_uses_stub_types(app: SphinxTestApp, status: StringIO, warning: StringIO) -> None:
     template = """\
@@ -307,11 +342,28 @@ def test_sphinx_build_uses_stub_types(app: SphinxTestApp, status: StringIO, warn
    :members:
 
 .. autofunction:: stub_mod.fetch
+
+.. autofunction:: stub_mod.transform
 """
     (Path(app.srcdir) / "index.rst").write_text(template)
     app.build()
     assert "build succeeded" in status.getvalue()
     result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
     assert "str" in result
+    assert "list" in result
     warn_text = warning.getvalue()
     assert "stub_mod" not in warn_text or "forward reference" not in warn_text
+    sys.modules.pop("stub_mod", None)
+
+
+@pytest.mark.sphinx("pseudoxml", testroot="pyi-stubs")
+def test_sphinx_build_stub_types_produce_crossrefs(app: SphinxTestApp, status: StringIO) -> None:
+    template = """\
+.. autofunction:: stub_mod.transform
+"""
+    (Path(app.srcdir) / "index.rst").write_text(template)
+    app.build()
+    assert "build succeeded" in status.getvalue()
+    result = (Path(app.srcdir) / "_build/pseudoxml/index.pseudoxml").read_text()
+    assert 'classes="xref py py-class"' in result
+    assert "docs.python.org" in result
