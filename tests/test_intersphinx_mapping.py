@@ -85,6 +85,17 @@ def test_build_type_mapping_multiple_roles() -> None:
     assert result["_thread._local"] == "threading.local"
 
 
+def test_build_type_mapping_skips_builtin_alias() -> None:
+    inventory_data: dict[str, dict[str, Any]] = {
+        "py:class": {
+            "dict": ("", "", "", ""),
+            "wsgiref.types.WSGIEnvironment": ("", "", "", ""),
+        },
+    }
+    result = build_type_mapping(_make_env(inventory_data))
+    assert "builtins.dict" not in result
+
+
 def test_format_annotation_applies_intersphinx_mapping() -> None:
     conf = create_autospec(
         Config,
