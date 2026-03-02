@@ -72,6 +72,66 @@ def test_find_stub_path_returns_none_when_getfile_fails() -> None:
         assert _find_stub_path(lambda: None) is None
 
 
+@pytest.mark.parametrize(
+    "ext_filename",
+    [
+        pytest.param("_mod.cpython-312-x86_64-linux-gnu.so", id="cpython_linux"),
+        pytest.param("_mod.cpython-313-darwin.so", id="cpython_darwin"),
+        pytest.param("_mod.cpython-314t-x86_64-linux-gnu.so", id="cpython_free_threaded"),
+        pytest.param("_mod.cpython-314d-x86_64-linux-gnu.so", id="cpython_debug"),
+        pytest.param("_mod.cpython-314-aarch64-linux-musl.so", id="cpython_musl"),
+        pytest.param("_mod.abi3.so", id="abi3_stable"),
+        pytest.param("_mod.so", id="simple_so"),
+        pytest.param("_mod.pyd", id="windows_pyd"),
+        pytest.param("_mod.cp314-win_amd64.pyd", id="windows_tagged_pyd"),
+        pytest.param("_mod.dll", id="cygwin_dll"),
+        pytest.param("_mod.pypy39-pp73-x86_64-linux-gnu.so", id="pypy"),
+    ],
+)
+def test_find_stub_path_extension_module(tmp_path: Path, ext_filename: str) -> None:
+    (tmp_path / ext_filename).write_bytes(b"")
+    (tmp_path / "_mod.pyi").write_text("def f(x: int) -> None: ...\n")
+    module = types.ModuleType("_mod")
+    module.__file__ = str(tmp_path / ext_filename)
+    with (
+        patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getmodule", return_value=module),
+        patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getfile", return_value=module.__file__),
+    ):
+        result = _find_stub_path(lambda: None)
+    assert result is not None
+    assert result.name == "_mod.pyi"
+
+
+def test_find_stub_path_extension_module_no_stub(tmp_path: Path) -> None:
+    ext_filename = "_mod.cpython-312-x86_64-linux-gnu.so"
+    (tmp_path / ext_filename).write_bytes(b"")
+    module = types.ModuleType("_mod")
+    module.__file__ = str(tmp_path / ext_filename)
+    with (
+        patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getmodule", return_value=module),
+        patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getfile", return_value=module.__file__),
+    ):
+        assert _find_stub_path(lambda: None) is None
+
+
+def test_find_stub_path_extension_module_package_fallback(tmp_path: Path) -> None:
+    ext_filename = "_mod.cpython-312-x86_64-linux-gnu.so"
+    (tmp_path / ext_filename).write_bytes(b"")
+    stub_dir = tmp_path / "stubs"
+    stub_dir.mkdir()
+    (stub_dir / "__init__.pyi").write_text("x: int\n")
+    module = types.ModuleType("_mod")
+    module.__file__ = str(tmp_path / ext_filename)
+    module.__path__ = [str(stub_dir)]
+    with (
+        patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getmodule", return_value=module),
+        patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getfile", return_value=module.__file__),
+    ):
+        result = _find_stub_path(lambda: None)
+    assert result is not None
+    assert result.name == "__init__.pyi"
+
+
 def test_find_stub_path_package_init_pyi(tmp_path: Path) -> None:
     pkg_dir = tmp_path / "mypkg"
     pkg_dir.mkdir()
