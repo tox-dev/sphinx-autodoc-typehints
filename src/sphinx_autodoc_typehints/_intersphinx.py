@@ -27,6 +27,7 @@ def build_type_mapping(env: BuildEnvironment) -> dict[str, str]:
             all_documented.add(documented_name)
             mod_path, _, attr_name = documented_name.rpartition(".")
             if not mod_path:
+                all_documented.add(f"builtins.{documented_name}")
                 continue
             try:
                 mod = importlib.import_module(mod_path)
