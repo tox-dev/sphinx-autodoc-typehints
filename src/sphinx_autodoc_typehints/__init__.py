@@ -151,7 +151,8 @@ def process_docstring(  # noqa: PLR0913, PLR0917
         return
     if inspect.isclass(obj):
         backfill_attrs_annotations(obj)
-    obj = obj.__init__ if inspect.isclass(obj) else obj
+    if inspect.isclass(obj):
+        obj = obj.__new__ if obj.__init__ is object.__init__ and obj.__new__ is not object.__new__ else obj.__init__
     try:
         obj = inspect.unwrap(obj)
     except ValueError:

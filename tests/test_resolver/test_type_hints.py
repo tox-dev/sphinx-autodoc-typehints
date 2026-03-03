@@ -1,19 +1,32 @@
 from __future__ import annotations
 
 import csv
+import importlib
+import subprocess  # noqa: S404
+import sys
+import sysconfig
+from collections.abc import Sequence
 from csv import Error
+from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
 
+import pytest
+
+from sphinx_autodoc_typehints._annotations import MyTypeAliasForwardRef
 from sphinx_autodoc_typehints._resolver._type_hints import (
     _build_localns,
     _execute_guarded_code,
     _future_annotations_imported,
     _get_type_hint,
+    _resolve_string_annotations,
     _resolve_type_guarded_imports,
     _run_guarded_import,
     _should_skip_guarded_import_resolution,
+    get_all_type_hints,
 )
+
+STUB_ROOT = Path(__file__).parent.parent / "roots" / "test-pyi-stubs"
 
 
 def test_no_source_code_type_guard() -> None:
@@ -110,3 +123,61 @@ def test_build_localns_preserves_existing_localns() -> None:
     localns: dict[Any, Any] = {"key": "value"}
     assert (result := _build_localns(mod.Outer.Inner.__init__, localns))["key"] == "value"
     assert result["Outer"] is mod.Outer
+
+
+def test_resolve_string_annotations_keeps_unresolvable_strings() -> None:
+    obj = MagicMock()
+    obj.__module__ = "builtins"
+    result = _resolve_string_annotations(obj, {"x": "NoSuchType", "y": "int"}, {})
+    assert result["x"] == "NoSuchType"
+    assert result["y"] is int
+
+
+def test_resolve_string_annotations_passes_non_strings() -> None:
+    obj = MagicMock()
+    obj.__module__ = "builtins"
+    result = _resolve_string_annotations(obj, {"x": int, "return": str}, {})  # type: ignore[dict-item]
+    assert result["x"] is int
+    assert result["return"] is str
+
+
+@pytest.fixture(scope="session")
+def c_ext_mod(tmp_path_factory: pytest.TempPathFactory) -> Any:
+    if not sysconfig.get_config_var("LDSHARED"):
+        pytest.skip("no C compiler available")
+    build_dir = tmp_path_factory.mktemp("c_ext")
+    ext_suffix = sysconfig.get_config_var("EXT_SUFFIX")
+    so_file = build_dir / f"c_ext_mod{ext_suffix}"
+    include_dir = sysconfig.get_path("include")
+    cc = sysconfig.get_config_var("CC") or "cc"
+    ldshared = sysconfig.get_config_var("LDSHARED") or f"{cc} -shared"
+    cflags = sysconfig.get_config_var("CFLAGS") or ""
+    c_src = str(STUB_ROOT / "c_ext_mod.c")
+    try:
+        subprocess.check_call(
+            [*ldshared.split(), f"-I{include_dir}", *cflags.split(), "-o", str(so_file), c_src],
+            cwd=str(STUB_ROOT),
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        pytest.skip("C extension compilation failed")
+    for stub in STUB_ROOT.glob("c_ext_mod.pyi"):
+        (build_dir / stub.name).write_text(stub.read_text())
+    sys.path.insert(0, str(build_dir))
+    try:
+        mod = importlib.import_module("c_ext_mod")
+    finally:
+        sys.path.pop(0)
+    return mod
+
+
+def test_get_all_type_hints_resolves_stub_annotations_for_c_extension(c_ext_mod: Any) -> None:
+    result = get_all_type_hints([], c_ext_mod.greet, "c_ext_mod.greet", {})
+    assert result["name"] is str
+    assert result["greeting"] == Sequence[str]
+    assert result["return"] is str
+
+
+def test_get_all_type_hints_preserves_stub_type_aliases(c_ext_mod: Any) -> None:
+    result = get_all_type_hints([], c_ext_mod.with_hook, "c_ext_mod.with_hook", {})
+    assert isinstance(result["callback"], MyTypeAliasForwardRef)
+    assert result["callback"].name == "GreetHook"

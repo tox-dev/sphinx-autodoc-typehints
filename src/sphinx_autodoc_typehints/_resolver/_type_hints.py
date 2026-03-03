@@ -8,17 +8,16 @@ import re
 import sys
 import textwrap
 import types
-from typing import TYPE_CHECKING, Any, get_type_hints
+from typing import Any, get_type_hints
 
 from sphinx.ext.autodoc.mock import mock
 from sphinx.util import logging
 
-from ._stubs import _backfill_from_stub, _get_stub_localns
+from sphinx_autodoc_typehints._annotations import MyTypeAliasForwardRef
+
+from ._stubs import _backfill_from_stub, _get_stub_context
 from ._type_comments import backfill_type_hints
 from ._util import get_obj_location
-
-if TYPE_CHECKING:
-    from sphinx_autodoc_typehints._annotations import MyTypeAliasForwardRef
 
 if sys.version_info >= (3, 14):  # pragma: >=3.14 cover
     import annotationlib
@@ -46,17 +45,49 @@ def get_all_type_hints(
     if not result:
         result = backfill_type_hints(obj, name)
         stub_localns: dict[str, Any] = {}
+        stub_alias_names: set[str] = set()
+        stub_owner_module: str = ""
         if not result:
             result = _backfill_from_stub(obj)
             if result:
-                stub_localns = _get_stub_localns(obj)
+                stub_localns, stub_alias_names, stub_owner_module = _get_stub_context(obj)
+        combined_localns = {**stub_localns, **localns}
+        for alias_name in stub_alias_names:
+            ref = MyTypeAliasForwardRef(alias_name)
+            ref.crossref = True
+            combined_localns[alias_name] = ref
         try:
             obj.__annotations__ = result
         except (AttributeError, TypeError):
-            pass
+            result = _resolve_string_annotations(obj, result, combined_localns, stub_owner_module)
         else:
-            result = _get_type_hint(autodoc_mock_imports, name, obj, {**localns, **stub_localns})
+            result = _get_type_hint(autodoc_mock_imports, name, obj, combined_localns)
     return result
+
+
+def _resolve_string_annotations(
+    obj: Any, annotations: dict[str, str], localns: dict[str, Any], owner_module: str = ""
+) -> dict[str, Any]:
+    # Use the stub owner module's namespace when available — the obj's __module__ may point at a C extension child
+    # (e.g. cbor2._cbor2) while the stub lives in the parent (cbor2/__init__.pyi).
+    module_name = owner_module or getattr(obj, "__module__", None)
+    globalns = vars(sys.modules[module_name]) if module_name and module_name in sys.modules else {}
+    resolved: dict[str, Any] = {}
+    for key, value in annotations.items():
+        if isinstance(value, str):
+            try:
+                resolved[key] = eval(value, globalns, localns)  # noqa: S307
+            except Exception:  # noqa: BLE001
+                _LOGGER.debug(
+                    "Failed to resolve annotation %r=%r for %s",
+                    key,
+                    value,
+                    getattr(obj, "__qualname__", "?"),
+                )
+                resolved[key] = value
+        else:
+            resolved[key] = value
+    return resolved
 
 
 def _get_type_hint(

@@ -18,9 +18,13 @@ from sphinx_autodoc_typehints._resolver._stubs import (
     _extract_annotations_from_stub,
     _extract_class_annotations,
     _extract_func_annotations,
+    _extract_type_alias_names,
     _find_ast_node,
+    _find_stub_for_module,
+    _find_stub_owner,
     _find_stub_path,
-    _get_stub_localns,
+    _get_module,
+    _get_stub_context,
     _parse_stub_ast,
     _resolve_stub_imports,
 )
@@ -266,6 +270,12 @@ def test_extract_class_annotations(source: str, expected: dict[str, str]) -> Non
             id="function",
         ),
         pytest.param("class Foo:\n  x: int\n  y: str\n", "Foo", {"x": "int", "y": "str"}, id="class"),
+        pytest.param(
+            "class Foo:\n  def __new__(cls, x: int) -> Foo: ...\n",
+            "Foo.__new__",
+            {"x": "int", "return": "Foo"},
+            id="class_new",
+        ),
         pytest.param("def greet(name: str) -> str: ...", "nonexistent", {}, id="missing_node"),
         pytest.param("x: int = 1\n", "x", {}, id="unsupported_node_type"),
     ],
@@ -288,6 +298,7 @@ def test_extract_annotations_from_stub_no_qualname() -> None:
     [
         pytest.param("greet", {"name": "str", "greeting": "str", "return": "str"}, id="function"),
         pytest.param("Calculator.Inner.process", {"data": "bytes", "return": "bytes"}, id="nested_class"),
+        pytest.param("Converter.__new__", {"output": "str", "return": "Converter"}, id="class_new"),
         pytest.param("fetch", {"url": "str", "return": "str"}, id="async_function"),
         pytest.param("transform", {"value": "Sequence[int]", "return": "list[str]"}, id="typing_imports"),
     ],
@@ -324,13 +335,68 @@ def test_resolve_stub_imports(source: str, expected: dict[str, Any]) -> None:
         assert ns == {}
 
 
-def test_get_stub_localns_returns_imports(stub_mod: Any) -> None:
-    ns = _get_stub_localns(stub_mod.transform)
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        pytest.param(
+            "from typing import TypeAlias\nFoo: TypeAlias = int\n",
+            {"Foo"},
+            id="typing_TypeAlias",
+        ),
+        pytest.param(
+            "import typing\nBar: typing.TypeAlias = str\n",
+            {"Bar"},
+            id="qualified_TypeAlias",
+        ),
+        pytest.param(
+            "from typing_extensions import TypeAlias\nQux: TypeAlias = int\n",
+            {"Qux"},
+            id="typing_extensions_TypeAlias",
+        ),
+        pytest.param(
+            "import typing_extensions\nQuux: typing_extensions.TypeAlias = str\n",
+            {"Quux"},
+            id="qualified_typing_extensions_TypeAlias",
+        ),
+        pytest.param(
+            "type Baz = int | str\n",
+            {"Baz"},
+            id="type_statement",
+        ),
+        pytest.param(
+            "x: int = 1\ndef f(): ...\n",
+            set(),
+            id="no_aliases",
+        ),
+    ],
+)
+def test_extract_type_alias_names(source: str, expected: set[str]) -> None:
+    assert _extract_type_alias_names(ast.parse(source)) == expected
+
+
+def test_get_stub_context_returns_aliases(stub_mod: Any) -> None:
+    ns, names, owner = _get_stub_context(stub_mod.greet)
+    assert "MyAlias" in names
     assert ns["Sequence"] is Sequence
+    assert owner == "stub_mod"
 
 
-def test_get_stub_localns_returns_empty_for_no_stub() -> None:
-    assert _get_stub_localns(test_get_stub_localns_returns_empty_for_no_stub) == {}
+def test_get_stub_context_returns_empty_for_no_stub() -> None:
+    ns, names, owner = _get_stub_context(test_get_stub_context_returns_empty_for_no_stub)
+    assert ns == {}
+    assert names == set()
+    assert not owner
+
+
+def test_get_stub_context_returns_empty_for_bad_syntax(stub_mod: Any, tmp_path: Path) -> None:
+    bad_stub = tmp_path / "stub_mod.pyi"
+    bad_stub.write_text("def (broken syntax\n")
+    with patch("sphinx_autodoc_typehints._resolver._stubs._find_stub_owner", return_value=(bad_stub, stub_mod)):
+        ns, names, owner = _get_stub_context(stub_mod.greet)
+    assert ns == {}
+    assert names == set()
+    assert not owner
+    _STUB_AST_CACHE.pop(bad_stub, None)
 
 
 @pytest.mark.sphinx("text", testroot="pyi-stubs")
@@ -339,6 +405,9 @@ def test_sphinx_build_uses_stub_types(app: SphinxTestApp, status: StringIO, warn
 .. autofunction:: stub_mod.greet
 
 .. autoclass:: stub_mod.Calculator
+   :members:
+
+.. autoclass:: stub_mod.Converter
    :members:
 
 .. autofunction:: stub_mod.fetch
@@ -367,3 +436,128 @@ def test_sphinx_build_stub_types_produce_crossrefs(app: SphinxTestApp, status: S
     result = (Path(app.srcdir) / "_build/pseudoxml/index.pseudoxml").read_text()
     assert 'classes="xref py py-class"' in result
     assert "docs.python.org" in result
+
+
+def test_find_stub_path_falls_back_to_parent_package(tmp_path: Path) -> None:
+    pkg_dir = tmp_path / "mypkg"
+    pkg_dir.mkdir()
+    (pkg_dir / "__init__.py").write_text("")
+    (pkg_dir / "__init__.pyi").write_text("def greet(name: str) -> str: ...\n")
+    ext_file = pkg_dir / "_ext.cpython-314-darwin.so"
+    ext_file.write_bytes(b"")
+
+    parent_module = types.ModuleType("mypkg")
+    parent_module.__file__ = str(pkg_dir / "__init__.py")
+    parent_module.__path__ = [str(pkg_dir)]
+
+    child_module = types.ModuleType("mypkg._ext")
+    child_module.__file__ = str(ext_file)
+
+    with (
+        patch.dict(sys.modules, {"mypkg": parent_module, "mypkg._ext": child_module}),
+        patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getmodule", return_value=child_module),
+        patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getfile", side_effect=lambda m: m.__file__),
+    ):
+        result = _find_stub_path(lambda: None)
+    assert result is not None
+    assert result.name == "__init__.pyi"
+    assert result.parent == pkg_dir
+
+
+def test_find_stub_owner_returns_parent_module(tmp_path: Path) -> None:
+    pkg_dir = tmp_path / "mypkg"
+    pkg_dir.mkdir()
+    (pkg_dir / "__init__.py").write_text("")
+    (pkg_dir / "__init__.pyi").write_text("def greet(name: str) -> str: ...\n")
+    ext_file = pkg_dir / "_ext.cpython-314-darwin.so"
+    ext_file.write_bytes(b"")
+
+    parent_module = types.ModuleType("mypkg")
+    parent_module.__file__ = str(pkg_dir / "__init__.py")
+    parent_module.__path__ = [str(pkg_dir)]
+
+    child_module = types.ModuleType("mypkg._ext")
+    child_module.__file__ = str(ext_file)
+
+    with (
+        patch.dict(sys.modules, {"mypkg": parent_module, "mypkg._ext": child_module}),
+        patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getmodule", return_value=child_module),
+        patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getfile", side_effect=lambda m: m.__file__),
+    ):
+        info = _find_stub_owner(lambda: None)
+    assert info is not None
+    stub_path, owner = info
+    assert stub_path.name == "__init__.pyi"
+    assert owner is parent_module
+
+
+def test_find_stub_for_module_returns_none_when_getfile_raises() -> None:
+    module = types.ModuleType("fake")
+    with patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getfile", side_effect=TypeError):
+        assert _find_stub_for_module(module) is None
+
+
+def test_get_module_returns_inspected_module() -> None:
+    assert _get_module(test_get_module_returns_inspected_module) is sys.modules[__name__]
+
+
+def test_get_module_falls_back_to_dunder_module() -> None:
+    obj = MagicMock(spec=[])
+    obj.__module__ = "sys"
+    with patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getmodule", return_value=None):
+        assert _get_module(obj) is sys
+
+
+def test_get_module_falls_back_to_objclass() -> None:
+    owner = MagicMock()
+    obj = type("FakeDescriptor", (), {"__objclass__": owner, "__module__": "nonexistent_xyz"})()
+    with patch(
+        "sphinx_autodoc_typehints._resolver._stubs.inspect.getmodule", side_effect=[None, sys.modules[__name__]]
+    ):
+        assert _get_module(obj) is sys.modules[__name__]
+
+
+def test_get_module_falls_back_to_self_class() -> None:
+    class _FakeClass:
+        pass
+
+    obj = MagicMock(spec=[])
+    obj.__module__ = None
+    obj.__self__ = _FakeClass
+    with patch(
+        "sphinx_autodoc_typehints._resolver._stubs.inspect.getmodule", side_effect=[None, sys.modules[__name__]]
+    ):
+        assert _get_module(obj) is sys.modules[__name__]
+
+
+def test_get_module_returns_none_when_all_fail() -> None:
+    obj = type("Opaque", (), {"__module__": "nonexistent_xyz"})()
+    with patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getmodule", return_value=None):
+        assert _get_module(obj) is None
+
+
+def test_get_stub_context_includes_owner_module_vars(tmp_path: Path) -> None:
+    pkg_dir = tmp_path / "mypkg"
+    pkg_dir.mkdir()
+    (pkg_dir / "__init__.py").write_text("")
+    (pkg_dir / "__init__.pyi").write_text("from collections.abc import Sequence\ndef greet(name: str) -> str: ...\n")
+    ext_file = pkg_dir / "_ext.cpython-314-darwin.so"
+    ext_file.write_bytes(b"")
+
+    parent_module = types.ModuleType("mypkg")
+    parent_module.__file__ = str(pkg_dir / "__init__.py")
+    parent_module.__path__ = [str(pkg_dir)]
+    parent_module.MyAlias = int  # type: ignore[attr-defined]
+
+    child_module = types.ModuleType("mypkg._ext")
+    child_module.__file__ = str(ext_file)
+
+    with (
+        patch.dict(sys.modules, {"mypkg": parent_module, "mypkg._ext": child_module}),
+        patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getmodule", return_value=child_module),
+        patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getfile", side_effect=lambda m: m.__file__),
+    ):
+        ns, _names, owner = _get_stub_context(lambda: None)
+    assert ns["Sequence"] is Sequence
+    assert ns["MyAlias"] is int
+    assert owner == "mypkg"

@@ -188,6 +188,34 @@ def test_inject_overload_local_directive_with_global_enabled() -> None:
         _OVERLOADS_CACHE.pop("test_mod", None)
 
 
+def test_process_docstring_uses_new_when_init_inherited() -> None:
+    class _NewOnlyClass:
+        def __new__(cls, x: int, y: str) -> _NewOnlyClass:  # noqa: ARG004, PYI034
+            return super().__new__(cls)
+
+    app = make_docstring_app(typehints_document_rtype=False)
+    lines: list[str] = [":param x: the x", ":param y: the y"]
+    process_docstring(app, "class", "test._NewOnlyClass", _NewOnlyClass, None, lines)
+    joined = "\n".join(lines)
+    assert ":type x:" in joined
+    assert ":type y:" in joined
+
+
+def test_process_docstring_prefers_init_over_new() -> None:
+    class _BothClass:
+        def __new__(cls, a: float) -> _BothClass:  # noqa: ARG004, PYI034
+            return super().__new__(cls)
+
+        def __init__(self, x: int) -> None:
+            self.x = x
+
+    app = make_docstring_app(typehints_document_rtype=False)
+    lines: list[str] = [":param x: the x"]
+    process_docstring(app, "class", "test._BothClass", _BothClass, None, lines)
+    joined = "\n".join(lines)
+    assert ":type x:" in joined
+
+
 def test_inject_types_no_signature() -> None:
     """Branch 261->263: signature is None skips _inject_signature."""
 
