@@ -11,6 +11,7 @@ from conftest import normalize_sphinx_text
 from sphinx.util.inspect import TypeAliasForwardRef
 
 from sphinx_autodoc_typehints import format_annotation
+from sphinx_autodoc_typehints._annotations import MyTypeAliasForwardRef
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -164,3 +165,46 @@ def test_format_annotation_type_alias_without_env() -> None:
     del config._typehints_env  # noqa: SLF001
     annotation = TypeAliasForwardRef("SomeAlias")
     assert format_annotation(annotation, config) == "SomeAlias"
+
+
+def test_format_annotation_crossref_alias_emits_type_role() -> None:
+    config = MagicMock()
+    config.typehints_formatter = None
+    config.typehints_fully_qualified = False
+    del config._typehints_env  # noqa: SLF001
+    annotation = MyTypeAliasForwardRef("EncoderHook")
+    annotation.crossref = True
+    assert format_annotation(annotation, config) == ":py:type:`~EncoderHook`"
+
+
+def test_format_annotation_crossref_alias_fully_qualified() -> None:
+    config = MagicMock()
+    config.typehints_formatter = None
+    config.typehints_fully_qualified = True
+    del config._typehints_env  # noqa: SLF001
+    annotation = MyTypeAliasForwardRef("EncoderHook")
+    annotation.crossref = True
+    assert format_annotation(annotation, config) == ":py:type:`EncoderHook`"
+
+
+def test_format_annotation_non_crossref_alias_returns_name() -> None:
+    config = MagicMock()
+    config.typehints_formatter = None
+    config.typehints_fully_qualified = False
+    del config._typehints_env  # noqa: SLF001
+    annotation = MyTypeAliasForwardRef("Array")
+    assert format_annotation(annotation, config) == "Array"
+
+
+def test_format_annotation_type_alias_found_in_py_domain() -> None:
+    config = MagicMock()
+    config.typehints_formatter = None
+    config.typehints_fully_qualified = False
+    config._typehints_module_prefix = "mymod"  # noqa: SLF001
+    py_domain = MagicMock()
+    py_domain.objects = {"mymod.SomeAlias": MagicMock(objtype="type")}
+    env = MagicMock()
+    env.get_domain.return_value = py_domain
+    config._typehints_env = env  # noqa: SLF001
+    annotation = TypeAliasForwardRef("SomeAlias")
+    assert format_annotation(annotation, config) == ":py:type:`~mymod.SomeAlias`"

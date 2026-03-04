@@ -65,6 +65,8 @@ _UNESCAPE_RE = re.compile(
 
 
 class MyTypeAliasForwardRef(TypeAliasForwardRef):
+    crossref: bool = False
+
     def __or__(self, value: Any) -> Any:  # ty: ignore[invalid-method-override]
         return Union[self, value]  # noqa: UP007
 
@@ -88,14 +90,16 @@ def format_annotation(annotation: Any, config: Config, *, short_literals: bool =
         return _format_internal_tuple(annotation, config)
 
     if isinstance(annotation, TypeAliasForwardRef):
+        fully_qualified: bool = getattr(config, "typehints_fully_qualified", False)
+        prefix = "" if fully_qualified else "~"
         if (env := getattr(config, "_typehints_env", None)) is not None:
             py_domain = env.get_domain("py")
             module_prefix = getattr(config, "_typehints_module_prefix", "")
             for candidate in (f"{module_prefix}.{annotation.name}", annotation.name):
                 if candidate in py_domain.objects and py_domain.objects[candidate].objtype == "type":
-                    fully_qualified: bool = getattr(config, "typehints_fully_qualified", False)
-                    prefix = "" if fully_qualified else "~"
                     return f":py:type:`{prefix}{candidate}`"
+        if isinstance(annotation, MyTypeAliasForwardRef) and annotation.crossref:
+            return f":py:type:`{prefix}{annotation.name}`"
         return annotation.name
 
     try:

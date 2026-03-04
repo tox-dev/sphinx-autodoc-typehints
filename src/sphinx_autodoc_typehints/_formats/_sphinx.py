@@ -67,7 +67,23 @@ def _line_is_param_line_for_arg(line: str, arg_name: str) -> bool:
     if keyword not in {"param", "parameter", "arg", "argument"}:
         return False
 
-    return any(doc_name == prefix + arg_name for prefix in ("", "\\*", "\\**", "\\*\\*"))
+    if any(doc_name == prefix + arg_name for prefix in ("", "\\*", "\\**", "\\*\\*")):
+        return True
+    # Match `:param type name:` format where inline type precedes the argument name.
+    return any(doc_name.endswith(f" {prefix}{arg_name}") for prefix in ("", "\\*", "\\**", "\\*\\*"))
+
+
+def _strip_inline_param_type(line: str, arg_name: str) -> str | None:
+    parts = line.split(":", maxsplit=2)
+    if len(parts) != 3:  # noqa: PLR2004
+        return None
+    directive_and_name = parts[1]
+    for prefix in ("", "\\*", "\\**", "\\*\\*"):
+        suffix = f" {prefix}{arg_name}"
+        if directive_and_name.endswith(suffix):
+            keyword = directive_and_name.split(maxsplit=1)[0]
+            return f":{keyword} {prefix}{arg_name}:{parts[2]}"
+    return None
 
 
 def _is_generator_type(annotation: Any) -> bool:
@@ -150,8 +166,9 @@ class SphinxFieldListFormat(DocstringFormat):
         return type_annotation, False
 
     def get_rtype_insert_info(self, app: Sphinx, lines: list[str]) -> InsertIndexInfo | None:  # noqa: PLR6301
-        if any(line.startswith(":rtype:") for line in lines):
-            return None
+        if (at := next((i for i, line in enumerate(lines) if line.startswith(":rtype:")), None)) is not None:
+            del lines[at]
+            return InsertIndexInfo(insert_index=at, found_return=True)
 
         for at, line in enumerate(lines):
             if line.startswith((":return:", ":returns:")):

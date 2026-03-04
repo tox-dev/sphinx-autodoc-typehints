@@ -101,7 +101,7 @@ mod.function(x, y)
       something
 
    Return type:
-      bytes
+      "str"
 
 """,
 )

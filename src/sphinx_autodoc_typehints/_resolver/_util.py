@@ -27,19 +27,31 @@ def get_obj_location(obj: Any) -> str | None:
 def collect_documented_type_aliases(
     obj: Any, module_prefix: str, env: BuildEnvironment
 ) -> tuple[dict[str, MyTypeAliasForwardRef], dict[int, MyTypeAliasForwardRef]]:
-    raw_annotations = getattr(obj, "__annotations__", {})
-    if not raw_annotations:
-        return {}, {}
-
     py_objects = env.get_domain("py").objects  # ty: ignore[unresolved-attribute]
     deferred: dict[str, MyTypeAliasForwardRef] = {}
     eager: dict[int, MyTypeAliasForwardRef] = {}
-    obj_globals = getattr(obj, "__globals__", {})
 
+    prefix_dot = f"{module_prefix}."
+    for fqn, obj_info in py_objects.items():
+        if obj_info.objtype != "type":
+            continue
+        if fqn.startswith(prefix_dot) or fqn == module_prefix:
+            short_name = fqn.rsplit(".", 1)[-1]
+            ref = MyTypeAliasForwardRef(short_name)
+            ref.crossref = True
+            deferred[short_name] = ref
+
+    raw_annotations = getattr(obj, "__annotations__", {})
+    if not raw_annotations:
+        return deferred, eager
+
+    obj_globals = getattr(obj, "__globals__", {})
     for annotation in raw_annotations.values():
         if isinstance(annotation, str):
             if _is_documented_type(annotation, module_prefix, py_objects):
-                deferred[annotation] = MyTypeAliasForwardRef(annotation)
+                ref = MyTypeAliasForwardRef(annotation)
+                ref.crossref = True
+                deferred[annotation] = ref
         else:
             for var_name, var_value in obj_globals.items():
                 if (
@@ -47,7 +59,9 @@ def collect_documented_type_aliases(
                     and not var_name.startswith("_")
                     and _is_documented_type(var_name, module_prefix, py_objects)
                 ):
-                    eager[id(annotation)] = MyTypeAliasForwardRef(var_name)
+                    ref = MyTypeAliasForwardRef(var_name)
+                    ref.crossref = True
+                    eager[id(annotation)] = ref
 
     return deferred, eager
 

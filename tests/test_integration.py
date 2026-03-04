@@ -289,7 +289,7 @@ mod.function(x, y, z_=None)
       something
 
    Return type:
-      bytes
+      "str"
 """,
 )
 def function(x: bool, y: int, z_: Optional[str] = None) -> str:
@@ -894,7 +894,7 @@ mod.func_with_rtype_in_weird_spot(a, b)
    More info about the function here.
 
    Return type:
-      int
+      "int"
 """,
 )
 def func_with_rtype_in_weird_spot(a: int, b: int) -> int:
