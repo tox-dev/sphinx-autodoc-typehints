@@ -9,7 +9,7 @@ import types
 from collections.abc import Sequence
 from csv import Error
 from pathlib import Path
-from typing import Any, get_args, get_origin
+from typing import Any, Union, get_args, get_origin
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -187,7 +187,8 @@ def test_get_all_type_hints_preserves_stub_type_aliases(c_ext_mod: Any) -> None:
 def test_get_all_type_hints_resolves_c_extension_class_new(c_ext_mod: Any) -> None:
     result = get_all_type_hints([], c_ext_mod.Encoder.__new__, "c_ext_mod.Encoder.__new__", {})
     default_type = result["default"]
-    assert get_origin(default_type) is types.UnionType
+    # Python 3.14+ produces types.UnionType for `X | None`, earlier versions produce typing.Union/Optional.
+    assert get_origin(default_type) in {types.UnionType, Union}
     args = get_args(default_type)
     assert len(args) == 2
     encoder_hook = args[0] if isinstance(args[0], MyTypeAliasForwardRef) else args[1]
