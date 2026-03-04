@@ -48,7 +48,7 @@ mod.function(x=5, y=10, z=15)
       something
 
    Return type:
-      bytes
+      "str"
 
 """,
 )

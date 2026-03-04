@@ -226,3 +226,55 @@ def test_inject_types_no_signature() -> None:
     lines: list[str] = []
     sat._inject_types_to_docstring({"return": str}, None, sample, app, "function", "sample", lines)  # noqa: SLF001
     assert not any(s.startswith(":type") for s in lines)
+
+
+def test_process_docstring_replaces_preexisting_single_line_type() -> None:
+    def func(x: int) -> None: ...
+
+    app = make_docstring_app(typehints_document_rtype=False)
+    lines: list[str] = [":param x: the x parameter", ":type x: str"]
+    process_docstring(app, "function", "test.func", func, None, lines)
+    type_lines = [line for line in lines if line.startswith(":type x:")]
+    assert len(type_lines) == 1
+    assert "int" in type_lines[0]
+    assert "str" not in "\n".join(lines)
+
+
+def test_process_docstring_replaces_preexisting_multiline_type() -> None:
+    def func(callback: int) -> None: ...
+
+    app = make_docstring_app(typehints_document_rtype=False)
+    lines: list[str] = [
+        ":param callback: the callback parameter",
+        ":type callback: ~collections.abc.Callable[[int,",
+        "    str], bool]",
+    ]
+    process_docstring(app, "function", "test.func", func, None, lines)
+    type_lines = [line for line in lines if line.startswith(":type callback:")]
+    assert len(type_lines) == 1
+    assert "int" in type_lines[0]
+    assert "Callable" not in "\n".join(lines)
+
+
+def test_process_docstring_strips_inline_param_type() -> None:
+    def func(x: int) -> None: ...
+
+    app = make_docstring_app(typehints_document_rtype=False)
+    lines: list[str] = [":param str x: the x parameter"]
+    process_docstring(app, "function", "test.func", func, None, lines)
+    assert ":param x: the x parameter" in lines
+    type_lines = [line for line in lines if line.startswith(":type x:")]
+    assert len(type_lines) == 1
+    assert "int" in type_lines[0]
+
+
+def test_process_docstring_strips_complex_inline_param_type() -> None:
+    def func(fp: int) -> None: ...
+
+    app = make_docstring_app(typehints_document_rtype=False)
+    lines: list[str] = [":param ~typing.IO[bytes] fp: the file"]
+    process_docstring(app, "function", "test.func", func, None, lines)
+    assert ":param fp: the file" in lines
+    type_lines = [line for line in lines if line.startswith(":type fp:")]
+    assert len(type_lines) == 1
+    assert "int" in type_lines[0]

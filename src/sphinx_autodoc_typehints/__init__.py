@@ -23,7 +23,7 @@ from ._annotations import (
 )
 from ._formats import detect_format
 from ._formats._numpydoc import _convert_numpydoc_to_sphinx_fields  # noqa: F401
-from ._formats._sphinx import _has_yields_section, _is_generator_type
+from ._formats._sphinx import _has_yields_section, _is_generator_type, _strip_inline_param_type
 from ._intersphinx import build_type_mapping
 from ._parser import parse
 from ._resolver import (
@@ -151,15 +151,22 @@ def process_docstring(  # noqa: PLR0913, PLR0917
         return
     if inspect.isclass(obj):
         backfill_attrs_annotations(obj)
+    use_class_for_signature = False
     if inspect.isclass(obj):
-        obj = obj.__new__ if obj.__init__ is object.__init__ and obj.__new__ is not object.__new__ else obj.__init__
+        if obj.__init__ is object.__init__ and obj.__new__ is not object.__new__:
+            use_class_for_signature = True
+            obj = obj.__new__
+        else:
+            obj = obj.__init__
     try:
         obj = inspect.unwrap(obj)
     except ValueError:
         return
 
     try:
-        signature = sphinx_signature(obj, type_aliases=app.config["autodoc_type_aliases"])
+        signature = sphinx_signature(
+            original_obj if use_class_for_signature else obj, type_aliases=app.config["autodoc_type_aliases"]
+        )
     except (ValueError, TypeError):
         signature = None
 
@@ -306,6 +313,13 @@ def _inject_arg_signature(  # noqa: PLR0913, PLR0917
 
     insert_index = fmt.find_param(lines, arg_name)
 
+    if (
+        insert_index is not None
+        and annotation is not None
+        and (stripped := _strip_inline_param_type(lines[insert_index], arg_name))
+    ):
+        lines[insert_index] = stripped
+
     if insert_index is not None and hasattr(fmt, "get_arg_name_from_line"):
         arg_name = fmt.get_arg_name_from_line(lines[insert_index]) or arg_name
 
@@ -315,27 +329,44 @@ def _inject_arg_signature(  # noqa: PLR0913, PLR0917
     elif annotation is not None and insert_index is None and app.config.always_document_param_types:
         insert_index = fmt.add_undocumented_param(lines, arg_name)
 
-    if insert_index is not None:
-        has_preexisting_annotation = False
+    if insert_index is None:
+        return
 
-        if annotation is None:
-            type_annotation, has_preexisting_annotation = fmt.find_preexisting_type(lines, arg_name)
-        else:
-            short_literals = app.config.python_display_short_literal_types
-            formatted_annotation = add_type_css_class(
-                format_annotation(annotation, app.config, short_literals=short_literals)
-            )
-            type_annotation = f":type {arg_name}: {formatted_annotation}"
+    has_preexisting = False
+    if annotation is None:
+        type_annotation, has_preexisting = fmt.find_preexisting_type(lines, arg_name)
+    else:
+        preexisting_line, has_preexisting = fmt.find_preexisting_type(lines, arg_name)
+        if has_preexisting:
+            insert_index = _remove_preexisting_type(lines, preexisting_line)
+        type_annotation = ":type {}: {}".format(
+            arg_name,
+            add_type_css_class(
+                format_annotation(annotation, app.config, short_literals=app.config.python_display_short_literal_types)
+            ),
+        )
 
-        if app.config.typehints_defaults:
-            formatted_default = format_default(app, default, annotation is not None or has_preexisting_annotation)
-            if formatted_default:
-                after = app.config.typehints_defaults.endswith("after")
-                type_annotation = fmt.append_default(
-                    lines, insert_index, type_annotation, formatted_default, after=after
-                )
+    if app.config.typehints_defaults and (
+        formatted_default := format_default(app, default, annotation is not None or has_preexisting)
+    ):
+        type_annotation = fmt.append_default(
+            lines,
+            insert_index,
+            type_annotation,
+            formatted_default,
+            after=app.config.typehints_defaults.endswith("after"),
+        )
 
-        lines.insert(insert_index, type_annotation)
+    lines.insert(insert_index, type_annotation)
+
+
+def _remove_preexisting_type(lines: list[str], preexisting_line: str) -> int:
+    idx = lines.index(preexisting_line)
+    end = idx + 1
+    while end < len(lines) and (not lines[end] or lines[end][0].isspace()):
+        end += 1
+    del lines[idx:end]
+    return idx
 
 
 def _inject_rtype(  # noqa: PLR0913, PLR0917
