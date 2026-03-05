@@ -167,6 +167,25 @@ def test_namedtuple_new_no_warning(
 
 
 @pytest.mark.sphinx("text", testroot="dummy")
+def test_namedtuple_no_forward_ref_warning(
+    app: SphinxTestApp,
+    status: StringIO,
+    warning: StringIO,
+    write_rst: Callable[[str], None],
+) -> None:
+    """Regression test for #656: NamedTuple forward reference resolution fails."""
+    write_rst("""\
+        .. autoclass:: dummy_module.MyNamedTupleWithPath
+            :undoc-members:
+    """)
+
+    app.build()
+
+    assert "build succeeded" in status.getvalue()
+    assert "Cannot resolve forward reference" not in warning.getvalue()
+
+
+@pytest.mark.sphinx("text", testroot="dummy")
 def test_sphinx_output_future_annotations(app: SphinxTestApp, status: StringIO) -> None:
     app.config.master_doc = "future_annotations"  # create flag
     app.build()
