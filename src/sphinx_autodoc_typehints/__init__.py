@@ -152,9 +152,11 @@ def process_docstring(  # noqa: PLR0913, PLR0917
     if inspect.isclass(obj):
         backfill_attrs_annotations(obj)
     use_class_for_signature = False
+    cls_for_hints = None
     if inspect.isclass(obj):
         if obj.__init__ is object.__init__ and obj.__new__ is not object.__new__:
             use_class_for_signature = True
+            cls_for_hints = obj
             obj = obj.__new__
         else:
             obj = obj.__init__
@@ -176,7 +178,7 @@ def process_docstring(  # noqa: PLR0913, PLR0917
     if (env := getattr(app, "env", None)) is not None:
         deferred, eager_aliases = collect_documented_type_aliases(obj, module_prefix, env)
         localns.update(deferred)
-    type_hints = get_all_type_hints(app.config.autodoc_mock_imports, obj, name, localns)
+    type_hints = get_all_type_hints(app.config.autodoc_mock_imports, cls_for_hints or obj, name, localns)
     for param, hint in type_hints.items():
         if id(hint) in eager_aliases:
             type_hints[param] = eager_aliases[id(hint)]
