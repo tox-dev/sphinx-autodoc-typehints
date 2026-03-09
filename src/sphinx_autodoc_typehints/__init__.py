@@ -365,7 +365,7 @@ def _inject_arg_signature(  # noqa: PLR0913, PLR0917
 def _remove_preexisting_type(lines: list[str], preexisting_line: str) -> int:
     idx = lines.index(preexisting_line)
     end = idx + 1
-    while end < len(lines) and (not lines[end] or lines[end][0].isspace()):
+    while end < len(lines) and lines[end] and lines[end][0].isspace():
         end += 1
     del lines[idx:end]
     return idx
