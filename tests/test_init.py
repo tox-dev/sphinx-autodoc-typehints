@@ -256,6 +256,16 @@ def test_process_docstring_replaces_preexisting_multiline_type() -> None:
     assert "Callable" not in "\n".join(lines)
 
 
+def test_process_docstring_preserves_blank_line_after_preexisting_type() -> None:
+    def func(x: int) -> None: ...
+
+    app = make_docstring_app(typehints_document_rtype=False)
+    lines: list[str] = [":param x: the x parameter", ":type x: str", "", ".. rubric:: Notes"]
+    process_docstring(app, "function", "test.func", func, None, lines)
+    blank_idx = next(i for i, line in enumerate(lines) if not line)
+    assert lines[blank_idx + 1] == ".. rubric:: Notes"
+
+
 def test_process_docstring_strips_inline_param_type() -> None:
     def func(x: int) -> None: ...
 
