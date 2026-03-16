@@ -189,9 +189,9 @@ def process_docstring(  # noqa: PLR0913, PLR0917
         has_overloads = _inject_overload_signatures(app, what, name, obj, lines)
         _inject_types_to_docstring(type_hints, signature, original_obj, app, what, name, lines, has_overloads)
     finally:
-        delattr(app.config, "_annotation_globals")
-        delattr(app.config, "_typehints_env")
-        delattr(app.config, "_typehints_module_prefix")
+        del app.config._annotation_globals  # noqa: SLF001
+        del app.config._typehints_env  # noqa: SLF001
+        del app.config._typehints_module_prefix  # noqa: SLF001
 
 
 def _inject_overload_signatures(
