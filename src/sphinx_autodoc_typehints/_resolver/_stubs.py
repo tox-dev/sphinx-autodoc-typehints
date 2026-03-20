@@ -37,34 +37,57 @@ def _get_stub_context(obj: Any) -> tuple[dict[str, Any], set[str], str]:
     stub_path, owner_module = info
     if (tree := _parse_stub_ast(stub_path)) is None:
         return {}, set(), ""
+    owner_package = getattr(owner_module, "__package__", None) or owner_module.__name__
     ns: dict[str, Any] = dict(vars(owner_module))
-    ns.update(_resolve_stub_imports(tree))
+    ns.update(_resolve_stub_imports(tree, owner_package))
     return ns, _extract_type_alias_names(tree), owner_module.__name__
 
 
-def _resolve_stub_imports(tree: ast.Module) -> dict[str, Any]:
+def _resolve_stub_imports(tree: ast.Module, owner_package: str = "") -> dict[str, Any]:
     ns: dict[str, Any] = {}
     for node in tree.body:
         if isinstance(node, ast.Import):
-            for alias in node.names:
-                with contextlib.suppress(ImportError):
-                    if alias.asname:
-                        ns[alias.asname] = importlib.import_module(alias.name)
-                    else:
-                        top = alias.name.split(".")[0]
-                        ns[top] = importlib.import_module(top)
-        elif isinstance(node, ast.ImportFrom) and node.module:
-            try:
-                mod = importlib.import_module(node.module)
-            except ImportError:
-                continue
-            for alias in node.names:
-                if alias.name == "*":
-                    continue
-                name = alias.asname or alias.name
-                if (val := getattr(mod, alias.name, None)) is not None:
-                    ns[name] = val
+            _resolve_import_node(node, ns)
+        elif isinstance(node, ast.ImportFrom):
+            _resolve_import_from_node(node, owner_package, ns)
     return ns
+
+
+def _resolve_import_node(node: ast.Import, ns: dict[str, Any]) -> None:
+    for alias in node.names:
+        with contextlib.suppress(ImportError):
+            if alias.asname:
+                ns[alias.asname] = importlib.import_module(alias.name)
+            else:
+                top = alias.name.split(".")[0]
+                ns[top] = importlib.import_module(top)
+
+
+def _resolve_import_from_node(node: ast.ImportFrom, owner_package: str, ns: dict[str, Any]) -> None:
+    if (module_name := _resolve_import_from(node, owner_package)) is None:
+        return
+    try:
+        mod = importlib.import_module(module_name)
+    except ImportError:
+        return
+    for alias in node.names:
+        if alias.name == "*":
+            continue
+        name = alias.asname or alias.name
+        if (val := getattr(mod, alias.name, None)) is not None:
+            ns[name] = val
+
+
+def _resolve_import_from(node: ast.ImportFrom, owner_package: str) -> str | None:
+    if not node.level:
+        return node.module or None
+    if not owner_package:
+        return node.module or None
+    parts = owner_package.rsplit(".", node.level - 1)
+    if len(parts) < node.level:
+        return None
+    base = parts[0]
+    return f"{base}.{node.module}" if node.module else base
 
 
 def _get_module(obj: Any) -> types.ModuleType | None:
