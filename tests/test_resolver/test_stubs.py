@@ -26,6 +26,7 @@ from sphinx_autodoc_typehints._resolver._stubs import (
     _get_module,
     _get_stub_context,
     _parse_stub_ast,
+    _resolve_import_from,
     _resolve_stub_imports,
 )
 
@@ -561,3 +562,60 @@ def test_get_stub_context_includes_owner_module_vars(tmp_path: Path) -> None:
     assert ns["Sequence"] is Sequence
     assert ns["MyAlias"] is int
     assert owner == "mypkg"
+
+
+@pytest.mark.parametrize(
+    ("source", "owner_package", "expected"),
+    [
+        pytest.param("from typing import Any", "", "typing", id="absolute"),
+        pytest.param("from .typing import ColorType", "matplotlib", "matplotlib.typing", id="rel_level1"),
+        pytest.param("from . import utils", "matplotlib", "matplotlib", id="rel_level1_bare"),
+        pytest.param("from ..typing import X", "matplotlib.figure", "matplotlib.typing", id="rel_level2"),
+        pytest.param("from .sub import Y", "", "sub", id="rel_no_package"),
+    ],
+)
+def test_resolve_import_from(source: str, owner_package: str, expected: str) -> None:
+    tree = ast.parse(source)
+    node = tree.body[0]
+    assert isinstance(node, ast.ImportFrom)
+    assert _resolve_import_from(node, owner_package) == expected
+
+
+def test_resolve_import_from_level_beyond_package() -> None:
+    node = ast.parse("from ...x import Y").body[0]
+    assert isinstance(node, ast.ImportFrom)
+    assert _resolve_import_from(node, "a") is None
+
+
+def test_resolve_stub_imports_relative() -> None:
+    source = "from .typing import ColorType\nfrom typing import Any\n"
+    tree = ast.parse(source)
+    # matplotlib.typing.ColorType is a type alias, check it resolves to something
+    ns = _resolve_stub_imports(tree, "matplotlib")
+    assert "Any" in ns
+    assert ns["Any"] is Any
+
+
+def test_get_stub_context_resolves_relative_imports(tmp_path: Path) -> None:
+    pkg_dir = tmp_path / "relpkg"
+    pkg_dir.mkdir()
+    sub_dir = pkg_dir / "sub"
+    sub_dir.mkdir()
+    (pkg_dir / "__init__.py").write_text("")
+    (sub_dir / "__init__.py").write_text("")
+    (sub_dir / "mod.py").write_text("class Cls:\n    pass\n")
+    (sub_dir / "mod.pyi").write_text("from typing import Any\nfrom ..helpers import Helper\nclass Cls:\n    x: Any\n")
+    (pkg_dir / "helpers.py").write_text("class Helper:\n    pass\n")
+
+    sys.path.insert(0, str(tmp_path))
+    try:
+        import relpkg.sub.mod  # noqa: PLC0415  # ty: ignore[unresolved-import]
+
+        ns, _names, owner = _get_stub_context(relpkg.sub.mod.Cls)
+        assert owner == "relpkg.sub.mod"
+        assert "Helper" in ns
+    finally:
+        sys.path.pop(0)
+        for mod_name in [k for k in sys.modules if k.startswith("relpkg")]:
+            sys.modules.pop(mod_name, None)
+        _STUB_AST_CACHE.clear()
