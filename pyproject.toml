@@ -158,6 +158,11 @@ count = true
 [tool.pyproject-fmt]
 max_supported_python = "3.14"
 
+[tool.ty]
+environment.python-version = "3.14"
+src.exclude = [ "tests/roots/" ]
+overrides = [ { include = [ "tests/" ], rules.empty-body = "ignore" } ]
+
 [tool.pytest]
 ini_options.testpaths = [
   "tests",
@@ -191,8 +196,3 @@ report.omit = [
 ]
 html.show_contexts = true
 html.skip_covered = false
-
-[tool.ty]
-environment.python-version = "3.14"
-src.exclude = [ "tests/roots/" ]
-overrides = [ { include = [ "tests/" ], rules.empty-body = "ignore" } ]
