@@ -18,6 +18,11 @@ class Calculator:
 
 
 class Converter:
+    """Convert output.
+
+    :param output: the output format
+    """
+
     def __new__(cls, output):
         instance = super().__new__(cls)
         instance.output = output

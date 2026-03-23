@@ -43,14 +43,15 @@ def get_all_type_hints(
 ) -> dict[str, Any]:
     result = _get_type_hint(autodoc_mock_imports, name, obj, localns)
     if not result:
-        result = backfill_type_hints(obj, name)
+        stub_obj = _stub_target(obj) if inspect.isclass(obj) else obj
+        result = backfill_type_hints(stub_obj, name)
         stub_localns: dict[str, Any] = {}
         stub_alias_names: set[str] = set()
         stub_owner_module: str = ""
         if not result:
-            result = _backfill_from_stub(obj)
+            result = _backfill_from_stub(stub_obj)
             if result:
-                stub_localns, stub_alias_names, stub_owner_module = _get_stub_context(obj)
+                stub_localns, stub_alias_names, stub_owner_module = _get_stub_context(stub_obj)
         combined_localns = {**stub_localns, **localns}
         for alias_name in stub_alias_names:
             ref = MyTypeAliasForwardRef(alias_name)
@@ -63,6 +64,15 @@ def get_all_type_hints(
         else:
             result = _get_type_hint(autodoc_mock_imports, name, obj, combined_localns)
     return result
+
+
+def _stub_target(cls: type) -> Any:
+    """Return the constructor method for stub/type-comment backfill when *cls* is a class."""
+    if cls.__init__ is not object.__init__:
+        return cls.__init__
+    if cls.__new__ is not object.__new__:
+        return cls.__new__
+    return cls
 
 
 def _resolve_string_annotations(

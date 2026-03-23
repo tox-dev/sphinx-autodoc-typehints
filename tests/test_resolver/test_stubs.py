@@ -426,6 +426,20 @@ def test_sphinx_build_uses_stub_types(app: SphinxTestApp, status: StringIO, warn
     sys.modules.pop("stub_mod", None)
 
 
+@pytest.mark.sphinx("text", testroot="pyi-stubs")
+def test_sphinx_build_class_new_uses_param_not_class_var(app: SphinxTestApp, status: StringIO) -> None:
+    template = """\
+.. autoclass:: stub_mod.Converter
+   :members:
+"""
+    (Path(app.srcdir) / "index.rst").write_text(template)
+    app.build()
+    assert "build succeeded" in status.getvalue()
+    result = (Path(app.srcdir) / "_build/text/index.txt").read_text()
+    assert '"str"' in result
+    sys.modules.pop("stub_mod", None)
+
+
 @pytest.mark.sphinx("pseudoxml", testroot="pyi-stubs")
 def test_sphinx_build_stub_types_produce_crossrefs(app: SphinxTestApp, status: StringIO) -> None:
     template = """\
