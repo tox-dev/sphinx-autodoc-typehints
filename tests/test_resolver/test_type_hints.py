@@ -16,6 +16,7 @@ import pytest
 
 from sphinx_autodoc_typehints._annotations import MyTypeAliasForwardRef
 from sphinx_autodoc_typehints._resolver._type_hints import (
+    _TYPE_GUARD_IMPORTS_RESOLVED,
     _build_localns,
     _execute_guarded_code,
     _future_annotations_imported,
@@ -194,3 +195,32 @@ def test_get_all_type_hints_resolves_c_extension_class_new(c_ext_mod: Any) -> No
     encoder_hook = args[0] if isinstance(args[0], MyTypeAliasForwardRef) else args[1]
     assert isinstance(encoder_hook, MyTypeAliasForwardRef)
     assert encoder_hook.name == "EncoderHook"
+
+
+def test_stub_annotations_not_polluted_on_repeated_calls(tmp_path: Path) -> None:
+    pkg = tmp_path / "stubpkg"
+    pkg.mkdir()
+    (pkg / "__init__.py").write_text("")
+    (pkg / "_types.py").write_text("class MyType: ...\n")
+    (pkg / "mod.py").write_text("class Klass:\n    def method(self, x): ...\n")
+    (pkg / "mod.pyi").write_text(
+        "from stubpkg._types import MyType\nclass Klass:\n    def method(self, x: MyType) -> None: ...\n"
+    )
+    sys.path.insert(0, str(tmp_path))
+    try:
+        mod = importlib.import_module("stubpkg.mod")
+        _TYPE_GUARD_IMPORTS_RESOLVED.discard("stubpkg.mod")
+
+        my_type = importlib.import_module("stubpkg._types").MyType
+
+        result1 = get_all_type_hints([], mod.Klass.method, "stubpkg.mod.Klass.method", {})
+        assert result1["x"] is my_type
+
+        _TYPE_GUARD_IMPORTS_RESOLVED.discard("stubpkg.mod")
+        result2 = _get_type_hint([], "another.Klass.method", mod.Klass.method, {})
+        assert result2.get("x") is my_type
+    finally:
+        sys.path.pop(0)
+        for name in [n for n in sys.modules if n.startswith("stubpkg")]:
+            del sys.modules[name]
+        _TYPE_GUARD_IMPORTS_RESOLVED.discard("stubpkg.mod")

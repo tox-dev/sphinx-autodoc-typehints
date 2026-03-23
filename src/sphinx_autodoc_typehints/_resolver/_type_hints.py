@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import importlib
 import inspect
 import re
@@ -63,6 +64,8 @@ def get_all_type_hints(
             result = _resolve_string_annotations(obj, result, combined_localns, stub_owner_module)
         else:
             result = _get_type_hint(autodoc_mock_imports, name, obj, combined_localns)
+            with contextlib.suppress(AttributeError, TypeError):
+                obj.__annotations__ = result
     return result
 
 
