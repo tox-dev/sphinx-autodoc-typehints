@@ -601,6 +601,20 @@ def test_resolve_import_from_level_beyond_package() -> None:
     assert _resolve_import_from(node, "a") is None
 
 
+def test_resolve_stub_imports_handles_conditional_blocks() -> None:
+    source = (
+        "import os\n"
+        "if sys.version_info >= (3, 11):\n"
+        "    from typing import Self\n"
+        "else:\n"
+        "    from typing_extensions import Self\n"
+    )
+    tree = ast.parse(source)
+    ns = _resolve_stub_imports(tree, "")
+    assert "os" in ns
+    assert "Self" in ns
+
+
 def test_resolve_stub_imports_relative() -> None:
     source = "from .typing import ColorType\nfrom typing import Any\n"
     tree = ast.parse(source)
