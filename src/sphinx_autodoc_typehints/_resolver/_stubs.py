@@ -45,12 +45,19 @@ def _get_stub_context(obj: Any) -> tuple[dict[str, Any], set[str], str]:
 
 def _resolve_stub_imports(tree: ast.Module, owner_package: str = "") -> dict[str, Any]:
     ns: dict[str, Any] = {}
-    for node in tree.body:
+    _resolve_stub_imports_from_body(tree.body, owner_package, ns)
+    return ns
+
+
+def _resolve_stub_imports_from_body(body: list[ast.stmt], owner_package: str, ns: dict[str, Any]) -> None:
+    for node in body:
         if isinstance(node, ast.Import):
             _resolve_import_node(node, ns)
         elif isinstance(node, ast.ImportFrom):
             _resolve_import_from_node(node, owner_package, ns)
-    return ns
+        elif isinstance(node, ast.If):
+            _resolve_stub_imports_from_body(node.body, owner_package, ns)
+            _resolve_stub_imports_from_body(node.orelse, owner_package, ns)
 
 
 def _resolve_import_node(node: ast.Import, ns: dict[str, Any]) -> None:
