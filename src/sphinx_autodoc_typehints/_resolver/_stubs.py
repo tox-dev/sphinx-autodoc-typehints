@@ -7,6 +7,7 @@ import contextlib
 import importlib
 import inspect
 import sys
+from copy import copy
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -46,6 +47,7 @@ def _get_stub_context(obj: Any) -> tuple[dict[str, Any], set[str], str]:
 def _resolve_stub_imports(tree: ast.Module, owner_package: str = "") -> dict[str, Any]:
     ns: dict[str, Any] = {}
     _resolve_stub_imports_from_body(tree.body, owner_package, ns)
+    _resolve_stub_definitions(tree.body, ns)
     return ns
 
 
@@ -58,6 +60,28 @@ def _resolve_stub_imports_from_body(body: list[ast.stmt], owner_package: str, ns
         elif isinstance(node, ast.If):
             _resolve_stub_imports_from_body(node.body, owner_package, ns)
             _resolve_stub_imports_from_body(node.orelse, owner_package, ns)
+
+
+_STUB_DEFINITION_TYPES = (ast.Assign, ast.AnnAssign, ast.ClassDef, ast.TypeAlias)
+
+
+def _resolve_stub_definitions(body: list[ast.stmt], ns: dict[str, Any]) -> None:
+    for node in body:
+        if isinstance(node, _STUB_DEFINITION_TYPES):
+            exec_node = _strip_class_decorators(node) if isinstance(node, ast.ClassDef) else node
+            with contextlib.suppress(Exception):
+                exec(compile(ast.Module(body=[exec_node], type_ignores=[]), "<stub>", "exec"), ns)  # noqa: S102
+        elif isinstance(node, ast.If):
+            _resolve_stub_definitions(node.body, ns)
+            _resolve_stub_definitions(node.orelse, ns)
+
+
+def _strip_class_decorators(node: ast.ClassDef) -> ast.ClassDef:
+    if not node.decorator_list:
+        return node
+    stripped = copy(node)
+    stripped.decorator_list = []
+    return stripped
 
 
 def _resolve_import_node(node: ast.Import, ns: dict[str, Any]) -> None:
