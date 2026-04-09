@@ -31,6 +31,7 @@ from ._resolver import (
     backfill_type_hints,
     collect_documented_type_aliases,
     get_all_type_hints,
+    get_instance_var_annotations,
     get_obj_location,
 )
 from .patches import _OVERLOADS_CACHE, install_patches
@@ -151,6 +152,9 @@ def process_docstring(  # noqa: PLR0913, PLR0917
         return
     if inspect.isclass(obj):
         backfill_attrs_annotations(obj)
+        ivar_annotations = get_instance_var_annotations(obj)
+    else:
+        ivar_annotations = {}
     use_class_for_signature = False
     cls_for_hints = None
     if inspect.isclass(obj):
@@ -188,6 +192,7 @@ def process_docstring(  # noqa: PLR0913, PLR0917
     try:
         has_overloads = _inject_overload_signatures(app, what, name, obj, lines)
         _inject_types_to_docstring(type_hints, signature, original_obj, app, what, name, lines, has_overloads)
+        _inject_ivar_types(ivar_annotations, app, lines)
     finally:
         del app.config._annotation_globals  # noqa: SLF001
         del app.config._typehints_env  # noqa: SLF001
@@ -406,6 +411,30 @@ def _inject_rtype(  # noqa: PLR0913, PLR0917
     )
 
     fmt.inject_rtype(lines, formatted_annotation, r, use_rtype=app.config.typehints_use_rtype)
+
+
+def _inject_ivar_types(ivar_annotations: dict[str, Any], app: Sphinx, lines: list[str]) -> None:
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        if not line.startswith(":ivar "):
+            i += 1
+            continue
+        _ivar, *type_tokens, attr_name = line.split(":", maxsplit=2)[1].split()
+        has_inline_type = bool(type_tokens)
+        has_vartype = any(ln.startswith(f":vartype {attr_name}:") for ln in lines)
+        if not has_inline_type and not has_vartype and attr_name in ivar_annotations:
+            formatted = add_type_css_class(
+                format_annotation(
+                    ivar_annotations[attr_name],
+                    app.config,
+                    short_literals=app.config.python_display_short_literal_types,
+                )
+            )
+            lines.insert(i, f":vartype {attr_name}: {formatted}")
+            i += 2
+        else:
+            i += 1
 
 
 def _extract_doc_description(annotation: Any) -> str | None:

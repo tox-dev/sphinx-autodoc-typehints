@@ -602,3 +602,104 @@ def test_wrong_module_path(app: SphinxTestApp, status: StringIO, warning: String
 
     assert "build succeeded" in status.getvalue()
     assert not warning.getvalue().strip()
+
+
+class _IvarClass:
+    """Class with instance variable docs.
+
+    :ivar bar: the bar value
+    :ivar count: the count
+    """
+
+    def __init__(self, bar: str = "baz", count: int = 0) -> None:
+        self.bar: str = bar
+        self.count: int = count
+
+
+class _IvarWithExistingVartype:
+    """Class with pre-existing :vartype:.
+
+    :ivar bar: the bar value
+    :vartype bar: str
+    """
+
+    def __init__(self) -> None:
+        self.bar: str = ""
+
+
+class _IvarInlineType:
+    """Class with inline-typed :ivar:.
+
+    :ivar str bar: the bar value
+    """
+
+    def __init__(self) -> None:
+        self.bar: str = ""
+
+
+class _IvarNoAnnotation:
+    """Class with ivar but no annotation.
+
+    :ivar bar: the bar value
+    """
+
+    def __init__(self) -> None:
+        self.bar = ""
+
+
+def test_ivar_type_injected() -> None:
+    assert _IvarClass().bar == "baz"  # instantiate to cover __init__
+    lines = [":ivar bar: the bar value", ":ivar count: the count"]
+    app = make_docstring_app()
+    process_docstring(app, "class", "_IvarClass", _IvarClass, None, lines)
+    assert any(line.startswith(":vartype bar:") and "str" in line for line in lines)
+    assert any(line.startswith(":vartype count:") and "int" in line for line in lines)
+
+
+def test_ivar_vartype_inserted_before_ivar() -> None:
+    lines = [":ivar bar: the bar value"]
+    app = make_docstring_app()
+    process_docstring(app, "class", "_IvarClass", _IvarClass, None, lines)
+    bar_idx = lines.index(":ivar bar: the bar value")
+    vartype_idx = next(i for i, line in enumerate(lines) if line.startswith(":vartype bar:"))
+    assert vartype_idx < bar_idx
+
+
+@pytest.mark.parametrize(
+    ("cls", "lines"),
+    [
+        pytest.param(
+            _IvarWithExistingVartype,
+            [":ivar bar: the bar value", ":vartype bar: str"],
+            id="existing_vartype",
+        ),
+        pytest.param(
+            _IvarInlineType,
+            [":ivar str bar: the bar value"],
+            id="inline_type",
+        ),
+    ],
+)
+def test_ivar_vartype_not_duplicated(cls: type, lines: list[str]) -> None:
+    cls()  # cover __init__
+    app = make_docstring_app()
+    process_docstring(app, "class", cls.__name__, cls, None, lines)
+    assert sum(1 for line in lines if line.startswith(":vartype bar:")) <= 1
+
+
+def test_ivar_without_annotation_no_vartype() -> None:
+    assert not _IvarNoAnnotation().bar  # cover __init__
+    lines = [":ivar bar: the bar value"]
+    app = make_docstring_app()
+    process_docstring(app, "class", "_IvarNoAnnotation", _IvarNoAnnotation, None, lines)
+    assert not any(line.startswith(":vartype bar:") for line in lines)
+
+
+def test_ivar_injection_only_for_class() -> None:
+    def func(x: str) -> str:  # needs annotations so process_docstring does not short-circuit
+        return x  # pragma: no cover
+
+    lines = [":ivar bar: should not be processed"]
+    app = make_docstring_app(typehints_document_rtype=False)
+    process_docstring(app, "function", "func", func, None, lines)
+    assert not any(line.startswith(":vartype bar:") for line in lines)
