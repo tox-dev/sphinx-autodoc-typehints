@@ -1,17 +1,20 @@
 from __future__ import annotations
 
+import sys
 import threading
+import types as _types
+import typing
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import create_autospec
 
+import pytest
 from sphinx.config import Config
 
 from sphinx_autodoc_typehints import format_annotation
 from sphinx_autodoc_typehints._intersphinx import build_type_mapping
 
 if TYPE_CHECKING:
-    import pytest
     from sphinx.environment import BuildEnvironment
 
 
@@ -110,3 +113,22 @@ def test_format_annotation_without_mapping() -> None:
     conf = create_autospec(Config, always_use_bars_union=False)
     result = format_annotation(threading.local, conf)
     assert result == ":py:class:`~_thread._local`"
+
+
+@pytest.mark.parametrize(
+    "alias",
+    [
+        pytest.param(bytes | memoryview, id="X|Y"),
+        pytest.param(typing.Union[bytes, memoryview], id="Union[X,Y]"),
+    ],
+)
+def test_build_type_mapping_skips_union_alias(monkeypatch: pytest.MonkeyPatch, alias: object) -> None:
+    # Union instances all resolve to the same union-type class path, so including
+    # them in the mapping would remap every union annotation in the docs.
+    mypkg = _types.ModuleType("mypkg")
+    mypkg.MyAlias = alias  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "mypkg", mypkg)
+    inventory_data: dict[str, dict[str, Any]] = {"py:data": {"mypkg.MyAlias": ("", "", "", "")}}
+    result = build_type_mapping(_make_env(inventory_data))
+    assert "types.UnionType" not in result
+    assert "typing.Union" not in result
