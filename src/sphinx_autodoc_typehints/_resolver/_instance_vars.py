@@ -7,7 +7,8 @@ from typing import Any
 
 
 def get_instance_var_annotations(cls: type) -> dict[str, Any]:
-    """Extract instance variable annotations from ``__init__`` by walking its AST.
+    """
+    Extract instance variable annotations from ``__init__`` by walking its AST.
 
     ``self.x: T = ...`` is not stored in ``cls.__annotations__`` at runtime, so
     ``typing.get_type_hints`` cannot see it — AST inspection is the only option.
