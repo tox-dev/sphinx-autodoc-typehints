@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib
+import types as _types
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -32,8 +33,17 @@ def build_type_mapping(env: BuildEnvironment) -> dict[str, str]:
             try:
                 mod = importlib.import_module(mod_path)
                 obj = getattr(mod, attr_name)
+                # Union instances borrow __module__/__qualname__ from their type class,
+                # so every X|Y alias resolves to the same "types.UnionType"/"typing.Union"
+                # path and would corrupt all union annotations in the rendered docs.
+                if isinstance(obj, _types.UnionType):
+                    continue
                 internal_path = f"{obj.__module__}.{obj.__qualname__}"
             except Exception:  # noqa: BLE001, S112
+                continue
+            # typing.Union[X, Y] aliases on Python <3.14 are not types.UnionType instances
+            # but still resolve to "typing.Union"; guard against those and any edge cases.
+            if internal_path in {"types.UnionType", "typing.Union"}:
                 continue
             if internal_path != documented_name:
                 candidates.append((internal_path, documented_name))
