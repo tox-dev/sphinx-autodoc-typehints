@@ -109,7 +109,13 @@ def _get_type_hint(
     _resolve_type_guarded_imports(autodoc_mock_imports, obj)
     localns = _build_localns(obj, localns)
     try:
-        result = get_type_hints(obj, None, localns, include_extras=True)
+        if getattr(obj, "__no_type_check__", False):
+            # typing.get_type_hints() unconditionally returns {} for @typing.no_type_check
+            # targets; inspect.get_annotations() has no such guard, so use it to still surface
+            # annotations in the rendered docs (see issue #680).
+            result = inspect.get_annotations(obj, locals=localns, eval_str=True)
+        else:
+            result = get_type_hints(obj, None, localns, include_extras=True)
     except (AttributeError, TypeError, RecursionError) as exc:
         if (
             isinstance(exc, TypeError) and _future_annotations_imported(obj) and "unsupported operand type" in str(exc)
