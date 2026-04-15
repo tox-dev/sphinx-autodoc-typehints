@@ -703,3 +703,90 @@ def test_ivar_injection_only_for_class() -> None:
     app = make_docstring_app(typehints_document_rtype=False)
     process_docstring(app, "function", "func", func, None, lines)
     assert not any(line.startswith(":vartype bar:") for line in lines)
+
+
+@pytest.mark.parametrize(
+    "malformed_line",
+    [
+        pytest.param(":ivar :", id="single_space_empty_name"),
+        pytest.param(":ivar  :", id="double_space_empty_name"),
+        pytest.param(":ivar   :", id="triple_space_empty_name"),
+        pytest.param(":ivar ", id="trailing_space_no_colon"),
+        pytest.param(":ivar bar", id="no_closing_colon"),
+        pytest.param(":ivar bar body", id="no_closing_colon_with_body"),
+    ],
+)
+def test_ivar_injection_skips_malformed_line(malformed_line: str) -> None:
+    """Regression: malformed ``:ivar ...`` lines must not crash the parser (issue #683)."""
+    assert _IvarClass().bar == "baz"  # cover __init__
+    lines = [malformed_line]
+    app = make_docstring_app()
+    process_docstring(app, "class", "_IvarClass", _IvarClass, None, lines)
+    assert lines == [malformed_line]
+
+
+def test_ivar_injection_survives_mixed_malformed_and_valid_lines() -> None:
+    """A crashing malformed entry must not block injection of valid sibling entries."""
+    assert _IvarClass().bar == "baz"  # cover __init__
+    lines = [
+        ":ivar :",
+        ":ivar bar: the bar value",
+        ":ivar  :",
+        ":ivar count: the count",
+    ]
+    app = make_docstring_app()
+    process_docstring(app, "class", "_IvarClass", _IvarClass, None, lines)
+    assert ":ivar :" in lines
+    assert ":ivar  :" in lines
+    assert any(line.startswith(":vartype bar:") and "str" in line for line in lines)
+    assert any(line.startswith(":vartype count:") and "int" in line for line in lines)
+
+
+@pytest.mark.parametrize(
+    "non_field_line",
+    [
+        pytest.param(":ivarname: not a real field", id="no_space_after_ivar"),
+        pytest.param(":ivars bar: pluralised keyword", id="pluralised_ivar"),
+    ],
+)
+def test_ivar_injection_ignores_non_ivar_field(non_field_line: str) -> None:
+    """Lines that merely share the ``:ivar`` prefix must not be mistaken for fields."""
+    assert _IvarClass().bar == "baz"  # cover __init__
+    lines = [non_field_line]
+    app = make_docstring_app()
+    process_docstring(app, "class", "_IvarClass", _IvarClass, None, lines)
+    assert lines == [non_field_line]
+
+
+@pytest.mark.parametrize(
+    "valid_line",
+    [
+        pytest.param(":ivar\tbar: the bar value", id="tab_separator"),
+        pytest.param(":ivar   bar: the bar value", id="multi_space_separator"),
+        pytest.param(":ivar  bar:  the bar value", id="multi_space_around_body"),
+    ],
+)
+def test_ivar_injection_accepts_whitespace_variants(valid_line: str) -> None:
+    """Non-ASCII-single-space whitespace between ``:ivar`` and name must still match."""
+    assert _IvarClass().bar == "baz"  # cover __init__
+    lines = [valid_line]
+    app = make_docstring_app()
+    process_docstring(app, "class", "_IvarClass", _IvarClass, None, lines)
+    assert any(line.startswith(":vartype bar:") and "str" in line for line in lines)
+
+
+@pytest.mark.parametrize(
+    "inline_typed_line",
+    [
+        pytest.param(":ivar Dict[str, int] bar: the bar value", id="dict_str_int"),
+        pytest.param(":ivar Callable[[int], str] bar: the bar value", id="callable"),
+        pytest.param(":ivar tuple[int, ...] bar: the bar value", id="tuple_ellipsis"),
+    ],
+)
+def test_ivar_injection_accepts_parameterised_inline_type(inline_typed_line: str) -> None:
+    """Inline types containing spaces still count as inline-typed and suppress injection."""
+    assert _IvarClass().bar == "baz"  # cover __init__
+    lines = [inline_typed_line]
+    app = make_docstring_app()
+    process_docstring(app, "class", "_IvarClass", _IvarClass, None, lines)
+    assert not any(line.startswith(":vartype bar:") for line in lines)
