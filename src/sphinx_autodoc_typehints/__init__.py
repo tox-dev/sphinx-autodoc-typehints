@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import inspect
+import re
 import types
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -413,28 +414,45 @@ def _inject_rtype(  # noqa: PLR0913, PLR0917
     fmt.inject_rtype(lines, formatted_annotation, r, use_rtype=app.config.typehints_use_rtype)
 
 
+# Matches a well-formed Sphinx ``:ivar ...:`` field list entry. Supports both
+# ``:ivar name:`` and the inline-typed ``:ivar <type> name:`` grammar. The
+# optional type is lazy so the final whitespace-delimited token before the
+# closing colon is always captured as the attribute name. Anything that does
+# not match (empty name, missing closing colon, bare ``:ivar :``) is skipped
+# rather than crashing the parser — see issue #683.
+_IVAR_FIELD_RE = re.compile(
+    r"""
+    ^:ivar                       # literal field marker
+    (?:\s+(?P<type>\S.*?))?      # optional inline type expression
+    \s+(?P<name>\w+)             # attribute name (Python identifier)
+    \s*:                         # closing colon of the field name
+    """,
+    re.VERBOSE,
+)
+
+
 def _inject_ivar_types(ivar_annotations: dict[str, Any], app: Sphinx, lines: list[str]) -> None:
-    i = 0
-    while i < len(lines):
-        line = lines[i]
-        if not line.startswith(":ivar "):
-            i += 1
+    line_index = 0
+    while line_index < len(lines):
+        match = _IVAR_FIELD_RE.match(lines[line_index])
+        if match is None:
+            line_index += 1
             continue
-        _ivar, *type_tokens, attr_name = line.split(":", maxsplit=2)[1].split()
-        has_inline_type = bool(type_tokens)
-        has_vartype = any(ln.startswith(f":vartype {attr_name}:") for ln in lines)
-        if not has_inline_type and not has_vartype and attr_name in ivar_annotations:
-            formatted = add_type_css_class(
-                format_annotation(
-                    ivar_annotations[attr_name],
-                    app.config,
-                    short_literals=app.config.python_display_short_literal_types,
-                )
+        attr_name = match["name"]
+        has_inline_type = match["type"] is not None
+        has_vartype = any(existing.startswith(f":vartype {attr_name}:") for existing in lines)
+        if has_inline_type or has_vartype or attr_name not in ivar_annotations:
+            line_index += 1
+            continue
+        formatted = add_type_css_class(
+            format_annotation(
+                ivar_annotations[attr_name],
+                app.config,
+                short_literals=app.config.python_display_short_literal_types,
             )
-            lines.insert(i, f":vartype {attr_name}: {formatted}")
-            i += 2
-        else:
-            i += 1
+        )
+        lines.insert(line_index, f":vartype {attr_name}: {formatted}")
+        line_index += 2
 
 
 def _extract_doc_description(annotation: Any) -> str | None:
