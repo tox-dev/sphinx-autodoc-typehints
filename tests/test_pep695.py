@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
     from sphinx.testing.util import SphinxTestApp
 
-_mod_pep695 = types.ModuleType("_mod_pep695")
+_mod_pep695 = types.ModuleType("mod")
 _mod_pep695.__file__ = __file__
 exec(  # noqa: S102
     dedent("""\
@@ -45,7 +45,16 @@ exec(  # noqa: S102
 
             :return: the thing
             \"\"\"
-            ...
+
+    class FooStringOrInt(Foo[StringOrInt]):
+        \"\"\"A subclass of Foo with StringOrInt type param.\"\"\"
+
+        def set(self, thing: StringOrInt) -> StringOrInt:
+            \"\"\"Set the thing.
+
+            :param thing: the thing
+            :return: the thing
+            \"\"\"
 
     class Multi[K, V]:
         \"\"\"A class with multiple type params.\"\"\"
@@ -127,12 +136,15 @@ def test_pep695_function_type_params(
 
 # TypeAliasType tests
 @pytest.mark.sphinx("text", testroot="integration")
-def test_pep695_type_aliases_undocumented(
+def test_pep695_type_alias_in_function_undocumented(
     app: SphinxTestApp,
     status: StringIO,
     warning: StringIO,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Test that PEP 695 type aliases in function signatures
+    are rendered as their literal types when the type aliases are
+    not documented."""
     (Path(app.srcdir) / "index.rst").write_text(".. autofunction:: mod.type_alias_func")
     monkeypatch.setitem(sys.modules, "mod", _mod_pep695)
     app.build()
@@ -158,12 +170,15 @@ def test_pep695_type_aliases_undocumented(
 
 
 @pytest.mark.sphinx("text", testroot="integration")
-def test_pep695_type_aliases_documented(
+def test_pep695_type_alias_in_function_documented(
     app: SphinxTestApp,
     status: StringIO,
     warning: StringIO,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Test that PEP 695 type aliases in function signatures
+    are rendered as their documented type names when the type aliases
+    are documented."""
     (Path(app.srcdir) / "index.rst").write_text(
         dedent("""\
         .. py:type:: mod.IntList
@@ -204,5 +219,94 @@ def test_pep695_type_aliases_documented(
 
            Returns:
               String or integer
+        """).strip()
+    assert result.strip() == normalize_sphinx_text(expected)
+
+
+@pytest.mark.sphinx("text", testroot="integration")
+def test_pep695_type_alias_in_method_undocumented(
+    app: SphinxTestApp,
+    status: StringIO,
+    warning: StringIO,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test that PEP 695 type aliases in method signatures are
+    rendered as their literal types when the type aliases are not
+    documented."""
+    (Path(app.srcdir) / "index.rst").write_text(".. autoclass:: mod.FooStringOrInt\n   :members:")
+    monkeypatch.setitem(sys.modules, "mod", _mod_pep695)
+    app.build()
+    assert "build succeeded" in status.getvalue()
+    assert not warning.getvalue().strip()
+
+    result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
+    expected = dedent("""\
+        class mod.FooStringOrInt(thing)
+
+           A subclass of Foo with StringOrInt type param.
+
+           set(thing)
+
+              Set the thing.
+
+              Parameters:
+                 **thing** ("str" | "int") -- the thing
+
+              Return type:
+                 "str" | "int"
+
+              Returns:
+                 the thing
+        """).strip()
+    assert result.strip() == normalize_sphinx_text(expected)
+
+
+@pytest.mark.sphinx("text", testroot="integration")
+def test_pep695_type_alias_in_method_documented(
+    app: SphinxTestApp,
+    status: StringIO,
+    warning: StringIO,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test that PEP 695 type aliases in method signatures are
+    rendered as their documented type names when the type aliases
+    are documented."""
+    (Path(app.srcdir) / "index.rst").write_text(
+        dedent("""\
+        .. py:type:: mod.StringOrInt
+
+           String or integer
+
+        .. autoclass:: mod.FooStringOrInt
+           :members:
+        """)
+    )
+    monkeypatch.setitem(sys.modules, "mod", _mod_pep695)
+    app.build()
+    assert "build succeeded" in status.getvalue()
+    assert not warning.getvalue().strip()
+
+    result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
+    expected = dedent("""\
+        type mod.StringOrInt
+
+           String or integer
+
+        class mod.FooStringOrInt(thing)
+
+           A subclass of Foo with StringOrInt type param.
+
+           set(thing)
+
+              Set the thing.
+
+              Parameters:
+                 **thing** ("StringOrInt") -- the thing
+
+              Return type:
+                 "StringOrInt"
+
+              Returns:
+                 the thing
         """).strip()
     assert result.strip() == normalize_sphinx_text(expected)
