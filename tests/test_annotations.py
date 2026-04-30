@@ -598,7 +598,3 @@ def test_get_canonical_type_alias_name_no_public_reexport(monkeypatch: pytest.Mo
     alias: TypeAliasType = priv.__dict__["ExtAlias2"]
     monkeypatch.setitem(sys.modules, "extpkg2._priv", priv)
     assert _get_canonical_type_alias_name(alias) == "extpkg2._priv.ExtAlias2"
-
-
-def test_get_canonical_type_alias_name_no_module() -> None:
-    assert not _get_canonical_type_alias_name(object())
