@@ -25,6 +25,7 @@ from typing import (  # noqa: UP035
     Required,
     Tuple,
     Type,
+    TypeAliasType,
     TypeVar,
     Union,
 )
@@ -40,6 +41,7 @@ from sphinx_autodoc_typehints import (
     get_annotation_class_name,
     get_annotation_module,
 )
+from sphinx_autodoc_typehints._annotations import _get_canonical_type_alias_name
 
 if TYPE_CHECKING:
     from sphobjinv import Inventory
@@ -569,3 +571,34 @@ def test_get_annotation_args_literal_values() -> None:
 def test_get_annotation_args_generic() -> None:
     result = get_annotation_args(Generic[T], "typing", "Generic")
     assert result == (T,)
+
+
+def test_get_canonical_type_alias_name_public_module(monkeypatch: pytest.MonkeyPatch) -> None:
+    pub = types.ModuleType("mypkg")
+    exec("type MyAlias = str | int", pub.__dict__)  # noqa: S102
+    alias: TypeAliasType = pub.__dict__["MyAlias"]
+    monkeypatch.setitem(sys.modules, "mypkg", pub)
+    assert _get_canonical_type_alias_name(alias) == "mypkg.MyAlias"
+
+
+def test_get_canonical_type_alias_name_private_to_public(monkeypatch: pytest.MonkeyPatch) -> None:
+    priv = types.ModuleType("extpkg._priv")
+    exec("type ExtAlias = str | int", priv.__dict__)  # noqa: S102
+    alias: TypeAliasType = priv.__dict__["ExtAlias"]
+    pub = types.ModuleType("extpkg")
+    pub.ExtAlias = alias  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "extpkg._priv", priv)
+    monkeypatch.setitem(sys.modules, "extpkg", pub)
+    assert _get_canonical_type_alias_name(alias) == "extpkg.ExtAlias"
+
+
+def test_get_canonical_type_alias_name_no_public_reexport(monkeypatch: pytest.MonkeyPatch) -> None:
+    priv = types.ModuleType("extpkg2._priv")
+    exec("type ExtAlias2 = str | int", priv.__dict__)  # noqa: S102
+    alias: TypeAliasType = priv.__dict__["ExtAlias2"]
+    monkeypatch.setitem(sys.modules, "extpkg2._priv", priv)
+    assert _get_canonical_type_alias_name(alias) == "extpkg2._priv.ExtAlias2"
+
+
+def test_get_canonical_type_alias_name_no_module() -> None:
+    assert not _get_canonical_type_alias_name(object())
