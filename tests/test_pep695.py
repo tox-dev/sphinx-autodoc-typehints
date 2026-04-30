@@ -310,3 +310,45 @@ def test_pep695_type_alias_in_method_documented(
                  the thing
         """).strip()
     assert result.strip() == normalize_sphinx_text(expected)
+
+
+@pytest.mark.sphinx("text", testroot="integration")
+def test_pep695_external_type_alias(
+    app: SphinxTestApp,
+    status: StringIO,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test that external TypeAliasType renders as the alias name, not the expanded value."""
+    # Define an external type alias in a private module
+    ext_priv_mod = types.ModuleType("extpkg._priv")
+    exec("type ExtAlias = str | int", ext_priv_mod.__dict__)  # noqa: S102
+    ext_alias = ext_priv_mod.__dict__["ExtAlias"]
+    # Reexport the type alias in a public module
+    ext_pub_mod = types.ModuleType("extpkg")
+    ext_pub_mod.ExtAlias = ext_alias  # type: ignore[attr-defined]
+    # Import and use the external type alias in user module
+    user_mod = types.ModuleType("user_mod")
+    user_mod.__dict__["ExtAlias"] = ext_alias
+    exec(  # noqa: S102
+        dedent("""\
+        from __future__ import annotations
+
+        def ext_alias_func(x: ExtAlias) -> ExtAlias:
+            \"\"\"Function using external type alias.
+
+            :param x: the value
+            :return: the value
+            \"\"\"
+            ...
+        """),
+        user_mod.__dict__,
+    )
+
+    (Path(app.srcdir) / "index.rst").write_text(".. autofunction:: user_mod.ext_alias_func")
+    monkeypatch.setitem(sys.modules, "user_mod", user_mod)
+    app.build()
+    assert "build succeeded" in status.getvalue()
+
+    result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
+    assert '"ExtAlias"' in result
+    assert '"str" | "int"' not in result
