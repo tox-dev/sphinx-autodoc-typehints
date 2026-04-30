@@ -45,6 +45,7 @@ exec(  # noqa: S102
 
             :return: the thing
             \"\"\"
+            ...
 
     class FooStringOrInt(Foo[StringOrInt]):
         \"\"\"A subclass of Foo with StringOrInt type param.\"\"\"
@@ -55,6 +56,7 @@ exec(  # noqa: S102
             :param thing: the thing
             :return: the thing
             \"\"\"
+            ...
 
     class Multi[K, V]:
         \"\"\"A class with multiple type params.\"\"\"
@@ -72,7 +74,6 @@ exec(  # noqa: S102
         :param x: input
         \"\"\"
         return x
-
     """),
     _mod_pep695.__dict__,
 )
@@ -134,7 +135,6 @@ def test_pep695_function_type_params(
     assert "Cannot resolve forward reference" not in warning.getvalue()
 
 
-# TypeAliasType tests
 @pytest.mark.sphinx("text", testroot="integration")
 def test_pep695_type_alias_in_function_undocumented(
     app: SphinxTestApp,
