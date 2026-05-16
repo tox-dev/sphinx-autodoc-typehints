@@ -504,7 +504,7 @@ def setup(app: Sphinx) -> dict[str, bool | str]:
     app.add_config_value("typehints_defaults", None, "env")
     app.add_config_value("simplify_optional_unions", True, "env")  # noqa: FBT003
     app.add_config_value("always_use_bars_union", False, "env")  # noqa: FBT003
-    app.add_config_value("typehints_formatter", None, "env")
+    app.add_config_value("typehints_formatter", None, "")
     app.add_config_value("typehints_document_overloads", True, "env")  # noqa: FBT003
     app.add_config_value("typehints_use_signature", False, "env")  # noqa: FBT003
     app.add_config_value("typehints_use_signature_return", False, "env")  # noqa: FBT003

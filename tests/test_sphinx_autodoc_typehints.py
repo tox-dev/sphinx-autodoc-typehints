@@ -336,6 +336,31 @@ def test_sphinx_output_formatter(
     assert contents == normalize_sphinx_text(dedent(expected_contents))
 
 
+@pytest.mark.sphinx("text", testroot="dummy")
+def test_typehints_formatter_builds_without_config_cache_warning(
+    app: SphinxTestApp,
+    status: StringIO,
+    warning: StringIO,
+    write_rst: Callable[[str], None],
+) -> None:
+    """Regression test for #695: callable typehints_formatter should not emit
+    cache warnings.
+    """
+
+    def formatter(_annotation: object, _config: object | None = None) -> str:
+        return "Formatted"
+
+    app.config.typehints_formatter = formatter
+    write_rst("""\
+        .. autofunction:: dummy_module.undocumented_function
+    """)
+
+    app.build()
+
+    assert "build succeeded" in status.getvalue()
+    assert not warning.getvalue().strip()
+
+
 @pytest.mark.parametrize("obj", [cmp_to_key, 1])
 def test_default_no_signature(obj: Any) -> None:
     app = make_docstring_app()
