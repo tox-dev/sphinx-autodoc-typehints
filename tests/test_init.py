@@ -95,9 +95,9 @@ def test_inject_overload_unannotated_param_and_no_return() -> None:
         parameters=[inspect.Parameter("x", inspect.Parameter.POSITIONAL_OR_KEYWORD)],
     )
     _OVERLOADS_CACHE["test_mod"] = {"func": [sig]}
+    app = make_docstring_app()
+    lines: list[str] = []
     try:
-        app = make_docstring_app()
-        lines: list[str] = []
         result = _inject_overload_signatures(app, "function", "name", obj, lines)
         assert result is True
         joined = "\n".join(lines)
