@@ -207,15 +207,12 @@ def test_stub_annotations_not_polluted_on_repeated_calls(tmp_path: Path) -> None
         "from stubpkg._types import MyType\nclass Klass:\n    def method(self, x: MyType) -> None: ...\n"
     )
     sys.path.insert(0, str(tmp_path))
+    mod = importlib.import_module("stubpkg.mod")
+    _TYPE_GUARD_IMPORTS_RESOLVED.discard("stubpkg.mod")
+    my_type = importlib.import_module("stubpkg._types").MyType
     try:
-        mod = importlib.import_module("stubpkg.mod")
-        _TYPE_GUARD_IMPORTS_RESOLVED.discard("stubpkg.mod")
-
-        my_type = importlib.import_module("stubpkg._types").MyType
-
         result1 = get_all_type_hints([], mod.Klass.method, "stubpkg.mod.Klass.method", {})
         assert result1["x"] is my_type
-
         _TYPE_GUARD_IMPORTS_RESOLVED.discard("stubpkg.mod")
         result2 = _get_type_hint([], "another.Klass.method", mod.Klass.method, {})
         assert result2.get("x") is my_type
