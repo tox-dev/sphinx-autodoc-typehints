@@ -1,8 +1,13 @@
 from __future__ import annotations
 
 import ast
+import importlib
+import inspect
 import os
+import shutil
+import subprocess  # noqa: S404
 import sys
+import sysconfig
 import textwrap
 import types
 from collections.abc import Sequence
@@ -21,6 +26,7 @@ from sphinx_autodoc_typehints._resolver._stubs import (
     _extract_func_annotations,
     _extract_type_alias_names,
     _find_ast_node,
+    _find_native_submodule_stub,
     _find_stub_for_module,
     _find_stub_owner,
     _find_stub_path,
@@ -29,9 +35,11 @@ from sphinx_autodoc_typehints._resolver._stubs import (
     _parse_stub_ast,
     _resolve_import_from,
     _resolve_stub_imports,
+    _stub_owner_package,
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
     from io import StringIO
 
     from sphinx.testing.util import SphinxTestApp
@@ -661,3 +669,227 @@ def test_get_stub_context_resolves_relative_imports(tmp_path: Path) -> None:
         for mod_name in [k for k in sys.modules if k.startswith("relpkg")]:
             sys.modules.pop(mod_name, None)
         _STUB_AST_CACHE.clear()
+
+
+@pytest.mark.parametrize(
+    ("owner_name", "package_attr", "stub_name", "expected"),
+    [
+        pytest.param("pkg", "pkg", "__init__.pyi", "pkg", id="package_with_attr"),
+        pytest.param("pkg.warc", None, "warc.pyi", "pkg", id="native_module_no_attr"),
+        pytest.param("pkg.sub", None, "__init__.pyi", "pkg.sub", id="native_subpackage_no_attr"),
+        pytest.param("solo", "", "solo.pyi", "", id="top_level_module"),
+        pytest.param("a.b.c", None, "c.pyi", "a.b", id="deep_module"),
+    ],
+)
+def test_stub_owner_package(owner_name: str, package_attr: str | None, stub_name: str, expected: str) -> None:
+    module = types.ModuleType(owner_name)
+    if package_attr is None:
+        del module.__package__
+    else:
+        module.__package__ = package_attr
+    assert _stub_owner_package(module, Path(stub_name)) == expected
+
+
+@pytest.fixture(scope="module")
+def native_subpkg_layout(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> Iterator[tuple[Path, types.ModuleType, types.ModuleType]]:
+    root = tmp_path_factory.mktemp("native_subpkg")
+    pkg_dir = root / "natpkg_edge"
+    pkg_dir.mkdir()
+    (pkg_dir / "__init__.py").write_text("")
+    (pkg_dir / "warc.pyi").write_text(
+        textwrap.dedent("""\
+            class WarcRecord:
+                record_id: str
+        """)
+    )
+    parent = types.ModuleType("natpkg_edge")
+    parent.__file__ = str(pkg_dir / "__init__.py")
+    parent.__path__ = [str(pkg_dir)]
+    child = types.ModuleType("natpkg_edge.warc")
+    yield pkg_dir, parent, child
+    _STUB_AST_CACHE.clear()
+
+
+def test_find_native_submodule_stub_sibling_pyi(
+    native_subpkg_layout: tuple[Path, types.ModuleType, types.ModuleType],
+) -> None:
+    _, parent, child = native_subpkg_layout
+    with patch.dict(sys.modules, {"natpkg_edge": parent, "natpkg_edge.warc": child}):
+        result = _find_native_submodule_stub(child)
+    assert result is not None
+    assert result.name == "warc.pyi"
+
+
+def test_find_native_submodule_stub_subpackage_init_pyi(tmp_path: Path) -> None:
+    pkg_dir = tmp_path / "natpkg_sub"
+    pkg_dir.mkdir()
+    sub_stub_dir = pkg_dir / "sub"
+    sub_stub_dir.mkdir()
+    (sub_stub_dir / "__init__.pyi").write_text("x: int\n")
+    parent = types.ModuleType("natpkg_sub")
+    parent.__path__ = [str(pkg_dir)]
+    child = types.ModuleType("natpkg_sub.sub")
+    with patch.dict(sys.modules, {"natpkg_sub": parent, "natpkg_sub.sub": child}):
+        result = _find_native_submodule_stub(child)
+    assert result is not None
+    assert result.name == "__init__.pyi"
+    assert result.parent.name == "sub"
+
+
+@pytest.mark.parametrize(
+    "module_name",
+    [
+        pytest.param("top_level_native", id="no_dot_in_name"),
+        pytest.param("absent.child", id="parent_missing_in_sys_modules"),
+    ],
+)
+def test_find_native_submodule_stub_returns_none_without_parent(module_name: str) -> None:
+    sys.modules.pop(module_name.partition(".")[0], None)
+    assert _find_native_submodule_stub(types.ModuleType(module_name)) is None
+
+
+def test_find_native_submodule_stub_parent_without_path(tmp_path: Path) -> None:
+    parent = types.ModuleType("flat_native")
+    parent.__file__ = str(tmp_path / "flat.py")
+    child = types.ModuleType("flat_native.child")
+    with patch.dict(sys.modules, {"flat_native": parent, "flat_native.child": child}):
+        assert _find_native_submodule_stub(child) is None
+
+
+def test_find_native_submodule_stub_no_matching_stub(tmp_path: Path) -> None:
+    pkg_dir = tmp_path / "natpkg_empty"
+    pkg_dir.mkdir()
+    parent = types.ModuleType("natpkg_empty")
+    parent.__path__ = [str(pkg_dir)]
+    child = types.ModuleType("natpkg_empty.missing")
+    with patch.dict(sys.modules, {"natpkg_empty": parent, "natpkg_empty.missing": child}):
+        assert _find_native_submodule_stub(child) is None
+
+
+def test_find_stub_for_module_uses_native_submodule_fallback(
+    native_subpkg_layout: tuple[Path, types.ModuleType, types.ModuleType],
+) -> None:
+    _, parent, child = native_subpkg_layout
+    with patch.dict(sys.modules, {"natpkg_edge": parent, "natpkg_edge.warc": child}):
+        result = _find_stub_for_module(child)
+    assert result is not None
+    assert result.name == "warc.pyi"
+
+
+@pytest.fixture(scope="module")
+def native_pkg(tmp_path_factory: pytest.TempPathFactory) -> Iterator[types.ModuleType]:
+    """Compile and import the PyO3-shaped reproduction extension from discussion #698."""
+    if not sysconfig.get_config_var("LDSHARED"):  # pragma: no cover
+        pytest.skip("no C compiler available")
+    build_dir = tmp_path_factory.mktemp("native_pkg_root")
+    pkg_dir = build_dir / "native_pkg"
+    pkg_dir.mkdir()
+    src_pkg = STUB_ROOT / "native_pkg"
+    for name in ("__init__.py", "warc.pyi"):
+        shutil.copyfile(src_pkg / name, pkg_dir / name)
+
+    ext_suffix = sysconfig.get_config_var("EXT_SUFFIX")
+    so_file = pkg_dir / f"_native{ext_suffix}"
+    include_dir = sysconfig.get_path("include")
+    ldshared = sysconfig.get_config_var("LDSHARED") or f"{sysconfig.get_config_var('CC') or 'cc'} -shared"
+    cflags = sysconfig.get_config_var("CFLAGS") or ""
+    try:
+        subprocess.check_call(
+            [*ldshared.split(), f"-I{include_dir}", *cflags.split(), "-o", str(so_file), str(src_pkg / "_native.c")],
+            cwd=str(pkg_dir),
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError):  # pragma: no cover
+        pytest.skip("C extension compilation failed")
+
+    sys.path.insert(0, str(build_dir))
+    try:
+        mod = importlib.import_module("native_pkg")
+    finally:
+        sys.path.pop(0)
+    yield mod
+    for name in [k for k in sys.modules if k == "native_pkg" or k.startswith("native_pkg.")]:
+        sys.modules.pop(name, None)
+    _STUB_AST_CACHE.clear()
+
+
+def test_native_submodule_has_no_file(native_pkg: types.ModuleType) -> None:
+    warc = native_pkg.warc
+    assert not hasattr(warc, "__file__")
+    assert not hasattr(warc, "__path__")
+    assert warc.__name__ == "native_pkg.warc"
+
+
+def test_find_stub_owner_resolves_native_submodule_stub(native_pkg: types.ModuleType) -> None:
+    info = _find_stub_owner(native_pkg.warc.WarcRecord)
+    assert info is not None
+    stub_path, owner = info
+    assert stub_path.name == "warc.pyi"
+    assert owner is native_pkg.warc
+
+
+def test_backfill_from_stub_for_native_submodule(native_pkg: types.ModuleType) -> None:
+    parse_annotations = _backfill_from_stub(native_pkg.warc.parse)
+    assert parse_annotations == {"data": "bytes", "return": "Iterator[WarcRecord]"}
+
+
+def test_get_stub_context_resolves_relative_imports_for_native_submodule(native_pkg: types.ModuleType) -> None:
+    ns, _names, owner = _get_stub_context(native_pkg.warc.parse)
+    assert owner == "native_pkg.warc"
+    assert ns["Iterator"].__module__ == "collections.abc"
+
+
+def test_native_function_signature_from_clinic_docstring(native_pkg: types.ModuleType) -> None:
+    assert inspect.signature(native_pkg.warc.parse).parameters
+    with pytest.raises(ValueError, match="no signature found"):
+        inspect.signature(native_pkg.warc.raw_parse)
+
+
+@pytest.mark.usefixtures("native_pkg")
+@pytest.mark.sphinx("text", testroot="pyi-stubs")
+def test_sphinx_build_resolves_param_and_return_for_native_submodule(
+    app: SphinxTestApp, status: StringIO, warning: StringIO
+) -> None:
+    (Path(app.srcdir) / "index.rst").write_text(
+        textwrap.dedent("""\
+            .. autofunction:: native_pkg.warc.parse
+        """)
+    )
+    app.build()
+    assert "build succeeded" in status.getvalue()
+    result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
+    assert "bytes" in result
+    assert "Iterator" in result
+    assert "WarcRecord" in result
+    warn_text = warning.getvalue()
+    assert "native_pkg" not in warn_text or "forward reference" not in warn_text
+
+
+@pytest.mark.usefixtures("native_pkg")
+@pytest.mark.sphinx("text", testroot="pyi-stubs")
+def test_sphinx_build_falls_back_to_return_only_without_signature(app: SphinxTestApp, status: StringIO) -> None:
+    (Path(app.srcdir) / "index.rst").write_text(
+        textwrap.dedent("""\
+            .. autofunction:: native_pkg.warc.raw_parse
+        """)
+    )
+    app.build()
+    assert "build succeeded" in status.getvalue()
+    result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
+    assert "Iterator" in result
+    assert "WarcRecord" in result
+
+
+@pytest.mark.usefixtures("native_pkg")
+@pytest.mark.sphinx("text", testroot="pyi-stubs")
+def test_sphinx_build_documents_native_class(app: SphinxTestApp, status: StringIO) -> None:
+    (Path(app.srcdir) / "index.rst").write_text(
+        textwrap.dedent("""\
+            .. autoclass:: native_pkg.warc.WarcRecord
+        """)
+    )
+    app.build()
+    assert "build succeeded" in status.getvalue()
+    result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
+    assert "WarcRecord" in result
