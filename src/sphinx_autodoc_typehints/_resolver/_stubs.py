@@ -38,10 +38,20 @@ def _get_stub_context(obj: Any) -> tuple[dict[str, Any], set[str], str]:
     stub_path, owner_module = info
     if (tree := _parse_stub_ast(stub_path)) is None:
         return {}, set(), ""
-    owner_package = getattr(owner_module, "__package__", None) or owner_module.__name__
     ns: dict[str, Any] = dict(vars(owner_module))
-    ns.update(_resolve_stub_imports(tree, owner_package))
+    ns.update(_resolve_stub_imports(tree, _stub_owner_package(owner_module, stub_path)))
     return ns, _extract_type_alias_names(tree), owner_module.__name__
+
+
+def _stub_owner_package(owner_module: types.ModuleType, stub_path: Path) -> str:
+    # Native submodules expose ``__package__ = None``; derive the package from the stub's name
+    # so relative imports inside ``<child>.pyi`` resolve relative to its parent package.
+    if owner_package := getattr(owner_module, "__package__", None):
+        return owner_package
+    owner_name = owner_module.__name__
+    if stub_path.name == "__init__.pyi":
+        return owner_name
+    return owner_name.rpartition(".")[0]
 
 
 def _resolve_stub_imports(tree: ast.Module, owner_package: str = "") -> dict[str, Any]:
@@ -161,7 +171,7 @@ def _find_stub_for_module(module: types.ModuleType) -> Path | None:
     try:
         source_file = inspect.getfile(module)
     except TypeError:
-        return None
+        return _find_native_submodule_stub(module)
     source = Path(source_file)
     if (stub := source.with_name(f"{source.name.split('.')[0]}.pyi")).is_file():
         return stub
@@ -169,6 +179,21 @@ def _find_stub_for_module(module: types.ModuleType) -> Path | None:
         for pkg_dir in module.__path__:
             if (init_stub := Path(pkg_dir) / "__init__.pyi").is_file():
                 return init_stub
+    return None
+
+
+def _find_native_submodule_stub(module: types.ModuleType) -> Path | None:
+    """Locate the sibling ``.pyi`` for a PyO3-style submodule registered via ``PyModule_AddObject``."""
+    name = getattr(module, "__name__", "")
+    parent_name, _, child = name.rpartition(".")
+    if not parent_name or (parent := sys.modules.get(parent_name)) is None:
+        return None
+    for pkg_dir in getattr(parent, "__path__", []) or []:
+        pkg_path = Path(pkg_dir)
+        if (stub := pkg_path / f"{child}.pyi").is_file():
+            return stub
+        if (init_stub := pkg_path / child / "__init__.pyi").is_file():
+            return init_stub
     return None
 
 

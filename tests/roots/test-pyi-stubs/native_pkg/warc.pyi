@@ -1,0 +1,9 @@
+from collections.abc import Iterator
+from typing import Self
+
+class WarcRecord:
+    record_id: str
+    def __new__(cls, record_id: str) -> Self: ...
+
+def parse(data: bytes) -> Iterator[WarcRecord]: ...
+def raw_parse(data: bytes) -> Iterator[WarcRecord]: ...
