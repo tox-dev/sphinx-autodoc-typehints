@@ -88,3 +88,18 @@ def test_collect_documented_type_aliases_ignores_unqualified_names() -> None:
     deferred, eager = collect_documented_type_aliases(obj, "cbor2", env)
     assert "EncoderHook" not in deferred
     assert eager == {}
+
+
+def test_collect_documented_type_aliases_annotations_name_error() -> None:
+    """PEP 649 lazy annotations raising NameError must not propagate."""
+
+    class _AnnotationsRaiser:
+        @property
+        def __annotations__(self) -> dict[str, object]:  # noqa: PLW3201
+            msg = "Callable"
+            raise NameError(msg)
+
+    env = _make_env_with_types(["mymod.MyType"])
+    deferred, eager = collect_documented_type_aliases(_AnnotationsRaiser(), "mymod", env)
+    assert "MyType" in deferred
+    assert eager == {}

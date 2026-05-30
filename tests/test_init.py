@@ -298,6 +298,22 @@ def test_process_docstring_strips_complex_inline_param_type() -> None:
     assert "int" in type_lines[0]
 
 
+def test_process_signature_annotations_name_error() -> None:
+    """PEP 649 lazy annotations raising NameError must not propagate from process_signature."""
+
+    class _Func:
+        @property
+        def __annotations__(self) -> dict[str, object]:  # noqa: PLW3201
+            msg = "Callable"
+            raise NameError(msg)
+
+        def __call__(self) -> None: ...
+
+    app = make_sig_app()
+    result = process_signature(app, "function", "test.func", _Func(), MagicMock(), "", "")
+    assert result is None
+
+
 def test_setup_returns_version() -> None:
     """setup() returns metadata dict with version from __version__."""
     app = create_autospec(Sphinx)
