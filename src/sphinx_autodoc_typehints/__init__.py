@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import inspect
 import re
+import sys
 import types
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -65,7 +66,12 @@ def process_signature(  # noqa: C901, PLR0911, PLR0912, PLR0913, PLR0917
 
     original_obj = obj
     obj = getattr(obj, "__init__", getattr(obj, "__new__", None)) if inspect.isclass(obj) else obj
-    if not getattr(obj, "__annotations__", None):
+    # In Python 3.14+, accessing __annotations__ evaluates lazy annotations (PEP 649) and raises
+    # NameError for TYPE_CHECKING-only names. __annotate__ is safe: it is None iff no annotations.
+    if sys.version_info >= (3, 14):
+        if not getattr(obj, "__annotate__", None):
+            return None
+    elif not getattr(obj, "__annotations__", None):
         return None
 
     try:

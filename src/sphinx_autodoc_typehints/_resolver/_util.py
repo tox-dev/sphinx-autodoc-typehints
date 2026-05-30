@@ -28,20 +28,15 @@ def collect_documented_type_aliases(
     obj: Any, module_prefix: str, env: BuildEnvironment
 ) -> tuple[dict[str, MyTypeAliasForwardRef], dict[int, MyTypeAliasForwardRef]]:
     py_objects = env.get_domain("py").objects  # ty: ignore[unresolved-attribute]
-    deferred: dict[str, MyTypeAliasForwardRef] = {}
+    deferred = _collect_module_type_aliases(module_prefix, py_objects)
     eager: dict[int, MyTypeAliasForwardRef] = {}
 
-    prefix_dot = f"{module_prefix}."
-    for fqn, obj_info in py_objects.items():
-        if obj_info.objtype != "type":
-            continue
-        if fqn.startswith(prefix_dot) or fqn == module_prefix:
-            short_name = fqn.rsplit(".", 1)[-1]
-            ref = MyTypeAliasForwardRef(short_name)
-            ref.crossref = True
-            deferred[short_name] = ref
-
-    raw_annotations = getattr(obj, "__annotations__", {})
+    # In Python 3.14+, accessing __annotations__ evaluates lazy annotations (PEP 649) and
+    # may raise NameError for TYPE_CHECKING-only names before imports are resolved.
+    try:
+        raw_annotations = getattr(obj, "__annotations__", {})
+    except NameError:
+        return deferred, eager
     if not raw_annotations:
         return deferred, eager
 
@@ -64,6 +59,18 @@ def collect_documented_type_aliases(
                     eager[id(annotation)] = ref
 
     return deferred, eager
+
+
+def _collect_module_type_aliases(module_prefix: str, py_objects: dict[str, Any]) -> dict[str, MyTypeAliasForwardRef]:
+    prefix_dot = f"{module_prefix}."
+    result: dict[str, MyTypeAliasForwardRef] = {}
+    for fqn, obj_info in py_objects.items():
+        if obj_info.objtype == "type" and (fqn.startswith(prefix_dot) or fqn == module_prefix):
+            short_name = fqn.rsplit(".", 1)[-1]
+            ref = MyTypeAliasForwardRef(short_name)
+            ref.crossref = True
+            result[short_name] = ref
+    return result
 
 
 def _is_documented_type(name: str, module_prefix: str, py_objects: dict[str, Any]) -> bool:
