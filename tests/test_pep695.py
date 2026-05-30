@@ -352,3 +352,43 @@ def test_pep695_external_type_alias(
     result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
     assert '"ExtAlias"' in result
     assert '"str" | "int"' not in result
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason="PEP 649 lazy annotation evaluation is Python 3.14+")
+@pytest.mark.sphinx("text", testroot="integration")
+def test_pep695_type_checking_only_annotation(
+    app: SphinxTestApp,
+    status: StringIO,
+    warning: StringIO,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Regression test for #703: PEP 695 generic functions with TYPE_CHECKING-only annotations
+    must not raise NameError during Sphinx processing."""
+    mod = types.ModuleType("mod_703")
+    mod.__file__ = __file__
+    exec(  # noqa: S102
+        dedent("""\
+        import functools
+        from typing import TYPE_CHECKING
+
+        if TYPE_CHECKING:
+            from collections.abc import Callable
+
+        def my_customizable_decorator[**P, R]() -> Callable[[Callable[P, R]], Callable[P, R]]:
+            \"\"\"Return a decorator that wraps functions.\"\"\"
+            def decorator[**P, R](func: Callable[P, R]) -> Callable[P, R]:
+                @functools.wraps(func)
+                def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+                    return func(*args, **kwargs)
+                return wrapper
+            return decorator
+        """),
+        mod.__dict__,
+    )
+    (Path(app.srcdir) / "index.rst").write_text(".. autofunction:: mod_703.my_customizable_decorator")
+    monkeypatch.setitem(sys.modules, "mod_703", mod)
+    app.build()
+    assert "build succeeded" in status.getvalue()
+    # The fix prevents process_signature from throwing — a forward_reference warning
+    # for unresolvable TYPE_CHECKING imports in exec'd modules is acceptable.
+    assert "threw an exception" not in warning.getvalue()

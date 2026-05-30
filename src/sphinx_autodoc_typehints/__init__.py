@@ -65,7 +65,15 @@ def process_signature(  # noqa: C901, PLR0911, PLR0912, PLR0913, PLR0917
 
     original_obj = obj
     obj = getattr(obj, "__init__", getattr(obj, "__new__", None)) if inspect.isclass(obj) else obj
-    if not getattr(obj, "__annotations__", None):
+    try:
+        has_annotations = getattr(obj, "__annotations__", None)
+    except NameError:
+        # PEP 649 (Python 3.14+): accessing __annotations__ may raise NameError when annotations
+        # reference TYPE_CHECKING-only names. Setting __annotations__ clears __annotate__, so we
+        # only reach here when annotations come from the original function definition. If __annotate__
+        # is callable, the function has annotations; proceed so sphinx_signature can use FORWARDREF.
+        has_annotations = getattr(obj, "__annotate__", None)
+    if not has_annotations:
         return None
 
     try:
