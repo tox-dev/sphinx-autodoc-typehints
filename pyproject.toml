@@ -85,8 +85,8 @@ pkg-meta = [
 ]
 
 [tool.hatch]
-build.hooks.vcs.version-file = "src/sphinx_autodoc_typehints/version.py"
 version.source = "vcs"
+build.hooks.vcs.version-file = "src/sphinx_autodoc_typehints/version.py"
 
 [tool.ruff]
 line-length = 120
@@ -160,8 +160,8 @@ count = true
 max_supported_python = "3.14"
 
 [tool.ty]
-environment.python-version = "3.14"
 src.exclude = [ "tests/roots/" ]
+environment.python-version = "3.14"
 overrides = [ { include = [ "tests/" ], rules.empty-body = "ignore" } ]
 
 [tool.pytest]
