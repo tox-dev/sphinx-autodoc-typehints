@@ -48,6 +48,17 @@ def test_process_signature_private_name_mangling() -> None:
     assert "self" not in sig_str
 
 
+def test_process_signature_class_instance() -> None:
+    """Line 121: bound instance methods should not have their first argument removed."""
+    instance = _ClassWithPrivate()
+    method = _ClassWithPrivate.__dict__["_ClassWithPrivate__secret"].__get__(instance)
+    app = make_sig_app()
+    result = process_signature(app, "method", "test_init._ClassWithPrivate.__secret", method, MagicMock(), "", "")
+    assert result is not None
+    sig_str, _ = result
+    assert sig_str == "(x)"
+
+
 def test_process_docstring_sphinx_signature_raises_value_error() -> None:
     """Lines 157-158: sphinx_signature raising ValueError sets signature to None."""
 

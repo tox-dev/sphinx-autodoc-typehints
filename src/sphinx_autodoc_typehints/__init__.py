@@ -118,7 +118,7 @@ def process_signature(  # noqa: C901, PLR0911, PLR0912, PLR0913, PLR0917
             if method_name.startswith("__") and not method_name.endswith("__"):
                 method_name = f"_{obj.__qualname__.split('.')[-2]}{method_name}"
             method_object = outer.__dict__.get(method_name, obj) if outer else obj
-            if not isinstance(method_object, classmethod | staticmethod):
+            if not isinstance(method_object, classmethod | staticmethod) and not inspect.ismethod(obj):
                 start = 1
 
     sph_signature = sph_signature.replace(parameters=parameters[start:])
