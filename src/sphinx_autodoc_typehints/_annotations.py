@@ -41,13 +41,14 @@ _PYDATA_ANNOTS_TYPING = {
 _PYDATA_ANNOTS_TYPES = {
     *("AsyncGeneratorType", "BuiltinFunctionType", "BuiltinMethodType"),
     *("CellType", "ClassMethodDescriptorType", "CoroutineType"),
-    "EllipsisType",
     *("FrameType", "FunctionType"),
     *("GeneratorType", "GetSetDescriptorType"),
     "LambdaType",
     *("MemberDescriptorType", "MethodDescriptorType", "MethodType", "MethodWrapperType"),
-    *("NoneType", "NotImplementedType"),
+    "NoneType",
     "WrapperDescriptorType",
+    # documented as ``py:class`` since the Python 3.13 docs
+    *({"EllipsisType", "NotImplementedType"} if sys.version_info < (3, 13) else set()),
 }
 _PYDATA_ANNOTATIONS = {
     *(("typing", n) for n in _PYDATA_ANNOTS_TYPING),
