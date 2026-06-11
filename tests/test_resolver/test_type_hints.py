@@ -235,6 +235,10 @@ def test_descriptor_type_hint_resolves_class_annotation(c_ext_mod: Any) -> None:
     assert get_descriptor_type_hint(c_ext_mod.Encoder.flags) is int
 
 
+def test_descriptor_type_hint_inside_version_guard(c_ext_mod: Any) -> None:
+    assert get_descriptor_type_hint(c_ext_mod.Encoder.guarded) is bool
+
+
 def test_descriptor_type_hint_for_non_class_stub_node(c_ext_mod: Any) -> None:
     fake_class = type("greet", (), {"__module__": c_ext_mod.__name__, "__qualname__": "greet"})
     descriptor = types.SimpleNamespace(__objclass__=fake_class, __name__="depth")

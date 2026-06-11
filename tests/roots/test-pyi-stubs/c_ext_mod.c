@@ -35,6 +35,7 @@ static PyGetSetDef encoder_getset[] = {
     {"depth", encoder_get_depth, NULL, "current nesting depth", NULL},
     {"hook", encoder_get_hook, NULL, "the active encoder hook", NULL},
     {"flags", encoder_get_depth, NULL, "encoder behavior flags", NULL},
+    {"guarded", encoder_get_depth, NULL, "a member guarded by sys.version_info in the stub", NULL},
     {NULL, NULL, NULL, NULL, NULL}
 };
 

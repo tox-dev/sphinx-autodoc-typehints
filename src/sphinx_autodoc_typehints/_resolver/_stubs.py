@@ -275,7 +275,14 @@ def _backfill_descriptor_annotation(obj: Any) -> str | None:
     node = _find_ast_node(tree.body, objclass.__qualname__.split("."))
     if not isinstance(node, ast.ClassDef):
         return None
-    for member in node.body:
+    members: list[ast.stmt] = list(node.body)
+    while members:
+        member = members.pop()
+        if isinstance(member, ast.If):
+            # stubs guard members behind `if sys.version_info >= ...` blocks (numpy's ndarray does)
+            members.extend(member.body)
+            members.extend(member.orelse)
+            continue
         if isinstance(member, ast.AnnAssign) and isinstance(member.target, ast.Name) and member.target.id == name:
             return ast.unparse(member.annotation)
         if not isinstance(member, ast.FunctionDef) or member.name != name or member.returns is None:
