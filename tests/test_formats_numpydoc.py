@@ -1,13 +1,24 @@
 from __future__ import annotations
 
+import sys
+from importlib.util import find_spec
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock
 
+import pytest
+from conftest import normalize_sphinx_text
 from sphinx.application import Sphinx
 
 from sphinx_autodoc_typehints._formats import detect_format
 from sphinx_autodoc_typehints._formats._base import InsertIndexInfo
 from sphinx_autodoc_typehints._formats._numpydoc import NumpydocFormat, _convert_numpydoc_to_sphinx_fields
 from sphinx_autodoc_typehints._formats._sphinx import SphinxFieldListFormat
+
+if TYPE_CHECKING:
+    from io import StringIO
+
+    from sphinx.testing.util import SphinxTestApp
 
 
 def test_convert_parameters_section() -> None:
@@ -390,3 +401,96 @@ def test_numpydoc_format_inject_rtype() -> None:
     info = InsertIndexInfo(insert_index=len(lines))
     fmt.inject_rtype(lines, ":py:class:`str`", info, use_rtype=True)
     assert any("rtype" in line for line in lines)
+
+
+def simple_func(x: int, y: str) -> str:
+    """
+    Do something simple.
+
+    Parameters
+    ----------
+    x : int
+        The x value.
+    y : str
+        The y value.
+
+    Returns
+    -------
+    result : str
+        The combined result.
+    """
+
+
+def raises_func(x: int) -> None:
+    """
+    Raise on bad input.
+
+    Parameters
+    ----------
+    x : int
+        The input value.
+
+    Raises
+    ------
+    ValueError
+        If x is negative.
+    TypeError
+        If x is not an integer.
+    """
+
+
+def multi_return(x: int) -> tuple[str, int]:
+    """
+    Return multiple values.
+
+    Parameters
+    ----------
+    x : int
+        The input.
+
+    Returns
+    -------
+    name : str
+        The name.
+    value : int
+        The value.
+    """
+
+
+def no_params() -> str:
+    """
+    Function with no parameters.
+
+    Returns
+    -------
+    str
+        A greeting.
+    """
+
+
+@pytest.mark.skipif(find_spec("numpydoc") is None, reason="requires the numpydoc extension")
+@pytest.mark.parametrize(
+    ("func", "expected_fragments"),
+    [
+        pytest.param(simple_func, ["Parameters:", "**x** (", "**y** (", "Return type:"], id="params-and-return"),
+        pytest.param(raises_func, ["Parameters:", "Raises:", "ValueError", "TypeError"], id="raises-section"),
+        pytest.param(multi_return, ["Return type:"], id="multi-return"),
+        pytest.param(no_params, ["Return type:"], id="no-params"),
+    ],
+)
+@pytest.mark.sphinx("text", testroot="numpydoc")
+def test_numpydoc_extension_build(
+    app: SphinxTestApp,
+    status: StringIO,
+    monkeypatch: pytest.MonkeyPatch,
+    func: Any,
+    expected_fragments: list[str],
+) -> None:
+    """Regression test for #347: docstrings preprocessed by the numpydoc extension keep their types."""
+    (Path(app.srcdir) / "index.rst").write_text(f".. autofunction:: mod_numpy.{func.__name__}")
+    monkeypatch.setitem(sys.modules, "mod_numpy", sys.modules[__name__])
+    app.build()
+    assert "build succeeded" in status.getvalue()
+    result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
+    for fragment in expected_fragments:
+        assert fragment in result
