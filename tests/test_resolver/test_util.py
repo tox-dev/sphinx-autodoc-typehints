@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 from unittest.mock import MagicMock, create_autospec, patch
 
+import pytest
 from sphinx.environment import BuildEnvironment
 
 from sphinx_autodoc_typehints._annotations import MyTypeAliasForwardRef
@@ -90,14 +91,21 @@ def test_collect_documented_type_aliases_ignores_unqualified_names() -> None:
     assert eager == {}
 
 
-def test_collect_documented_type_aliases_annotations_name_error() -> None:
-    """PEP 649 lazy annotations raising NameError must not propagate."""
+@pytest.mark.parametrize(
+    "error",
+    [
+        pytest.param(NameError("Callable"), id="name-error"),
+        pytest.param(TypeError("type 'DiGraph' is not subscriptable"), id="type-error"),
+    ],
+)
+def test_collect_documented_type_aliases_annotations_error(error: Exception) -> None:
+    """PEP 649 lazy annotation evaluation raising (NameError for TYPE_CHECKING-only names, TypeError
+    for subscripting a non-generic class) must not propagate (issue #712)."""
 
     class _AnnotationsRaiser:
         @property
         def __annotations__(self) -> dict[str, object]:  # noqa: PLW3201
-            msg = "Callable"
-            raise NameError(msg)
+            raise error
 
     env = _make_env_with_types(["mymod.MyType"])
     deferred, eager = collect_documented_type_aliases(_AnnotationsRaiser(), "mymod", env)

@@ -121,6 +121,8 @@ def _get_type_hint(
             isinstance(exc, TypeError) and _future_annotations_imported(obj) and "unsupported operand type" in str(exc)
         ):  # pragma: <3.14 cover
             result = obj.__annotations__
+        elif isinstance(exc, TypeError) and sys.version_info >= (3, 14):  # pragma: >=3.14 cover
+            result = _get_forward_ref_annotations(obj)
         else:
             result = {}
     except NameError as exc:
@@ -138,6 +140,14 @@ def _get_type_hint(
         else:
             result = obj.__annotations__  # pragma: <3.14 cover
     return result
+
+
+def _get_forward_ref_annotations(obj: Any) -> dict[str, Any]:  # pragma: >=3.14 cover
+    # ForwardRef proxies keep unevaluatable annotations renderable as their source text — see #712
+    try:
+        return annotationlib.get_annotations(obj, format=annotationlib.Format.FORWARDREF)
+    except (NameError, TypeError, AttributeError, RecursionError):
+        return {}
 
 
 def _resolve_type_guarded_imports(autodoc_mock_imports: list[str], obj: Any) -> None:

@@ -31,11 +31,11 @@ def collect_documented_type_aliases(
     deferred = _collect_module_type_aliases(module_prefix, py_objects)
     eager: dict[int, MyTypeAliasForwardRef] = {}
 
-    # In Python 3.14+, accessing __annotations__ evaluates lazy annotations (PEP 649) and
-    # may raise NameError for TYPE_CHECKING-only names before imports are resolved.
+    # PEP 649 (Python 3.14+): annotation expressions only run on access and may fail at runtime
+    # (TYPE_CHECKING-only names, subscripting a non-generic class)
     try:
         raw_annotations = getattr(obj, "__annotations__", {})
-    except NameError:
+    except (NameError, TypeError, AttributeError):
         return deferred, eager
     if not raw_annotations:
         return deferred, eager

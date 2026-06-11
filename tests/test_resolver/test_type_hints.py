@@ -66,6 +66,34 @@ def test_get_type_hint_recursion_error() -> None:
         assert _get_type_hint([], "test", func, {}) == {}
 
 
+@pytest.fixture
+def non_subscriptable_generic_func() -> Any:  # pragma: >=3.14 cover
+    # dont_inherit keeps this file's `from __future__ import annotations` (PEP 563) out of the
+    # compiled module so its annotations stay lazily evaluated (PEP 649)
+    source = "class NotGeneric: ...\n\n\ndef func(g: NotGeneric[int]) -> None: ...\n"
+    ns: dict[str, Any] = {}
+    exec(compile(source, "<mod_712>", "exec", dont_inherit=True), ns)  # noqa: S102
+    return ns["func"]
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason="PEP 649 lazy annotation evaluation is Python 3.14+")
+def test_get_type_hint_unevaluatable_annotation_falls_back_to_forward_ref(
+    non_subscriptable_generic_func: Any,
+) -> None:  # pragma: >=3.14 cover
+    """Annotations whose evaluation raises TypeError degrade to ForwardRef proxies (issue #712)."""
+    result = _get_type_hint([], "test.func", non_subscriptable_generic_func, {})
+    assert result["g"].__forward_arg__ == "NotGeneric[int]"
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason="PEP 649 lazy annotation evaluation is Python 3.14+")
+def test_get_type_hint_forward_ref_fallback_failure_returns_empty(
+    non_subscriptable_generic_func: Any,
+) -> None:  # pragma: >=3.14 cover
+    """When even the FORWARDREF format cannot evaluate the annotations, fall back to no hints."""
+    with patch("sphinx_autodoc_typehints._resolver._type_hints.annotationlib.get_annotations", side_effect=TypeError):
+        assert _get_type_hint([], "test.func", non_subscriptable_generic_func, {}) == {}
+
+
 def test_execute_guarded_code_catches_exception() -> None:
     module = type("FakeModule", (), {"__globals__": {}, "__dict__": {}})()
     with patch("sphinx_autodoc_typehints._resolver._type_hints._run_guarded_import", side_effect=RuntimeError("boom")):
