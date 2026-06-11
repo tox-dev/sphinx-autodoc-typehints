@@ -16,7 +16,9 @@ if sys.version_info >= (3, 14):  # pragma: >=3.14 cover
     import annotationlib
 
 import pytest
+from conftest import make_docstring_app
 
+from sphinx_autodoc_typehints import process_docstring
 from sphinx_autodoc_typehints._annotations import MyTypeAliasForwardRef
 from sphinx_autodoc_typehints._resolver._type_hints import (
     _TYPE_GUARD_IMPORTS_RESOLVED,
@@ -29,6 +31,7 @@ from sphinx_autodoc_typehints._resolver._type_hints import (
     _run_guarded_import,
     _should_skip_guarded_import_resolution,
     get_all_type_hints,
+    get_descriptor_type_hint,
 )
 
 STUB_ROOT = Path(__file__).parent.parent / "roots" / "test-pyi-stubs"
@@ -214,6 +217,56 @@ def test_get_all_type_hints_preserves_stub_type_aliases(c_ext_mod: Any) -> None:
     result = get_all_type_hints([], c_ext_mod.with_hook, "c_ext_mod.with_hook", {})
     assert isinstance(result["callback"], MyTypeAliasForwardRef)
     assert result["callback"].name == "GreetHook"
+
+
+def test_descriptor_type_hint_resolves_from_stub(c_ext_mod: Any) -> None:
+    assert get_descriptor_type_hint(c_ext_mod.Encoder.depth) is int
+
+
+def test_descriptor_type_hint_preserves_stub_type_aliases(c_ext_mod: Any) -> None:
+    hint = get_descriptor_type_hint(c_ext_mod.Encoder.hook)
+    args = get_args(hint)
+    assert len(args) == 2
+    encoder_hook = args[0] if isinstance(args[0], MyTypeAliasForwardRef) else args[1]
+    assert encoder_hook.name == "EncoderHook"
+
+
+def test_descriptor_type_hint_resolves_class_annotation(c_ext_mod: Any) -> None:
+    assert get_descriptor_type_hint(c_ext_mod.Encoder.flags) is int
+
+
+def test_descriptor_type_hint_inside_version_guard(c_ext_mod: Any) -> None:
+    assert get_descriptor_type_hint(c_ext_mod.Encoder.guarded) is bool
+
+
+def test_descriptor_type_hint_for_non_class_stub_node(c_ext_mod: Any) -> None:
+    fake_class = type("greet", (), {"__module__": c_ext_mod.__name__, "__qualname__": "greet"})
+    descriptor = types.SimpleNamespace(__objclass__=fake_class, __name__="depth")
+    assert get_descriptor_type_hint(descriptor) is None
+
+
+def test_descriptor_type_hint_for_name_missing_from_stub(c_ext_mod: Any) -> None:
+    descriptor = types.SimpleNamespace(__objclass__=c_ext_mod.Encoder, __name__="missing")
+    assert get_descriptor_type_hint(descriptor) is None
+
+
+def test_process_docstring_injects_descriptor_type(c_ext_mod: Any) -> None:
+    app = make_docstring_app()
+    lines = ["current nesting depth"]
+    process_docstring(app, "attribute", "c_ext_mod.Encoder.depth", c_ext_mod.Encoder.depth, None, lines)
+    assert lines[0] == "current nesting depth"
+    assert lines[-1].startswith(":type: ")
+    assert "int" in lines[-1]
+
+
+def test_descriptor_type_hint_without_stub_is_none() -> None:
+    import array  # noqa: PLC0415
+
+    assert get_descriptor_type_hint(array.array.typecode) is None
+
+
+def test_descriptor_type_hint_ignores_non_descriptors() -> None:
+    assert get_descriptor_type_hint(object()) is None
 
 
 def test_get_all_type_hints_resolves_c_extension_class_new(c_ext_mod: Any) -> None:

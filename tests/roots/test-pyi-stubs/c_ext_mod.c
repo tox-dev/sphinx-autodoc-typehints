@@ -19,6 +19,26 @@ static PyObject *encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwarg
     return type->tp_alloc(type, 0);
 }
 
+static PyObject *encoder_get_depth(PyObject *self, void *closure) {
+    (void)self;
+    (void)closure;
+    return PyLong_FromLong(0);
+}
+
+static PyObject *encoder_get_hook(PyObject *self, void *closure) {
+    (void)self;
+    (void)closure;
+    Py_RETURN_NONE;
+}
+
+static PyGetSetDef encoder_getset[] = {
+    {"depth", encoder_get_depth, NULL, "current nesting depth", NULL},
+    {"hook", encoder_get_hook, NULL, "the active encoder hook", NULL},
+    {"flags", encoder_get_depth, NULL, "encoder behavior flags", NULL},
+    {"guarded", encoder_get_depth, NULL, "a member guarded by sys.version_info in the stub", NULL},
+    {NULL, NULL, NULL, NULL, NULL}
+};
+
 static PyTypeObject EncoderType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "c_ext_mod.Encoder",
@@ -27,6 +47,7 @@ static PyTypeObject EncoderType = {
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_new = encoder_new,
+    .tp_getset = encoder_getset,
 };
 
 static int module_exec(PyObject *m) {
