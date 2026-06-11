@@ -85,6 +85,26 @@ def test_process_docstring_sphinx_signature_raises_type_error() -> None:
     assert ":param x: the x" in lines
 
 
+def test_process_docstring_descriptor_without_stub_is_untouched() -> None:
+    """A C data descriptor with no stub keeps its docstring as-is."""
+    import array  # noqa: PLC0415
+
+    app = make_docstring_app()
+    lines = ["the typecode character used to create the array"]
+    process_docstring(app, "attribute", "array.array.typecode", array.array.typecode, None, lines)
+    assert lines == ["the typecode character used to create the array"]
+
+
+def test_process_docstring_descriptor_with_existing_type_field() -> None:
+    """An explicit :type: field wins over the stub annotation."""
+    import array  # noqa: PLC0415
+
+    app = make_docstring_app()
+    lines = [":type: str"]
+    process_docstring(app, "attribute", "array.array.typecode", array.array.typecode, None, lines)
+    assert lines == [":type: str"]
+
+
 def test_inject_overload_no_qualname() -> None:
     """Line 198: obj without __qualname__ returns False."""
     obj = MagicMock(spec=[])

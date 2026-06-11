@@ -16,7 +16,7 @@ from sphinx.util import logging
 
 from sphinx_autodoc_typehints._annotations import MyTypeAliasForwardRef
 
-from ._stubs import _backfill_from_stub, _get_stub_context
+from ._stubs import _backfill_descriptor_annotation, _backfill_from_stub, _get_stub_context
 from ._type_comments import backfill_type_hints
 from ._util import get_obj_location
 
@@ -76,6 +76,25 @@ def _stub_target(cls: type) -> Any:
     if cls.__new__ is not object.__new__:
         return cls.__new__
     return cls
+
+
+def get_descriptor_type_hint(obj: Any) -> Any | None:
+    """
+    Resolve the documented type of a C data descriptor from its stub, or ``None``.
+
+    The signature-driven backfill never sees these objects because they are not
+    callable; the annotation string from the stub is evaluated in the stub's
+    namespace so aliases and forward references resolve the same way they do
+    for function signatures.
+    """
+    if (annotation := _backfill_descriptor_annotation(obj)) is None:
+        return None
+    localns, alias_names, owner_module = _get_stub_context(obj)
+    for alias_name in alias_names:
+        ref = MyTypeAliasForwardRef(alias_name)
+        ref.crossref = True
+        localns[alias_name] = ref
+    return _resolve_string_annotations(obj, {"return": annotation}, localns, owner_module)["return"]
 
 
 def _resolve_string_annotations(

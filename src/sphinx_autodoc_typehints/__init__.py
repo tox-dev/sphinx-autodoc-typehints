@@ -32,6 +32,7 @@ from ._resolver import (
     backfill_type_hints,
     collect_documented_type_aliases,
     get_all_type_hints,
+    get_descriptor_type_hint,
     get_instance_var_annotations,
     get_obj_location,
 )
@@ -157,6 +158,7 @@ def process_docstring(  # noqa: PLR0913, PLR0917
     original_obj = obj
     obj = obj.fget if isinstance(obj, property) else obj
     if not callable(obj):
+        _maybe_inject_descriptor_type(app, what, obj, lines)
         return
     if inspect.isclass(obj):
         backfill_attrs_annotations(obj)
@@ -205,6 +207,20 @@ def process_docstring(  # noqa: PLR0913, PLR0917
         del app.config._annotation_globals  # noqa: SLF001
         del app.config._typehints_env  # noqa: SLF001
         del app.config._typehints_module_prefix  # noqa: SLF001
+
+
+def _maybe_inject_descriptor_type(app: Sphinx, what: str, obj: Any, lines: list[str]) -> None:
+    """C data descriptors document as plain attributes; lift their type from the stub."""
+    if what != "attribute" or not (inspect.isgetsetdescriptor(obj) or inspect.ismemberdescriptor(obj)):
+        return
+    if any(line.startswith(":type:") for line in lines):
+        return
+    if (hint := get_descriptor_type_hint(obj)) is None:
+        return
+    formatted = add_type_css_class(
+        format_annotation(hint, app.config, short_literals=app.config.python_display_short_literal_types)
+    )
+    lines.extend(["", f":type: {formatted}"])
 
 
 def _inject_overload_signatures(

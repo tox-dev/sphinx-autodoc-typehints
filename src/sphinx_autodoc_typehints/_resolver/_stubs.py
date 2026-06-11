@@ -258,6 +258,33 @@ def _extract_func_annotations(node: ast.FunctionDef | ast.AsyncFunctionDef) -> d
     return result
 
 
+def _backfill_descriptor_annotation(obj: Any) -> str | None:
+    """
+    Return the stub annotation string for a C data descriptor, or ``None``.
+
+    getset and member descriptors carry no runtime annotations, so their type
+    can only come from the owning class's stub: either a ``@property`` return
+    annotation or a class-level annotated assignment with the same name.
+    """
+    objclass = getattr(obj, "__objclass__", None)
+    name = getattr(obj, "__name__", None)
+    if objclass is None or not name:
+        return None
+    if (stub_path := _find_stub_path(obj)) is None or (tree := _parse_stub_ast(stub_path)) is None:
+        return None
+    node = _find_ast_node(tree.body, objclass.__qualname__.split("."))
+    if not isinstance(node, ast.ClassDef):
+        return None
+    for member in node.body:
+        if isinstance(member, ast.AnnAssign) and isinstance(member.target, ast.Name) and member.target.id == name:
+            return ast.unparse(member.annotation)
+        if not isinstance(member, ast.FunctionDef) or member.name != name or member.returns is None:
+            continue
+        if any(isinstance(decorator, ast.Name) and decorator.id == "property" for decorator in member.decorator_list):
+            return ast.unparse(member.returns)
+    return None
+
+
 def _extract_class_annotations(node: ast.ClassDef) -> dict[str, str]:
     result: dict[str, str] = {}
     for child in node.body:
