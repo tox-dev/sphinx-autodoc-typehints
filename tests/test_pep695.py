@@ -4,7 +4,7 @@ import sys
 import types
 from pathlib import Path
 from textwrap import dedent
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Union
 
 import pytest
 from conftest import normalize_sphinx_text
@@ -392,3 +392,145 @@ def test_pep695_type_checking_only_annotation(
     # The fix prevents process_signature from throwing — a forward_reference warning
     # for unresolvable TYPE_CHECKING imports in exec'd modules is acceptable.
     assert "threw an exception" not in warning.getvalue()
+
+
+UserId = Union[int, str]
+RequestData = dict[str, Any]
+
+_TYPE_ALIAS_PREAMBLE = """\
+.. py:type:: mod.UserId
+
+   A user identifier that can be either an integer or a string.
+
+.. py:type:: mod.RequestData
+
+   Request data dictionary.
+
+.. autofunction:: mod.{}
+"""
+
+_TYPE_ALIAS_EXPECTED = """\
+type mod.UserId
+
+   A user identifier that can be either an integer or a string.
+
+type mod.RequestData
+
+   Request data dictionary.
+
+{}
+"""
+
+
+def get_user(user_id: UserId) -> str:
+    """
+    Get a user by ID.
+
+    Args:
+        user_id: The user identifier
+    """
+
+
+def process_request(data: RequestData) -> bool:
+    """
+    Process a request.
+
+    Args:
+        data: The request data
+    """
+
+
+@pytest.mark.parametrize(
+    ("documented", "expected_body"),
+    [
+        pytest.param(
+            get_user,
+            """\
+mod.get_user(user_id)
+
+   Get a user by ID.
+
+   Parameters:
+      **user_id** ("UserId") -- The user identifier
+
+   Return type:
+      "str"
+""",
+            id="get-user",
+        ),
+        pytest.param(
+            process_request,
+            """\
+mod.process_request(data)
+
+   Process a request.
+
+   Parameters:
+      **data** ("RequestData") -- The request data
+
+   Return type:
+      "bool"
+""",
+            id="process-request",
+        ),
+    ],
+)
+@pytest.mark.sphinx("text", testroot="integration")
+def test_documented_type_alias_crossref(
+    app: SphinxTestApp,
+    status: StringIO,
+    warning: StringIO,
+    monkeypatch: pytest.MonkeyPatch,
+    documented: Any,
+    expected_body: str,
+) -> None:
+    (Path(app.srcdir) / "index.rst").write_text(_TYPE_ALIAS_PREAMBLE.format(documented.__name__))
+    monkeypatch.setitem(sys.modules, "mod", sys.modules[__name__])
+    app.build()
+    assert "build succeeded" in status.getvalue()
+
+    value = warning.getvalue().strip()
+    assert not value or "Inline strong start-string without end-string" in value
+
+    result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
+    expected = dedent(normalize_sphinx_text(_TYPE_ALIAS_EXPECTED.format(expected_body))).strip()
+    assert result.strip() == expected
+
+
+@pytest.mark.sphinx("text", testroot="integration")
+def test_eager_annotations(
+    app: SphinxTestApp,
+    status: StringIO,
+    warning: StringIO,
+) -> None:
+    """Non-deferred annotations (no ``from __future__ import annotations``) also resolve."""
+    template = """\
+.. py:type:: mod_eager.UserId
+
+   A user identifier.
+
+.. autofunction:: mod_eager.get_user_eager
+"""
+    (Path(app.srcdir) / "index.rst").write_text(template)
+    app.build()
+    assert "build succeeded" in status.getvalue()
+
+    value = warning.getvalue().strip()
+    assert not value or "Inline strong start-string without end-string" in value
+
+    result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
+    assert '"UserId"' in result
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason="annotationlib requires Python 3.14+")
+@pytest.mark.sphinx("text", testroot="integration")
+def test_forward_ref_builds_without_errors(  # pragma: >=3.14 cover
+    app: SphinxTestApp,
+    status: StringIO,
+) -> None:
+    """Forward-referencing module builds cleanly on 3.14+ using annotationlib."""
+    (Path(app.srcdir) / "index.rst").write_text(".. autoclass:: mod_forward_ref.Tree\n   :members:\n")
+    app.build()
+    assert "build succeeded" in status.getvalue()
+    result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
+    assert "Tree" in result

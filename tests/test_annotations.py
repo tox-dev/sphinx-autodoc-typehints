@@ -29,11 +29,12 @@ from typing import (  # noqa: UP035
     TypeVar,
     Union,
 )
-from unittest.mock import create_autospec
+from unittest.mock import MagicMock, create_autospec
 
 import pytest
 import typing_extensions
 from sphinx.config import Config
+from sphinx.util.inspect import TypeAliasForwardRef
 
 from sphinx_autodoc_typehints import (
     format_annotation,
@@ -41,7 +42,7 @@ from sphinx_autodoc_typehints import (
     get_annotation_class_name,
     get_annotation_module,
 )
-from sphinx_autodoc_typehints._annotations import _get_canonical_type_alias_name
+from sphinx_autodoc_typehints._annotations import MyTypeAliasForwardRef, _get_canonical_type_alias_name
 
 if TYPE_CHECKING:
     from sphobjinv import Inventory
@@ -606,3 +607,44 @@ def test_get_canonical_type_alias_name_no_public_reexport(monkeypatch: pytest.Mo
     alias: TypeAliasType = priv.__dict__["ExtAlias2"]
     monkeypatch.setitem(sys.modules, "extpkg2._priv", priv)
     assert _get_canonical_type_alias_name(alias) == "extpkg2._priv.ExtAlias2"
+
+
+def _config_without_env(*, fully_qualified: bool = False) -> MagicMock:
+    config = MagicMock()
+    config.typehints_formatter = None
+    config.typehints_fully_qualified = fully_qualified
+    del config._typehints_env  # noqa: SLF001
+    return config
+
+
+def test_format_annotation_type_alias_without_env() -> None:
+    """TypeAliasForwardRef falls back to plain name when no env is available."""
+    assert format_annotation(TypeAliasForwardRef("SomeAlias"), _config_without_env()) == "SomeAlias"
+
+
+@pytest.mark.parametrize(
+    ("crossref", "fully_qualified", "expected_result"),
+    [
+        pytest.param(True, False, ":py:type:`~EncoderHook`", id="crossref"),
+        pytest.param(True, True, ":py:type:`EncoderHook`", id="crossref-fully-qualified"),
+        pytest.param(False, False, "EncoderHook", id="plain-name"),
+    ],
+)
+def test_format_annotation_crossref_alias(crossref: bool, fully_qualified: bool, expected_result: str) -> None:
+    annotation = MyTypeAliasForwardRef("EncoderHook")
+    annotation.crossref = crossref
+    assert format_annotation(annotation, _config_without_env(fully_qualified=fully_qualified)) == expected_result
+
+
+def test_format_annotation_type_alias_found_in_py_domain() -> None:
+    config = MagicMock()
+    config.typehints_formatter = None
+    config.typehints_fully_qualified = False
+    config._typehints_module_prefix = "mymod"  # noqa: SLF001
+    py_domain = MagicMock()
+    py_domain.objects = {"mymod.SomeAlias": MagicMock(objtype="type")}
+    env = MagicMock()
+    env.get_domain.return_value = py_domain
+    config._typehints_env = env  # noqa: SLF001
+    annotation = TypeAliasForwardRef("SomeAlias")
+    assert format_annotation(annotation, config) == ":py:type:`~mymod.SomeAlias`"
