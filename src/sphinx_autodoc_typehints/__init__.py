@@ -325,9 +325,9 @@ def _inject_arg_signature(  # noqa: PLR0913, PLR0917
     doc_description = _extract_doc_description(annotation) if annotation is not None else None
 
     if arg_name.endswith("_"):
-        arg_name = f"{arg_name[:-1]}\\_"
-
-    insert_index = fmt.find_param(lines, arg_name)
+        arg_name, insert_index = _find_trailing_underscore_param(lines, arg_name, fmt)
+    else:
+        insert_index = fmt.find_param(lines, arg_name)
 
     if (
         insert_index is not None
@@ -374,6 +374,21 @@ def _inject_arg_signature(  # noqa: PLR0913, PLR0917
         )
 
     lines.insert(insert_index, type_annotation)
+
+
+def _find_trailing_underscore_param(lines: list[str], arg_name: str, fmt: Any) -> tuple[str, int | None]:
+    escaped_name = f"{arg_name[:-1]}\\_"
+    if (insert_index := fmt.find_param(lines, escaped_name)) is not None:
+        return escaped_name, insert_index
+    if (insert_index := fmt.find_param(lines, arg_name)) is None:
+        return escaped_name, None
+    # napoleon only escapes the trailing underscore when strip_signature_backslash is on, and docutils
+    # swallows an unescaped one as reference markup — see issue #708
+    rewritten = lines[insert_index].replace(f" {arg_name}:", f" {escaped_name}:", 1)
+    if rewritten == lines[insert_index]:
+        return arg_name, insert_index
+    lines[insert_index] = rewritten
+    return escaped_name, insert_index
 
 
 def _remove_preexisting_type(lines: list[str], preexisting_line: str) -> int:

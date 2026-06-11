@@ -306,6 +306,61 @@ def function(x: bool, y: int, z_: Optional[str] = None) -> str:
 
 @expected(
     """\
+mod.function_with_trailing_underscore_numpy(a, lambda_=None)
+
+   Do nothing.
+
+   Parameters:
+      * **a** ("int") -- Description for a.
+
+      * **lambda_** ("float" | "None", default: "None") -- Description
+        for lambda.
+
+   Return type:
+      "None"
+""",
+    typehints_defaults="comma",
+)
+def function_with_trailing_underscore_numpy(a: int, lambda_: float | None = None) -> None:
+    """Do nothing.
+
+    Parameters
+    ----------
+    a
+        Description for a.
+    lambda_
+        Description for lambda.
+    """
+
+
+@expected(
+    """\
+mod.function_with_trailing_underscore_google(a, lambda_=None)
+
+   Do nothing.
+
+   Parameters:
+      * **a** ("int") -- Description for a.
+
+      * **lambda_** ("float" | "None", default: "None") -- Description
+        for lambda.
+
+   Return type:
+      "None"
+""",
+    typehints_defaults="comma",
+)
+def function_with_trailing_underscore_google(a: int, lambda_: float | None = None) -> None:
+    """Do nothing.
+
+    Args:
+        a: Description for a.
+        lambda_: Description for lambda.
+    """
+
+
+@expected(
+    """\
 mod.function_with_starred_documentation_param_names(*args, **kwargs)
 
    Function docstring.

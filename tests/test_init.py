@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import inspect
+from typing import Any
 from unittest.mock import MagicMock, create_autospec, patch
 
+import pytest
 from conftest import make_docstring_app, make_sig_app
 from sphinx.application import Sphinx
 from sphinx.config import Config
@@ -307,6 +309,52 @@ def test_process_docstring_strips_complex_inline_param_type() -> None:
     type_lines = [line for line in lines if line.startswith(":type fp:")]
     assert len(type_lines) == 1
     assert "int" in type_lines[0]
+
+
+def _trailing_underscore_func(lambda_: float) -> None: ...
+
+
+def _trailing_underscore_starred_func(*args_: float) -> None: ...
+
+
+def _trailing_underscore_undocumented_func(x_: float) -> None: ...
+
+
+@pytest.mark.parametrize(
+    ("func", "lines", "expected_param_line", "expected_type_name"),
+    [
+        pytest.param(
+            _trailing_underscore_func,
+            [":param lambda_: description"],
+            ":param lambda\\_: description",
+            "lambda\\_",
+            id="unescaped-line-rewritten",
+        ),
+        pytest.param(
+            _trailing_underscore_starred_func,
+            [":param \\*args_: description"],
+            ":param \\*args_: description",
+            "args_",
+            id="starred-line-kept",
+        ),
+        pytest.param(
+            _trailing_underscore_undocumented_func,
+            [],
+            ":param x\\_:",
+            "x\\_",
+            id="undocumented-escaped",
+        ),
+    ],
+)
+def test_process_docstring_trailing_underscore_param(
+    func: Any, lines: list[str], expected_param_line: str, expected_type_name: str
+) -> None:
+    """napoleon emits ``:param lambda_:`` unescaped by default; the param line must be rewritten to
+    the escaped form and the type attached, except for forms that cannot be rewritten (issue #708)."""
+    app = make_docstring_app(typehints_document_rtype=False, always_document_param_types=True)
+    process_docstring(app, "function", "test.func", func, None, lines)
+    assert expected_param_line in lines
+    assert any(line.startswith(":type ") and expected_type_name in line and "float" in line for line in lines)
 
 
 def test_process_signature_annotations_name_error() -> None:
