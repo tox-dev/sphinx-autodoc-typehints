@@ -534,3 +534,36 @@ def test_forward_ref_builds_without_errors(  # pragma: >=3.14 cover
     assert "build succeeded" in status.getvalue()
     result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
     assert "Tree" in result
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason="PEP 649 lazy annotation evaluation is Python 3.14+")
+@pytest.mark.sphinx("text", testroot="integration")
+def test_non_subscriptable_generic_annotation(  # pragma: >=3.14 cover
+    app: SphinxTestApp,
+    status: StringIO,
+    warning: StringIO,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Regression test for #712: annotations whose lazy evaluation raises (here TypeError from
+    subscripting a non-generic class) must not crash the build; the hint degrades to its source text."""
+    mod = types.ModuleType("mod_712")
+    mod.__file__ = __file__
+    source = dedent("""\
+    class DiGraph:
+        pass
+
+
+    def add_node_between_nodes(g: DiGraph[int]) -> None:
+        \"\"\"Stub.\"\"\"
+    """)
+    # dont_inherit keeps this file's `from __future__ import annotations` (PEP 563) out of the
+    # compiled module so its annotations stay lazily evaluated (PEP 649)
+    exec(compile(source, "<mod_712>", "exec", dont_inherit=True), mod.__dict__)  # noqa: S102
+    (Path(app.srcdir) / "index.rst").write_text(".. autofunction:: mod_712.add_node_between_nodes")
+    monkeypatch.setitem(sys.modules, "mod_712", mod)
+    app.config.__dict__["always_document_param_types"] = True
+    app.build()
+    assert "build succeeded" in status.getvalue()
+    assert "threw an exception" not in warning.getvalue()
+    result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
+    assert "DiGraph[int]" in result

@@ -357,14 +357,21 @@ def test_process_docstring_trailing_underscore_param(
     assert any(line.startswith(":type ") and expected_type_name in line and "float" in line for line in lines)
 
 
-def test_process_signature_annotations_name_error() -> None:
-    """PEP 649 lazy annotations raising NameError must not propagate from process_signature."""
+@pytest.mark.parametrize(
+    "error",
+    [
+        pytest.param(NameError("Callable"), id="name-error"),
+        pytest.param(TypeError("type 'DiGraph' is not subscriptable"), id="type-error"),
+    ],
+)
+def test_process_signature_annotations_error(error: Exception) -> None:
+    """PEP 649 lazy annotation evaluation raising (NameError for TYPE_CHECKING-only names, TypeError
+    for subscripting a non-generic class) must not propagate from process_signature (issue #712)."""
 
     class _Func:
         @property
         def __annotations__(self) -> dict[str, object]:  # noqa: PLW3201
-            msg = "Callable"
-            raise NameError(msg)
+            raise error
 
         def __call__(self) -> None: ...
 
