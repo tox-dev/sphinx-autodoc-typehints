@@ -78,7 +78,7 @@ def make_docstring_app(**overrides: object) -> Sphinx:
     return app
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=True, scope="session")  # noqa: RUF076
 def _test_python_path() -> Iterator[None]:
     test_path = str(Path(__file__).parent)
     sys.path.insert(0, test_path)
@@ -105,7 +105,7 @@ def inv(pytestconfig: pytest.Config) -> Inventory:
     return Inventory(inv_dict)  # ty: ignore[too-many-positional-arguments]
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True)  # noqa: RUF076
 def _remove_sphinx_projects(request: pytest.FixtureRequest, sphinx_test_tempdir: Path) -> None:
     if not request.node.get_closest_marker("sphinx"):
         return
