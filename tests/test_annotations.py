@@ -648,3 +648,19 @@ def test_format_annotation_type_alias_found_in_py_domain() -> None:
     config._typehints_env = env  # noqa: SLF001
     annotation = TypeAliasForwardRef("SomeAlias")
     assert format_annotation(annotation, config) == ":py:type:`~mymod.SomeAlias`"
+
+
+def test_format_annotation_recursive_type_alias() -> None:
+    """A self-referential PEP 695 alias renders as a cross-reference to itself, not forever (#720)."""
+    namespace: dict[str, Any] = {}
+    exec("type RecType = int | list[RecType]", namespace)  # noqa: S102
+    result = format_annotation(namespace["RecType"], create_autospec(Config))
+    assert result == ":py:class:`int` | :py:class:`list`\\ \\[:py:type:`~RecType`]"
+
+
+def test_format_annotation_mutually_recursive_type_alias() -> None:
+    """An indirect cycle between PEP 695 aliases resolves to a self cross-reference too (#720)."""
+    namespace: dict[str, Any] = {}
+    exec("type A = int | list[B]\ntype B = str | list[A]", namespace)  # noqa: S102
+    result = format_annotation(namespace["A"], create_autospec(Config))
+    assert result == ":py:class:`int` | :py:class:`list`\\ \\[:py:class:`str` | :py:class:`list`\\ \\[:py:type:`~A`]]"

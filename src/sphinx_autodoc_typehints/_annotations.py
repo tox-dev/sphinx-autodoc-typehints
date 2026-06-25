@@ -21,7 +21,7 @@ from sphinx.util import rst
 from sphinx.util.inspect import TypeAliasForwardRef
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Generator
 
     from sphinx.config import Config
 
@@ -74,8 +74,59 @@ class MyTypeAliasForwardRef(TypeAliasForwardRef):
         return Union[self, value]  # noqa: UP007
 
 
-def format_annotation(annotation: Any, config: Config, *, short_literals: bool = False) -> str:  # noqa: C901, PLR0911, PLR0912, PLR0915, PLR0914
-    """Format the annotation."""
+def format_annotation(annotation: Any, config: Config, *, short_literals: bool = False) -> str:
+    """
+    Format the annotation into reStructuredText cross-reference markup.
+
+    The annotation is a tree (``dict[str, list[int]]`` nests three levels), so formatting it is a
+    post-order walk. The walk is driven iteratively with an explicit stack rather than by recursion:
+    a PEP 695 type alias may reference itself (``type T = int | list[T]``), which is a fully
+    supported recursive type but would expand forever and exhaust the interpreter recursion limit if
+    walked naively. Each frame on the stack is one suspended ``_format_node`` generator; the generator
+    yields the child annotations it needs formatted and is resumed with their rendered strings.
+    ``active`` holds the aliases currently being expanded along the path from the root, so when an
+    alias references itself it is rendered as a cross-reference to its own name -- the natural
+    representation of a recursive type -- instead of being expanded again.
+    """
+    fully_qualified: bool = getattr(config, "typehints_fully_qualified", False)
+    cycle_prefix = "" if fully_qualified else "~"
+
+    stack = [(_format_node(annotation, config, short_literals=short_literals), annotation)]
+    active = {id(annotation)} if isinstance(annotation, TypeAliasType) else set()
+    rendered: str | None = None
+    while True:
+        gen, node = stack[-1]
+        try:
+            child = next(gen) if rendered is None else gen.send(rendered)
+        except StopIteration as done:
+            stack.pop()
+            if isinstance(node, TypeAliasType):
+                active.discard(id(node))
+            rendered = done.value
+            if not stack:
+                return rendered
+            continue
+        if isinstance(child, TypeAliasType) and id(child) in active:
+            rendered = f":py:type:`{cycle_prefix}{child.__name__}`"
+            continue
+        stack.append((_format_node(child, config, short_literals=short_literals), child))
+        if isinstance(child, TypeAliasType):
+            active.add(id(child))
+        rendered = None
+
+
+def _format_node(  # noqa: C901, PLR0911, PLR0912, PLR0915, PLR0914
+    annotation: Any,
+    config: Config,
+    *,
+    short_literals: bool,
+) -> Generator[Any, str, str]:
+    """
+    Format a single annotation node, delegating nested annotations to :func:`format_annotation`.
+
+    Every nested annotation is ``yield``-ed and the driver sends back its formatted string, so the
+    recursion lives in the driver's explicit stack rather than on the Python call stack.
+    """
     typehints_formatter: Callable[..., str] | None = getattr(config, "typehints_formatter", None)
     if typehints_formatter is not None:
         formatted = typehints_formatter(annotation, config)
@@ -90,7 +141,14 @@ def format_annotation(annotation: Any, config: Config, *, short_literals: bool =
         return ":py:data:`...<Ellipsis>`"
 
     if isinstance(annotation, tuple):
-        return _format_internal_tuple(annotation, config)
+        parts = []
+        for item in annotation:
+            parts.append((yield item))  # noqa: PERF401  # yield is illegal inside a comprehension
+        if not parts:
+            return "()"
+        if len(parts) == 1:
+            return f"({parts[0]}, )"
+        return f"({', '.join(parts)})"
 
     if isinstance(annotation, TypeAliasForwardRef):
         fully_qualified: bool = getattr(config, "typehints_fully_qualified", False)
@@ -106,7 +164,7 @@ def format_annotation(annotation: Any, config: Config, *, short_literals: bool =
         return annotation.name
 
     if isinstance(annotation, TypeAliasType):
-        fully_qualified: bool = getattr(config, "typehints_fully_qualified", False)
+        fully_qualified = getattr(config, "typehints_fully_qualified", False)
         prefix = "" if fully_qualified else "~"
         if (env := getattr(config, "_typehints_env", None)) is not None:
             py_domain = env.get_domain("py")
@@ -126,7 +184,7 @@ def format_annotation(annotation: Any, config: Config, *, short_literals: bool =
             if canonical and canonical.split(".")[0] != current_top:
                 full_name = _fixup_module_name(config, canonical.rpartition(".")[0]) + "." + annotation.__name__
                 return f":py:obj:`{prefix}{full_name}`"
-        return format_annotation(annotation.__value__, config, short_literals=short_literals)
+        return (yield annotation.__value__)
 
     try:
         module = get_annotation_module(annotation)
@@ -140,7 +198,7 @@ def format_annotation(annotation: Any, config: Config, *, short_literals: bool =
     if (mapping := getattr(config, "_intersphinx_type_mapping", None)) and (mapped := mapping.get(internal_path)):
         module, _, class_name = mapped.rpartition(".")
     full_name = f"{module}.{class_name}" if module != "builtins" else class_name
-    fully_qualified: bool = getattr(config, "typehints_fully_qualified", False)
+    fully_qualified = getattr(config, "typehints_fully_qualified", False)
     prefix = "" if fully_qualified or full_name == class_name else "~"
     role = "data" if (module, class_name) in _PYDATA_ANNOTATIONS else "class"
     args_format = "\\[{}]"
@@ -160,15 +218,16 @@ def format_annotation(annotation: Any, config: Config, *, short_literals: bool =
         newtype_name = annotation.__name__
         newtype_qualified = f"{newtype_module}.{newtype_name}" if newtype_module else newtype_name
         newtype_prefix = "" if fully_qualified or not newtype_module else "~"
-        supertype = format_annotation(annotation.__supertype__, config, short_literals=short_literals)
+        supertype = yield annotation.__supertype__
         return f":py:class:`{newtype_prefix}{newtype_qualified}` ({supertype})"
     if full_name == "typing.Annotated":
-        return format_annotation(annotation.__origin__, config, short_literals=short_literals)
+        return (yield annotation.__origin__)
     if full_name in {"typing.TypeVar", "typing.ParamSpec"}:
         params = {k: getattr(annotation, f"__{k}__") for k in ("bound", "covariant", "contravariant")}
         params = {k: v for k, v in params.items() if v}
         if "bound" in params:
-            params["bound"] = f" {format_annotation(params['bound'], config, short_literals=short_literals)}"
+            bound = yield params["bound"]
+            params["bound"] = f" {bound}"
         args_format = f"\\(``{annotation.__name__}``{', {}' if args else ''}"
         if params:
             args_format += "".join(f", {k}={v}" for k, v in params.items())
@@ -189,7 +248,9 @@ def format_annotation(annotation: Any, config: Config, *, short_literals: bool =
                 args_format = f"\\[:py:data:`{prefix}typing.Union`\\[{{}}]]"
                 args = tuple(x for x in args if x is not type(None))
     elif full_name in {"typing.Callable", "collections.abc.Callable"} and args and args[0] is not ...:
-        fmt = [format_annotation(arg, config, short_literals=short_literals) for arg in args]
+        fmt = []
+        for arg in args:
+            fmt.append((yield arg))  # noqa: PERF401  # yield is illegal inside a comprehension
         formatted_args = f"\\[\\[{', '.join(fmt[:-1])}], {fmt[-1]}]"
     elif full_name == "typing.Literal":
         literal_parts = [_format_literal_arg(arg, config) for arg in args]
@@ -199,14 +260,20 @@ def format_annotation(annotation: Any, config: Config, *, short_literals: bool =
     elif is_bars_union:
         if not args:
             return f":py:{'class' if sys.version_info >= (3, 14) else 'data'}:`{prefix}typing.Union`"
-        return " | ".join([format_annotation(arg, config, short_literals=short_literals) for arg in args])
+        union_parts = []
+        for arg in args:
+            union_parts.append((yield arg))  # noqa: PERF401  # yield is illegal inside a comprehension
+        return " | ".join(union_parts)
 
     if args and not formatted_args:
-        fmt = [format_annotation(arg, config, short_literals=short_literals) for arg in args]
+        fmt = []
+        for arg in args:
+            fmt.append((yield arg))
         formatted_args = args_format.format(", ".join(fmt))
 
     escape = "\\ " if formatted_args else ""
-    return f":py:{role}:`{prefix}{full_name}`{escape}{formatted_args}"
+    # B901: returning a value from a generator is intentional here — the driver reads it via StopIteration
+    return f":py:{role}:`{prefix}{full_name}`{escape}{formatted_args}"  # noqa: B901
 
 
 def get_annotation_module(annotation: Any) -> str:
@@ -275,15 +342,6 @@ def get_annotation_args(annotation: Any, module: str, class_name: str) -> tuple[
         return annotation.__parameters__
     result = getattr(annotation, "__args__", ())
     return () if len(result) == 1 and result[0] == () else result  # type: ignore[misc]
-
-
-def _format_internal_tuple(t: tuple[Any, ...], config: Config, *, short_literals: bool = False) -> str:
-    fmt = [format_annotation(a, config, short_literals=short_literals) for a in t]
-    if len(fmt) == 0:
-        return "()"
-    if len(fmt) == 1:
-        return f"({fmt[0]}, )"
-    return f"({', '.join(fmt)})"
 
 
 def _fixup_module_name(config: Config, module: str) -> str:
