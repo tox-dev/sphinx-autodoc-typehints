@@ -498,6 +498,43 @@ def test_documented_type_alias_crossref(
 
 
 @pytest.mark.sphinx("text", testroot="integration")
+def test_recursive_type_alias_does_not_recurse_forever(
+    app: SphinxTestApp,
+    status: StringIO,
+    warning: StringIO,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A self-referential PEP 695 alias builds cleanly and renders as a self cross-reference (#720)."""
+    mod = types.ModuleType("mod_720")
+    mod.__file__ = __file__
+    exec(  # noqa: S102
+        dedent("""\
+        from __future__ import annotations
+
+        type RecType = int | list[RecType]
+        \"\"\"A recursive type alias.\"\"\"
+
+        def some_func(some_param: RecType) -> None:
+            \"\"\"Describe.
+
+            :param some_param: some description
+            \"\"\"
+            ...
+        """),
+        mod.__dict__,
+    )
+    (Path(app.srcdir) / "index.rst").write_text(".. autofunction:: mod_720.some_func")
+    monkeypatch.setitem(sys.modules, "mod_720", mod)
+    app.build()
+    assert "build succeeded" in status.getvalue()
+    value = warning.getvalue().strip()
+    assert not value or "Inline strong start-string without end-string" in value
+
+    result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
+    assert '"RecType"' in result
+
+
+@pytest.mark.sphinx("text", testroot="integration")
 def test_eager_annotations(
     app: SphinxTestApp,
     status: StringIO,
