@@ -535,6 +535,43 @@ def test_recursive_type_alias_does_not_recurse_forever(
 
 
 @pytest.mark.sphinx("text", testroot="integration")
+def test_recursive_type_alias_from_other_module(
+    app: SphinxTestApp,
+    status: StringIO,
+    warning: StringIO,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A recursive alias imported from another module resolves to that module's target (#723)."""
+    pkg = Path(app.srcdir) / "pkg_723"
+    pkg.mkdir()
+    (pkg / "other.py").write_text('type RecType = int | list[RecType]\n"""A recursive type alias."""\n')
+    (pkg / "__init__.py").write_text(
+        dedent("""\
+        from pkg_723.other import RecType
+
+
+        def some_func(some_param: RecType) -> None:
+            \"\"\"Describe.
+
+            :param some_param: some description
+            \"\"\"
+            ...
+        """)
+    )
+    (Path(app.srcdir) / "index.rst").write_text(
+        ".. automodule:: pkg_723\n   :members:\n\n.. automodule:: pkg_723.other\n   :members:\n"
+    )
+    monkeypatch.syspath_prepend(str(app.srcdir))
+    app.config.nitpicky = True
+    app.build()
+    assert "build succeeded" in status.getvalue()
+    assert "reference target not found" not in warning.getvalue()
+
+    result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
+    assert '"int" | "list"["RecType"]' in result
+
+
+@pytest.mark.sphinx("text", testroot="integration")
 def test_eager_annotations(
     app: SphinxTestApp,
     status: StringIO,

@@ -107,7 +107,11 @@ def format_annotation(annotation: Any, config: Config, *, short_literals: bool =
                 return rendered
             continue
         if isinstance(child, TypeAliasType) and id(child) in active:
-            rendered = f":py:type:`{cycle_prefix}{child.__name__}`"
+            # A cross-module alias may live in a module Sphinx has not read yet, leaving it out of the py
+            # domain here. Fall back to its canonical qualified name, which resolves in the later xref
+            # phase and renders the same short form when the alias is undocumented.
+            self_name = _get_canonical_type_alias_name(child) or child.__name__
+            rendered = _type_alias_crossref(child, config) or f":py:type:`{cycle_prefix}{self_name}`"
             continue
         stack.append((_format_node(child, config, short_literals=short_literals), child))
         if isinstance(child, TypeAliasType):
@@ -164,26 +168,8 @@ def _format_node(  # noqa: C901, PLR0911, PLR0912, PLR0915, PLR0914
         return annotation.name
 
     if isinstance(annotation, TypeAliasType):
-        fully_qualified = getattr(config, "typehints_fully_qualified", False)
-        prefix = "" if fully_qualified else "~"
-        if (env := getattr(config, "_typehints_env", None)) is not None:
-            py_domain = env.get_domain("py")
-            module_prefix = getattr(config, "_typehints_module_prefix", "")
-            prefix_parts = module_prefix.split(".") if module_prefix else []
-            # Walk up the module prefix to find a matching type in the py domain
-            candidates = [
-                f"{'.'.join(prefix_parts[:n])}.{annotation.__name__}" for n in range(len(prefix_parts), 0, -1)
-            ]
-            candidates.append(annotation.__name__)
-            for candidate in candidates:
-                if candidate in py_domain.objects and py_domain.objects[candidate].objtype == "type":
-                    return f":py:type:`{prefix}{candidate}`"
-            # Handle external type aliases
-            canonical = _get_canonical_type_alias_name(annotation)
-            current_top = module_prefix.split(".")[0] if module_prefix else ""
-            if canonical and canonical.split(".")[0] != current_top:
-                full_name = _fixup_module_name(config, canonical.rpartition(".")[0]) + "." + annotation.__name__
-                return f":py:obj:`{prefix}{full_name}`"
+        if (crossref := _type_alias_crossref(annotation, config)) is not None:
+            return crossref
         return (yield annotation.__value__)
 
     try:
@@ -374,6 +360,38 @@ def _get_types_type(obj: Any) -> str | None:
 
 def _is_newtype(annotation: Any) -> bool:
     return isinstance(annotation, NewType)
+
+
+def _type_alias_crossref(annotation: TypeAliasType, config: Config) -> str | None:
+    """
+    Render a PEP 695 type alias as a reStructuredText cross-reference, or ``None`` when it is not a known target.
+
+    Look the alias up in the py domain under the names it could be documented as: walk up the current module
+    prefix (so a ``T`` documented in the module being built wins), then its canonical module (so an alias
+    imported from elsewhere still resolves), then its bare name. An alias owned by a different top-level package
+    falls back to an intersphinx-style reference. Returning ``None`` tells the caller to expand the alias value.
+    """
+    env = getattr(config, "_typehints_env", None)
+    if env is None:
+        return None
+    fully_qualified: bool = getattr(config, "typehints_fully_qualified", False)
+    prefix = "" if fully_qualified else "~"
+    py_domain = env.get_domain("py")
+    module_prefix = getattr(config, "_typehints_module_prefix", "")
+    prefix_parts = module_prefix.split(".") if module_prefix else []
+    canonical = _get_canonical_type_alias_name(annotation)
+    candidates = [".".join((*prefix_parts[:n], annotation.__name__)) for n in range(len(prefix_parts), 0, -1)]
+    if canonical:
+        candidates.append(canonical)
+    candidates.append(annotation.__name__)
+    for candidate in candidates:
+        if (obj := py_domain.objects.get(candidate)) is not None and obj.objtype == "type":
+            return f":py:type:`{prefix}{candidate}`"
+    current_top = prefix_parts[0] if prefix_parts else ""
+    if canonical and canonical.split(".")[0] != current_top:
+        full_name = _fixup_module_name(config, canonical.rpartition(".")[0]) + "." + annotation.__name__
+        return f":py:obj:`{prefix}{full_name}`"
+    return None
 
 
 def _get_canonical_type_alias_name(annotation: TypeAliasType) -> str:
