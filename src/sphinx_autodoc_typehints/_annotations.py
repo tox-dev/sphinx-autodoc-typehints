@@ -38,18 +38,20 @@ _PYDATA_ANNOTS_TYPING = {
     "Tuple",
     *({"Union"} if sys.version_info < (3, 14) else set()),
 }
-_PYDATA_ANNOTS_TYPES = {
-    *("AsyncGeneratorType", "BuiltinFunctionType", "BuiltinMethodType"),
-    *("CellType", "ClassMethodDescriptorType", "CoroutineType"),
-    *("FrameType", "FunctionType"),
-    *("GeneratorType", "GetSetDescriptorType"),
-    "LambdaType",
-    *("MemberDescriptorType", "MethodDescriptorType", "MethodType", "MethodWrapperType"),
-    "NoneType",
-    "WrapperDescriptorType",
-    # documented as ``py:class`` since the Python 3.13 docs
-    *({"EllipsisType", "NotImplementedType"} if sys.version_info < (3, 13) else set()),
-}
+# The types module documents these as ``py:data`` through 3.12 and as ``py:class`` from 3.13 on.
+_PYDATA_ANNOTS_TYPES = (
+    {
+        *("AsyncGeneratorType", "BuiltinFunctionType", "BuiltinMethodType"),
+        *("CellType", "ClassMethodDescriptorType", "CoroutineType"),
+        *("EllipsisType", "FrameType", "FunctionType"),
+        *("GeneratorType", "GetSetDescriptorType"),
+        "LambdaType",
+        *("MemberDescriptorType", "MethodDescriptorType", "MethodType", "MethodWrapperType"),
+        *("NoneType", "NotImplementedType", "WrapperDescriptorType"),
+    }
+    if sys.version_info < (3, 13)
+    else set()
+)
 _PYDATA_ANNOTATIONS = {
     *(("typing", n) for n in _PYDATA_ANNOTS_TYPING),
     *(("types", n) for n in _PYDATA_ANNOTS_TYPES),

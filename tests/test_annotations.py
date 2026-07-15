@@ -167,8 +167,16 @@ _CASES = [
         f":py:{'class' if sys.version_info >= (3, 13) else 'data'}:`~types.EllipsisType`",
         id="EllipsisType",
     ),
-    pytest.param(FunctionType, ":py:data:`~types.FunctionType`", id="FunctionType"),
-    pytest.param(FrameType, ":py:data:`~types.FrameType`", id="FrameType"),
+    pytest.param(
+        FunctionType,
+        f":py:{'class' if sys.version_info >= (3, 13) else 'data'}:`~types.FunctionType`",
+        id="FunctionType",
+    ),
+    pytest.param(
+        FrameType,
+        f":py:{'class' if sys.version_info >= (3, 13) else 'data'}:`~types.FrameType`",
+        id="FrameType",
+    ),
     pytest.param(ModuleType, ":py:class:`~types.ModuleType`", id="ModuleType"),
     pytest.param(
         NotImplementedType,
