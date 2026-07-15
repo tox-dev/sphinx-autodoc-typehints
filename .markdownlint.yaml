@@ -3,6 +3,5 @@ MD013:
   headers: false
   line_length: 120
   tables: false
-
 MD046:
   style: fenced
