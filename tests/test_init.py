@@ -6,8 +6,11 @@ from unittest.mock import MagicMock, create_autospec, patch
 
 import pytest
 from conftest import make_docstring_app, make_sig_app
+from docutils.frontend import get_default_settings
+from docutils.parsers.rst import Parser
 from sphinx.application import Sphinx
 from sphinx.config import Config
+from sphinx.ext.autosummary import extract_summary
 
 import sphinx_autodoc_typehints as sat
 from sphinx_autodoc_typehints import (
@@ -152,6 +155,25 @@ def test_inject_overload_empty_overloads_returns_false() -> None:
         assert _inject_overload_signatures(app, "function", "name", obj, []) is False
     finally:
         _OVERLOADS_CACHE.pop("test_mod2", None)
+
+
+def test_inject_overload_keeps_summary_first() -> None:
+    """Overloads must follow the summary so autosummary can still extract it (#730)."""
+    obj = MagicMock()
+    obj.__module__ = "test_mod"
+    obj.__qualname__ = "func"
+    sig = inspect.Signature(
+        parameters=[inspect.Parameter("x", inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=int)],
+        return_annotation=str,
+    )
+    _OVERLOADS_CACHE["test_mod"] = {"func": [sig]}
+    try:
+        app = make_docstring_app()
+        lines = ["Run the thing.", "", ":param x: the x"]
+        assert _inject_overload_signatures(app, "function", "name", obj, lines) is True
+        assert extract_summary(lines, get_default_settings(Parser())) == "Run the thing."
+    finally:
+        _OVERLOADS_CACHE.pop("test_mod", None)
 
 
 def test_local_function_warning_includes_location() -> None:

@@ -843,13 +843,13 @@ def func_with_overload(a: str, b: str) -> None: ...
     """\
 mod.func_with_overload(a, b)
 
+   f does the thing. The arguments can either be ints or strings but
+   they must both have the same type.
+
    Overloads:
       * **a** (int), **b** (int) → None
 
       * **a** (str), **b** (str) → None
-
-   f does the thing. The arguments can either be ints or strings but
-   they must both have the same type.
 
    Parameters:
       * **a** ("int" | "str") -- The first thing
@@ -883,12 +883,12 @@ def overload_with_complex_types(x: dict[str, int]) -> list[int]: ...
     """\
 mod.overload_with_complex_types(x)
 
+   Function with overloaded complex types.
+
    Overloads:
       * **x** (list[int]) → dict[str, int]
 
       * **x** (dict[str, int]) → list[int]
-
-   Function with overloaded complex types.
 
    Parameters:
       **x** ("list"["int"] | "dict"["str", "int"]) -- Input value

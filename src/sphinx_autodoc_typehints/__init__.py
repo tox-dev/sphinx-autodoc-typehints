@@ -236,9 +236,16 @@ def _inject_overload_signatures(
         return False
     if (overloads := _resolve_overloads(obj)) is None:
         return False
-    for line in reversed(_format_overload_lines(overloads, app)):
-        lines.insert(0, line)
+    idx = _summary_end(lines)
+    lines[idx:idx] = ["", *_format_overload_lines(overloads, app)]
     return True
+
+
+def _summary_end(lines: list[str]) -> int:
+    """Index past the summary paragraph so overloads land below it and autosummary still reads it (#730)."""
+    if (start := next((i for i, line in enumerate(lines) if line.strip()), None)) is None:
+        return len(lines)
+    return next((i for i in range(start, len(lines)) if not lines[i].strip()), len(lines))
 
 
 def _strip_no_overloads_directive(lines: list[str]) -> bool:
