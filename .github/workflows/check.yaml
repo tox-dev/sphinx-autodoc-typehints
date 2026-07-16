@@ -7,14 +7,11 @@ on:
   pull_request:
   schedule:
     - cron: "0 8 * * *"
-
 concurrency:
   group: check-${{ github.ref }}
   cancel-in-progress: true
-
 permissions:
   contents: read
-
 jobs:
   test:
     runs-on: ubuntu-latest
