@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 _mod_pep695 = types.ModuleType("mod")
 _mod_pep695.__file__ = __file__
-exec(  # noqa: S102
+exec(  # ruff:ignore[exec-builtin]
     dedent("""\
     from __future__ import annotations
 
@@ -321,7 +321,7 @@ def test_pep695_external_type_alias(
     """Test that external TypeAliasType renders as the alias name, not the expanded value."""
     # Define an external type alias in a private module
     ext_priv_mod = types.ModuleType("extpkg._priv")
-    exec("type ExtAlias = str | int", ext_priv_mod.__dict__)  # noqa: S102
+    exec("type ExtAlias = str | int", ext_priv_mod.__dict__)  # ruff:ignore[exec-builtin]
     ext_alias = ext_priv_mod.__dict__["ExtAlias"]
     # Reexport the type alias in a public module
     ext_pub_mod = types.ModuleType("extpkg")
@@ -329,7 +329,7 @@ def test_pep695_external_type_alias(
     # Import and use the external type alias in user module
     user_mod = types.ModuleType("user_mod")
     user_mod.__dict__["ExtAlias"] = ext_alias
-    exec(  # noqa: S102
+    exec(  # ruff:ignore[exec-builtin]
         dedent("""\
         from __future__ import annotations
 
@@ -366,7 +366,7 @@ def test_pep695_type_checking_only_annotation(
     must not raise NameError during Sphinx processing."""
     mod = types.ModuleType("mod_703")
     mod.__file__ = __file__
-    exec(  # noqa: S102
+    exec(  # ruff:ignore[exec-builtin]
         dedent("""\
         import functools
         from typing import TYPE_CHECKING
@@ -507,7 +507,7 @@ def test_recursive_type_alias_does_not_recurse_forever(
     """A self-referential PEP 695 alias builds cleanly and renders as a self cross-reference (#720)."""
     mod = types.ModuleType("mod_720")
     mod.__file__ = __file__
-    exec(  # noqa: S102
+    exec(  # ruff:ignore[exec-builtin]
         dedent("""\
         from __future__ import annotations
 
@@ -632,7 +632,7 @@ def test_non_subscriptable_generic_annotation(  # pragma: >=3.14 cover
     """)
     # dont_inherit keeps this file's `from __future__ import annotations` (PEP 563) out of the
     # compiled module so its annotations stay lazily evaluated (PEP 649)
-    exec(compile(source, "<mod_712>", "exec", dont_inherit=True), mod.__dict__)  # noqa: S102
+    exec(compile(source, "<mod_712>", "exec", dont_inherit=True), mod.__dict__)  # ruff:ignore[exec-builtin]
     (Path(app.srcdir) / "index.rst").write_text(".. autofunction:: mod_712.add_node_between_nodes")
     monkeypatch.setitem(sys.modules, "mod_712", mod)
     app.config.__dict__["always_document_param_types"] = True

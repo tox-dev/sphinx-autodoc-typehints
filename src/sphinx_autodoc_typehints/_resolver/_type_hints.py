@@ -108,8 +108,8 @@ def _resolve_string_annotations(
     for key, value in annotations.items():
         if isinstance(value, str):
             try:
-                resolved[key] = eval(value, globalns, localns)  # noqa: S307
-            except Exception:  # noqa: BLE001
+                resolved[key] = eval(value, globalns, localns)  # ruff:ignore[suspicious-eval-usage]
+            except Exception:  # ruff:ignore[blind-except]
                 _LOGGER.debug(
                     "Failed to resolve annotation %r=%r for %s",
                     key,
@@ -200,7 +200,7 @@ def _execute_guarded_code(autodoc_mock_imports: list[str], obj: Any, module_code
         guarded_code = textwrap.dedent(part)
         try:
             _run_guarded_import(autodoc_mock_imports, obj, guarded_code)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  # ruff:ignore[blind-except]
             module_name = getattr(obj, "__module__", None) or getattr(obj, "__name__", "?")
             _LOGGER.warning(
                 "Failed guarded type import in %r: %r",
@@ -216,14 +216,14 @@ def _run_guarded_import(autodoc_mock_imports: list[str], obj: Any, guarded_code:
     ns = getattr(obj, "__globals__", obj.__dict__)
     try:
         with mock(autodoc_mock_imports):
-            exec(guarded_code, ns)  # noqa: S102
+            exec(guarded_code, ns)  # ruff:ignore[exec-builtin]
     except ImportError as exc:
         if not exc.name:
             return
         _resolve_type_guarded_imports(autodoc_mock_imports, importlib.import_module(exc.name))
         try:
             with mock(autodoc_mock_imports):
-                exec(guarded_code, ns)  # noqa: S102
+                exec(guarded_code, ns)  # ruff:ignore[exec-builtin]
         except ImportError:
             pass
 
@@ -255,7 +255,7 @@ def _future_annotations_imported(obj: Any) -> bool:
     annotations_ = getattr(inspect.getmodule(obj), "annotations", None)
     if annotations_ is None:
         return False
-    return bool(annotations_.compiler_flag == 0x1000000)  # noqa: PLR2004
+    return bool(annotations_.compiler_flag == 0x1000000)  # ruff:ignore[magic-value-comparison]
 
 
 __all__ = ["get_all_type_hints"]

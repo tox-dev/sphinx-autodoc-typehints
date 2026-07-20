@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import typing
-from builtins import ValueError  # handle does not have __module__  # noqa: A004
+from builtins import ValueError  # handle does not have __module__  # ruff:ignore[builtin-import-shadowing]
 from functools import cmp_to_key  # has __module__ but cannot get module as is builtin
 from typing import TYPE_CHECKING
 
@@ -21,7 +21,7 @@ if typing.TYPE_CHECKING:
 
 
 if TYPE_CHECKING:  # bad import
-    from functools import missing  # noqa: F401
+    from functools import missing  # ruff:ignore[unused-import]
 
 
 def a[AnyStr: (bytes, str)](f: Decimal, s: AnyStr) -> Sequence[AnyStr | Decimal]:

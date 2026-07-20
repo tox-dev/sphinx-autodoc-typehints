@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from docutils.nodes import Node
     from sphinx.application import Sphinx
 
-_BUILTIN_DIRECTIVES = frozenset(directives._directive_registry)  # noqa: SLF001
+_BUILTIN_DIRECTIVES = frozenset(directives._directive_registry)  # ruff:ignore[private-member-access]
 
 PARAM_SYNONYMS = ("param ", "parameter ", "arg ", "argument ", "keyword ", "kwarg ", "kwparam ")
 
@@ -43,11 +43,11 @@ _GENERATOR_TYPES = frozenset({
 
 def _get_sphinx_line_keyword_and_argument(line: str) -> tuple[str, str | None] | None:
     param_line_without_description = line.split(":", maxsplit=2)
-    if len(param_line_without_description) != 3:  # noqa: PLR2004
+    if len(param_line_without_description) != 3:  # ruff:ignore[magic-value-comparison]
         return None
 
     split_directive_and_name = param_line_without_description[1].split(maxsplit=1)
-    if len(split_directive_and_name) != 2:  # noqa: PLR2004
+    if len(split_directive_and_name) != 2:  # ruff:ignore[magic-value-comparison]
         if not len(split_directive_and_name):
             return None
         return split_directive_and_name[0], None
@@ -75,7 +75,7 @@ def _line_is_param_line_for_arg(line: str, arg_name: str) -> bool:
 
 def _strip_inline_param_type(line: str, arg_name: str) -> str | None:
     parts = line.split(":", maxsplit=2)
-    if len(parts) != 3:  # noqa: PLR2004
+    if len(parts) != 3:  # ruff:ignore[magic-value-comparison]
         return None
     directive_and_name = parts[1]
     for prefix in ("", "\\*", "\\**", "\\*\\*"):
@@ -124,7 +124,7 @@ class _NoOpDirective(Directive):
     optional_arguments = 99
     final_argument_whitespace = True
 
-    def run(self) -> list[nodes.Node]:  # noqa: PLR6301
+    def run(self) -> list[nodes.Node]:  # ruff:ignore[no-self-use]
         return []
 
 
@@ -142,30 +142,30 @@ def _tag_name(node: Node) -> str:
 
 class SphinxFieldListFormat(DocstringFormat):
     @staticmethod
-    def detect(lines: list[str]) -> bool:  # noqa: ARG004
+    def detect(lines: list[str]) -> bool:  # ruff:ignore[unused-static-method-argument]
         return True
 
-    def find_param(self, lines: list[str], arg_name: str) -> int | None:  # noqa: PLR6301
+    def find_param(self, lines: list[str], arg_name: str) -> int | None:  # ruff:ignore[no-self-use]
         for at, line in enumerate(lines):
             if _line_is_param_line_for_arg(line, arg_name):
                 return at
         return None
 
-    def inject_param_type(self, lines: list[str], arg_name: str, formatted_type: str, at: int) -> None:  # noqa: PLR6301
+    def inject_param_type(self, lines: list[str], arg_name: str, formatted_type: str, at: int) -> None:  # ruff:ignore[no-self-use]
         lines.insert(at, f":type {arg_name}: {formatted_type}")
 
-    def add_undocumented_param(self, lines: list[str], arg_name: str) -> int:  # noqa: PLR6301
+    def add_undocumented_param(self, lines: list[str], arg_name: str) -> int:  # ruff:ignore[no-self-use]
         lines.append(f":param {arg_name}:")
         return len(lines) - 1
 
-    def find_preexisting_type(self, lines: list[str], arg_name: str) -> tuple[str, bool]:  # noqa: PLR6301
+    def find_preexisting_type(self, lines: list[str], arg_name: str) -> tuple[str, bool]:  # ruff:ignore[no-self-use]
         type_annotation = f":type {arg_name}: "
         for line in lines:
             if line.startswith(type_annotation):
                 return line, True
         return type_annotation, False
 
-    def get_rtype_insert_info(self, app: Sphinx, lines: list[str]) -> InsertIndexInfo | None:  # noqa: PLR6301
+    def get_rtype_insert_info(self, app: Sphinx, lines: list[str]) -> InsertIndexInfo | None:  # ruff:ignore[no-self-use]
         if (at := next((i for i, line in enumerate(lines) if line.startswith(":rtype:")), None)) is not None:
             del lines[at]
             return InsertIndexInfo(insert_index=at, found_return=True)
@@ -201,7 +201,7 @@ class SphinxFieldListFormat(DocstringFormat):
 
         return InsertIndexInfo(insert_index=len(lines))
 
-    def inject_rtype(  # noqa: PLR6301
+    def inject_rtype(  # ruff:ignore[no-self-use]
         self,
         lines: list[str],
         formatted_annotation: str,
@@ -229,7 +229,7 @@ class SphinxFieldListFormat(DocstringFormat):
             line = lines[insert_index]
             lines[insert_index] = f":return: {formatted_annotation} --{line[line.find(' ') :]}"
 
-    def append_default(  # noqa: PLR6301
+    def append_default(  # ruff:ignore[no-self-use]
         self,
         lines: list[str],
         insert_index: int,

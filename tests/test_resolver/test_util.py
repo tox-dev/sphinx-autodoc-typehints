@@ -104,7 +104,7 @@ def test_collect_documented_type_aliases_annotations_error(error: Exception) -> 
 
     class _AnnotationsRaiser:
         @property
-        def __annotations__(self) -> dict[str, object]:  # noqa: PLW3201
+        def __annotations__(self) -> dict[str, object]:  # ruff:ignore[bad-dunder-method-name]
             raise error
 
     env = _make_env_with_types(["mymod.MyType"])

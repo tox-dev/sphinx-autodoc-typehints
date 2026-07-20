@@ -80,7 +80,7 @@ def _parse_numpydoc_entries(lines: list[str], start: int) -> list[_NumpydocEntry
     return entries
 
 
-def _convert_numpydoc_to_sphinx_fields(lines: list[str]) -> None:  # noqa: C901, PLR0912
+def _convert_numpydoc_to_sphinx_fields(lines: list[str]) -> None:  # ruff:ignore[complex-structure, too-many-branches]
     """Convert numpydoc-formatted sections in ``lines`` to Sphinx field list syntax in-place."""
     if not any(line.strip() in _NUMPYDOC_SECTIONS for line in lines):
         return

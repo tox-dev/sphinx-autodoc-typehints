@@ -8,7 +8,7 @@ import typing
 from collections.abc import Callable, Mapping
 from io import StringIO
 from types import EllipsisType, FrameType, FunctionType, ModuleType, NotImplementedType, TracebackType
-from typing import (  # noqa: UP035
+from typing import (  # ruff:ignore[deprecated-import]
     IO,
     TYPE_CHECKING,
     Annotated,
@@ -53,7 +53,7 @@ V_contra = TypeVar("V_contra", contravariant=True)
 X = TypeVar("X", str, int)
 Y = TypeVar("Y", bound=str)
 Z = TypeVar("Z", bound="A")
-S = TypeVar("S", bound="miss")  # type: ignore[name-defined] # miss not defined on purpose # noqa: F821
+S = TypeVar("S", bound="miss")  # type: ignore[name-defined] # miss not defined on purpose # ruff:ignore[undefined-name]
 W = NewType("W", str)
 
 
@@ -473,7 +473,7 @@ def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str
 )
 def test_always_use_bars_union(annotation: str, expected_result: str) -> None:
     conf = create_autospec(Config, always_use_bars_union=True)
-    result = format_annotation(eval(annotation), conf)  # noqa: S307
+    result = format_annotation(eval(annotation), conf)  # ruff:ignore[suspicious-eval-usage]
     assert result == expected_result
 
 
@@ -592,7 +592,7 @@ def test_get_annotation_args_generic() -> None:
 
 def test_get_canonical_type_alias_name_public_module(monkeypatch: pytest.MonkeyPatch) -> None:
     pub = types.ModuleType("mypkg")
-    exec("type MyAlias = str | int", pub.__dict__)  # noqa: S102
+    exec("type MyAlias = str | int", pub.__dict__)  # ruff:ignore[exec-builtin]
     alias: TypeAliasType = pub.__dict__["MyAlias"]
     monkeypatch.setitem(sys.modules, "mypkg", pub)
     assert _get_canonical_type_alias_name(alias) == "mypkg.MyAlias"
@@ -600,7 +600,7 @@ def test_get_canonical_type_alias_name_public_module(monkeypatch: pytest.MonkeyP
 
 def test_get_canonical_type_alias_name_private_to_public(monkeypatch: pytest.MonkeyPatch) -> None:
     priv = types.ModuleType("extpkg._priv")
-    exec("type ExtAlias = str | int", priv.__dict__)  # noqa: S102
+    exec("type ExtAlias = str | int", priv.__dict__)  # ruff:ignore[exec-builtin]
     alias: TypeAliasType = priv.__dict__["ExtAlias"]
     pub = types.ModuleType("extpkg")
     pub.ExtAlias = alias  # type: ignore[attr-defined]
@@ -611,7 +611,7 @@ def test_get_canonical_type_alias_name_private_to_public(monkeypatch: pytest.Mon
 
 def test_get_canonical_type_alias_name_no_public_reexport(monkeypatch: pytest.MonkeyPatch) -> None:
     priv = types.ModuleType("extpkg2._priv")
-    exec("type ExtAlias2 = str | int", priv.__dict__)  # noqa: S102
+    exec("type ExtAlias2 = str | int", priv.__dict__)  # ruff:ignore[exec-builtin]
     alias: TypeAliasType = priv.__dict__["ExtAlias2"]
     monkeypatch.setitem(sys.modules, "extpkg2._priv", priv)
     assert _get_canonical_type_alias_name(alias) == "extpkg2._priv.ExtAlias2"
@@ -621,7 +621,7 @@ def _config_without_env(*, fully_qualified: bool = False) -> MagicMock:
     config = MagicMock()
     config.typehints_formatter = None
     config.typehints_fully_qualified = fully_qualified
-    del config._typehints_env  # noqa: SLF001
+    del config._typehints_env  # ruff:ignore[private-member-access]
     return config
 
 
@@ -648,12 +648,12 @@ def test_format_annotation_type_alias_found_in_py_domain() -> None:
     config = MagicMock()
     config.typehints_formatter = None
     config.typehints_fully_qualified = False
-    config._typehints_module_prefix = "mymod"  # noqa: SLF001
+    config._typehints_module_prefix = "mymod"  # ruff:ignore[private-member-access]
     py_domain = MagicMock()
     py_domain.objects = {"mymod.SomeAlias": MagicMock(objtype="type")}
     env = MagicMock()
     env.get_domain.return_value = py_domain
-    config._typehints_env = env  # noqa: SLF001
+    config._typehints_env = env  # ruff:ignore[private-member-access]
     annotation = TypeAliasForwardRef("SomeAlias")
     assert format_annotation(annotation, config) == ":py:type:`~mymod.SomeAlias`"
 
@@ -661,7 +661,7 @@ def test_format_annotation_type_alias_found_in_py_domain() -> None:
 def test_format_annotation_recursive_type_alias() -> None:
     """A self-referential PEP 695 alias renders as a cross-reference to itself, not forever (#720)."""
     namespace: dict[str, Any] = {}
-    exec("type RecType = int | list[RecType]", namespace)  # noqa: S102
+    exec("type RecType = int | list[RecType]", namespace)  # ruff:ignore[exec-builtin]
     result = format_annotation(namespace["RecType"], create_autospec(Config))
     assert result == ":py:class:`int` | :py:class:`list`\\ \\[:py:type:`~RecType`]"
 
@@ -669,6 +669,6 @@ def test_format_annotation_recursive_type_alias() -> None:
 def test_format_annotation_mutually_recursive_type_alias() -> None:
     """An indirect cycle between PEP 695 aliases resolves to a self cross-reference too (#720)."""
     namespace: dict[str, Any] = {}
-    exec("type A = int | list[B]\ntype B = str | list[A]", namespace)  # noqa: S102
+    exec("type A = int | list[B]\ntype B = str | list[A]", namespace)  # ruff:ignore[exec-builtin]
     result = format_annotation(namespace["A"], create_autospec(Config))
     assert result == ":py:class:`int` | :py:class:`list`\\ \\[:py:class:`str` | :py:class:`list`\\ \\[:py:type:`~A`]]"

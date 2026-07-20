@@ -39,7 +39,7 @@ def rst_to_docutils(settings: Values, rst: str) -> Any:
 def patched_parse_annotation(settings: Values, typ: str, env: Any) -> Any:
     # if typ doesn't start with our label, use original function
     if not typ.startswith(TYPE_IS_RST_LABEL):
-        assert _parse_annotation is not None  # noqa: S101
+        assert _parse_annotation is not None  # ruff:ignore[assert]
         return _parse_annotation(typ, env)
     # Otherwise handle as rst
     typ = typ[len(TYPE_IS_RST_LABEL) :]
@@ -53,7 +53,7 @@ def patched_handle_signature(self: PyAttribute, sig: str, signode: desc_signatur
         return orig_handle_signature(self, sig, signode)
 
 
-def patch_attribute_handling(app: Sphinx) -> None:  # noqa: ARG001
+def patch_attribute_handling(app: Sphinx) -> None:  # ruff:ignore[unused-function-argument]
     """Patch PyAttribute.handle_signature to format class attribute type annotations."""
     if not OKAY_TO_PATCH:
         return

@@ -72,8 +72,8 @@ def warns(info: WarningInfo) -> Callable[[T], T]:
 
 
 @expected("mod.get_local_function()")
-def get_local_function():  # noqa: ANN201
-    def wrapper(self) -> str:  # noqa: ANN001
+def get_local_function():  # ruff:ignore[missing-return-type-undocumented-public-function]
+    def wrapper(self) -> str:  # ruff:ignore[missing-type-function-argument]
         """
         Wrapper
         """
@@ -197,7 +197,7 @@ class Class:
         :param x: foo
         """
 
-    def __magic_custom_method__(self, x: str) -> str:  # noqa: PLW3201
+    def __magic_custom_method__(self, x: str) -> str:  # ruff:ignore[bad-dunder-method-name]
         """
         Magic dunder method docstring.
 
@@ -262,7 +262,7 @@ exception mod.DummyException(message)
       **message** ("str") -- blah
 """,
 )
-class DummyException(Exception):  # noqa: N818
+class DummyException(Exception):  # ruff:ignore[error-suffix-on-exception-name]
     """
     Exception docstring
 
@@ -375,7 +375,7 @@ mod.function_with_starred_documentation_param_names(*args, **kwargs)
       * ****kwargs** ("str") -- bar
 """,
 )
-def function_with_starred_documentation_param_names(*args: int, **kwargs: str):  # noqa: ANN201
+def function_with_starred_documentation_param_names(*args: int, **kwargs: str):  # ruff:ignore[missing-return-type-undocumented-public-function]
     r"""
     Function docstring.
 
@@ -398,7 +398,7 @@ mod.function_with_escaped_default(x='\\\\x08')
       **x** ("str") -- foo
 """,
 )
-def function_with_escaped_default(x: str = "\b"):  # noqa: ANN201
+def function_with_escaped_default(x: str = "\b"):  # ruff:ignore[missing-return-type-undocumented-public-function]
     """
     Function docstring.
 
@@ -456,7 +456,7 @@ ArrayLike = Literal["test"]
 ALIAS_OPTIONS = {"autodoc_type_aliases": {"ArrayLike": "Array", "AliasedClass": '"Class Alias"'}}
 
 
-class _SchemaMeta(type):  # noqa: PLW1641
+class _SchemaMeta(type):  # ruff:ignore[eq-without-hash]
     def __eq__(cls, other: object) -> bool:
         return True
 
@@ -560,7 +560,7 @@ mod.function_with_unresolvable_annotation(x)
       **x** (a.b.c) -- foo
 """,
 )
-def function_with_unresolvable_annotation(x: a.b.c):  # noqa: ANN201, F821  # ty: ignore[unresolved-reference]
+def function_with_unresolvable_annotation(x: a.b.c):  # ruff:ignore[missing-return-type-undocumented-public-function, undefined-name]  # ty: ignore[unresolved-reference]
     """
     Function docstring.
 
@@ -583,9 +583,9 @@ mod.function_with_typehint_comment(x, y)
       "None"
 """,
 )
-def function_with_typehint_comment(  # noqa: ANN201
-    x,  # type: int  # noqa: ANN001
-    y,  # type: str  # noqa: ANN001
+def function_with_typehint_comment(  # ruff:ignore[missing-return-type-undocumented-public-function]
+    x,  # type: int  # ruff:ignore[missing-type-function-argument]
+    y,  # type: str  # ruff:ignore[missing-type-function-argument]
 ):
     # type: (...) -> None
     """
@@ -629,14 +629,14 @@ class ClassWithTypehints:
 
     def __init__(
         self,
-        x,  # type: int  # noqa: ANN001
+        x,  # type: int  # ruff:ignore[missing-type-function-argument]
     ) -> None:
         # type: (...) -> None
         ...
 
-    def foo(  # noqa: ANN201
+    def foo(  # ruff:ignore[missing-return-type-undocumented-public-function]
         self,
-        x,  # type: str  # noqa: ANN001
+        x,  # type: str  # ruff:ignore[missing-type-function-argument]
     ):
         # type: (...) -> int
         """
@@ -645,7 +645,7 @@ class ClassWithTypehints:
         :arg x: foo
         """
 
-    def method_without_typehint(self, x):  # noqa: ANN001, ANN201
+    def method_without_typehint(self, x):  # ruff:ignore[missing-type-function-argument, missing-return-type-undocumented-public-function]
         """
         Method docstring.
         """
@@ -670,7 +670,7 @@ mod.function_with_typehint_comment_not_inline(x=None, *y, z, **kwargs)
       "None"
 """,
 )
-def function_with_typehint_comment_not_inline(x=None, *y, z, **kwargs):  # noqa: ANN001, ANN002, ANN003, ANN201
+def function_with_typehint_comment_not_inline(x=None, *y, z, **kwargs):  # ruff:ignore[missing-type-function-argument, missing-type-args, missing-type-kwargs, missing-return-type-undocumented-public-function]
     # type: (Union[str, bytes, None], *str, bytes, **int) -> None
     """
     Function docstring.
@@ -719,10 +719,10 @@ class ClassWithTypehintsNotInline:
     :param x: foo
     """
 
-    def __init__(self, x=None) -> None:  # type: (Optional[Callable[[int, bytes], int]]) -> None  # noqa: ANN001
+    def __init__(self, x=None) -> None:  # type: (Optional[Callable[[int, bytes], int]]) -> None  # ruff:ignore[missing-type-function-argument]
         ...
 
-    def foo(self, x=1):  # type: (Callable[[int, bytes], int]) -> int  # noqa: ANN001, ANN201
+    def foo(self, x=1):  # type: (Callable[[int, bytes], int]) -> int  # ruff:ignore[missing-type-function-argument, missing-return-type-undocumented-public-function]
         """
         Method docstring.
 
@@ -730,9 +730,9 @@ class ClassWithTypehintsNotInline:
         """
 
     @classmethod
-    def mk(  # noqa: ANN206
+    def mk(  # ruff:ignore[missing-return-type-class-method]
         cls,
-        x=None,  # noqa: ANN001
+        x=None,  # ruff:ignore[missing-type-function-argument]
     ):  # type: (Optional[Callable[[int, bytes], int]]) -> ClassWithTypehintsNotInline
         """
         Method docstring.
@@ -799,7 +799,7 @@ mod.mocked_import(x)
       **x** ("Mailbox") -- function
 """,
 )
-def mocked_import(x: Mailbox):  # noqa: ANN201
+def mocked_import(x: Mailbox):  # ruff:ignore[missing-return-type-undocumented-public-function]
     """
     A docstring.
 

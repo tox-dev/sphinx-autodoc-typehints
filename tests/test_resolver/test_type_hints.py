@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import csv
 import importlib
-import subprocess  # noqa: S404
+import subprocess  # ruff:ignore[suspicious-subprocess-import]
 import sys
 import sysconfig
 import types
@@ -75,7 +75,7 @@ def non_subscriptable_generic_func() -> Any:  # pragma: >=3.14 cover
     # compiled module so its annotations stay lazily evaluated (PEP 649)
     source = "class NotGeneric: ...\n\n\ndef func(g: NotGeneric[int]) -> None: ...\n"
     ns: dict[str, Any] = {}
-    exec(compile(source, "<mod_712>", "exec", dont_inherit=True), ns)  # noqa: S102
+    exec(compile(source, "<mod_712>", "exec", dont_inherit=True), ns)  # ruff:ignore[exec-builtin]
     return ns["func"]
 
 
@@ -140,7 +140,7 @@ def test_guarded_import_warning_includes_module() -> None:
 
 
 def test_build_localns_adds_ancestor_classes() -> None:
-    import tests.roots.test_nested_attrs_localns as mod  # noqa: PLC0415
+    import tests.roots.test_nested_attrs_localns as mod  # ruff:ignore[import-outside-top-level]
 
     assert _build_localns(mod.Outer.Inner.__init__, {})["Outer"] is mod.Outer
 
@@ -154,7 +154,7 @@ def test_build_localns_no_qualname() -> None:
 
 
 def test_build_localns_preserves_existing_localns() -> None:
-    import tests.roots.test_nested_attrs_localns as mod  # noqa: PLC0415
+    import tests.roots.test_nested_attrs_localns as mod  # ruff:ignore[import-outside-top-level]
 
     localns: dict[Any, Any] = {"key": "value"}
     assert (result := _build_localns(mod.Outer.Inner.__init__, localns))["key"] == "value"
@@ -260,7 +260,7 @@ def test_process_docstring_injects_descriptor_type(c_ext_mod: Any) -> None:
 
 
 def test_descriptor_type_hint_without_stub_is_none() -> None:
-    import array  # noqa: PLC0415
+    import array  # ruff:ignore[import-outside-top-level]
 
     assert get_descriptor_type_hint(array.array.typecode) is None
 

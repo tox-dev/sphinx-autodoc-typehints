@@ -17,12 +17,12 @@ if TYPE_CHECKING:
     from sphinx.ext.autodoc import Options
 
 
-def napoleon_numpy_docstring_return_type_processor(  # noqa: PLR0913, PLR0917
+def napoleon_numpy_docstring_return_type_processor(  # ruff:ignore[too-many-arguments, too-many-positional-arguments]
     app: Sphinx,
     what: str,
-    name: str,  # noqa: ARG001
-    obj: Any,  # noqa: ARG001
-    options: Options | None,  # noqa: ARG001
+    name: str,  # ruff:ignore[unused-function-argument]
+    obj: Any,  # ruff:ignore[unused-function-argument]
+    options: Options | None,  # ruff:ignore[unused-function-argument]
     lines: list[str],
 ) -> None:
     """Insert a : under Returns: to tell napoleon not to look for a return type."""
@@ -42,7 +42,7 @@ def napoleon_numpy_docstring_return_type_processor(  # noqa: PLR0913, PLR0917
         # Napoleon allows the underline to consist of a bunch of weirder things...
         if len(chars) != 1 or next(iter(chars)) not in "=-~_*+#":
             continue
-        pos += 2  # noqa: PLW2901
+        pos += 2  # ruff:ignore[redefined-loop-name]
         break
     else:
         return
@@ -68,7 +68,7 @@ def _patched_lookup_annotation(*_args: Any) -> str:
 
 def _patch_google_docstring_lookup_annotation() -> None:
     """Fix issue https://github.com/tox-dev/sphinx-autodoc-typehints/issues/308."""
-    GoogleDocstring._lookup_annotation = _patched_lookup_annotation  # type: ignore[assignment] # noqa: SLF001
+    GoogleDocstring._lookup_annotation = _patched_lookup_annotation  # type: ignore[assignment] # ruff:ignore[private-member-access]
 
 
 orig_base_admonition_run = BaseAdmonition.run
@@ -96,7 +96,7 @@ def _patched_text_indent(self: Text, *args: Any) -> Any:
 def _patched_body_doctest(
     self: Body, _match: None, _context: None, next_state: str | None
 ) -> tuple[list[Any], str | None, list[Any]]:
-    assert self.document.current_line is not None  # noqa: S101
+    assert self.document.current_line is not None  # ruff:ignore[assert]
     line = self.document.current_line + 1
     data = "\n".join(self.state_machine.get_text_block())  # ty: ignore[unresolved-attribute]
     n = nodes.doctest_block(data, data)
@@ -127,7 +127,7 @@ def fix_directive_based_signature_formatting() -> None:
     Overloads are cached before being cleared so we can render them in docstrings with
     proper type formatting instead of in signatures where types can't be cross-referenced.
     """
-    from sphinx.pycode import ModuleAnalyzer  # noqa: PLC0415
+    from sphinx.pycode import ModuleAnalyzer  # ruff:ignore[import-outside-top-level]
 
     original_analyze = ModuleAnalyzer.analyze
 

@@ -12,7 +12,7 @@ def _decorated_function(x: int, y: str) -> bool:
 
 @typing.no_type_check
 class _DecoratedClass:
-    def method(self, value: int) -> str:  # noqa: PLR6301
+    def method(self, value: int) -> str:  # ruff:ignore[no-self-use]
         return str(value)
 
 

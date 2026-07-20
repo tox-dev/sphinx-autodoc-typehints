@@ -80,7 +80,7 @@ def _resolve_stub_definitions(body: list[ast.stmt], ns: dict[str, Any]) -> None:
         if isinstance(node, _STUB_DEFINITION_TYPES):
             exec_node = _strip_class_decorators(node) if isinstance(node, ast.ClassDef) else node
             with contextlib.suppress(Exception):
-                exec(compile(ast.Module(body=[exec_node], type_ignores=[]), "<stub>", "exec"), ns)  # noqa: S102
+                exec(compile(ast.Module(body=[exec_node], type_ignores=[]), "<stub>", "exec"), ns)  # ruff:ignore[exec-builtin]
         elif isinstance(node, ast.If):
             _resolve_stub_definitions(node.body, ns)
             _resolve_stub_definitions(node.orelse, ns)

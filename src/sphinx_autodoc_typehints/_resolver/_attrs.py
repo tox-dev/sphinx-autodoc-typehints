@@ -7,7 +7,7 @@ from typing import Any
 
 def backfill_attrs_annotations(obj: Any) -> None:
     try:
-        from attrs import fields, has  # noqa: PLC0415
+        from attrs import fields, has  # ruff:ignore[import-outside-top-level]
     except ImportError:
         return
     if not has(obj):

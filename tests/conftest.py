@@ -130,7 +130,7 @@ def write_rst(app: SphinxTestApp) -> Callable[[str], None]:
     return _write
 
 
-def pytest_ignore_collect(collection_path: Path, config: pytest.Config) -> bool | None:  # noqa: ARG001
+def pytest_ignore_collect(collection_path: Path, config: pytest.Config) -> bool | None:  # ruff:ignore[unused-function-argument]
     version_re = re.compile(r"_py(\d)(\d)\.py$")
     if match := version_re.search(collection_path.name):
         version = tuple(int(x) for x in match.groups())

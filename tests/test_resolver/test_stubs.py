@@ -5,7 +5,7 @@ import importlib
 import inspect
 import os
 import shutil
-import subprocess  # noqa: S404
+import subprocess  # ruff:ignore[suspicious-subprocess-import]
 import sys
 import sysconfig
 import textwrap
@@ -48,7 +48,7 @@ STUB_ROOT = Path(__file__).parent.parent / "roots" / "test-pyi-stubs"
 
 
 def _import_stub_mod() -> types.ModuleType:
-    import stub_mod  # noqa: PLC0415  # ty: ignore[unresolved-import]
+    import stub_mod  # ruff:ignore[import-outside-top-level]  # ty: ignore[unresolved-import]
 
     return stub_mod
 
@@ -659,7 +659,7 @@ def test_get_stub_context_resolves_relative_imports(tmp_path: Path) -> None:
 
     sys.path.insert(0, str(tmp_path))
     try:
-        import relpkg.sub.mod  # noqa: PLC0415  # ty: ignore[unresolved-import]
+        import relpkg.sub.mod  # ruff:ignore[import-outside-top-level]  # ty: ignore[unresolved-import]
 
         ns, _names, owner = _get_stub_context(relpkg.sub.mod.Cls)
         assert owner == "relpkg.sub.mod"

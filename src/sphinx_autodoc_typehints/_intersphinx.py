@@ -39,7 +39,7 @@ def build_type_mapping(env: BuildEnvironment) -> dict[str, str]:
                 if isinstance(obj, _types.UnionType):
                     continue
                 internal_path = f"{obj.__module__}.{obj.__qualname__}"
-            except Exception:  # noqa: BLE001, S112
+            except Exception:  # ruff:ignore[blind-except, try-except-continue]
                 continue
             # typing.Union[X, Y] aliases on Python <3.14 are not types.UnionType instances
             # but still resolve to "typing.Union"; guard against those and any edge cases.

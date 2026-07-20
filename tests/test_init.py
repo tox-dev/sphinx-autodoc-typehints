@@ -90,7 +90,7 @@ def test_process_docstring_sphinx_signature_raises_type_error() -> None:
 
 def test_process_docstring_descriptor_without_stub_is_untouched() -> None:
     """A C data descriptor with no stub keeps its docstring as-is."""
-    import array  # noqa: PLC0415
+    import array  # ruff:ignore[import-outside-top-level]
 
     app = make_docstring_app()
     lines = ["the typecode character used to create the array"]
@@ -100,7 +100,7 @@ def test_process_docstring_descriptor_without_stub_is_untouched() -> None:
 
 def test_process_docstring_descriptor_with_existing_type_field() -> None:
     """An explicit :type: field wins over the stub annotation."""
-    import array  # noqa: PLC0415
+    import array  # ruff:ignore[import-outside-top-level]
 
     app = make_docstring_app()
     lines = [":type: str"]
@@ -253,7 +253,7 @@ def test_inject_overload_local_directive_with_global_enabled() -> None:
 
 def test_process_docstring_uses_new_when_init_inherited() -> None:
     class _NewOnlyClass:
-        def __new__(cls, x: int, y: str) -> _NewOnlyClass:  # noqa: ARG004, PYI034
+        def __new__(cls, x: int, y: str) -> _NewOnlyClass:  # ruff:ignore[unused-static-method-argument, non-self-return-type]
             return super().__new__(cls)
 
     app = make_docstring_app(typehints_document_rtype=False)
@@ -266,7 +266,7 @@ def test_process_docstring_uses_new_when_init_inherited() -> None:
 
 def test_process_docstring_prefers_init_over_new() -> None:
     class _BothClass:
-        def __new__(cls, a: float) -> _BothClass:  # noqa: ARG004, PYI034
+        def __new__(cls, a: float) -> _BothClass:  # ruff:ignore[unused-static-method-argument, non-self-return-type]
             return super().__new__(cls)
 
         def __init__(self, x: int) -> None:
@@ -287,7 +287,7 @@ def test_inject_types_no_signature() -> None:
     app = make_docstring_app(typehints_document_rtype=False)
 
     lines: list[str] = []
-    sat._inject_types_to_docstring({"return": str}, None, sample, app, "function", "sample", lines)  # noqa: SLF001
+    sat._inject_types_to_docstring({"return": str}, None, sample, app, "function", "sample", lines)  # ruff:ignore[private-member-access]
     assert not any(s.startswith(":type") for s in lines)
 
 
@@ -412,7 +412,7 @@ def test_process_signature_annotations_error(error: Exception) -> None:
 
     class _Func:
         @property
-        def __annotations__(self) -> dict[str, object]:  # noqa: PLW3201
+        def __annotations__(self) -> dict[str, object]:  # ruff:ignore[bad-dunder-method-name]
             raise error
 
         def __call__(self) -> None: ...

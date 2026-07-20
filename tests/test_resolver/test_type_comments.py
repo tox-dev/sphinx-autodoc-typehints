@@ -63,7 +63,7 @@ def test__normalize_source_lines_def_starting_decorator_parameter() -> None:
 
 
 def test_syntax_error_backfill() -> None:
-    def func(x):  # noqa: ANN202
+    def func(x):  # ruff:ignore[missing-return-type-private-function]
         ...
 
     backfill_type_hints(func, "func")
@@ -133,7 +133,7 @@ def test_backfill_type_hints_empty_return() -> None:
         return_value="def f(x):\n    # type: (int) -> \n    pass\n",
     ):
 
-        def f(x): ...  # noqa: ANN202
+        def f(x): ...  # ruff:ignore[missing-return-type-private-function]
 
         result = backfill_type_hints(f, "f")
     assert result == {"x": "int"}
@@ -145,7 +145,7 @@ def test_backfill_type_hints_unparseable_type_comment() -> None:
         return_value="def f(x):\n    # type: bad_comment\n    pass\n",
     ):
 
-        def f(x): ...  # noqa: ANN202
+        def f(x): ...  # ruff:ignore[missing-return-type-private-function]
 
         result = backfill_type_hints(f, "f")
     assert result == {}
@@ -175,22 +175,22 @@ def test_multi_child_ast_warning_includes_location() -> None:
 
 
 class _BackfillClass:
-    def method(self, x):  # noqa: ANN202
+    def method(self, x):  # ruff:ignore[missing-return-type-private-function]
         # type: (int) -> str
         ...
 
 
-def _typed_func(x, y):  # noqa: ANN202
+def _typed_func(x, y):  # ruff:ignore[missing-return-type-private-function]
     # type: (int, str) -> bool
     ...
 
 
-def _posonly_typed_func(x, y, /):  # noqa: ANN202
+def _posonly_typed_func(x, y, /):  # ruff:ignore[missing-return-type-private-function]
     # type: (int, str) -> bool
     ...
 
 
-def _inline_typed_func(  # noqa: ANN202
+def _inline_typed_func(  # ruff:ignore[missing-return-type-private-function]
     x,  # type: int
     y,  # type: str
 ):
@@ -198,6 +198,6 @@ def _inline_typed_func(  # noqa: ANN202
     ...
 
 
-def _mismatched_type_comment(x, y, z):  # noqa: ANN202
+def _mismatched_type_comment(x, y, z):  # ruff:ignore[missing-return-type-private-function]
     # type: (int) -> bool
     ...

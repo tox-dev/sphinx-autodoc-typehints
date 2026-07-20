@@ -41,7 +41,7 @@ def test_guarded_import_missing_name_no_warning(
     """)
     user_mod = types.ModuleType("user_mod")
     user_mod.__file__ = "/fake/user_mod.py"
-    exec(compile(source, "/fake/user_mod.py", "exec"), user_mod.__dict__)  # noqa: S102
+    exec(compile(source, "/fake/user_mod.py", "exec"), user_mod.__dict__)  # ruff:ignore[exec-builtin]
 
     monkeypatch.setitem(sys.modules, "target_mod", target_mod)
     monkeypatch.setitem(sys.modules, "user_mod", user_mod)
