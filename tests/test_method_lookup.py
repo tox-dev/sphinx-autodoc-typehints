@@ -32,7 +32,7 @@ class MyClass:
 def test_method_lookup_does_not_crash(
     app: SphinxTestApp,
     status: StringIO,
-    warning: StringIO,  # noqa: ARG001
+    warning: StringIO,  # ruff:ignore[unused-function-argument]
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     (Path(app.srcdir) / "index.rst").write_text(

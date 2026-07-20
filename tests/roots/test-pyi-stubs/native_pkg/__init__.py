@@ -2,5 +2,5 @@
 
 from __future__ import annotations
 
-from . import _native  # noqa: F401
+from . import _native  # ruff:ignore[unused-import]
 from . import warc as warc

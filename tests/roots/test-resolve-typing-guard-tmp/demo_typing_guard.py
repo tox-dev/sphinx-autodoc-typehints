@@ -44,7 +44,7 @@ class SomeClass:
         """
         return cls(input_value)
 
-    def calculate_thing(self, number: float) -> datetime.timedelta:  # noqa: PLR6301
+    def calculate_thing(self, number: float) -> datetime.timedelta:  # ruff:ignore[no-self-use]
         """
         Calculate a thing
 

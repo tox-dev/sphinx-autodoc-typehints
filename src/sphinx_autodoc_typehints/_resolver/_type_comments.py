@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 
-def backfill_type_hints(obj: Any, name: str) -> dict[str, Any]:  # noqa: C901, PLR0911
+def backfill_type_hints(obj: Any, name: str) -> dict[str, Any]:  # ruff:ignore[complex-structure, too-many-return-statements]
     parse_kwargs = {"type_comments": True}
 
     def _one_child(module: Module) -> stmt | None:

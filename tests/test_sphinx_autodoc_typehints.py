@@ -131,7 +131,7 @@ def test_always_document_param_types(
 def test_always_document_param_types_with_defaults_braces_after(
     app: SphinxTestApp,
     status: StringIO,
-    warning: StringIO,  # noqa: ARG001
+    warning: StringIO,  # ruff:ignore[unused-function-argument]
     write_rst: Callable[[str], None],
 ) -> None:
     """Regression test for #575: IndexError when combining always_document_param_types with braces-after."""
@@ -296,7 +296,7 @@ def test_sphinx_output_defaults(
     ("formatter_config_val", "expected"),
     [
         (None, ['("bool") -- foo', '("int") -- bar', '"str"']),
-        (lambda ann, conf: "Test", ["(Test) -- foo", "(Test) -- bar", "Test"]),  # noqa: ARG005
+        (lambda ann, conf: "Test", ["(Test) -- foo", "(Test) -- bar", "Test"]),  # ruff:ignore[unused-lambda-argument]
         ("some string", Exception("needs to be callable or `None`")),
     ],
 )

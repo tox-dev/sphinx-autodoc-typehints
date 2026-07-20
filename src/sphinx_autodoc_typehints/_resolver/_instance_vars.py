@@ -46,8 +46,8 @@ def get_instance_var_annotations(cls: type) -> dict[str, Any]:
     resolved: dict[str, Any] = {}
     for attr_name, ann_str in raw.items():
         try:
-            resolved[attr_name] = eval(ann_str, globalns)  # noqa: S307
-        except Exception:  # noqa: BLE001
+            resolved[attr_name] = eval(ann_str, globalns)  # ruff:ignore[suspicious-eval-usage]
+        except Exception:  # ruff:ignore[blind-except]
             resolved[attr_name] = ann_str
     return resolved
 

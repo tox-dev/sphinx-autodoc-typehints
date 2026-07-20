@@ -41,10 +41,10 @@ def test_patch_attribute_handling_when_not_okay() -> None:
 
 def test_rst_to_docutils_returns_parsed_nodes() -> None:
     """Lines 34-36: rst_to_docutils parses RST and returns inner nodes."""
-    from docutils.frontend import get_default_settings  # noqa: PLC0415
-    from sphinx.parsers import RSTParser  # noqa: PLC0415
+    from docutils.frontend import get_default_settings  # ruff:ignore[import-outside-top-level]
+    from sphinx.parsers import RSTParser  # ruff:ignore[import-outside-top-level]
 
-    from sphinx_autodoc_typehints.attributes_patch import rst_to_docutils  # noqa: PLC0415
+    from sphinx_autodoc_typehints.attributes_patch import rst_to_docutils  # ruff:ignore[import-outside-top-level]
 
     settings = get_default_settings(RSTParser)  # type: ignore[arg-type]
     settings.env = MagicMock()

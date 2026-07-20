@@ -29,7 +29,7 @@ class _NestedFunction:
         self.outer: int = 0
 
         def inner() -> None:
-            fake_self_attr: str = ""  # noqa: F841
+            fake_self_attr: str = ""  # ruff:ignore[unused-variable]
 
         inner()
 

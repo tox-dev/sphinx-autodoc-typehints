@@ -12,7 +12,7 @@ class Calculator:
 
 class Converter:
     output: str
-    def __new__(cls, output: str) -> Converter: ...  # noqa: PYI034
+    def __new__(cls, output: str) -> Converter: ...  # ruff:ignore[non-self-return-type]
 
 async def fetch(url: str) -> str: ...
 def transform(value: Sequence[int]) -> list[str]: ...

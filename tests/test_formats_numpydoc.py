@@ -274,7 +274,7 @@ def test_numpydoc_format_find_preexisting_type() -> None:
         "        The x value.",
         "",
     ]
-    fmt._ensure_converted(lines)  # noqa: SLF001
+    fmt._ensure_converted(lines)  # ruff:ignore[private-member-access]
     annotation, found = fmt.find_preexisting_type(lines, "x")
     assert found
     assert "int" in annotation
@@ -303,7 +303,7 @@ def test_numpydoc_format_inject_param_type() -> None:
         "        The x value.",
         "",
     ]
-    fmt._ensure_converted(lines)  # noqa: SLF001
+    fmt._ensure_converted(lines)  # ruff:ignore[private-member-access]
     idx = fmt.find_param(lines, "x")
     assert idx is not None
     fmt.inject_param_type(lines, "x", "int", idx + 1)

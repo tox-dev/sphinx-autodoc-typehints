@@ -23,7 +23,7 @@ from ._annotations import (
     unescape,
 )
 from ._formats import detect_format
-from ._formats._numpydoc import _convert_numpydoc_to_sphinx_fields  # noqa: F401
+from ._formats._numpydoc import _convert_numpydoc_to_sphinx_fields  # ruff:ignore[unused-import]
 from ._formats._sphinx import _has_yields_section, _is_generator_type, _strip_inline_param_type
 from ._intersphinx import build_type_mapping
 from ._parser import parse
@@ -51,14 +51,14 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 
-def process_signature(  # noqa: C901, PLR0911, PLR0912, PLR0913, PLR0917
+def process_signature(  # ruff:ignore[complex-structure, too-many-return-statements, too-many-branches, too-many-arguments, too-many-positional-arguments]
     app: Sphinx,
     what: str,
     name: str,
     obj: Any,
-    options: Options,  # noqa: ARG001
-    signature: str,  # noqa: ARG001
-    return_annotation: str,  # noqa: ARG001
+    options: Options,  # ruff:ignore[unused-function-argument]
+    signature: str,  # ruff:ignore[unused-function-argument]
+    return_annotation: str,  # ruff:ignore[unused-function-argument]
 ) -> tuple[str, None] | None:
     """Process the signature."""
     if not callable(obj):
@@ -146,12 +146,12 @@ def _is_dataclass(name: str, what: str, qualname: str) -> bool:
     return (what == "method" and name.endswith(".__init__")) or (what == "class" and qualname.endswith(".__init__"))
 
 
-def process_docstring(  # noqa: PLR0913, PLR0917
+def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-arguments]
     app: Sphinx,
     what: str,
     name: str,
     obj: Any,
-    options: Options | None,  # noqa: ARG001
+    options: Options | None,  # ruff:ignore[unused-function-argument]
     lines: list[str],
 ) -> None:
     """Process the docstring for an entry."""
@@ -196,17 +196,17 @@ def process_docstring(  # noqa: PLR0913, PLR0917
     for param, hint in type_hints.items():
         if id(hint) in eager_aliases:
             type_hints[param] = eager_aliases[id(hint)]
-    app.config._annotation_globals = getattr(obj, "__globals__", {})  # noqa: SLF001
-    app.config._typehints_env = env  # noqa: SLF001
-    app.config._typehints_module_prefix = module_prefix  # noqa: SLF001
+    app.config._annotation_globals = getattr(obj, "__globals__", {})  # ruff:ignore[private-member-access]
+    app.config._typehints_env = env  # ruff:ignore[private-member-access]
+    app.config._typehints_module_prefix = module_prefix  # ruff:ignore[private-member-access]
     try:
         has_overloads = _inject_overload_signatures(app, what, name, obj, lines)
         _inject_types_to_docstring(type_hints, signature, original_obj, app, what, name, lines, has_overloads)
         _inject_ivar_types(ivar_annotations, app, lines)
     finally:
-        del app.config._annotation_globals  # noqa: SLF001
-        del app.config._typehints_env  # noqa: SLF001
-        del app.config._typehints_module_prefix  # noqa: SLF001
+        del app.config._annotation_globals  # ruff:ignore[private-member-access]
+        del app.config._typehints_env  # ruff:ignore[private-member-access]
+        del app.config._typehints_module_prefix  # ruff:ignore[private-member-access]
 
 
 def _maybe_inject_descriptor_type(app: Sphinx, what: str, obj: Any, lines: list[str]) -> None:
@@ -226,7 +226,7 @@ def _maybe_inject_descriptor_type(app: Sphinx, what: str, obj: Any, lines: list[
 def _inject_overload_signatures(
     app: Sphinx,
     what: str,
-    name: str,  # noqa: ARG001
+    name: str,  # ruff:ignore[unused-function-argument]
     obj: Any,
     lines: list[str],
 ) -> bool:
@@ -292,7 +292,7 @@ def _format_overload_lines(overloads: list[inspect.Signature], app: Sphinx) -> l
     return result
 
 
-def format_default(app: Sphinx, default: Any, is_annotated: bool) -> str | None:  # noqa: FBT001
+def format_default(app: Sphinx, default: Any, is_annotated: bool) -> str | None:  # ruff:ignore[boolean-type-hint-positional-argument]
     if default is inspect.Parameter.empty:
         return None
     formatted = repr(default).replace("\\", "\\\\")
@@ -306,7 +306,7 @@ def format_default(app: Sphinx, default: Any, is_annotated: bool) -> str | None:
     return f"default: ``{formatted}``"
 
 
-def _inject_types_to_docstring(  # noqa: PLR0913, PLR0917
+def _inject_types_to_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-arguments]
     type_hints: dict[str, Any],
     signature: inspect.Signature | None,
     original_obj: Any,
@@ -314,7 +314,7 @@ def _inject_types_to_docstring(  # noqa: PLR0913, PLR0917
     what: str,
     name: str,
     lines: list[str],
-    has_overloads: bool = False,  # noqa: FBT001, FBT002
+    has_overloads: bool = False,  # ruff:ignore[boolean-type-hint-positional-argument, boolean-default-value-positional-argument]
 ) -> None:
     fmt = detect_format(lines)
     if signature is not None:
@@ -334,7 +334,7 @@ def _inject_signature(
         _inject_arg_signature(type_hints, signature, app, lines, arg_name, fmt)
 
 
-def _inject_arg_signature(  # noqa: PLR0913, PLR0917
+def _inject_arg_signature(  # ruff:ignore[too-many-arguments, too-many-positional-arguments]
     type_hints: dict[str, Any],
     signature: inspect.Signature,
     app: Sphinx,
@@ -422,7 +422,7 @@ def _remove_preexisting_type(lines: list[str], preexisting_line: str) -> int:
     return idx
 
 
-def _inject_rtype(  # noqa: PLR0913, PLR0917
+def _inject_rtype(  # ruff:ignore[too-many-arguments, too-many-positional-arguments]
     type_hints: dict[str, Any],
     original_obj: Any,
     app: Sphinx,
@@ -509,7 +509,7 @@ def _extract_doc_description(annotation: Any) -> str | None:
     return None
 
 
-def validate_config(app: Sphinx, env: BuildEnvironment, docnames: list[str]) -> None:  # noqa: ARG001
+def validate_config(app: Sphinx, env: BuildEnvironment, docnames: list[str]) -> None:  # ruff:ignore[unused-function-argument]
     valid = {None, "comma", "braces", "braces-after"}
     if app.config.typehints_defaults not in valid | {False}:
         msg = f"typehints_defaults needs to be one of {valid!r}, not {app.config.typehints_defaults!r}"
@@ -520,7 +520,7 @@ def validate_config(app: Sphinx, env: BuildEnvironment, docnames: list[str]) -> 
         msg = f"typehints_formatter needs to be callable or `None`, not {formatter}"
         raise ValueError(msg)
 
-    app.config._intersphinx_type_mapping = build_type_mapping(env)  # noqa: SLF001
+    app.config._intersphinx_type_mapping = build_type_mapping(env)  # ruff:ignore[private-member-access]
 
 
 def sphinx_autodoc_typehints_type_role(
@@ -541,18 +541,18 @@ def sphinx_autodoc_typehints_type_role(
 
 
 def setup(app: Sphinx) -> dict[str, bool | str]:
-    app.add_config_value("always_document_param_types", False, "html")  # noqa: FBT003
-    app.add_config_value("typehints_fully_qualified", False, "env")  # noqa: FBT003
-    app.add_config_value("typehints_document_rtype", True, "env")  # noqa: FBT003
-    app.add_config_value("typehints_document_rtype_none", True, "env")  # noqa: FBT003
-    app.add_config_value("typehints_use_rtype", True, "env")  # noqa: FBT003
+    app.add_config_value("always_document_param_types", False, "html")  # ruff:ignore[boolean-positional-value-in-call]
+    app.add_config_value("typehints_fully_qualified", False, "env")  # ruff:ignore[boolean-positional-value-in-call]
+    app.add_config_value("typehints_document_rtype", True, "env")  # ruff:ignore[boolean-positional-value-in-call]
+    app.add_config_value("typehints_document_rtype_none", True, "env")  # ruff:ignore[boolean-positional-value-in-call]
+    app.add_config_value("typehints_use_rtype", True, "env")  # ruff:ignore[boolean-positional-value-in-call]
     app.add_config_value("typehints_defaults", None, "env")
-    app.add_config_value("simplify_optional_unions", True, "env")  # noqa: FBT003
-    app.add_config_value("always_use_bars_union", False, "env")  # noqa: FBT003
+    app.add_config_value("simplify_optional_unions", True, "env")  # ruff:ignore[boolean-positional-value-in-call]
+    app.add_config_value("always_use_bars_union", False, "env")  # ruff:ignore[boolean-positional-value-in-call]
     app.add_config_value("typehints_formatter", None, "")
-    app.add_config_value("typehints_document_overloads", True, "env")  # noqa: FBT003
-    app.add_config_value("typehints_use_signature", False, "env")  # noqa: FBT003
-    app.add_config_value("typehints_use_signature_return", False, "env")  # noqa: FBT003
+    app.add_config_value("typehints_document_overloads", True, "env")  # ruff:ignore[boolean-positional-value-in-call]
+    app.add_config_value("typehints_use_signature", False, "env")  # ruff:ignore[boolean-positional-value-in-call]
+    app.add_config_value("typehints_use_signature_return", False, "env")  # ruff:ignore[boolean-positional-value-in-call]
     app.add_config_value("typehints_fixup_module_name", None, "env")
     app.add_role("sphinx_autodoc_typehints_type", sphinx_autodoc_typehints_type_role)
     app.connect("env-before-read-docs", validate_config)

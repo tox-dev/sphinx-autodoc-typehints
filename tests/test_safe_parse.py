@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 def test_extension_directive_not_executed_during_snippet_parse(
     app: SphinxTestApp,
     status: StringIO,
-    warning: StringIO,  # noqa: ARG001
+    warning: StringIO,  # ruff:ignore[unused-function-argument]
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """A non-builtin directive in a docstring should only execute once (during the real build)."""
@@ -49,7 +49,7 @@ def test_extension_directive_not_executed_during_snippet_parse(
         \"\"\"
         return x
     """)
-    exec(compile(src, "<test>", "exec"), (mod := {}))  # noqa: S102
+    exec(compile(src, "<test>", "exec"), (mod := {}))  # ruff:ignore[exec-builtin]
     fake_module = type(sys)("mod")
     fake_module.__dict__.update(mod)
     monkeypatch.setitem(sys.modules, "mod", fake_module)

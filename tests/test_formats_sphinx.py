@@ -35,7 +35,7 @@ def test_inject_rtype_inserts_blank_line_before_rtype(monkeypatch: pytest.Monkey
     monkeypatch.setattr(sat, "add_type_css_class", lambda value: value)
 
     lines = ["A paragraph.", ".. note:: hi"]
-    sat._inject_rtype({"return": str}, sample, app, "function", "sample", lines, fmt)  # noqa: SLF001
+    sat._inject_rtype({"return": str}, sample, app, "function", "sample", lines, fmt)  # ruff:ignore[private-member-access]
 
     assert lines == ["A paragraph.", "", ":rtype: str", "", ".. note:: hi"]
 
@@ -58,7 +58,7 @@ def test_inject_rtype_does_not_add_extra_blank_line(monkeypatch: pytest.MonkeyPa
     monkeypatch.setattr(sat, "add_type_css_class", lambda value: value)
 
     lines = ["", ""]
-    sat._inject_rtype({"return": str}, sample, app, "function", "sample", lines, fmt)  # noqa: SLF001
+    sat._inject_rtype({"return": str}, sample, app, "function", "sample", lines, fmt)  # ruff:ignore[private-member-access]
 
     assert lines == ["", ":rtype: str", ""]
 

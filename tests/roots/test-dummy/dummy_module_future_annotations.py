@@ -2,9 +2,9 @@ from __future__ import annotations
 
 
 def function_with_py310_annotations(
-    self,  # noqa: ANN001
+    self,  # ruff:ignore[missing-type-function-argument]
     x: bool | None,
-    y: int | str | float,  # noqa: PYI041
+    y: int | str | float,  # ruff:ignore[redundant-numeric-union]
     z: str | None = None,
 ) -> str:
     """

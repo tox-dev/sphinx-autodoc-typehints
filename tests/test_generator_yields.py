@@ -83,7 +83,7 @@ def _build_genclass(app: SphinxTestApp, monkeypatch: pytest.MonkeyPatch) -> str:
 def test_generator_no_duplicate_return_type(
     app: SphinxTestApp,
     status: StringIO,
-    warning: StringIO,  # noqa: ARG001
+    warning: StringIO,  # ruff:ignore[unused-function-argument]
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     text = _build_genclass(app, monkeypatch)
@@ -99,7 +99,7 @@ def test_generator_no_duplicate_return_type(
 def test_generator_without_yields_keeps_rtype(
     app: SphinxTestApp,
     status: StringIO,
-    warning: StringIO,  # noqa: ARG001
+    warning: StringIO,  # ruff:ignore[unused-function-argument]
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     text = _build_genclass(app, monkeypatch)
