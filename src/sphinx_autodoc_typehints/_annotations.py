@@ -15,7 +15,7 @@ import inspect
 import re
 import sys
 import types
-from typing import TYPE_CHECKING, Any, AnyStr, ForwardRef, NewType, TypeVar, Union
+from typing import TYPE_CHECKING, Any, AnyStr, ForwardRef, NewType, TypeVar, Union, get_args, get_origin
 
 from sphinx.util import rst
 from sphinx.util.inspect import TypeAliasForwardRef
@@ -75,6 +75,11 @@ class MyTypeAliasForwardRef(TypeAliasForwardRef):
     def __or__(self, value: Any) -> Any:  # ty: ignore[invalid-method-override]
         return Union[self, value]  # ruff:ignore[non-pep604-annotation-union]
 
+    def __getitem__(self, item: Any) -> Any:
+        # A generic alias stands in for the real one while resolving string annotations, so it has to
+        # be subscriptable: evaluating ``"Pair[int]"`` would raise ``TypeError`` and drop the hint.
+        return types.GenericAlias(self, item)  # ty: ignore[invalid-argument-type]  # any origin works at runtime
+
 
 def format_annotation(annotation: Any, config: Config, *, short_literals: bool = False) -> str:
     """
@@ -84,17 +89,15 @@ def format_annotation(annotation: Any, config: Config, *, short_literals: bool =
     post-order walk. The walk is driven iteratively with an explicit stack rather than by recursion:
     a PEP 695 type alias may reference itself (``type T = int | list[T]``), which is a fully
     supported recursive type but would expand forever and exhaust the interpreter recursion limit if
-    walked naively. Each frame on the stack is one suspended ``_format_node`` generator; the generator
+    walked naively -- as may a generic one through its subscripted form (``type T[X] = X | list[T[X]]``).
+    Each frame on the stack is one suspended ``_format_node`` generator; the generator
     yields the child annotations it needs formatted and is resumed with their rendered strings.
     ``active`` holds the aliases currently being expanded along the path from the root, so when an
     alias references itself it is rendered as a cross-reference to its own name -- the natural
     representation of a recursive type -- instead of being expanded again.
     """
-    fully_qualified: bool = getattr(config, "typehints_fully_qualified", False)
-    cycle_prefix = "" if fully_qualified else "~"
-
     stack = [(_format_node(annotation, config, short_literals=short_literals), annotation)]
-    active = {id(annotation)} if isinstance(annotation, TypeAliasType) else set()
+    active = {id(alias)} if (alias := _underlying_type_alias(annotation)) is not None else set()
     rendered: str | None = None
     while True:
         gen, node = stack[-1]
@@ -102,22 +105,18 @@ def format_annotation(annotation: Any, config: Config, *, short_literals: bool =
             child = next(gen) if rendered is None else gen.send(rendered)
         except StopIteration as done:
             stack.pop()
-            if isinstance(node, TypeAliasType):
-                active.discard(id(node))
+            if (alias := _underlying_type_alias(node)) is not None:
+                active.discard(id(alias))
             rendered = done.value
             if not stack:
                 return rendered
             continue
-        if isinstance(child, TypeAliasType) and id(child) in active:
-            # A cross-module alias may live in a module Sphinx has not read yet, leaving it out of the py
-            # domain here. Fall back to its canonical qualified name, which resolves in the later xref
-            # phase and renders the same short form when the alias is undocumented.
-            self_name = _get_canonical_type_alias_name(child) or child.__name__
-            rendered = _type_alias_crossref(child, config) or f":py:type:`{cycle_prefix}{self_name}`"
+        if (alias := _underlying_type_alias(child)) is not None and id(alias) in active:
+            rendered = _type_alias_crossref(alias, config) or _alias_name_reference(alias, config)
             continue
         stack.append((_format_node(child, config, short_literals=short_literals), child))
-        if isinstance(child, TypeAliasType):
-            active.add(id(child))
+        if alias is not None:
+            active.add(id(alias))
         rendered = None
 
 
@@ -173,6 +172,24 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
         if (crossref := _type_alias_crossref(annotation, config)) is not None:
             return crossref
         return (yield annotation.__value__)
+
+    if isinstance(alias := get_origin(annotation), TypeAliasType | TypeAliasForwardRef):
+        # A subscripted generic alias, e.g. ``NDArray[np.void]`` for ``type NDArray[ScalarT] = ...``.
+        # It is a plain ``types.GenericAlias``, so without unwrapping it here the code below would
+        # render it as its wrapper class' name instead of as the alias.
+        args = get_args(annotation)
+        if isinstance(alias, TypeAliasForwardRef):  # a documented alias, resolved from a string annotation
+            rendered_alias = yield alias
+        elif (crossref := _type_alias_crossref(alias, config)) is not None:
+            rendered_alias = crossref
+        elif _matches_type_params(alias, args):  # an undocumented alias: expand its value, with args substituted
+            return (yield _substitute_type_params(alias, args))
+        else:  # a wrong-arity subscript cannot expand, so name the alias instead of leaking its type params
+            rendered_alias = _alias_name_reference(alias, config)
+        parts = []
+        for arg in args:
+            parts.append((yield arg))  # yield is illegal inside a comprehension
+        return f"{rendered_alias}\\ \\[{', '.join(parts)}]"
 
     try:
         module = get_annotation_module(annotation)
@@ -362,6 +379,46 @@ def _get_types_type(obj: Any) -> str | None:
 
 def _is_newtype(annotation: Any) -> bool:
     return isinstance(annotation, NewType)
+
+
+def _underlying_type_alias(annotation: Any) -> TypeAliasType | None:
+    """Return the PEP 695 alias an annotation is, or the one a subscripted alias parametrizes."""
+    if isinstance(annotation, TypeAliasType):
+        return annotation
+    if isinstance(origin := get_origin(annotation), TypeAliasType):
+        return origin
+    return None
+
+
+def _matches_type_params(alias: TypeAliasType, args: tuple[Any, ...]) -> bool:
+    """Whether ``args`` can be substituted: the runtime accepts a wrong-arity subscript, so check it here."""
+    params = alias.__type_params__
+    if any(not isinstance(param, TypeVar) for param in params):  # a TypeVarTuple or ParamSpec absorbs any count
+        return True
+    return len(params) == len(args)
+
+
+def _substitute_type_params(alias: TypeAliasType, args: tuple[Any, ...]) -> Any:
+    """Substitute ``args`` into an undocumented generic alias' value, so it expands to concrete types."""
+    if isinstance(value := alias.__value__, TypeVar):
+        # ``type Ident[X] = X`` has a bare type param as its value: it is the substitution, not a container
+        return dict(zip(alias.__type_params__, args, strict=False)).get(value, value)
+    try:
+        return value[args]
+    except TypeError:  # the value ignores its type params, e.g. ``type Count[X] = int``
+        return value
+
+
+def _alias_name_reference(alias: TypeAliasType, config: Config) -> str:
+    """
+    Render an alias as a cross-reference to its own name, without expanding its value.
+
+    A cross-module alias may live in a module Sphinx has not read yet, leaving it out of the py domain. Its
+    canonical qualified name resolves in the later xref phase and renders the same short form when the alias
+    is undocumented.
+    """
+    prefix = "" if getattr(config, "typehints_fully_qualified", False) else "~"
+    return f":py:type:`{prefix}{_get_canonical_type_alias_name(alias) or alias.__name__}`"
 
 
 def _type_alias_crossref(annotation: TypeAliasType, config: Config) -> str | None:
