@@ -51,17 +51,17 @@ def get_all_type_hints(
         stub_obj = _stub_target(obj) if inspect.isclass(obj) else obj
         result = backfill_type_hints(stub_obj, name)
         stub_localns: dict[str, Any] = {}
-        stub_alias_names: set[str] = set()
+        stub_crossref_names: set[str] = set()
         stub_owner_module: str = ""
         if not result:
             result = _backfill_from_stub(stub_obj)
             if result:
-                stub_localns, stub_alias_names, stub_owner_module = _get_stub_context(stub_obj)
+                stub_localns, stub_crossref_names, stub_owner_module = _get_stub_context(stub_obj)
         combined_localns = {**stub_localns, **localns}
-        for alias_name in stub_alias_names:
-            ref = MyTypeAliasForwardRef(alias_name)
+        for crossref_name in stub_crossref_names:
+            ref = MyTypeAliasForwardRef(crossref_name)
             ref.crossref = True
-            combined_localns[alias_name] = ref
+            combined_localns[crossref_name] = ref
         try:
             obj.__annotations__ = result
         except (AttributeError, TypeError):
@@ -93,11 +93,11 @@ def get_descriptor_type_hint(obj: Any) -> Any | None:
     """
     if (annotation := _backfill_descriptor_annotation(obj)) is None:
         return None
-    localns, alias_names, owner_module = _get_stub_context(obj)
-    for alias_name in alias_names:
-        ref = MyTypeAliasForwardRef(alias_name)
+    localns, crossref_names, owner_module = _get_stub_context(obj)
+    for crossref_name in crossref_names:
+        ref = MyTypeAliasForwardRef(crossref_name)
         ref.crossref = True
-        localns[alias_name] = ref
+        localns[crossref_name] = ref
     return _resolve_string_annotations(obj, {"return": annotation}, localns, owner_module)["return"]
 
 

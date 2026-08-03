@@ -365,6 +365,28 @@ def test_stub_annotations_not_polluted_on_repeated_calls(tmp_path: Path) -> None
         _TYPE_GUARD_IMPORTS_RESOLVED.discard("stubpkg.mod")
 
 
+def test_get_all_type_hints_crossrefs_names_from_stub_only_modules(tmp_path: Path) -> None:
+    """numpy's _polybase.pyi imports from _polytypes.pyi, which ships no runtime module (issue #741)."""
+    pkg = tmp_path / "stubonlypkg"
+    pkg.mkdir()
+    (pkg / "__init__.py").write_text("")
+    (pkg / "_types.pyi").write_text("from typing import Any\n_SeriesLike = Any\n")
+    (pkg / "poly.py").write_text("class Poly:\n    def __init__(self, coef): ...\n")
+    (pkg / "poly.pyi").write_text(
+        "from ._types import _SeriesLike\nclass Poly:\n    def __init__(self, coef: _SeriesLike) -> None: ...\n"
+    )
+    sys.path.insert(0, str(tmp_path))
+    try:
+        mod = importlib.import_module("stubonlypkg.poly")
+        hint = get_all_type_hints([], mod.Poly, "stubonlypkg.poly.Poly", {})["coef"]
+    finally:
+        sys.path.remove(str(tmp_path))
+        for name in [n for n in sys.modules if n.startswith("stubonlypkg")]:
+            del sys.modules[name]
+    assert isinstance(hint, MyTypeAliasForwardRef)
+    assert hint.name == "_SeriesLike"
+
+
 @pytest.mark.skipif(sys.version_info < (3, 14), reason="annotationlib requires Python 3.14+")
 def test_get_type_hint_uses_annotationlib_on_name_error() -> None:  # pragma: >=3.14 cover
     """_get_type_hint falls back to annotationlib.get_annotations on 3.14+ NameError."""

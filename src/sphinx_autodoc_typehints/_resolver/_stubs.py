@@ -27,11 +27,15 @@ def _backfill_from_stub(obj: Any) -> dict[str, str]:
 
 def _get_stub_context(obj: Any) -> tuple[dict[str, Any], set[str], str]:
     """
-    Return (localns, alias_names, owner_module_name) from the stub owning *obj*.
+    Return (localns, crossref_names, owner_module_name) from the stub owning *obj*.
 
     Single lookup avoids duplicate ``_find_stub_owner`` / ``_parse_stub_ast`` calls. The owner module name lets callers
     use ``vars(sys.modules[name])`` as the correct globalns — important when a C extension function lives in a child
     module but its stub belongs to a parent package (e.g. ``cbor2._cbor2.dumps`` → ``cbor2/__init__.pyi``).
+
+    Crossref names are the stub's type aliases plus every name it imports that has no runtime counterpart, such as
+    numpy's ``_SeriesLikeCoef_co`` living in the stub-only ``numpy/polynomial/_polytypes.pyi``. Both render as a plain
+    cross-reference instead of failing to evaluate.
     """
     if (info := _find_stub_owner(obj)) is None:
         return {}, set(), ""
@@ -39,8 +43,9 @@ def _get_stub_context(obj: Any) -> tuple[dict[str, Any], set[str], str]:
     if (tree := _parse_stub_ast(stub_path)) is None:
         return {}, set(), ""
     ns: dict[str, Any] = dict(vars(owner_module))
-    ns.update(_resolve_stub_imports(tree, _stub_owner_package(owner_module, stub_path)))
-    return ns, _extract_type_alias_names(tree), owner_module.__name__
+    resolved, unresolved = _resolve_stub_imports(tree, _stub_owner_package(owner_module, stub_path))
+    ns.update(resolved)
+    return ns, _extract_type_alias_names(tree) | (unresolved - ns.keys()), owner_module.__name__
 
 
 def _stub_owner_package(owner_module: types.ModuleType, stub_path: Path) -> str:
@@ -54,22 +59,25 @@ def _stub_owner_package(owner_module: types.ModuleType, stub_path: Path) -> str:
     return owner_name.rpartition(".")[0]
 
 
-def _resolve_stub_imports(tree: ast.Module, owner_package: str = "") -> dict[str, Any]:
+def _resolve_stub_imports(tree: ast.Module, owner_package: str = "") -> tuple[dict[str, Any], set[str]]:
     ns: dict[str, Any] = {}
-    _resolve_stub_imports_from_body(tree.body, owner_package, ns)
+    unresolved: set[str] = set()
+    _resolve_stub_imports_from_body(tree.body, owner_package, ns, unresolved)
     _resolve_stub_definitions(tree.body, ns)
-    return ns
+    return ns, unresolved - ns.keys()
 
 
-def _resolve_stub_imports_from_body(body: list[ast.stmt], owner_package: str, ns: dict[str, Any]) -> None:
+def _resolve_stub_imports_from_body(
+    body: list[ast.stmt], owner_package: str, ns: dict[str, Any], unresolved: set[str]
+) -> None:
     for node in body:
         if isinstance(node, ast.Import):
             _resolve_import_node(node, ns)
         elif isinstance(node, ast.ImportFrom):
-            _resolve_import_from_node(node, owner_package, ns)
+            _resolve_import_from_node(node, owner_package, ns, unresolved)
         elif isinstance(node, ast.If):
-            _resolve_stub_imports_from_body(node.body, owner_package, ns)
-            _resolve_stub_imports_from_body(node.orelse, owner_package, ns)
+            _resolve_stub_imports_from_body(node.body, owner_package, ns, unresolved)
+            _resolve_stub_imports_from_body(node.orelse, owner_package, ns, unresolved)
 
 
 _STUB_DEFINITION_TYPES = (ast.Assign, ast.AnnAssign, ast.ClassDef, ast.TypeAlias)
@@ -104,19 +112,26 @@ def _resolve_import_node(node: ast.Import, ns: dict[str, Any]) -> None:
                 ns[top] = importlib.import_module(top)
 
 
-def _resolve_import_from_node(node: ast.ImportFrom, owner_package: str, ns: dict[str, Any]) -> None:
-    if (module_name := _resolve_import_from(node, owner_package)) is None:
-        return
-    try:
-        mod = importlib.import_module(module_name)
-    except ImportError:
-        return
+def _resolve_import_from_node(
+    node: ast.ImportFrom, owner_package: str, ns: dict[str, Any], unresolved: set[str]
+) -> None:
+    module_name = _resolve_import_from(node, owner_package)
+    mod = _import_module_or_none(module_name) if module_name else None
     for alias in node.names:
         if alias.name == "*":
             continue
         name = alias.asname or alias.name
-        if (val := getattr(mod, alias.name, None)) is not None:
+        if mod is not None and (val := getattr(mod, alias.name, None)) is not None:
             ns[name] = val
+        else:
+            unresolved.add(name)
+
+
+def _import_module_or_none(module_name: str) -> types.ModuleType | None:
+    try:
+        return importlib.import_module(module_name)
+    except ImportError:
+        return None
 
 
 def _resolve_import_from(node: ast.ImportFrom, owner_package: str) -> str | None:

@@ -325,24 +325,26 @@ def test_backfill_from_stub_no_stub() -> None:
 
 
 @pytest.mark.parametrize(
-    ("source", "expected"),
+    ("source", "expected", "expected_unresolved"),
     [
-        pytest.param("import os\nimport sys\n", {"os": os, "sys": sys}, id="basic_import"),
-        pytest.param("import os as operating_system\n", {"operating_system": os}, id="import_as"),
-        pytest.param("import os.path\n", {"os": os}, id="dotted_import"),
-        pytest.param("from typing import Optional, Any\n", {"Optional": Optional, "Any": Any}, id="from_import"),
-        pytest.param("from typing import Optional as Opt\n", {"Opt": Optional}, id="from_import_as"),
-        pytest.param("from typing import *\n", {}, id="star_import_skipped"),
-        pytest.param("import nonexistent_xyz\nfrom nonexistent_abc import Foo\n", {}, id="missing_module_skipped"),
-        pytest.param("from typing import NonExistentThing\n", {}, id="missing_attr_skipped"),
+        pytest.param("import os\nimport sys\n", {"os": os, "sys": sys}, set(), id="basic_import"),
+        pytest.param("import os as operating_system\n", {"operating_system": os}, set(), id="import_as"),
+        pytest.param("import os.path\n", {"os": os}, set(), id="dotted_import"),
+        pytest.param("from typing import Optional, Any\n", {"Optional": Optional, "Any": Any}, set(), id="from_import"),
+        pytest.param("from typing import Optional as Opt\n", {"Opt": Optional}, set(), id="from_import_as"),
+        pytest.param("from typing import *\n", {}, set(), id="star_import_skipped"),
+        pytest.param("import nonexistent_xyz\n", {}, set(), id="missing_module_import_skipped"),
+        pytest.param("from nonexistent_abc import Foo\n", {}, {"Foo"}, id="missing_module_from_import"),
+        pytest.param("from typing import NonExistentThing\n", {}, {"NonExistentThing"}, id="missing_attr"),
     ],
 )
-def test_resolve_stub_imports(source: str, expected: dict[str, Any]) -> None:
-    ns = _resolve_stub_imports(ast.parse(source))
+def test_resolve_stub_imports(source: str, expected: dict[str, Any], expected_unresolved: set[str]) -> None:
+    ns, unresolved = _resolve_stub_imports(ast.parse(source))
     for key, val in expected.items():
         assert ns[key] is val
     if not expected:
         assert ns == {}
+    assert unresolved == expected_unresolved
 
 
 @pytest.mark.parametrize(
@@ -619,7 +621,7 @@ def test_resolve_stub_imports_handles_conditional_blocks() -> None:
             from typing_extensions import Self
     """)
     tree = ast.parse(source)
-    ns = _resolve_stub_imports(tree, "")
+    ns, _ = _resolve_stub_imports(tree, "")
     assert "os" in ns
     assert "Self" in ns
 
@@ -632,7 +634,7 @@ def test_resolve_stub_definitions_evaluates_typevars_and_classes() -> None:
             x: int
     """)
     tree = ast.parse(source)
-    ns = _resolve_stub_imports(tree, "")
+    ns, _ = _resolve_stub_imports(tree, "")
     assert "_T" in ns
     assert "MyDict" in ns
 
@@ -641,7 +643,7 @@ def test_resolve_stub_imports_relative() -> None:
     source = "from .typing import ColorType\nfrom typing import Any\n"
     tree = ast.parse(source)
     # matplotlib.typing.ColorType is a type alias, check it resolves to something
-    ns = _resolve_stub_imports(tree, "matplotlib")
+    ns, _ = _resolve_stub_imports(tree, "matplotlib")
     assert "Any" in ns
     assert ns["Any"] is Any
 
