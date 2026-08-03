@@ -9,7 +9,7 @@ import types
 from collections.abc import Sequence
 from csv import Error
 from pathlib import Path
-from typing import Any, Union, get_args, get_origin
+from typing import Any, TypeAliasType, Union, get_args, get_origin
 from unittest.mock import MagicMock, patch
 
 if sys.version_info >= (3, 14):  # pragma: >=3.14 cover
@@ -137,6 +137,11 @@ def test_guarded_import_warning_includes_module() -> None:
     mock_logger.warning.assert_called_once()
     args = mock_logger.warning.call_args
     assert "fake_mod" in str(args)
+
+
+def test_get_all_type_hints_for_class_owning_the_type_params_slot() -> None:
+    """typing.TypeAliasType hands back the __type_params__ descriptor rather than a tuple (issue #740)."""
+    assert get_all_type_hints([], TypeAliasType, "mod.TypeAliasType", {}) == {}
 
 
 def test_build_localns_adds_ancestor_classes() -> None:

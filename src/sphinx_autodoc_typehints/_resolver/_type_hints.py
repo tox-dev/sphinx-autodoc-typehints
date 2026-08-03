@@ -9,7 +9,7 @@ import re
 import sys
 import textwrap
 import types
-from typing import Any, get_type_hints
+from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar, TypeVarTuple, get_type_hints
 
 from sphinx.ext.autodoc.mock import mock
 from sphinx.util import logging
@@ -22,6 +22,9 @@ from ._util import get_obj_location
 
 if sys.version_info >= (3, 14):  # pragma: >=3.14 cover
     import annotationlib
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -40,7 +43,7 @@ _TYPE_GUARD_IMPORTS_RESOLVED: set[str] = set()
 
 
 def get_all_type_hints(
-    autodoc_mock_imports: list[str], obj: Any, name: str, localns: dict[Any, MyTypeAliasForwardRef]
+    autodoc_mock_imports: list[str], obj: Any, name: str, localns: Mapping[str, Any]
 ) -> dict[str, Any]:
     result = _get_type_hint(autodoc_mock_imports, name, obj, localns)
     if not result:
@@ -122,9 +125,7 @@ def _resolve_string_annotations(
     return resolved
 
 
-def _get_type_hint(
-    autodoc_mock_imports: list[str], name: str, obj: Any, localns: dict[Any, MyTypeAliasForwardRef]
-) -> dict[str, Any]:
+def _get_type_hint(autodoc_mock_imports: list[str], name: str, obj: Any, localns: Mapping[str, Any]) -> dict[str, Any]:
     _resolve_type_guarded_imports(autodoc_mock_imports, obj)
     localns = _build_localns(obj, localns)
     try:
@@ -228,12 +229,12 @@ def _run_guarded_import(autodoc_mock_imports: list[str], obj: Any, guarded_code:
             pass
 
 
-def _build_localns(obj: Any, localns: dict[Any, MyTypeAliasForwardRef]) -> dict[Any, MyTypeAliasForwardRef]:
-    if type_params := getattr(obj, "__type_params__", None):
-        localns = {**localns, **{p.__name__: p for p in type_params}}
+def _build_localns(obj: Any, localns: Mapping[str, Any]) -> dict[str, Any]:
+    result = dict(localns)
+    result.update({p.__name__: p for p in _type_params(obj)})
     parts = (getattr(obj, "__qualname__", "") or "").split(".")
     if len(parts) <= 1:
-        return localns
+        return result
     if ns := (vars(module) if (module := inspect.getmodule(obj)) else getattr(obj, "__globals__", None)):
         current: Any = None
         for part in parts[:-1]:
@@ -245,10 +246,15 @@ def _build_localns(obj: Any, localns: dict[Any, MyTypeAliasForwardRef]) -> dict[
             if current is None:
                 break
             if inspect.isclass(current):
-                localns = {**localns, part: current}
-            if ancestor_params := getattr(current, "__type_params__", None):
-                localns = {**localns, **{p.__name__: p for p in ancestor_params}}
-    return localns
+                result[part] = current
+            result.update({p.__name__: p for p in _type_params(current)})
+    return result
+
+
+def _type_params(obj: Any) -> tuple[TypeVar | ParamSpec | TypeVarTuple, ...]:
+    # A class owning the __type_params__ slot itself (typing.TypeAliasType) hands back the descriptor, not a tuple
+    params = getattr(obj, "__type_params__", ())
+    return params if isinstance(params, tuple) else ()
 
 
 def _future_annotations_imported(obj: Any) -> bool:
