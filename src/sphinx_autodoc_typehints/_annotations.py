@@ -96,9 +96,6 @@ def format_annotation(annotation: Any, config: Config, *, short_literals: bool =
     alias references itself it is rendered as a cross-reference to its own name -- the natural
     representation of a recursive type -- instead of being expanded again.
     """
-    fully_qualified: bool = getattr(config, "typehints_fully_qualified", False)
-    cycle_prefix = "" if fully_qualified else "~"
-
     stack = [(_format_node(annotation, config, short_literals=short_literals), annotation)]
     active = {id(alias)} if (alias := _underlying_type_alias(annotation)) is not None else set()
     rendered: str | None = None
@@ -115,14 +112,10 @@ def format_annotation(annotation: Any, config: Config, *, short_literals: bool =
                 return rendered
             continue
         if (alias := _underlying_type_alias(child)) is not None and id(alias) in active:
-            # A cross-module alias may live in a module Sphinx has not read yet, leaving it out of the py
-            # domain here. Fall back to its canonical qualified name, which resolves in the later xref
-            # phase and renders the same short form when the alias is undocumented.
-            self_name = _get_canonical_type_alias_name(alias) or alias.__name__
-            rendered = _type_alias_crossref(alias, config) or f":py:type:`{cycle_prefix}{self_name}`"
+            rendered = _type_alias_crossref(alias, config) or _alias_name_reference(alias, config)
             continue
         stack.append((_format_node(child, config, short_literals=short_literals), child))
-        if (alias := _underlying_type_alias(child)) is not None:
+        if alias is not None:
             active.add(id(alias))
         rendered = None
 
@@ -189,8 +182,10 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
             rendered_alias = yield alias
         elif (crossref := _type_alias_crossref(alias, config)) is not None:
             rendered_alias = crossref
-        else:  # an undocumented alias: expand its value, with the type params substituted
+        elif _matches_type_params(alias, args):  # an undocumented alias: expand its value, with args substituted
             return (yield _substitute_type_params(alias, args))
+        else:  # a wrong-arity subscript cannot expand, so name the alias instead of leaking its type params
+            rendered_alias = _alias_name_reference(alias, config)
         parts = []
         for arg in args:
             parts.append((yield arg))  # yield is illegal inside a comprehension
@@ -395,12 +390,35 @@ def _underlying_type_alias(annotation: Any) -> TypeAliasType | None:
     return None
 
 
+def _matches_type_params(alias: TypeAliasType, args: tuple[Any, ...]) -> bool:
+    """Whether ``args`` can be substituted: the runtime accepts a wrong-arity subscript, so check it here."""
+    params = alias.__type_params__
+    if any(not isinstance(param, TypeVar) for param in params):  # a TypeVarTuple or ParamSpec absorbs any count
+        return True
+    return len(params) == len(args)
+
+
 def _substitute_type_params(alias: TypeAliasType, args: tuple[Any, ...]) -> Any:
     """Substitute ``args`` into an undocumented generic alias' value, so it expands to concrete types."""
+    if isinstance(value := alias.__value__, TypeVar):
+        # ``type Ident[X] = X`` has a bare type param as its value: it is the substitution, not a container
+        return dict(zip(alias.__type_params__, args, strict=False)).get(value, value)
     try:
-        return alias.__value__[args]
-    except TypeError:  # the value isn't subscriptable, e.g. a bare ``TypeVar``
-        return alias.__value__
+        return value[args]
+    except TypeError:  # the value ignores its type params, e.g. ``type Count[X] = int``
+        return value
+
+
+def _alias_name_reference(alias: TypeAliasType, config: Config) -> str:
+    """
+    Render an alias as a cross-reference to its own name, without expanding its value.
+
+    A cross-module alias may live in a module Sphinx has not read yet, leaving it out of the py domain. Its
+    canonical qualified name resolves in the later xref phase and renders the same short form when the alias
+    is undocumented.
+    """
+    prefix = "" if getattr(config, "typehints_fully_qualified", False) else "~"
+    return f":py:type:`{prefix}{_get_canonical_type_alias_name(alias) or alias.__name__}`"
 
 
 def _type_alias_crossref(annotation: TypeAliasType, config: Config) -> str | None:

@@ -5,9 +5,13 @@ import types
 from pathlib import Path
 from textwrap import dedent
 from typing import TYPE_CHECKING, Any, Union
+from unittest.mock import create_autospec
 
 import pytest
 from conftest import normalize_sphinx_text
+from sphinx.config import Config
+
+from sphinx_autodoc_typehints import format_annotation
 
 if TYPE_CHECKING:
     from io import StringIO
@@ -527,8 +531,7 @@ def test_recursive_type_alias_does_not_recurse_forever(
     monkeypatch.setitem(sys.modules, "mod_720", mod)
     app.build()
     assert "build succeeded" in status.getvalue()
-    value = warning.getvalue().strip()
-    assert not value or "Inline strong start-string without end-string" in value
+    assert not warning.getvalue().strip()
 
     result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
     assert '"RecType"' in result
@@ -685,7 +688,7 @@ def test_pep695_generic_type_alias_documented(
     warning: StringIO,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """A subscripted generic alias cross-references the alias and keeps its args (#740)."""
+    """A subscripted generic alias cross-references the alias and keeps its args."""
     mod = types.ModuleType("mod_generic_alias_doc")
     mod.__file__ = __file__
     exec(  # ruff:ignore[exec-builtin]
@@ -730,7 +733,7 @@ def test_pep695_external_generic_type_alias(
     warning: StringIO,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """A subscripted generic alias from another package resolves to its canonical public name (#740).
+    """A subscripted generic alias from another package resolves to its canonical public name.
 
     This is ``numpy.typing.NDArray[np.void]``: an alias defined in a private module, re-exported from a
     public one, used subscripted. Without unwrapping the subscription it renders as ``GenericAlias``.
@@ -799,8 +802,54 @@ def test_recursive_generic_type_alias_does_not_recurse_forever(
     monkeypatch.setitem(sys.modules, "mod_rec_generic", mod)
     app.build()
     assert "build succeeded" in status.getvalue()
-    value = warning.getvalue().strip()
-    assert not value or "Inline strong start-string without end-string" in value
+    assert not warning.getvalue().strip()
 
     result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
     assert '"RecPair"' in result
+
+
+_mod_generic_edge = types.ModuleType("mod_generic_edge")
+_mod_generic_edge.__file__ = __file__
+exec(  # ruff:ignore[exec-builtin]
+    dedent("""\
+    type Ident[X] = X
+    type Count[X] = int
+    type Nested[X] = list[Ident[X]]
+    type Pair[A, B] = tuple[A, B]
+    type Star[*Ts] = tuple[*Ts]
+    """),
+    _mod_generic_edge.__dict__,
+)
+_ALIAS_XREF = r":py:type:`~mod_generic_edge.Pair`"
+
+
+@pytest.mark.parametrize(
+    ("annotation", "expected"),
+    [
+        pytest.param(_mod_generic_edge.Ident[int], r":py:class:`int`", id="value_is_a_bare_type_param"),
+        pytest.param(_mod_generic_edge.Count[int], r":py:class:`int`", id="value_ignores_its_type_param"),
+        pytest.param(
+            _mod_generic_edge.Nested[int],
+            r":py:class:`list`\ \[:py:class:`int`]",
+            id="value_wraps_another_alias",
+        ),
+        pytest.param(
+            _mod_generic_edge.Star[int, str],
+            r":py:class:`tuple`\ \[:py:class:`int`, :py:class:`str`]",
+            id="variadic_type_param",
+        ),
+        pytest.param(
+            _mod_generic_edge.Pair[int],
+            _ALIAS_XREF + r"\ \[:py:class:`int`]",
+            id="too_few_args",
+        ),
+        pytest.param(
+            _mod_generic_edge.Pair[int, str, bool],
+            _ALIAS_XREF + r"\ \[:py:class:`int`, :py:class:`str`, :py:class:`bool`]",
+            id="too_many_args",
+        ),
+    ],
+)
+def test_undocumented_generic_alias_substitution(annotation: Any, expected: str) -> None:
+    """An undocumented generic alias expands its value, unless the subscript arity rules that out."""
+    assert format_annotation(annotation, create_autospec(Config)) == expected
