@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import contextlib
 import importlib
 import inspect
@@ -198,19 +199,28 @@ def _should_skip_guarded_import_resolution(obj: Any) -> bool:
 
 def _execute_guarded_code(autodoc_mock_imports: list[str], obj: Any, module_code: str) -> None:
     for _, part in _TYPE_GUARD_IMPORT_RE.findall(module_code):
-        guarded_code = textwrap.dedent(part)
         try:
-            _run_guarded_import(autodoc_mock_imports, obj, guarded_code)
-        except Exception as exc:  # ruff:ignore[blind-except]
-            module_name = getattr(obj, "__module__", None) or getattr(obj, "__name__", "?")
-            _LOGGER.warning(
-                "Failed guarded type import in %r: %r",
-                module_name,
-                exc,
-                type="sphinx_autodoc_typehints",
-                subtype="guarded_import",
-                location=get_obj_location(obj),
-            )
+            # One statement at a time, so an unimportable optional dependency cannot strand the names after it — #741
+            statements = [ast.unparse(node) for node in ast.parse(textwrap.dedent(part)).body]
+        except SyntaxError as exc:
+            _warn_guarded_import(obj, exc)
+            continue
+        for statement in statements:
+            try:
+                _run_guarded_import(autodoc_mock_imports, obj, statement)
+            except Exception as exc:  # ruff:ignore[blind-except]
+                _warn_guarded_import(obj, exc)
+
+
+def _warn_guarded_import(obj: Any, exc: Exception) -> None:
+    _LOGGER.warning(
+        "Failed guarded type import in %r: %r",
+        getattr(obj, "__module__", None) or getattr(obj, "__name__", "?"),
+        exc,
+        type="sphinx_autodoc_typehints",
+        subtype="guarded_import",
+        location=get_obj_location(obj),
+    )
 
 
 def _run_guarded_import(autodoc_mock_imports: list[str], obj: Any, guarded_code: str) -> None:
