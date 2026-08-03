@@ -641,3 +641,166 @@ def test_non_subscriptable_generic_annotation(  # pragma: >=3.14 cover
     assert "threw an exception" not in warning.getvalue()
     result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
     assert "DiGraph[int]" in result
+
+
+@pytest.mark.sphinx("text", testroot="integration")
+def test_pep695_generic_type_alias_undocumented(
+    app: SphinxTestApp,
+    status: StringIO,
+    warning: StringIO,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A subscripted generic alias expands to its value with the type params substituted."""
+    mod = types.ModuleType("mod_generic_alias")
+    mod.__file__ = __file__
+    exec(  # ruff:ignore[exec-builtin]
+        dedent("""\
+        from __future__ import annotations
+
+        type Pair[T] = tuple[T, T]
+
+        def pair_func(x: Pair[int]) -> None:
+            \"\"\"Describe.
+
+            :param x: a pair
+            \"\"\"
+            ...
+        """),
+        mod.__dict__,
+    )
+    (Path(app.srcdir) / "index.rst").write_text(".. autofunction:: mod_generic_alias.pair_func")
+    monkeypatch.setitem(sys.modules, "mod_generic_alias", mod)
+    app.build()
+    assert "build succeeded" in status.getvalue()
+    assert not warning.getvalue().strip()
+
+    result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
+    assert '"tuple"["int", "int"]' in result
+
+
+@pytest.mark.sphinx("text", testroot="integration")
+def test_pep695_generic_type_alias_documented(
+    app: SphinxTestApp,
+    status: StringIO,
+    warning: StringIO,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A subscripted generic alias cross-references the alias and keeps its args (#740)."""
+    mod = types.ModuleType("mod_generic_alias_doc")
+    mod.__file__ = __file__
+    exec(  # ruff:ignore[exec-builtin]
+        dedent("""\
+        from __future__ import annotations
+
+        type Pair[T] = tuple[T, T]
+        \"\"\"A pair of things.\"\"\"
+
+        def pair_func(x: Pair[int]) -> None:
+            \"\"\"Describe.
+
+            :param x: a pair
+            \"\"\"
+            ...
+        """),
+        mod.__dict__,
+    )
+    (Path(app.srcdir) / "index.rst").write_text(
+        dedent("""\
+        .. py:type:: mod_generic_alias_doc.Pair
+
+           A pair of things
+
+        .. autofunction:: mod_generic_alias_doc.pair_func
+        """)
+    )
+    monkeypatch.setitem(sys.modules, "mod_generic_alias_doc", mod)
+    app.config.nitpicky = True
+    app.build()
+    assert "build succeeded" in status.getvalue()
+    assert "reference target not found" not in warning.getvalue()
+
+    result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
+    assert '"Pair"["int"]' in result
+
+
+@pytest.mark.sphinx("text", testroot="integration")
+def test_pep695_external_generic_type_alias(
+    app: SphinxTestApp,
+    status: StringIO,
+    warning: StringIO,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A subscripted generic alias from another package resolves to its canonical public name (#740).
+
+    This is ``numpy.typing.NDArray[np.void]``: an alias defined in a private module, re-exported from a
+    public one, used subscripted. Without unwrapping the subscription it renders as ``GenericAlias``.
+    """
+    ext_priv_mod = types.ModuleType("extpkg2._priv")
+    exec("type ExtPair[T] = tuple[T, T]", ext_priv_mod.__dict__)  # ruff:ignore[exec-builtin]
+    ext_alias = ext_priv_mod.__dict__["ExtPair"]
+    ext_pub_mod = types.ModuleType("extpkg2")
+    ext_pub_mod.ExtPair = ext_alias  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "extpkg2._priv", ext_priv_mod)
+    monkeypatch.setitem(sys.modules, "extpkg2", ext_pub_mod)
+
+    user_mod = types.ModuleType("user_mod_generic")
+    user_mod.__dict__["ExtPair"] = ext_alias
+    exec(  # ruff:ignore[exec-builtin]
+        dedent("""\
+        from __future__ import annotations
+
+        def ext_pair_func(x: ExtPair[int]) -> None:
+            \"\"\"Describe.
+
+            :param x: a pair
+            \"\"\"
+            ...
+        """),
+        user_mod.__dict__,
+    )
+    (Path(app.srcdir) / "index.rst").write_text(".. autofunction:: user_mod_generic.ext_pair_func")
+    monkeypatch.setitem(sys.modules, "user_mod_generic", user_mod)
+    app.build()
+    assert "build succeeded" in status.getvalue()
+    assert "GenericAlias" not in warning.getvalue()
+
+    result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
+    assert '"ExtPair"["int"]' in result
+    assert "GenericAlias" not in result
+
+
+@pytest.mark.sphinx("text", testroot="integration")
+def test_recursive_generic_type_alias_does_not_recurse_forever(
+    app: SphinxTestApp,
+    status: StringIO,
+    warning: StringIO,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A generic alias that references itself through its subscripted form builds cleanly."""
+    mod = types.ModuleType("mod_rec_generic")
+    mod.__file__ = __file__
+    exec(  # ruff:ignore[exec-builtin]
+        dedent("""\
+        from __future__ import annotations
+
+        type RecPair[T] = T | list[RecPair[T]]
+        \"\"\"A recursive generic type alias.\"\"\"
+
+        def some_func(some_param: RecPair[int]) -> None:
+            \"\"\"Describe.
+
+            :param some_param: some description
+            \"\"\"
+            ...
+        """),
+        mod.__dict__,
+    )
+    (Path(app.srcdir) / "index.rst").write_text(".. autofunction:: mod_rec_generic.some_func")
+    monkeypatch.setitem(sys.modules, "mod_rec_generic", mod)
+    app.build()
+    assert "build succeeded" in status.getvalue()
+    value = warning.getvalue().strip()
+    assert not value or "Inline strong start-string without end-string" in value
+
+    result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
+    assert '"RecPair"' in result
