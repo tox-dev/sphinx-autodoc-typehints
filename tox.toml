@@ -21,7 +21,8 @@ package = "wheel"
 wheel_build_env = ".pkg"
 dependency_groups = [ "test" ]
 pass_env = [ "DIFF_AGAINST", "PYTEST_*" ]
-set_env = { COVERAGE_FILE = "{work_dir}/.coverage.{env_name}" }
+# sysmon, the coverage core Python 3.14+ defaults to, cannot record the dynamic contexts --cov-context asks for
+set_env = { COVERAGE_FILE = "{work_dir}/.coverage.{env_name}", COVERAGE_CORE = "ctrace" }
 commands = [
   [
     "python",
@@ -83,3 +84,10 @@ description = "generate a DEV environment"
 package = "editable"
 dependency_groups = [ "dev" ]
 commands = [ [ "uv", "pip", "tree" ], [ "python", "-c", "import sys; print(sys.executable)" ] ]
+
+# 3.15 ships no compiled coverage tracer yet, leaving the pure-Python core as the only one recording contexts
+[env."3.15"]
+set_env = { COVERAGE_FILE = "{work_dir}/.coverage.{env_name}", COVERAGE_CORE = "pytrace" }
+
+[env."3.15t"]
+set_env = { COVERAGE_FILE = "{work_dir}/.coverage.{env_name}", COVERAGE_CORE = "pytrace" }
