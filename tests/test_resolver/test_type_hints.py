@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import csv
 import importlib
+import re
 import subprocess  # ruff:ignore[suspicious-subprocess-import]
 import sys
 import sysconfig
 import types
-from collections.abc import Sequence
+from collections.abc import Callable, Iterator, Sequence
 from csv import Error
+from decimal import Decimal
 from pathlib import Path
 from typing import Any, TypeAliasType, Union, get_args, get_origin
 from unittest.mock import MagicMock, patch
@@ -142,6 +144,57 @@ def test_guarded_import_warning_includes_module() -> None:
 def test_get_all_type_hints_for_class_owning_the_type_params_slot() -> None:
     """typing.TypeAliasType hands back the __type_params__ descriptor rather than a tuple (issue #740)."""
     assert get_all_type_hints([], TypeAliasType, "mod.TypeAliasType", {}) == {}
+
+
+@pytest.fixture
+def guarded_module(tmp_path: Path, request: pytest.FixtureRequest) -> Iterator[Callable[[str], types.ModuleType]]:
+    name = re.sub(r"\W", "_", request.node.name)
+    sys.path.insert(0, str(tmp_path))
+
+    def build(source: str) -> types.ModuleType:
+        (tmp_path / f"{name}.py").write_text(source)
+        return importlib.import_module(name)
+
+    yield build
+    sys.path.remove(str(tmp_path))
+    sys.modules.pop(name, None)
+
+
+def test_guarded_import_binds_names_below_an_unimportable_one(
+    guarded_module: Callable[[str], types.ModuleType],
+) -> None:
+    """An absent optional dependency must not strand the imports under it (issue #741)."""
+    module = guarded_module(
+        "from __future__ import annotations\n"
+        "from typing import TYPE_CHECKING\n"
+        "\n"
+        "if TYPE_CHECKING:\n"
+        "    from no_such_dependency import Absent\n"
+        "    from decimal import Decimal\n"
+        "\n"
+        "def func(value: Decimal) -> None: ...\n"
+    )
+    assert get_all_type_hints([], module.func, f"{module.__name__}.func", {})["value"] is Decimal
+
+
+def test_guarded_import_warns_when_the_block_does_not_parse(
+    guarded_module: Callable[[str], types.ModuleType],
+) -> None:
+    """A block truncated mid-literal by the guard regex is reported rather than raised (issue #741)."""
+    module = guarded_module(
+        "from typing import TYPE_CHECKING\n"
+        "\n"
+        "if TYPE_CHECKING:\n"
+        '    DOC = """\n'
+        "text\n"
+        '"""\n'
+        "\n"
+        "def func(value: int) -> None: ...\n"
+    )
+    mock_logger = MagicMock()
+    with patch("sphinx_autodoc_typehints._resolver._type_hints._LOGGER", mock_logger):
+        get_all_type_hints([], module.func, f"{module.__name__}.func", {})
+    assert "unterminated triple-quoted string literal" in str(mock_logger.warning.call_args)
 
 
 def test_build_localns_adds_ancestor_classes() -> None:
@@ -310,6 +363,28 @@ def test_stub_annotations_not_polluted_on_repeated_calls(tmp_path: Path) -> None
         for name in [n for n in sys.modules if n.startswith("stubpkg")]:
             del sys.modules[name]
         _TYPE_GUARD_IMPORTS_RESOLVED.discard("stubpkg.mod")
+
+
+def test_get_all_type_hints_crossrefs_names_from_stub_only_modules(tmp_path: Path) -> None:
+    """numpy's _polybase.pyi imports from _polytypes.pyi, which ships no runtime module (issue #741)."""
+    pkg = tmp_path / "stubonlypkg"
+    pkg.mkdir()
+    (pkg / "__init__.py").write_text("")
+    (pkg / "_types.pyi").write_text("from typing import Any\n_SeriesLike = Any\n")
+    (pkg / "poly.py").write_text("class Poly:\n    def __init__(self, coef): ...\n")
+    (pkg / "poly.pyi").write_text(
+        "from ._types import _SeriesLike\nclass Poly:\n    def __init__(self, coef: _SeriesLike) -> None: ...\n"
+    )
+    sys.path.insert(0, str(tmp_path))
+    try:
+        mod = importlib.import_module("stubonlypkg.poly")
+        hint = get_all_type_hints([], mod.Poly, "stubonlypkg.poly.Poly", {})["coef"]
+    finally:
+        sys.path.remove(str(tmp_path))
+        for name in [n for n in sys.modules if n.startswith("stubonlypkg")]:
+            del sys.modules[name]
+    assert isinstance(hint, MyTypeAliasForwardRef)
+    assert hint.name == "_SeriesLike"
 
 
 @pytest.mark.skipif(sys.version_info < (3, 14), reason="annotationlib requires Python 3.14+")

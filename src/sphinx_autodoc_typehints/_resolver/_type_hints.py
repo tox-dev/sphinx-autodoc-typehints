@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import contextlib
 import importlib
 import inspect
@@ -50,17 +51,17 @@ def get_all_type_hints(
         stub_obj = _stub_target(obj) if inspect.isclass(obj) else obj
         result = backfill_type_hints(stub_obj, name)
         stub_localns: dict[str, Any] = {}
-        stub_alias_names: set[str] = set()
+        stub_crossref_names: set[str] = set()
         stub_owner_module: str = ""
         if not result:
             result = _backfill_from_stub(stub_obj)
             if result:
-                stub_localns, stub_alias_names, stub_owner_module = _get_stub_context(stub_obj)
+                stub_localns, stub_crossref_names, stub_owner_module = _get_stub_context(stub_obj)
         combined_localns = {**stub_localns, **localns}
-        for alias_name in stub_alias_names:
-            ref = MyTypeAliasForwardRef(alias_name)
+        for crossref_name in stub_crossref_names:
+            ref = MyTypeAliasForwardRef(crossref_name)
             ref.crossref = True
-            combined_localns[alias_name] = ref
+            combined_localns[crossref_name] = ref
         try:
             obj.__annotations__ = result
         except (AttributeError, TypeError):
@@ -92,11 +93,11 @@ def get_descriptor_type_hint(obj: Any) -> Any | None:
     """
     if (annotation := _backfill_descriptor_annotation(obj)) is None:
         return None
-    localns, alias_names, owner_module = _get_stub_context(obj)
-    for alias_name in alias_names:
-        ref = MyTypeAliasForwardRef(alias_name)
+    localns, crossref_names, owner_module = _get_stub_context(obj)
+    for crossref_name in crossref_names:
+        ref = MyTypeAliasForwardRef(crossref_name)
         ref.crossref = True
-        localns[alias_name] = ref
+        localns[crossref_name] = ref
     return _resolve_string_annotations(obj, {"return": annotation}, localns, owner_module)["return"]
 
 
@@ -198,19 +199,28 @@ def _should_skip_guarded_import_resolution(obj: Any) -> bool:
 
 def _execute_guarded_code(autodoc_mock_imports: list[str], obj: Any, module_code: str) -> None:
     for _, part in _TYPE_GUARD_IMPORT_RE.findall(module_code):
-        guarded_code = textwrap.dedent(part)
         try:
-            _run_guarded_import(autodoc_mock_imports, obj, guarded_code)
-        except Exception as exc:  # ruff:ignore[blind-except]
-            module_name = getattr(obj, "__module__", None) or getattr(obj, "__name__", "?")
-            _LOGGER.warning(
-                "Failed guarded type import in %r: %r",
-                module_name,
-                exc,
-                type="sphinx_autodoc_typehints",
-                subtype="guarded_import",
-                location=get_obj_location(obj),
-            )
+            # One statement at a time, so an unimportable optional dependency cannot strand the names after it — #741
+            statements = [ast.unparse(node) for node in ast.parse(textwrap.dedent(part)).body]
+        except SyntaxError as exc:
+            _warn_guarded_import(obj, exc)
+            continue
+        for statement in statements:
+            try:
+                _run_guarded_import(autodoc_mock_imports, obj, statement)
+            except Exception as exc:  # ruff:ignore[blind-except]
+                _warn_guarded_import(obj, exc)
+
+
+def _warn_guarded_import(obj: Any, exc: Exception) -> None:
+    _LOGGER.warning(
+        "Failed guarded type import in %r: %r",
+        getattr(obj, "__module__", None) or getattr(obj, "__name__", "?"),
+        exc,
+        type="sphinx_autodoc_typehints",
+        subtype="guarded_import",
+        location=get_obj_location(obj),
+    )
 
 
 def _run_guarded_import(autodoc_mock_imports: list[str], obj: Any, guarded_code: str) -> None:
