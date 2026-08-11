@@ -99,7 +99,9 @@ class Slotted:
 class Metaclass(type): ...
 
 
-PY312_PLUS = sys.version_info >= (3, 12)
+# The interpreter reports NoneType instead of None for an unset ParamSpec bound before CPython gh-151955 (fixed at
+# patch level, e.g. present in 3.13.15 but not 3.14.7), so probe the runtime instead of the version.
+_NONE_BOUND = ", bound= :py:obj:`None`" if P.__bound__ is not None else ""
 
 
 @pytest.mark.parametrize(
@@ -372,17 +374,15 @@ _CASES = [
     pytest.param(Y, r":py:class:`~typing.TypeVar`\ \(``Y``, bound= :py:class:`str`)", id="Y"),
     pytest.param(Z, r":py:class:`~typing.TypeVar`\ \(``Z``, bound= A)", id="Z"),
     pytest.param(S, r":py:class:`~typing.TypeVar`\ \(``S``, bound= miss)", id="S"),
-    pytest.param(
-        P, rf":py:class:`~typing.ParamSpec`\ \(``P``{', bound= :py:obj:`None`' if PY312_PLUS else ''})", id="P"
-    ),
+    pytest.param(P, rf":py:class:`~typing.ParamSpec`\ \(``P``{_NONE_BOUND})", id="P"),
     pytest.param(
         P_co,
-        rf":py:class:`~typing.ParamSpec`\ \(``P_co``{', bound= :py:obj:`None`' if PY312_PLUS else ''}, covariant=True)",
+        rf":py:class:`~typing.ParamSpec`\ \(``P_co``{_NONE_BOUND}, covariant=True)",
         id="P_co",
     ),
     pytest.param(
         P_contra,
-        rf":py:class:`~typing.ParamSpec`\ \(``P_contra``{', bound= :py:obj:`None`' if PY312_PLUS else ''}"
+        rf":py:class:`~typing.ParamSpec`\ \(``P_contra``{_NONE_BOUND}"
         ", contravariant=True)",
         id="P-contra",
     ),
