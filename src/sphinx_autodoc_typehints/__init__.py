@@ -5,6 +5,7 @@ from __future__ import annotations
 import inspect
 import re
 import types
+from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from docutils import nodes
@@ -40,11 +41,12 @@ from .patches import _OVERLOADS_CACHE, install_patches
 from .version import __version__
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterator
 
     from docutils.nodes import Node
     from docutils.parsers.rst import states
     from sphinx.application import Sphinx
+    from sphinx.config import Config
     from sphinx.environment import BuildEnvironment
     from sphinx.ext.autodoc import Options
 
@@ -196,17 +198,36 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
     for param, hint in type_hints.items():
         if id(hint) in eager_aliases:
             type_hints[param] = eager_aliases[id(hint)]
-    app.config._annotation_globals = getattr(obj, "__globals__", {})  # ruff:ignore[private-member-access]
-    app.config._typehints_env = env  # ruff:ignore[private-member-access]
-    app.config._typehints_module_prefix = module_prefix  # ruff:ignore[private-member-access]
-    try:
+    with _annotation_state(
+        app.config,
+        _annotation_globals=getattr(obj, "__globals__", {}),
+        _typehints_env=env,
+        _typehints_module_prefix=module_prefix,
+    ):
         has_overloads = _inject_overload_signatures(app, what, name, obj, lines)
         _inject_types_to_docstring(type_hints, signature, original_obj, app, what, name, lines, has_overloads)
         _inject_ivar_types(ivar_annotations, app, lines)
+
+
+@contextmanager
+def _annotation_state(config: Config, **values: Any) -> Iterator[None]:
+    """
+    Publish the state format_annotation reads off the config, restoring what was there.
+
+    Documenting an object can re-enter this handler for another one, and deleting the attributes
+    on the way out of the inner call then broke the outer call's teardown (#750).
+    """
+    previous = {name: getattr(config, name) for name in values if hasattr(config, name)}
+    for name, value in values.items():
+        setattr(config, name, value)
+    try:
+        yield
     finally:
-        del app.config._annotation_globals  # ruff:ignore[private-member-access]
-        del app.config._typehints_env  # ruff:ignore[private-member-access]
-        del app.config._typehints_module_prefix  # ruff:ignore[private-member-access]
+        for name in values:
+            if name in previous:
+                setattr(config, name, previous[name])
+            else:
+                delattr(config, name)
 
 
 def _maybe_inject_descriptor_type(app: Sphinx, what: str, obj: Any, lines: list[str]) -> None:
