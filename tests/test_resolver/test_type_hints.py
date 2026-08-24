@@ -197,6 +197,68 @@ def test_guarded_import_warns_when_the_block_does_not_parse(
     assert "unterminated triple-quoted string literal" in str(mock_logger.warning.call_args)
 
 
+def test_guarded_import_warns_when_a_compound_statement_hides_it(
+    guarded_module: Callable[[str], types.ModuleType],
+) -> None:
+    """A version gated or try/except import still reports the absent dependency (issue #751)."""
+    module = guarded_module(
+        "from __future__ import annotations\n"
+        "from typing import TYPE_CHECKING\n"
+        "\n"
+        "if TYPE_CHECKING:\n"
+        "    try:\n"
+        "        from no_such_dependency import Absent\n"
+        "    except ImportError:\n"
+        "        from no_such_fallback import Absent\n"
+        "\n"
+        "def func(value: Absent) -> None: ...\n"
+    )
+    mock_logger = MagicMock()
+    with patch("sphinx_autodoc_typehints._resolver._type_hints._LOGGER", mock_logger):
+        get_all_type_hints([], module.func, f"{module.__name__}.func", {})
+    assert "Failed guarded type import" in str(mock_logger.warning.call_args_list)
+
+
+def test_guarded_comprehension_target_leaves_the_builtin_alone(
+    guarded_module: Callable[[str], types.ModuleType],
+) -> None:
+    """Only the statement's own targets are stood in, so a comprehension variable cannot shadow a builtin (#751)."""
+    module = guarded_module(
+        "from __future__ import annotations\n"
+        "from typing import TYPE_CHECKING\n"
+        "\n"
+        "if TYPE_CHECKING:\n"
+        "    from decimal import Decimal\n"
+        "    REGISTRY = {type: Decimal[type] for type in (int, str)}\n"
+        "\n"
+        "def func(value: type, registry: REGISTRY) -> None: ...\n"
+    )
+    hints = get_all_type_hints([], module.func, f"{module.__name__}.func", {})
+    assert hints["value"] is type
+    assert hints["registry"].name == "REGISTRY"
+
+
+def test_guarded_version_gated_alias_binds_its_name(
+    guarded_module: Callable[[str], types.ModuleType],
+) -> None:
+    """A failing annotated assignment nested in a version check still leaves its name usable (#751)."""
+    module = guarded_module(
+        "from __future__ import annotations\n"
+        "import sys\n"
+        "from typing import TYPE_CHECKING, TypeAlias\n"
+        "\n"
+        "if TYPE_CHECKING:\n"
+        "    from decimal import Decimal\n"
+        "    if sys.version_info >= (3, 12):\n"
+        "        Coords: TypeAlias = Decimal[int]\n"
+        "    else:\n"
+        "        Coords: TypeAlias = Decimal\n"
+        "\n"
+        "def func(value: Coords) -> None: ...\n"
+    )
+    assert get_all_type_hints([], module.func, f"{module.__name__}.func", {})["value"].name == "Coords"
+
+
 def test_build_localns_adds_ancestor_classes() -> None:
     import tests.roots.test_nested_attrs_localns as mod  # ruff:ignore[import-outside-top-level]
 
