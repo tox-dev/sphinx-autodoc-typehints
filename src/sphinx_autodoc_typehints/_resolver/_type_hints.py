@@ -25,7 +25,7 @@ if sys.version_info >= (3, 14):  # pragma: >=3.14 cover
     import annotationlib
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Iterator, Mapping
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -209,9 +209,10 @@ def _execute_guarded_code(autodoc_mock_imports: list[str], obj: Any, module_code
             try:
                 _run_guarded_import(autodoc_mock_imports, obj, ast.unparse(statement))
             except Exception as exc:  # ruff:ignore[blind-except]
-                if isinstance(statement, ast.Import | ast.ImportFrom):
+                if any(isinstance(node, ast.Import | ast.ImportFrom) for node in ast.walk(statement)):
                     _warn_guarded_import(obj, exc)
                 else:
+                    _LOGGER.debug("Skipped guarded statement the interpreter rejects: %r", exc)
                     _bind_unresolvable_names(obj, statement)
 
 
@@ -232,13 +233,23 @@ def _bind_unresolvable_names(obj: Any, statement: ast.stmt) -> None:
 
     Type checkers accept constructs the interpreter rejects, e.g. ``TypeVar("T", bound="A" | B)`` (#751).
     """
-    if isinstance(statement, ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef):
-        names = [statement.name]
-    else:
-        names = [n.id for n in ast.walk(statement) if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Store)]
     namespace = getattr(obj, "__globals__", obj.__dict__)
-    for name in names:
+    for name in _defined_names(statement):
         namespace.setdefault(name, MyTypeAliasForwardRef(name))
+
+
+def _defined_names(node: ast.AST) -> Iterator[str]:
+    """Names the node binds, taking only its own targets so loop and comprehension variables stay out."""
+    if isinstance(node, ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef):
+        yield node.name
+    elif isinstance(node, ast.Assign):
+        yield from (target.id for target in node.targets if isinstance(target, ast.Name))
+    elif isinstance(node, ast.AnnAssign):
+        if isinstance(node.target, ast.Name):
+            yield node.target.id
+    elif isinstance(node, ast.stmt):
+        for child in ast.iter_child_nodes(node):
+            yield from _defined_names(child)
 
 
 def _run_guarded_import(autodoc_mock_imports: list[str], obj: Any, guarded_code: str) -> None:
