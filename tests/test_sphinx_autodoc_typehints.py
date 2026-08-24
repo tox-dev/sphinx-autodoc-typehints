@@ -395,6 +395,14 @@ def test_resolve_typing_guard_attrs_imports(app: SphinxTestApp, status: StringIO
     assert not warning.getvalue()
 
 
+@pytest.mark.sphinx("text", testroot="reentrant-formatter")
+def test_reentrant_formatter_keeps_the_build_alive(app: SphinxTestApp, status: StringIO, warning: StringIO) -> None:
+    """A formatter documenting a second object must not abort the build (#750)."""
+    app.build()
+    assert "build succeeded" in status.getvalue()
+    assert not warning.getvalue()
+
+
 @pytest.mark.sphinx("text", testroot="dummy")
 def test_sphinx_output_formatter_no_use_rtype(app: SphinxTestApp, status: StringIO) -> None:
     app.config.master_doc = "simple_no_use_rtype"  # create flag
