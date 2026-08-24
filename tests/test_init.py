@@ -433,21 +433,23 @@ def test_setup_returns_version() -> None:
 
 
 def test_process_docstring_reentrant_call_keeps_outer_state() -> None:
-    """A formatter documenting a second object must not break the outer teardown (#750)."""
+    """A nested call must hand the outer one its own state back (#750)."""
 
     def inner(flag: str) -> str: ...
 
     def outer(flag: bool) -> bool: ...
 
     app = make_docstring_app()
+    prefix_after_nesting = []
 
-    def formatter(annotation: Any, config: Config) -> None:  # ruff:ignore[unused-function-argument]
+    def formatter(annotation: Any, config: Config) -> None:
         if annotation is bool:
-            process_docstring(app, "function", "test.inner", inner, None, ["Inner.", "", ":return: it"])
+            process_docstring(app, "function", "inner_mod.inner", inner, None, ["Inner.", "", ":return: it"])
+            prefix_after_nesting.append(config._typehints_module_prefix)  # ruff:ignore[private-member-access]
 
     app.config.typehints_formatter = formatter
     lines = ["Outer.", "", ":param flag: the flag", ":return: it"]
-    process_docstring(app, "function", "test.outer", outer, None, lines)
+    process_docstring(app, "function", "outer_mod.outer", outer, None, lines)
     bool_type = ":sphinx_autodoc_typehints_type:`\\:py\\:class\\:\\`bool\\``"
     assert lines == [
         "Outer.",
@@ -458,3 +460,4 @@ def test_process_docstring_reentrant_call_keeps_outer_state() -> None:
         f":rtype: {bool_type}",
         ":return: it",
     ]
+    assert prefix_after_nesting == ["outer_mod", "outer_mod"]
