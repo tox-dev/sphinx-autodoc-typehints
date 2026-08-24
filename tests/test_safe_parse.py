@@ -74,7 +74,15 @@ class _TrackingDirective(Directive):
 def test_intersphinx_role_resolves_during_snippet_parse(
     app: SphinxTestApp, status: StringIO, warning: StringIO
 ) -> None:
-    """The snippet parse must not shadow the intersphinx role dispatcher (#753)."""
+    """Neither the snippet parse nor the type role may shadow the intersphinx dispatcher (#753)."""
     app.build()
     assert "build succeeded" in status.getvalue()
-    assert "unknown role name" not in warning.getvalue()
+    assert not warning.getvalue()
+
+
+@pytest.mark.sphinx("text", testroot="intersphinx-missing-inventory")
+def test_snippet_parse_stays_quiet(app: SphinxTestApp, status: StringIO, warning: StringIO) -> None:
+    """A reference the role cannot resolve is reported by the real parse alone (#753)."""
+    app.build()
+    assert "build succeeded" in status.getvalue()
+    assert warning.getvalue().count("inventory for external cross-reference not found") == 1

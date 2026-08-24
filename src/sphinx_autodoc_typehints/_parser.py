@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 
 from docutils.utils import new_document
 from sphinx.parsers import RSTParser
-from sphinx.util.docutils import sphinx_domains
 
 if TYPE_CHECKING:
     import optparse
@@ -23,9 +22,9 @@ class _RstSnippetParser(RSTParser):
 
 
 def parse(inputstr: str, settings: Values | optparse.Values) -> nodes.document:
-    """Parse inputstr and return a docutils document."""
+    """Parse inputstr and return a docutils document. Callers must already be inside ``sphinx_domains``."""
     doc = new_document("", settings=settings)  # ty: ignore[invalid-argument-type]
-    with sphinx_domains(settings.env):
-        parser = _RstSnippetParser()
-        parser.parse(inputstr, doc)
+    # Entering sphinx_domains again shadows the intersphinx dispatcher layered on top of it,
+    # losing the external+ roles the read phase resolves (#753)
+    _RstSnippetParser().parse(inputstr, doc)
     return doc
