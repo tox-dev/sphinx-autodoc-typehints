@@ -15,7 +15,6 @@ from docutils.frontend import get_default_settings
 from docutils.parsers.rst import Directive, directives
 from docutils.utils import new_document
 from sphinx.parsers import RSTParser
-from sphinx.util.docutils import sphinx_domains
 
 from sphinx_autodoc_typehints._parser import _RstSnippetParser
 
@@ -109,13 +108,13 @@ def _safe_parse(inputstr: str, settings: Values | optparse.Values) -> nodes.docu
         return cls, messages
 
     doc = new_document("", settings=settings)  # ty: ignore[invalid-argument-type]
-    with sphinx_domains(settings.env):
-        directives.directive = _safe_directive_lookup  # type: ignore[assignment]
-        try:
-            parser = _RstSnippetParser()
-            parser.parse(inputstr, doc)
-        finally:
-            directives.directive = original_lookup
+    # The read phase already runs inside sphinx_domains; entering it again shadows the intersphinx
+    # dispatcher layered on top of it, losing the external+ roles (#753)
+    directives.directive = _safe_directive_lookup  # type: ignore[assignment]
+    try:
+        _RstSnippetParser().parse(inputstr, doc)
+    finally:
+        directives.directive = original_lookup
     return doc
 
 

@@ -1,4 +1,4 @@
-"""Tests that snippet parsing doesn't trigger extension directive side-effects."""
+"""Tests that the throwaway snippet parse leaves the real build untouched."""
 
 from __future__ import annotations
 
@@ -68,3 +68,13 @@ class _TrackingDirective(Directive):
     def run(self) -> list:
         _TrackingDirective.executions.append(self.content[0] if self.content else "")
         return []
+
+
+@pytest.mark.sphinx("text", testroot="intersphinx-external-role")
+def test_intersphinx_role_resolves_during_snippet_parse(
+    app: SphinxTestApp, status: StringIO, warning: StringIO
+) -> None:
+    """The snippet parse must not shadow the intersphinx role dispatcher (#753)."""
+    app.build()
+    assert "build succeeded" in status.getvalue()
+    assert "unknown role name" not in warning.getvalue()
