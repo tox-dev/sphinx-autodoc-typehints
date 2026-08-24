@@ -140,6 +140,9 @@ lint.per-file-ignores."tests/roots/test-pyi-stubs/stub_mod.py" = [
 lint.per-file-ignores."tests/roots/test-pyi-stubs/stub_mod.pyi" = [
   "I002", # stub files don't use `from __future__ import annotations`
 ]
+lint.per-file-ignores."tests/roots/test-unexecutable-guard/demo_unexecutable_guard.py" = [
+  "UP047", # the legacy TypeVar spelling is what the guard cannot execute
+]
 lint.per-file-ignores."tests/test_resolver/test_type_comments.py" = [
   "ANN001", # type comment fixtures intentionally omit annotations
   "ARG001", # type comment fixtures have intentionally unused args
