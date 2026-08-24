@@ -131,9 +131,6 @@ lint.per-file-ignores."tests/roots/test-integration/mod_forward_ref.py" = [
   "I002",    # intentionally omits `from __future__ import annotations` to test forward references
   "PLR6301", # method must be instance method to test class forward refs
 ]
-lint.per-file-ignores."tests/roots/test-unexecutable-guard/demo_unexecutable_guard.py" = [
-  "UP047", # the legacy TypeVar spelling is what the guard cannot execute
-]
 lint.per-file-ignores."tests/roots/test-pyi-stubs/stub_mod.py" = [
   "ANN",     # intentionally has no type annotations to simulate a C extension
   "I002",    # intentionally omits `from __future__ import annotations`
@@ -142,6 +139,9 @@ lint.per-file-ignores."tests/roots/test-pyi-stubs/stub_mod.py" = [
 ]
 lint.per-file-ignores."tests/roots/test-pyi-stubs/stub_mod.pyi" = [
   "I002", # stub files don't use `from __future__ import annotations`
+]
+lint.per-file-ignores."tests/roots/test-unexecutable-guard/demo_unexecutable_guard.py" = [
+  "UP047", # the legacy TypeVar spelling is what the guard cannot execute
 ]
 lint.per-file-ignores."tests/test_resolver/test_type_comments.py" = [
   "ANN001", # type comment fixtures intentionally omit annotations
