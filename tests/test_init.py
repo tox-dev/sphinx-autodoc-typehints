@@ -430,3 +430,31 @@ def test_setup_returns_version() -> None:
     assert result["version"] == __version__
     assert result["parallel_read_safe"] is True
     assert result["parallel_write_safe"] is True
+
+
+def test_process_docstring_reentrant_call_keeps_outer_state() -> None:
+    """A formatter documenting a second object must not break the outer teardown (#750)."""
+
+    def inner(flag: str) -> str: ...
+
+    def outer(flag: bool) -> bool: ...
+
+    app = make_docstring_app()
+
+    def formatter(annotation: Any, config: Config) -> None:  # ruff:ignore[unused-function-argument]
+        if annotation is bool:
+            process_docstring(app, "function", "test.inner", inner, None, ["Inner.", "", ":return: it"])
+
+    app.config.typehints_formatter = formatter
+    lines = ["Outer.", "", ":param flag: the flag", ":return: it"]
+    process_docstring(app, "function", "test.outer", outer, None, lines)
+    bool_type = ":sphinx_autodoc_typehints_type:`\\:py\\:class\\:\\`bool\\``"
+    assert lines == [
+        "Outer.",
+        "",
+        f":type flag: {bool_type}",
+        ":param flag: the flag",
+        "",
+        f":rtype: {bool_type}",
+        ":return: it",
+    ]
