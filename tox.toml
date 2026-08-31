@@ -58,6 +58,13 @@ commands = [
   ],
 ]
 
+# 3.15 ships no compiled coverage tracer yet, leaving the pure-Python core as the only one recording contexts
+[env."3.15"]
+set_env = { COVERAGE_FILE = "{work_dir}/.coverage.{env_name}", COVERAGE_CORE = "pytrace" }
+
+[env."3.15t"]
+set_env = { COVERAGE_FILE = "{work_dir}/.coverage.{env_name}", COVERAGE_CORE = "pytrace" }
+
 [env.fix]
 description = "format the code base to adhere to our styles, and complain about what we cannot do automatically"
 skip_install = true
@@ -84,10 +91,3 @@ description = "generate a DEV environment"
 package = "editable"
 dependency_groups = [ "dev" ]
 commands = [ [ "uv", "pip", "tree" ], [ "python", "-c", "import sys; print(sys.executable)" ] ]
-
-# 3.15 ships no compiled coverage tracer yet, leaving the pure-Python core as the only one recording contexts
-[env."3.15"]
-set_env = { COVERAGE_FILE = "{work_dir}/.coverage.{env_name}", COVERAGE_CORE = "pytrace" }
-
-[env."3.15t"]
-set_env = { COVERAGE_FILE = "{work_dir}/.coverage.{env_name}", COVERAGE_CORE = "pytrace" }
