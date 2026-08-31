@@ -109,20 +109,21 @@ lint.ignore = [
   "S104",   # Possible binding to all interface
 ]
 lint.per-file-ignores."tests/**/*.py" = [
-  "B903",    # test fixture classes intentionally use plain __init__ without dataclass
-  "D",       # don't care about documentation in tests
-  "FBT",     # don't care about booleans as positional arguments in tests
-  "INP001",  # no implicit namespace
-  "PLC2701", # private imports
-  "PLR0913", # any number of arguments in tests
-  "PLR0917", # any number of arguments in tests
-  "PLR2004", # Magic value used in comparison, consider replacing with a constant variable
-  "PYI033",  # we test for legacy `# type:` comments
-  "S101",    # asserts allowed in tests
-  "S603",    # `subprocess` call: check for execution of untrusted input
-  "UP006",   # we test for old List/Tuple syntax
-  "UP007",   # we test for old Union syntax
-  "UP045",   # we test for old Optional syntax
+  "B903",                   # test fixture classes intentionally use plain __init__ without dataclass
+  "D",                      # don't care about documentation in tests
+  "FBT",                    # don't care about booleans as positional arguments in tests
+  "INP001",                 # no implicit namespace
+  "PLC2701",                # private imports
+  "PLR0913",                # any number of arguments in tests
+  "PLR0917",                # any number of arguments in tests
+  "PLR2004",                # Magic value used in comparison, consider replacing with a constant variable
+  "PYI033",                 # we test for legacy `# type:` comments
+  "pytest-fixture-autouse", # shared setup fixtures are meant to apply to every test
+  "S101",                   # asserts allowed in tests
+  "S603",                   # `subprocess` call: check for execution of untrusted input
+  "UP006",                  # we test for old List/Tuple syntax
+  "UP007",                  # we test for old Union syntax
+  "UP045",                  # we test for old Optional syntax
 ]
 lint.per-file-ignores."tests/roots/test-integration/mod_eager.py" = [
   "I002", # this file intentionally omits `from __future__ import annotations` to test non-deferred annotations
