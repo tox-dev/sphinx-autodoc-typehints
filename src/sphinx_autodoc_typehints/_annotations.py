@@ -171,6 +171,8 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
     if isinstance(annotation, TypeAliasType):
         if (crossref := _type_alias_crossref(annotation, config)) is not None:
             return crossref
+        if not _can_expand_alias(annotation, config):
+            return _alias_name_reference(annotation, config)
         return (yield annotation.__value__)
 
     if isinstance(alias := get_origin(annotation), TypeAliasType | TypeAliasForwardRef):
@@ -182,9 +184,9 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
             rendered_alias = yield alias
         elif (crossref := _type_alias_crossref(alias, config)) is not None:
             rendered_alias = crossref
-        elif _matches_type_params(alias, args):  # an undocumented alias: expand its value, with args substituted
+        elif _matches_type_params(alias, args) and _can_expand_alias(alias, config):  # undocumented: expand its value
             return (yield _substitute_type_params(alias, args))
-        else:  # a wrong-arity subscript cannot expand, so name the alias instead of leaking its type params
+        else:  # cannot expand, so name the alias instead of leaking its type params
             rendered_alias = _alias_name_reference(alias, config)
         parts = []
         for arg in args:
@@ -388,6 +390,30 @@ def _underlying_type_alias(annotation: Any) -> TypeAliasType | None:
     if isinstance(origin := get_origin(annotation), TypeAliasType):
         return origin
     return None
+
+
+def _can_expand_alias(alias: TypeAliasType, config: Config) -> bool:
+    """
+    Whether the alias' lazily evaluated value is available.
+
+    A module reached only through an annotation has not had its ``if TYPE_CHECKING`` block executed, so the names
+    the value uses can still be missing; run that block before giving up, so what we render does not depend on the
+    order Sphinx reads modules in (#764).
+    """
+    if _alias_value_evaluates(alias):
+        return True
+    if (resolve_guarded_imports := getattr(config, "_typehints_resolve_guarded_imports", None)) is None:
+        return False
+    resolve_guarded_imports(inspect.getmodule(alias))
+    return _alias_value_evaluates(alias)
+
+
+def _alias_value_evaluates(alias: TypeAliasType) -> bool:
+    try:
+        _ = alias.__value__
+    except NameError:
+        return False
+    return True
 
 
 def _matches_type_params(alias: TypeAliasType, args: tuple[Any, ...]) -> bool:
