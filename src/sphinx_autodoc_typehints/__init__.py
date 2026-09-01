@@ -6,6 +6,7 @@ import inspect
 import re
 import types
 from contextlib import contextmanager
+from functools import partial
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from docutils import nodes
@@ -36,6 +37,7 @@ from ._resolver import (
     get_descriptor_type_hint,
     get_instance_var_annotations,
     get_obj_location,
+    resolve_type_guarded_imports,
 )
 from .patches import _OVERLOADS_CACHE, install_patches
 from .version import __version__
@@ -203,6 +205,7 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
         _annotation_globals=getattr(obj, "__globals__", {}),
         _typehints_env=env,
         _typehints_module_prefix=module_prefix,
+        _typehints_resolve_guarded_imports=partial(resolve_type_guarded_imports, app.config.autodoc_mock_imports),
     ):
         has_overloads = _inject_overload_signatures(app, what, name, obj, lines)
         _inject_types_to_docstring(type_hints, signature, original_obj, app, what, name, lines, has_overloads)

@@ -127,7 +127,7 @@ def _resolve_string_annotations(
 
 
 def _get_type_hint(autodoc_mock_imports: list[str], name: str, obj: Any, localns: Mapping[str, Any]) -> dict[str, Any]:
-    _resolve_type_guarded_imports(autodoc_mock_imports, obj)
+    resolve_type_guarded_imports(autodoc_mock_imports, obj)
     localns = _build_localns(obj, localns)
     try:
         if getattr(obj, "__no_type_check__", False):
@@ -171,7 +171,8 @@ def _get_forward_ref_annotations(obj: Any) -> dict[str, Any]:  # pragma: >=3.14 
         return {}
 
 
-def _resolve_type_guarded_imports(autodoc_mock_imports: list[str], obj: Any) -> None:
+def resolve_type_guarded_imports(autodoc_mock_imports: list[str], obj: Any) -> None:
+    """Execute the ``if TYPE_CHECKING`` block of *obj*'s module, binding the names it guards."""
     if _should_skip_guarded_import_resolution(obj):
         return
 
@@ -189,7 +190,7 @@ def _resolve_type_guarded_imports(autodoc_mock_imports: list[str], obj: Any) -> 
 
 def _should_skip_guarded_import_resolution(obj: Any) -> bool:
     if isinstance(obj, types.ModuleType):
-        return False
+        return obj.__name__ in _TYPE_GUARD_IMPORTS_RESOLVED
 
     if not hasattr(obj, "__globals__"):
         return True
@@ -260,7 +261,7 @@ def _run_guarded_import(autodoc_mock_imports: list[str], obj: Any, guarded_code:
     except ImportError as exc:
         if not exc.name:
             return
-        _resolve_type_guarded_imports(autodoc_mock_imports, importlib.import_module(exc.name))
+        resolve_type_guarded_imports(autodoc_mock_imports, importlib.import_module(exc.name))
         try:
             with mock(autodoc_mock_imports):
                 exec(guarded_code, ns)  # ruff:ignore[exec-builtin]
@@ -303,4 +304,7 @@ def _future_annotations_imported(obj: Any) -> bool:
     return bool(annotations_.compiler_flag == 0x1000000)  # ruff:ignore[magic-value-comparison]
 
 
-__all__ = ["get_all_type_hints"]
+__all__ = [
+    "get_all_type_hints",
+    "resolve_type_guarded_imports",
+]

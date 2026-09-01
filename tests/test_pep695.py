@@ -574,6 +574,90 @@ def test_recursive_type_alias_from_other_module(
     assert '"int" | "list"["RecType"]' in result
 
 
+@pytest.mark.parametrize(
+    ("package", "alias", "annotation", "expected"),
+    [
+        pytest.param(
+            "pkg_764",
+            "type Alias = int | Sequence[str]",
+            "Alias | None",
+            '"int" | "Sequence"["str"] | "None"',
+            id="plain",
+        ),
+        pytest.param(
+            "pkg_764_generic",
+            "type Alias[T] = Sequence[T]",
+            "Alias[int]",
+            '"Sequence"["int"]',
+            id="generic",
+        ),
+    ],
+)
+@pytest.mark.sphinx("text", testroot="integration")
+def test_type_alias_value_needs_guarded_import(
+    app: SphinxTestApp,
+    status: StringIO,
+    warning: StringIO,
+    monkeypatch: pytest.MonkeyPatch,
+    package: str,
+    alias: str,
+    annotation: str,
+    expected: str,
+) -> None:
+    """An alias expands even when its value needs the guarded imports of the module defining it (#764)."""
+    pkg = Path(app.srcdir) / package
+    pkg.mkdir()
+    (pkg / "__init__.py").touch()
+    (pkg / "_types.py").write_text(
+        dedent(f"""\
+        from __future__ import annotations
+
+        from typing import TYPE_CHECKING
+
+        if TYPE_CHECKING:
+            from collections.abc import Sequence
+
+        {alias}
+        """)
+    )
+    (pkg / "api.py").write_text(
+        dedent(f"""\
+        from __future__ import annotations
+
+        from typing import TYPE_CHECKING
+
+        if TYPE_CHECKING:
+            from ._types import Alias
+
+
+        def f(x: {annotation}) -> None:
+            \"\"\"Do nothing.
+
+            :param x: an argument.
+            \"\"\"
+        """)
+    )
+    (Path(app.srcdir) / "index.rst").write_text(f".. autofunction:: {package}.api.f\n")
+    monkeypatch.syspath_prepend(str(app.srcdir))
+    app.build()
+    assert "build succeeded" in status.getvalue()
+    assert not warning.getvalue().strip()
+
+    result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
+    assert expected in result
+
+
+_mod_unresolvable = types.ModuleType("mod_unresolvable")
+_mod_unresolvable.__file__ = __file__
+exec("type Broken = Missing\n", _mod_unresolvable.__dict__)  # ruff:ignore[exec-builtin]
+
+
+def test_alias_whose_value_never_evaluates_renders_as_its_name() -> None:
+    """An alias nothing can evaluate falls back to a reference to its own name (#764)."""
+    formatted = format_annotation(_mod_unresolvable.Broken, create_autospec(Config))
+    assert formatted == ":py:type:`~mod_unresolvable.Broken`"
+
+
 @pytest.mark.sphinx("text", testroot="integration")
 def test_eager_annotations(
     app: SphinxTestApp,

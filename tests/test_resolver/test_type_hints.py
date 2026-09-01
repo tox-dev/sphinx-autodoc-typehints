@@ -29,18 +29,18 @@ from sphinx_autodoc_typehints._resolver._type_hints import (
     _future_annotations_imported,
     _get_type_hint,
     _resolve_string_annotations,
-    _resolve_type_guarded_imports,
     _run_guarded_import,
     _should_skip_guarded_import_resolution,
     get_all_type_hints,
     get_descriptor_type_hint,
+    resolve_type_guarded_imports,
 )
 
 STUB_ROOT = Path(__file__).parent.parent / "roots" / "test-pyi-stubs"
 
 
 def test_no_source_code_type_guard() -> None:
-    _resolve_type_guarded_imports([], Error)
+    resolve_type_guarded_imports([], Error)
 
 
 def test_future_annotations_not_imported() -> None:
