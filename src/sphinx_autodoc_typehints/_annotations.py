@@ -15,6 +15,7 @@ import inspect
 import re
 import sys
 import types
+from hashlib import blake2s
 from typing import TYPE_CHECKING, Any, AnyStr, ForwardRef, NewType, TypeVar, Union, get_args, get_origin
 
 from sphinx.util import rst
@@ -59,6 +60,12 @@ _PYDATA_ANNOTATIONS = {
 
 _TYPES_DICT = {getattr(types, name): name for name in types.__all__}
 _TYPES_DICT[types.FunctionType] = "FunctionType"
+
+#: Role marking a spot where the resolve phase picks between a reference and an expanded alias value.
+ALIAS_CHOICE_ROLE = "sphinx_autodoc_typehints_alias"
+#: Node attribute and build environment attribute the two renderings are looked up through.
+ALIAS_CHOICE_KEY = "sphinx_autodoc_typehints_alias_key"
+ALIAS_CHOICE_ENV_ATTR = "_typehints_alias_choices"
 
 _UNESCAPE_RE = re.compile(
     r"""
@@ -171,27 +178,34 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
     if isinstance(annotation, TypeAliasType):
         if (crossref := _type_alias_crossref(annotation, config)) is not None:
             return crossref
+        reference = _alias_name_reference(annotation, config)
         if not _can_expand_alias(annotation, config):
-            return _alias_name_reference(annotation, config)
-        return (yield annotation.__value__)
+            return reference
+        expanded = yield annotation.__value__
+        return _defer_alias_choice(config, reference, expanded) or expanded
 
     if isinstance(alias := get_origin(annotation), TypeAliasType | TypeAliasForwardRef):
         # A subscripted generic alias, e.g. ``NDArray[np.void]`` for ``type NDArray[ScalarT] = ...``.
         # It is a plain ``types.GenericAlias``, so without unwrapping it here the code below would
         # render it as its wrapper class' name instead of as the alias.
         args = get_args(annotation)
+        expanded: str | None = None
         if isinstance(alias, TypeAliasForwardRef):  # a documented alias, resolved from a string annotation
             rendered_alias = yield alias
         elif (crossref := _type_alias_crossref(alias, config)) is not None:
             rendered_alias = crossref
-        elif _matches_type_params(alias, args) and _can_expand_alias(alias, config):  # undocumented: expand its value
-            return (yield _substitute_type_params(alias, args))
-        else:  # cannot expand, so name the alias instead of leaking its type params
+        else:
+            if _matches_type_params(alias, args) and _can_expand_alias(alias, config):
+                expanded = yield _substitute_type_params(alias, args)
+            # cannot expand, so name the alias instead of leaking its type params
             rendered_alias = _alias_name_reference(alias, config)
         parts = []
         for arg in args:
             parts.append((yield arg))  # yield is illegal inside a comprehension
-        return f"{rendered_alias}\\ \\[{', '.join(parts)}]"
+        subscripted = f"{rendered_alias}\\ \\[{', '.join(parts)}]"
+        if expanded is None:
+            return subscripted
+        return _defer_alias_choice(config, subscripted, expanded) or expanded
 
     try:
         module = get_annotation_module(annotation)
@@ -447,14 +461,37 @@ def _alias_name_reference(alias: TypeAliasType, config: Config) -> str:
     return f":py:type:`{prefix}{_get_canonical_type_alias_name(alias) or alias.__name__}`"
 
 
+def _defer_alias_choice(config: Config, linked: str, expanded: str) -> str | None:
+    """
+    Emit a marker the resolve phase replaces with ``linked`` or ``expanded``, or ``None`` if it cannot.
+
+    Whether an alias is documented has no answer while documents are still being read: the py domain
+    only learns a target once its own document is read, so deciding here would tie the rendering of a
+    signature to where its document sorts (and to how ``-j`` hands documents out). Hand both renderings
+    to the post-transform instead, which runs once every document is in.
+    """
+    env = getattr(config, "_typehints_env", None)
+    if env is None or linked == expanded:
+        return None
+    choices = getattr(env, ALIAS_CHOICE_ENV_ATTR, None)
+    if not isinstance(choices, dict):
+        choices = {}
+        setattr(env, ALIAS_CHOICE_ENV_ATTR, choices)
+    # Content-addressed, so a doctree read in an earlier build still finds its choice
+    key = blake2s(f"{linked}\n{expanded}".encode(), digest_size=8).hexdigest()
+    choices[key] = (linked, expanded)
+    return f":{ALIAS_CHOICE_ROLE}:`{key}`"
+
+
 def _type_alias_crossref(annotation: TypeAliasType, config: Config) -> str | None:
     """
     Render a PEP 695 type alias as a reStructuredText cross-reference, or ``None`` when it is not a known target.
 
     Look the alias up in the py domain under the names it could be documented as: walk up the current module
     prefix (so a ``T`` documented in the module being built wins), then its canonical module (so an alias
-    imported from elsewhere still resolves), then its bare name. An alias owned by a different top-level package
-    falls back to an intersphinx-style reference. Returning ``None`` tells the caller to expand the alias value.
+    imported from elsewhere still resolves), then its bare name. An alias owned by a different top-level
+    package falls back to an intersphinx-style reference. Only a document already read can answer, so
+    ``None`` means "not known yet", and the caller defers the choice to the resolve phase.
     """
     env = getattr(config, "_typehints_env", None)
     if env is None:
