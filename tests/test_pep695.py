@@ -571,7 +571,8 @@ def test_recursive_type_alias_from_other_module(
     assert "reference target not found" not in warning.getvalue()
 
     result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
-    assert '"int" | "list"["RecType"]' in result
+    # documented further down the same document, which only the resolve phase can know
+    assert '**some_param** ("RecType")' in result
 
 
 @pytest.mark.parametrize(
@@ -681,6 +682,77 @@ def test_eager_annotations(
 
     result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
     assert '"UserId"' in result
+
+
+@pytest.mark.sphinx("text", testroot="integration")
+def test_alias_documented_in_a_later_document(
+    app: SphinxTestApp,
+    status: StringIO,
+    warning: StringIO,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An alias documented in a document read after the one using it cross-references, not expands."""
+    (Path(app.srcdir) / "index.rst").write_text(
+        ".. autofunction:: mod.type_alias_func\n\n.. toctree::\n\n   zz_aliases\n"
+    )
+    (Path(app.srcdir) / "zz_aliases.rst").write_text(".. py:type:: mod.IntList\n\n   List of integers.\n")
+    monkeypatch.setitem(sys.modules, "mod", _mod_pep695)
+    app.build()
+    assert "build succeeded" in status.getvalue()
+
+    value = warning.getvalue().strip()
+    assert not value or "Inline strong start-string without end-string" in value
+
+    result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
+    assert '"IntList"' in result
+    assert '"list"["int"]' not in result
+
+
+_mod_nested = types.ModuleType("mod_nested")
+_mod_nested.__file__ = __file__
+exec(  # ruff:ignore[exec-builtin]
+    dedent("""\
+    from __future__ import annotations
+
+    type Inner = int | str
+    type Outer = Inner | bytes
+    type Documented = float
+    type Mixed = Documented | Inner
+
+    def nested_func(x: Mixed) -> Outer:
+        \"\"\"Describe.
+
+        :param x: the value
+        :return: the result
+        \"\"\"
+        ...
+    """),
+    _mod_nested.__dict__,
+)
+
+
+@pytest.mark.sphinx("text", testroot="integration")
+def test_alias_expansion_recurses_into_further_aliases(
+    app: SphinxTestApp,
+    status: StringIO,
+    warning: StringIO,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An expanded value naming further aliases links the documented ones and expands the rest."""
+    (Path(app.srcdir) / "index.rst").write_text(
+        ".. autofunction:: mod_nested.nested_func\n\n.. toctree::\n\n   zz_aliases\n"
+    )
+    (Path(app.srcdir) / "zz_aliases.rst").write_text(".. py:type:: mod_nested.Documented\n\n   A documented alias.\n")
+    monkeypatch.setitem(sys.modules, "mod_nested", _mod_nested)
+    app.build()
+    assert "build succeeded" in status.getvalue()
+
+    value = warning.getvalue().strip()
+    assert not value or "Inline strong start-string without end-string" in value
+
+    result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
+    assert '**x** ("Documented" | "int" | "str")' in result  # Mixed = Documented | Inner
+    assert '"int" | "str" | "bytes"' in result  # Outer = Inner | bytes
 
 
 @pytest.mark.skipif(sys.version_info < (3, 14), reason="annotationlib requires Python 3.14+")
