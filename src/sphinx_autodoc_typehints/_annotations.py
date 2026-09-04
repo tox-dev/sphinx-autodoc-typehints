@@ -12,10 +12,8 @@ from __future__ import annotations
 
 import enum
 import inspect
-import re
 import sys
 import types
-from hashlib import blake2s
 from typing import TYPE_CHECKING, Any, AnyStr, ForwardRef, NewType, TypeVar, Union, get_args, get_origin
 
 from sphinx.util import rst
@@ -27,6 +25,8 @@ if TYPE_CHECKING:
     from sphinx.config import Config
 
 from typing import TypeAliasType
+
+from ._deferred import defer_alias_choice
 
 _PYDATA_ANNOTS_TYPING = {
     "Any",
@@ -60,20 +60,6 @@ _PYDATA_ANNOTATIONS = {
 
 _TYPES_DICT = {getattr(types, name): name for name in types.__all__}
 _TYPES_DICT[types.FunctionType] = "FunctionType"
-
-#: Role marking a spot where the resolve phase picks between a reference and an expanded alias value.
-ALIAS_CHOICE_ROLE = "sphinx_autodoc_typehints_alias"
-#: Node attribute and build environment attribute the two renderings are looked up through.
-ALIAS_CHOICE_KEY = "sphinx_autodoc_typehints_alias_key"
-ALIAS_CHOICE_ENV_ATTR = "_typehints_alias_choices"
-
-_UNESCAPE_RE = re.compile(
-    r"""
-    \\          # literal backslash
-    ([^ ])      # followed by any non-space character (captured)
-    """,
-    re.VERBOSE,
-)
 
 
 class MyTypeAliasForwardRef(TypeAliasForwardRef):
@@ -182,7 +168,7 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
         if not _can_expand_alias(annotation, config):
             return reference
         expanded = yield annotation.__value__
-        return _defer_alias_choice(config, reference, expanded) or expanded
+        return defer_alias_choice(config, reference, expanded) or expanded
 
     if isinstance(alias := get_origin(annotation), TypeAliasType | TypeAliasForwardRef):
         # A subscripted generic alias, e.g. ``NDArray[np.void]`` for ``type NDArray[ScalarT] = ...``.
@@ -205,7 +191,7 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
         subscripted = f"{rendered_alias}\\ \\[{', '.join(parts)}]"
         if expanded is None:
             return subscripted
-        return _defer_alias_choice(config, subscripted, expanded) or expanded
+        return defer_alias_choice(config, subscripted, expanded) or expanded
 
     try:
         module = get_annotation_module(annotation)
@@ -461,28 +447,6 @@ def _alias_name_reference(alias: TypeAliasType, config: Config) -> str:
     return f":py:type:`{prefix}{_get_canonical_type_alias_name(alias) or alias.__name__}`"
 
 
-def _defer_alias_choice(config: Config, linked: str, expanded: str) -> str | None:
-    """
-    Emit a marker the resolve phase replaces with ``linked`` or ``expanded``, or ``None`` if it cannot.
-
-    Whether an alias is documented has no answer while documents are still being read: the py domain
-    only learns a target once its own document is read, so deciding here would tie the rendering of a
-    signature to where its document sorts (and to how ``-j`` hands documents out). Hand both renderings
-    to the post-transform instead, which runs once every document is in.
-    """
-    env = getattr(config, "_typehints_env", None)
-    if env is None or linked == expanded:
-        return None
-    choices = getattr(env, ALIAS_CHOICE_ENV_ATTR, None)
-    if not isinstance(choices, dict):
-        choices = {}
-        setattr(env, ALIAS_CHOICE_ENV_ATTR, choices)
-    # Content-addressed, so a doctree read in an earlier build still finds its choice
-    key = blake2s(f"{linked}\n{expanded}".encode(), digest_size=8).hexdigest()
-    choices[key] = (linked, expanded)
-    return f":{ALIAS_CHOICE_ROLE}:`{key}`"
-
-
 def _type_alias_crossref(annotation: TypeAliasType, config: Config) -> str | None:
     """
     Render a PEP 695 type alias as a reStructuredText cross-reference, or ``None`` when it is not a known target.
@@ -542,11 +506,6 @@ def _get_canonical_type_alias_name(annotation: TypeAliasType) -> str:
         if getattr(mod, name, None) is annotation:
             return f"{mod_name}.{name}"
     return f"{module}.{name}"
-
-
-def unescape(escaped: str) -> str:
-    escaped = escaped.replace("\x00", "")
-    return _UNESCAPE_RE.sub(r"\1", escaped)
 
 
 def add_type_css_class(type_rst: str) -> str:

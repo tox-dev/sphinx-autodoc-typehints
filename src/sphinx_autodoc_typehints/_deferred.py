@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from hashlib import blake2s
+from typing import TYPE_CHECKING, Any, Final
 
 from docutils import nodes
 from sphinx import addnodes
@@ -10,14 +11,21 @@ from sphinx.errors import NoUri
 from sphinx.transforms.post_transforms import SphinxPostTransform
 from sphinx.util.docutils import sphinx_domains
 
-from ._annotations import ALIAS_CHOICE_ENV_ATTR, ALIAS_CHOICE_KEY, unescape
-from ._parser import parse
+from ._parser import parse, unescape
 
 if TYPE_CHECKING:
     from docutils.nodes import Node
     from docutils.parsers.rst import states
     from sphinx.application import Sphinx
+    from sphinx.config import Config
     from sphinx.environment import BuildEnvironment
+
+
+#: Role marking a spot where the resolve phase picks between a reference and an expanded alias value.
+ALIAS_CHOICE_ROLE: Final = "sphinx_autodoc_typehints_alias"
+#: Node attribute and build environment attribute the two renderings are looked up through.
+ALIAS_CHOICE_KEY: Final = "sphinx_autodoc_typehints_alias_key"
+ALIAS_CHOICE_ENV_ATTR: Final = "_typehints_alias_choices"
 
 
 def alias_choice_role(
@@ -34,6 +42,28 @@ def alias_choice_role(
     node = nodes.inline("", "")
     node[ALIAS_CHOICE_KEY] = unescape(text)
     return [node], []
+
+
+def defer_alias_choice(config: Config, linked: str, expanded: str) -> str | None:
+    """
+    Emit a marker the resolve phase replaces with ``linked`` or ``expanded``, or ``None`` if it cannot.
+
+    Whether an alias is documented has no answer while documents are still being read: the py domain
+    only learns a target once its own document is read, so deciding here would tie the rendering of a
+    signature to where its document sorts (and to how ``-j`` hands documents out). Hand both renderings
+    to the post-transform instead, which runs once every document is in.
+    """
+    env = getattr(config, "_typehints_env", None)
+    if env is None or linked == expanded:
+        return None
+    choices = getattr(env, ALIAS_CHOICE_ENV_ATTR, None)
+    if not isinstance(choices, dict):
+        choices = {}
+        setattr(env, ALIAS_CHOICE_ENV_ATTR, choices)
+    # Content-addressed, so a doctree read in an earlier build still finds its choice
+    key = blake2s(f"{linked}\n{expanded}".encode(), digest_size=8).hexdigest()
+    choices[key] = (linked, expanded)
+    return f":{ALIAS_CHOICE_ROLE}:`{key}`"
 
 
 def merge_alias_choices(app: Sphinx, env: BuildEnvironment, docnames: list[str], other: BuildEnvironment) -> None:
@@ -114,5 +144,6 @@ class DeferAliasChoice(SphinxPostTransform):
 __all__ = [
     "DeferAliasChoice",
     "alias_choice_role",
+    "defer_alias_choice",
     "merge_alias_choices",
 ]

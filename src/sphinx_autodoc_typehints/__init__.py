@@ -16,21 +16,19 @@ from sphinx.util.inspect import stringify_signature
 
 # re-exports for backward compatibility
 from ._annotations import (
-    ALIAS_CHOICE_ROLE,
     MyTypeAliasForwardRef,
     add_type_css_class,
     format_annotation,
     get_annotation_args,
     get_annotation_class_name,
     get_annotation_module,
-    unescape,
 )
-from ._deferred import DeferAliasChoice, alias_choice_role, merge_alias_choices
+from ._deferred import ALIAS_CHOICE_ROLE, DeferAliasChoice, alias_choice_role, merge_alias_choices
 from ._formats import detect_format
 from ._formats._numpydoc import _convert_numpydoc_to_sphinx_fields  # ruff:ignore[unused-import]
 from ._formats._sphinx import _has_yields_section, _is_generator_type, _strip_inline_param_type
 from ._intersphinx import build_type_mapping
-from ._parser import parse
+from ._parser import parse, unescape
 from ._resolver import (
     backfill_attrs_annotations,
     backfill_type_hints,
