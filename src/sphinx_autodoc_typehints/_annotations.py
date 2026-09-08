@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import enum
 import inspect
-import re
 import sys
 import types
 from typing import TYPE_CHECKING, Any, AnyStr, ForwardRef, NewType, TypeVar, Union, get_args, get_origin
@@ -26,6 +25,8 @@ if TYPE_CHECKING:
     from sphinx.config import Config
 
 from typing import TypeAliasType
+
+from ._deferred import defer_alias_choice
 
 _PYDATA_ANNOTS_TYPING = {
     "Any",
@@ -59,14 +60,6 @@ _PYDATA_ANNOTATIONS = {
 
 _TYPES_DICT = {getattr(types, name): name for name in types.__all__}
 _TYPES_DICT[types.FunctionType] = "FunctionType"
-
-_UNESCAPE_RE = re.compile(
-    r"""
-    \\          # literal backslash
-    ([^ ])      # followed by any non-space character (captured)
-    """,
-    re.VERBOSE,
-)
 
 
 class MyTypeAliasForwardRef(TypeAliasForwardRef):
@@ -171,27 +164,34 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
     if isinstance(annotation, TypeAliasType):
         if (crossref := _type_alias_crossref(annotation, config)) is not None:
             return crossref
+        reference = _alias_name_reference(annotation, config)
         if not _can_expand_alias(annotation, config):
-            return _alias_name_reference(annotation, config)
-        return (yield annotation.__value__)
+            return reference
+        expanded = yield annotation.__value__
+        return defer_alias_choice(config, reference, expanded) or expanded
 
     if isinstance(alias := get_origin(annotation), TypeAliasType | TypeAliasForwardRef):
         # A subscripted generic alias, e.g. ``NDArray[np.void]`` for ``type NDArray[ScalarT] = ...``.
         # It is a plain ``types.GenericAlias``, so without unwrapping it here the code below would
         # render it as its wrapper class' name instead of as the alias.
         args = get_args(annotation)
+        expanded: str | None = None
         if isinstance(alias, TypeAliasForwardRef):  # a documented alias, resolved from a string annotation
             rendered_alias = yield alias
         elif (crossref := _type_alias_crossref(alias, config)) is not None:
             rendered_alias = crossref
-        elif _matches_type_params(alias, args) and _can_expand_alias(alias, config):  # undocumented: expand its value
-            return (yield _substitute_type_params(alias, args))
-        else:  # cannot expand, so name the alias instead of leaking its type params
+        else:
+            if _matches_type_params(alias, args) and _can_expand_alias(alias, config):
+                expanded = yield _substitute_type_params(alias, args)
+            # cannot expand, so name the alias instead of leaking its type params
             rendered_alias = _alias_name_reference(alias, config)
         parts = []
         for arg in args:
             parts.append((yield arg))  # yield is illegal inside a comprehension
-        return f"{rendered_alias}\\ \\[{', '.join(parts)}]"
+        subscripted = f"{rendered_alias}\\ \\[{', '.join(parts)}]"
+        if expanded is None:
+            return subscripted
+        return defer_alias_choice(config, subscripted, expanded) or expanded
 
     try:
         module = get_annotation_module(annotation)
@@ -453,8 +453,9 @@ def _type_alias_crossref(annotation: TypeAliasType, config: Config) -> str | Non
 
     Look the alias up in the py domain under the names it could be documented as: walk up the current module
     prefix (so a ``T`` documented in the module being built wins), then its canonical module (so an alias
-    imported from elsewhere still resolves), then its bare name. An alias owned by a different top-level package
-    falls back to an intersphinx-style reference. Returning ``None`` tells the caller to expand the alias value.
+    imported from elsewhere still resolves), then its bare name. An alias owned by a different top-level
+    package falls back to an intersphinx-style reference. Only a document already read can answer, so
+    ``None`` means "not known yet", and the caller defers the choice to the resolve phase.
     """
     env = getattr(config, "_typehints_env", None)
     if env is None:
@@ -505,11 +506,6 @@ def _get_canonical_type_alias_name(annotation: TypeAliasType) -> str:
         if getattr(mod, name, None) is annotation:
             return f"{mod_name}.{name}"
     return f"{module}.{name}"
-
-
-def unescape(escaped: str) -> str:
-    escaped = escaped.replace("\x00", "")
-    return _UNESCAPE_RE.sub(r"\1", escaped)
 
 
 def add_type_css_class(type_rst: str) -> str:

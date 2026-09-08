@@ -22,13 +22,13 @@ from ._annotations import (
     get_annotation_args,
     get_annotation_class_name,
     get_annotation_module,
-    unescape,
 )
+from ._deferred import ALIAS_CHOICE_ROLE, DeferAliasChoice, alias_choice_role, merge_alias_choices
 from ._formats import detect_format
 from ._formats._numpydoc import _convert_numpydoc_to_sphinx_fields  # ruff:ignore[unused-import]
 from ._formats._sphinx import _has_yields_section, _is_generator_type, _strip_inline_param_type
 from ._intersphinx import build_type_mapping
-from ._parser import parse
+from ._parser import parse, unescape
 from ._resolver import (
     backfill_attrs_annotations,
     backfill_type_hints,
@@ -579,6 +579,9 @@ def setup(app: Sphinx) -> dict[str, bool | str]:
     app.add_config_value("typehints_use_signature_return", False, "env")  # ruff:ignore[boolean-positional-value-in-call]
     app.add_config_value("typehints_fixup_module_name", None, "env")
     app.add_role("sphinx_autodoc_typehints_type", sphinx_autodoc_typehints_type_role)
+    app.add_role(ALIAS_CHOICE_ROLE, alias_choice_role)
+    app.add_post_transform(DeferAliasChoice)
+    app.connect("env-merge-info", merge_alias_choices)
     app.connect("env-before-read-docs", validate_config)
     app.connect("autodoc-process-signature", process_signature)
     app.connect("autodoc-process-docstring", process_docstring)
