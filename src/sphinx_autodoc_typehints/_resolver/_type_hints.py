@@ -5,6 +5,7 @@ from __future__ import annotations
 import ast
 import contextlib
 import importlib
+import importlib.util
 import inspect
 import re
 import sys
@@ -208,7 +209,7 @@ def _execute_guarded_code(autodoc_mock_imports: list[str], obj: Any, module_code
             continue
         for statement in statements:
             try:
-                _run_guarded_import(autodoc_mock_imports, obj, ast.unparse(statement))
+                _run_guarded_import(autodoc_mock_imports, obj, statement)
             except Exception as exc:  # ruff:ignore[blind-except]
                 if any(isinstance(node, ast.Import | ast.ImportFrom) for node in ast.walk(statement)):
                     _warn_guarded_import(obj, exc)
@@ -253,20 +254,42 @@ def _defined_names(node: ast.AST) -> Iterator[str]:
             yield from _defined_names(child)
 
 
-def _run_guarded_import(autodoc_mock_imports: list[str], obj: Any, guarded_code: str) -> None:
+def _run_guarded_import(autodoc_mock_imports: list[str], obj: Any, statement: ast.stmt) -> None:
     ns = getattr(obj, "__globals__", obj.__dict__)
-    try:
-        with mock(autodoc_mock_imports):
-            exec(guarded_code, ns)  # ruff:ignore[exec-builtin]
-    except ImportError as exc:
-        if not exc.name:
-            return
-        resolve_type_guarded_imports(autodoc_mock_imports, importlib.import_module(exc.name))
+    guarded_code = ast.unparse(statement)
+    mocked = list(autodoc_mock_imports)
+    while True:
         try:
-            with mock(autodoc_mock_imports):
+            with mock(mocked):
                 exec(guarded_code, ns)  # ruff:ignore[exec-builtin]
-        except ImportError:
-            pass
+        except ImportError as exc:
+            if not exc.name:
+                return
+            if (
+                isinstance(exc, ModuleNotFoundError)
+                and exc.name not in mocked
+                and any(_is_within(module, exc.name) for module in _imported_modules(statement, ns.get("__package__")))
+            ):
+                # The guard means the dependency need not be installed; mock it as autodoc_mock_imports would (#768)
+                _LOGGER.debug("Mocked absent guarded dependency %r for %r", exc.name, getattr(obj, "__module__", "?"))
+                mocked.append(exc.name)
+                continue
+            resolve_type_guarded_imports(autodoc_mock_imports, importlib.import_module(exc.name))
+            with mock(mocked), contextlib.suppress(ImportError):
+                exec(guarded_code, ns)  # ruff:ignore[exec-builtin]
+        return
+
+
+def _imported_modules(statement: ast.stmt, package: str | None) -> Iterator[str]:
+    for node in ast.walk(statement):
+        if isinstance(node, ast.Import):
+            yield from (alias.name for alias in node.names)
+        elif isinstance(node, ast.ImportFrom):
+            yield importlib.util.resolve_name("." * node.level + (node.module or ""), package)
+
+
+def _is_within(module: str, package: str) -> bool:
+    return module == package or module.startswith(f"{package}.")
 
 
 def _build_localns(obj: Any, localns: Mapping[str, Any]) -> dict[str, Any]:

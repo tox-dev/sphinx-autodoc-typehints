@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import csv
 import importlib
 import re
@@ -7,11 +8,11 @@ import subprocess  # ruff:ignore[suspicious-subprocess-import]
 import sys
 import sysconfig
 import types
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from csv import Error
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, TypeAliasType, Union, get_args, get_origin
+from typing import Any, Protocol, TypeAliasType, Union, get_args, get_origin
 from unittest.mock import MagicMock, patch
 
 if sys.version_info >= (3, 14):  # pragma: >=3.14 cover
@@ -108,7 +109,7 @@ def test_execute_guarded_code_catches_exception() -> None:
 def test_run_guarded_import_no_exc_name() -> None:
     ns: dict[str, Any] = {}
     obj: Any = type("FakeObj", (), {"__globals__": ns})()
-    _run_guarded_import([], obj, "raise ImportError()")
+    _run_guarded_import([], obj, ast.parse("raise ImportError()").body[0])
 
 
 def test_forward_ref_warning_includes_module() -> None:
@@ -146,22 +147,32 @@ def test_get_all_type_hints_for_class_owning_the_type_params_slot() -> None:
     assert get_all_type_hints([], TypeAliasType, "mod.TypeAliasType", {}) == {}
 
 
+class _GuardedModuleBuilder(Protocol):
+    def __call__(
+        self, source: str, *, package: bool = False, files: Mapping[str, str] | None = None
+    ) -> types.ModuleType: ...
+
+
 @pytest.fixture
-def guarded_module(tmp_path: Path, request: pytest.FixtureRequest) -> Iterator[Callable[[str], types.ModuleType]]:
+def guarded_module(tmp_path: Path, request: pytest.FixtureRequest) -> Iterator[_GuardedModuleBuilder]:
     name = re.sub(r"\W", "_", request.node.name)
     sys.path.insert(0, str(tmp_path))
 
-    def build(source: str) -> types.ModuleType:
-        (tmp_path / f"{name}.py").write_text(source)
+    def build(source: str, *, package: bool = False, files: Mapping[str, str] | None = None) -> types.ModuleType:
+        for path, content in {f"{name}/__init__.py" if package else f"{name}.py": source, **(files or {})}.items():
+            (tmp_path / path).parent.mkdir(parents=True, exist_ok=True)
+            (tmp_path / path).write_text(content)
         return importlib.import_module(name)
 
     yield build
     sys.path.remove(str(tmp_path))
-    sys.modules.pop(name, None)
+    for loaded, module in list(sys.modules.items()):
+        if str(getattr(module, "__file__", None) or "").startswith(str(tmp_path)):
+            del sys.modules[loaded]
 
 
 def test_guarded_import_binds_names_below_an_unimportable_one(
-    guarded_module: Callable[[str], types.ModuleType],
+    guarded_module: _GuardedModuleBuilder,
 ) -> None:
     """An absent optional dependency must not strand the imports under it (issue #741)."""
     module = guarded_module(
@@ -178,7 +189,7 @@ def test_guarded_import_binds_names_below_an_unimportable_one(
 
 
 def test_guarded_import_warns_when_the_block_does_not_parse(
-    guarded_module: Callable[[str], types.ModuleType],
+    guarded_module: _GuardedModuleBuilder,
 ) -> None:
     """A block truncated mid-literal by the guard regex is reported rather than raised (issue #741)."""
     module = guarded_module(
@@ -197,30 +208,103 @@ def test_guarded_import_warns_when_the_block_does_not_parse(
     assert "unterminated triple-quoted string literal" in str(mock_logger.warning.call_args)
 
 
-def test_guarded_import_warns_when_a_compound_statement_hides_it(
-    guarded_module: Callable[[str], types.ModuleType],
+@pytest.mark.parametrize(
+    ("guard", "annotation", "display_name"),
+    [
+        pytest.param("from no_such_dependency import Absent", "Absent", "no_such_dependency.Absent", id="from"),
+        pytest.param(
+            "import no_such_dependency.sub",
+            "no_such_dependency.sub.Absent",
+            "no_such_dependency.sub.Absent",
+            id="dotted",
+        ),
+        pytest.param(
+            "try:\n"
+            "        from no_such_dependency import Absent\n"
+            "    except ImportError:\n"
+            "        from no_such_fallback import Absent",
+            "Absent",
+            "no_such_fallback.Absent",
+            id="try-except",
+        ),
+    ],
+)
+def test_guarded_import_mocks_an_absent_dependency(
+    guarded_module: _GuardedModuleBuilder, guard: str, annotation: str, display_name: str
 ) -> None:
-    """A version gated or try/except import still reports the absent dependency (issue #751)."""
+    """The resolver mocks a guarded dependency the docs environment lacks, as autodoc_mock_imports would (#768)."""
     module = guarded_module(
         "from __future__ import annotations\n"
         "from typing import TYPE_CHECKING\n"
         "\n"
         "if TYPE_CHECKING:\n"
-        "    try:\n"
-        "        from no_such_dependency import Absent\n"
-        "    except ImportError:\n"
-        "        from no_such_fallback import Absent\n"
+        f"    {guard}\n"
         "\n"
-        "def func(value: Absent) -> None: ...\n"
+        f"def func(value: {annotation}) -> None: ...\n"
+    )
+    mock_logger = MagicMock()
+    with patch("sphinx_autodoc_typehints._resolver._type_hints._LOGGER", mock_logger):
+        hints = get_all_type_hints([], module.func, f"{module.__name__}.func", {})
+    mock_logger.warning.assert_not_called()
+    assert hints["value"].__display_name__ == display_name
+
+
+def test_guarded_relative_import_of_an_absent_sibling_is_mocked(guarded_module: _GuardedModuleBuilder) -> None:
+    """The resolver matches the absent module by absolute name, so a relative guarded import gets mocked too (#768)."""
+    module = guarded_module(
+        "from __future__ import annotations\n"
+        "from typing import TYPE_CHECKING\n"
+        "\n"
+        "if TYPE_CHECKING:\n"
+        "    from .absent import Thing\n"
+        "\n"
+        "def func(value: Thing) -> None: ...\n",
+        package=True,
+    )
+    hint = get_all_type_hints([], module.func, f"{module.__name__}.func", {})["value"]
+    assert hint.__display_name__ == f"{module.__name__}.absent.Thing"
+
+
+def test_guarded_import_warns_when_the_dependency_is_installed_but_broken(
+    guarded_module: _GuardedModuleBuilder,
+) -> None:
+    """A dependency that is installed yet fails to import is an environment fault and still warns (#768)."""
+    module = guarded_module(
+        "from __future__ import annotations\n"
+        "from typing import TYPE_CHECKING\n"
+        "\n"
+        "if TYPE_CHECKING:\n"
+        "    from broken_dependency import Broken\n"
+        "\n"
+        "def func(value: Broken) -> None: ...\n",
+        files={"broken_dependency.py": "import no_such_inner\n"},
     )
     mock_logger = MagicMock()
     with patch("sphinx_autodoc_typehints._resolver._type_hints._LOGGER", mock_logger):
         get_all_type_hints([], module.func, f"{module.__name__}.func", {})
-    assert "Failed guarded type import" in str(mock_logger.warning.call_args_list)
+    assert "No module named 'no_such_inner'" in str(mock_logger.warning.call_args_list)
+
+
+def test_guarded_import_warns_when_a_module_is_imported_as_a_package(guarded_module: _GuardedModuleBuilder) -> None:
+    """Mocking cannot give a plain module a submodule, so the failure warns once instead of looping (#768)."""
+    module = guarded_module(
+        "from __future__ import annotations\n"
+        "from typing import TYPE_CHECKING\n"
+        "\n"
+        "if TYPE_CHECKING:\n"
+        "    import plain_module.sub\n"
+        "\n"
+        "def func(value: plain_module.sub.Thing) -> None: ...\n",
+        files={"plain_module.py": ""},
+    )
+    mock_logger = MagicMock()
+    with patch("sphinx_autodoc_typehints._resolver._type_hints._LOGGER", mock_logger):
+        get_all_type_hints([], module.func, f"{module.__name__}.func", {})
+    assert "'plain_module' is not a package" in str(mock_logger.warning.call_args_list)
 
 
 def test_guarded_comprehension_target_leaves_the_builtin_alone(
-    guarded_module: Callable[[str], types.ModuleType],
+    guarded_module: _GuardedModuleBuilder,
 ) -> None:
     """Only the statement's own targets are stood in, so a comprehension variable cannot shadow a builtin (#751)."""
     module = guarded_module(
@@ -239,7 +323,7 @@ def test_guarded_comprehension_target_leaves_the_builtin_alone(
 
 
 def test_guarded_version_gated_alias_binds_its_name(
-    guarded_module: Callable[[str], types.ModuleType],
+    guarded_module: _GuardedModuleBuilder,
 ) -> None:
     """A failing annotated assignment nested in a version check still leaves its name usable (#751)."""
     module = guarded_module(
