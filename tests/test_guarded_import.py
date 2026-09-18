@@ -102,3 +102,35 @@ def test_guarded_code_the_interpreter_rejects(app: SphinxTestApp, status: String
            Returns:
               the wrapper
         """)
+
+
+@pytest.mark.sphinx("text", testroot="absent-guarded-dependency")
+def test_absent_guarded_dependency_renders_as_cross_reference(
+    app: SphinxTestApp, status: StringIO, warning: StringIO
+) -> None:
+    """Mocking a dependency the docs environment lacks keeps its types as cross-references (#768)."""
+    app.build()
+    assert "build succeeded" in status.getvalue()
+    assert not warning.getvalue()
+    text = (Path(app.srcdir) / "_build" / "text" / "index.txt").read_text()
+    assert text == dedent("""\
+        Module whose type checking guard names a dependency the docs
+        environment lacks.
+
+        demo_absent_guarded_dependency.load(cube, array, precision)
+
+           Load a cube.
+
+           Parameters:
+              * **cube** ("Cube") -- the cube
+
+              * **array** ("Array") -- the backing array
+
+              * **precision** ("Decimal") -- the precision
+
+           Return type:
+              "list"["Cube"]
+
+           Returns:
+              the cubes
+        """)

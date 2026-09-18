@@ -245,9 +245,12 @@ def process(item: othermodule.OtherClass) -> None: ...
 ### Resolve types from `TYPE_CHECKING` blocks
 
 This extension automatically imports types from
-[`TYPE_CHECKING`](https://docs.python.org/3/library/typing.html#typing.TYPE_CHECKING) blocks at doc-build time. If a
-type still fails to resolve, the dependency is likely not installed in your docs environment. Either install it, or
-suppress the warning:
+[`TYPE_CHECKING`](https://docs.python.org/3/library/typing.html#typing.TYPE_CHECKING) blocks at doc-build time. When the
+block imports a dependency your docs environment lacks, the extension mocks it the way
+[`autodoc_mock_imports`](https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#confval-autodoc_mock_imports)
+would, so its types still render as cross-references; install it when you want those references to resolve. A statement
+that fails for another reason, such as a dependency that is installed but broken, raises a warning. Fix the environment,
+or suppress it:
 
 ```python
 suppress_warnings = ["sphinx_autodoc_typehints.guarded_import"]
@@ -379,7 +382,7 @@ All warnings can be suppressed via Sphinx's
 | `sphinx_autodoc_typehints`                    | Catch-all for every warning from this extension.                            |
 | `sphinx_autodoc_typehints.comment`            | A type comment (`# type: ...`) couldn't be parsed.                          |
 | `sphinx_autodoc_typehints.forward_reference`  | A forward reference (string annotation) couldn't be resolved.               |
-| `sphinx_autodoc_typehints.guarded_import`     | A type from a `TYPE_CHECKING` block couldn't be imported at runtime.        |
+| `sphinx_autodoc_typehints.guarded_import`     | A `TYPE_CHECKING` statement failed to run (absent dependencies are mocked). |
 | `sphinx_autodoc_typehints.local_function`     | A type annotation references a function defined inside another function.    |
 | `sphinx_autodoc_typehints.multiple_ast_nodes` | A type comment matched multiple definitions and the right one is ambiguous. |
 
