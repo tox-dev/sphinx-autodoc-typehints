@@ -188,6 +188,22 @@ def test_guarded_import_binds_names_below_an_unimportable_one(
     assert get_all_type_hints([], module.func, f"{module.__name__}.func", {})["value"] is Decimal
 
 
+def test_guarded_import_resolves_namedtuple_field_without_prior_function(
+    guarded_module: _GuardedModuleBuilder,
+) -> None:
+    module = guarded_module(
+        "from __future__ import annotations\n"
+        "from typing import TYPE_CHECKING, NamedTuple\n"
+        "\n"
+        "if TYPE_CHECKING:\n"
+        "    from pathlib import Path\n"
+        "\n"
+        "class P(NamedTuple):\n"
+        "    path: Path\n"
+    )
+    assert get_all_type_hints([], module.P, f"{module.__name__}.P", {}) == {"path": Path}
+
+
 def test_guarded_import_warns_when_the_block_does_not_parse(
     guarded_module: _GuardedModuleBuilder,
 ) -> None:
