@@ -174,6 +174,8 @@ def _get_forward_ref_annotations(obj: Any) -> dict[str, Any]:  # pragma: >=3.14 
 
 def resolve_type_guarded_imports(autodoc_mock_imports: list[str], obj: Any) -> None:
     """Execute the ``if TYPE_CHECKING`` block of *obj*'s module, binding the names it guards."""
+    if inspect.isclass(obj) and (module := inspect.getmodule(obj)) is not None:
+        obj = module
     if _should_skip_guarded_import_resolution(obj):
         return
 
