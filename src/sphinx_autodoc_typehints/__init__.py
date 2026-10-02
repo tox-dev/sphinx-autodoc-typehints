@@ -43,7 +43,7 @@ from .patches import _OVERLOADS_CACHE, install_patches
 from .version import __version__
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
+    from collections.abc import Callable, Generator
 
     from docutils.nodes import Node
     from docutils.parsers.rst import states
@@ -213,7 +213,7 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
 
 
 @contextmanager
-def _annotation_state(config: Config, **values: Any) -> Iterator[None]:
+def _annotation_state(config: Config, **values: Any) -> Generator[None, None, None]:
     """
     Publish the state format_annotation reads off the config, restoring what was there.
 
