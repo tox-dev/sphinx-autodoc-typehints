@@ -2,7 +2,7 @@
 build-backend = "hatchling.build"
 requires = [
   "hatch-vcs>=0.5",
-  "hatchling>=1.29",
+  "hatchling>=1.32.4",
 ]
 
 [project]
@@ -57,19 +57,19 @@ dev = [
   { include-group = "type" },
 ]
 test = [
-  "attrs>=25.4",
+  "attrs>=26.1",
   "covdefaults>=2.3",
-  "coverage>=7.13.4",
+  "coverage>=7.16.2",
   "defusedxml>=0.7.1",
-  "diff-cover>=10.2",
-  "numpydoc>=1.10",
-  "pytest>=9.0.2",
-  "pytest-cov>=7",
-  "sphobjinv>=2.3.1.3",
-  "typing-extensions>=4.15",
+  "diff-cover>=10.6",
+  "numpydoc>=1.11",
+  "pytest>=9.1.1",
+  "pytest-cov>=7.1",
+  "sphobjinv>=2.4",
+  "typing-extensions>=4.16",
 ]
 type = [
-  "ty>=0.0.19,<0.0.25",
+  "ty<0.0.25,>=0.0.24",
   { include-group = "docs" },
   { include-group = "test" },
 ]
@@ -77,12 +77,12 @@ docs = [
   "furo>=2025.12.19",
 ]
 lint = [
-  "pre-commit-uv>=4.2.1",
+  "pre-commit-uv>=4.3",
 ]
 pkg-meta = [
   "check-wheel-contents>=0.6.3",
-  "twine>=6.2",
-  "uv>=0.10.6",
+  "twine>=7",
+  "uv>=0.12.22",
 ]
 
 [tool.hatch]
