@@ -12,7 +12,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from csv import Error
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Protocol, TypeAliasType, Union, get_args, get_origin
+from typing import Any, ParamSpec, Protocol, TypeAliasType, TypeVar, TypeVarTuple, Union, get_args, get_origin
 from unittest.mock import MagicMock, patch
 
 if sys.version_info >= (3, 14):  # pragma: >=3.14 cover
@@ -189,24 +189,29 @@ def test_guarded_import_binds_names_below_an_unimportable_one(
 
 
 @pytest.mark.parametrize(
-    ("declaration", "annotation", "expected"),
+    ("declaration", "annotation", "kind"),
     [
-        pytest.param("T: int", "T", "~T", id="type-var"),
-        pytest.param("**P", "Callable[P, int]", "collections.abc.Callable[~P, int]", id="param-spec"),
-        pytest.param("*Ts", "Ts", "Ts", id="type-var-tuple"),
+        pytest.param("T: int", "T", TypeVar, id="type-var"),
+        pytest.param("**P", "P", ParamSpec, id="param-spec"),
+        pytest.param("*Ts", "Ts", TypeVarTuple, id="type-var-tuple"),
     ],
 )
 def test_stub_generic_parameters_resolve_on_repeated_calls(
-    guarded_module: _GuardedModuleBuilder, declaration: str, annotation: str, expected: str
+    guarded_module: _GuardedModuleBuilder,
+    declaration: str,
+    annotation: str,
+    kind: type[TypeVar | ParamSpec | TypeVarTuple],
 ) -> None:
     module = guarded_module("def func(value): return value\n")
     Path(str(module.__file__)).with_suffix(".pyi").write_text(
         f"from collections.abc import Callable\ndef func[{declaration}](value: {annotation}) -> {annotation}: ...\n"
     )
     for _ in range(2):
-        assert {key: str(value) for key, value in get_all_type_hints([], module.func, "func", {}).items()} == {
-            "value": expected,
-            "return": expected,
+        assert {
+            key: (type(value), value.__name__) for key, value in get_all_type_hints([], module.func, "func", {}).items()
+        } == {
+            "value": (kind, annotation),
+            "return": (kind, annotation),
         }
 
 
