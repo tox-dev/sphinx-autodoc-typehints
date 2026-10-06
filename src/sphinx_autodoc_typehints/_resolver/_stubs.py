@@ -9,12 +9,13 @@ import inspect
 import sys
 from copy import copy
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final, ParamSpec, TypeVar, TypeVarTuple, cast
 
 from ._type_comments import _load_args
 
 if TYPE_CHECKING:
     import types
+    from collections.abc import Callable
 
 _STUB_AST_CACHE: dict[Path, ast.Module | None] = {}
 
@@ -45,7 +46,27 @@ def _get_stub_context(obj: Any) -> tuple[dict[str, Any], set[str], str]:
     ns: dict[str, Any] = dict(vars(owner_module))
     resolved, unresolved = _resolve_stub_imports(tree, _stub_owner_package(owner_module, stub_path))
     ns.update(resolved)
+    ns.update(_stub_type_params(tree, obj))
     return ns, _extract_type_alias_names(tree) | (unresolved - ns.keys()), owner_module.__name__
+
+
+_TYPE_PARAM_FACTORIES: Final[dict[type[ast.type_param], Callable[[str], TypeVar | ParamSpec | TypeVarTuple]]] = {
+    ast.TypeVar: TypeVar,
+    ast.ParamSpec: ParamSpec,
+    ast.TypeVarTuple: TypeVarTuple,
+}
+
+
+def _stub_type_params(tree: ast.Module, obj: Any) -> dict[str, TypeVar | ParamSpec | TypeVarTuple]:
+    result: dict[str, TypeVar | ParamSpec | TypeVarTuple] = {}
+    parts = str(getattr(obj, "__qualname__", "")).split(".")
+    for depth in range(1, len(parts) + 1):
+        if isinstance(
+            node := _find_ast_node(tree.body, parts[:depth]), ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef
+        ):
+            for param in cast("list[ast.TypeVar | ast.ParamSpec | ast.TypeVarTuple]", node.type_params):
+                result[param.name] = _TYPE_PARAM_FACTORIES[type(param)](param.name)
+    return result
 
 
 def _stub_owner_package(owner_module: types.ModuleType, stub_path: Path) -> str:
