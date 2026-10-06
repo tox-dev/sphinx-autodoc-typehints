@@ -188,6 +188,41 @@ def test_guarded_import_binds_names_below_an_unimportable_one(
     assert get_all_type_hints([], module.func, f"{module.__name__}.func", {})["value"] is Decimal
 
 
+@pytest.mark.parametrize(
+    ("declaration", "annotation", "expected"),
+    [
+        pytest.param("T: int", "T", "~T", id="type-var"),
+        pytest.param("**P", "Callable[P, int]", "collections.abc.Callable[~P, int]", id="param-spec"),
+        pytest.param("*Ts", "Ts", "Ts", id="type-var-tuple"),
+    ],
+)
+def test_stub_generic_parameters_resolve_on_repeated_calls(
+    guarded_module: _GuardedModuleBuilder, declaration: str, annotation: str, expected: str
+) -> None:
+    module = guarded_module("def func(value): return value\n")
+    Path(str(module.__file__)).with_suffix(".pyi").write_text(
+        f"from collections.abc import Callable\ndef func[{declaration}](value: {annotation}) -> {annotation}: ...\n"
+    )
+    for _ in range(2):
+        assert {key: str(value) for key, value in get_all_type_hints([], module.func, "func", {}).items()} == {
+            "value": expected,
+            "return": expected,
+        }
+
+
+def test_stub_method_resolves_class_and_function_parameters(guarded_module: _GuardedModuleBuilder) -> None:
+    module = guarded_module("class Owner:\n    async def func(self, value): return value\n")
+    Path(str(module.__file__)).with_suffix(".pyi").write_text(
+        "from collections.abc import Callable\n"
+        "class Owner[T]:\n"
+        "    async def func[**P](self, value: Callable[P, T]) -> T: ...\n"
+    )
+    assert {key: str(value) for key, value in get_all_type_hints([], module.Owner.func, "Owner.func", {}).items()} == {
+        "value": "collections.abc.Callable[~P, ~T]",
+        "return": "~T",
+    }
+
+
 def test_guarded_import_resolves_namedtuple_field_without_prior_function(
     guarded_module: _GuardedModuleBuilder,
 ) -> None:
