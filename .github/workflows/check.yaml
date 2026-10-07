@@ -30,6 +30,8 @@ jobs:
           - pkg_meta
     steps:
       - name: Install OS dependencies
+        id: graphviz
+        background: true
         run: sudo apt-get install graphviz -y
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -46,6 +48,7 @@ jobs:
       - name: Install Python
         if: startsWith(matrix.env, '3.') && matrix.env != '3.14'
         run: uv python install --python-preference only-managed ${{ matrix.env }}
+      - wait: graphviz
       - name: Setup test suite
         run: tox run -vv --notest --skip-missing-interpreters false -e ${{ matrix.env }}
       - name: Run test suite
