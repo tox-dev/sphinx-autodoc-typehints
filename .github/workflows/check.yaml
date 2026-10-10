@@ -40,13 +40,14 @@ jobs:
       - name: Install the latest version of uv
         uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
+          python-version: "3.15"
           enable-cache: false
           cache-dependency-glob: "pyproject.toml"
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Install tox
-        run: uv tool install --python-preference only-managed --python 3.14 tox --with tox-uv
+        run: uv tool install --python-preference only-managed --python 3.15 tox --with tox-uv
       - name: Install Python
-        if: startsWith(matrix.env, '3.') && matrix.env != '3.14'
+        if: startsWith(matrix.env, '3.') && matrix.env != '3.15'
         run: uv python install --python-preference only-managed ${{ matrix.env }}
       - wait: graphviz
       - name: Setup test suite

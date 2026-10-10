@@ -98,55 +98,55 @@ lint.select = [
   "ALL",
 ]
 lint.ignore = [
-  "ANN401", # allow Any as type annotation
-  "COM812", # Conflict with formatter
-  "CPY",    # No copyright statements
-  "D203",   # `one-blank-line-before-class` (D203) and `no-blank-line-before-class` (D211) are incompatible
-  "D212",   # `multi-line-summary-first-line` (D212) and `multi-line-summary-second-line` (D213) are incompatible
-  "DOC",    # no sphinx support
-  "ISC001", # Conflict with formatter
-  "RUF067", # `__init__` module should only contain docstrings and re-exports
-  "S104",   # Possible binding to all interface
+  "any-type",                                  # allow Any as type annotation
+  "CPY",                                       # No copyright statements
+  "DOC",                                       # no sphinx support
+  "hardcoded-bind-all-interfaces",             # Possible binding to all interface
+  "incorrect-blank-line-before-class",         # `one-blank-line-before-class` (D203) and `no-blank-line-before-class` (D211) are incompatible
+  "missing-trailing-comma",                    # Conflict with formatter
+  "multi-line-summary-first-line",             # `multi-line-summary-first-line` (D212) and `multi-line-summary-second-line` (D213) are incompatible
+  "non-empty-init-module",                     # `__init__` module should only contain docstrings and re-exports
+  "single-line-implicit-string-concatenation", # Conflict with formatter
 ]
 lint.per-file-ignores."tests/**/*.py" = [
-  "B903",                   # test fixture classes intentionally use plain __init__ without dataclass
-  "D",                      # don't care about documentation in tests
-  "FBT",                    # don't care about booleans as positional arguments in tests
-  "INP001",                 # no implicit namespace
-  "PLC2701",                # private imports
-  "PLR0913",                # any number of arguments in tests
-  "PLR0917",                # any number of arguments in tests
-  "PLR2004",                # Magic value used in comparison, consider replacing with a constant variable
-  "PYI033",                 # we test for legacy `# type:` comments
-  "pytest-fixture-autouse", # shared setup fixtures are meant to apply to every test
-  "S101",                   # asserts allowed in tests
-  "S603",                   # `subprocess` call: check for execution of untrusted input
-  "UP006",                  # we test for old List/Tuple syntax
-  "UP007",                  # we test for old Union syntax
-  "UP045",                  # we test for old Optional syntax
+  "assert",                               # asserts allowed in tests
+  "class-as-data-structure",              # test fixture classes intentionally use plain __init__ without dataclass
+  "D",                                    # don't care about documentation in tests
+  "FBT",                                  # don't care about booleans as positional arguments in tests
+  "implicit-namespace-package",           # no implicit namespace
+  "import-private-name",                  # private imports
+  "legacy-type-comment",                  # we test for legacy `# type:` comments
+  "magic-value-comparison",               # Magic value used in comparison, consider replacing with a constant variable
+  "non-pep585-annotation",                # we test for old List/Tuple syntax
+  "non-pep604-annotation-optional",       # we test for old Optional syntax
+  "non-pep604-annotation-union",          # we test for old Union syntax
+  "pytest-fixture-autouse",               # shared setup fixtures are meant to apply to every test
+  "subprocess-without-shell-equals-true", # `subprocess` call: check for execution of untrusted input
+  "too-many-arguments",                   # any number of arguments in tests
+  "too-many-positional-arguments",        # any number of arguments in tests
 ]
 lint.per-file-ignores."tests/roots/test-integration/mod_eager.py" = [
-  "I002", # this file intentionally omits `from __future__ import annotations` to test non-deferred annotations
+  "missing-required-import", # this file intentionally omits `from __future__ import annotations` to test non-deferred annotations
 ]
 lint.per-file-ignores."tests/roots/test-integration/mod_forward_ref.py" = [
-  "I002",    # intentionally omits `from __future__ import annotations` to test forward references
-  "PLR6301", # method must be instance method to test class forward refs
+  "missing-required-import", # intentionally omits `from __future__ import annotations` to test forward references
+  "no-self-use",             # method must be instance method to test class forward refs
 ]
 lint.per-file-ignores."tests/roots/test-pyi-stubs/stub_mod.py" = [
-  "ANN",     # intentionally has no type annotations to simulate a C extension
-  "I002",    # intentionally omits `from __future__ import annotations`
-  "PLR6301", # method must be instance method to test stub resolution
-  "RUF029",  # async function must be async to test async stub resolution
+  "ANN",                     # intentionally has no type annotations to simulate a C extension
+  "missing-required-import", # intentionally omits `from __future__ import annotations`
+  "no-self-use",             # method must be instance method to test stub resolution
+  "unused-async",            # async function must be async to test async stub resolution
 ]
 lint.per-file-ignores."tests/roots/test-pyi-stubs/stub_mod.pyi" = [
-  "I002", # stub files don't use `from __future__ import annotations`
+  "missing-required-import", # stub files don't use `from __future__ import annotations`
 ]
 lint.per-file-ignores."tests/roots/test-unexecutable-guard/demo_unexecutable_guard.py" = [
-  "UP047", # the legacy TypeVar spelling is what the guard cannot execute
+  "non-pep695-generic-function", # the legacy TypeVar spelling is what the guard cannot execute
 ]
 lint.per-file-ignores."tests/test_resolver/test_type_comments.py" = [
-  "ANN001", # type comment fixtures intentionally omit annotations
-  "ARG001", # type comment fixtures have intentionally unused args
+  "missing-type-function-argument", # type comment fixtures intentionally omit annotations
+  "unused-function-argument",       # type comment fixtures have intentionally unused args
 ]
 lint.isort = { known-first-party = [
   "sphinx_autodoc_typehints",
@@ -167,7 +167,7 @@ max_supported_python = "3.15"
 
 [tool.ty]
 src.exclude = [ "tests/roots/" ]
-environment.python-version = "3.14"
+environment.python-version = "3.15"
 overrides = [ { include = [ "tests/" ], rules.empty-body = "ignore" } ]
 
 [tool.pytest]

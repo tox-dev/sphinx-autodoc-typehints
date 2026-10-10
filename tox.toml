@@ -17,6 +17,7 @@ skip_missing_interpreters = true
 
 [env_run_base]
 description = "run the unit tests with pytest under {base_python}"
+default_base_python = [ "3.15" ]
 package = "wheel"
 wheel_build_env = ".pkg"
 dependency_groups = [ "test" ]
@@ -57,6 +58,9 @@ commands = [
     "100",
   ],
 ]
+
+[env_pkg_base]
+default_base_python = [ "3.15" ]
 
 # 3.15 ships no compiled coverage tracer yet, leaving the pure-Python core as the only one recording contexts
 [env."3.15"]
