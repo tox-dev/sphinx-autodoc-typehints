@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import datetime
+import datetime as dt
 
 from attrs import define
 
@@ -11,7 +11,7 @@ from attrs import define
 class SomeClass:
     """This class does something."""
 
-    date: datetime.date
+    date: dt.date
     """Date to handle"""
 
     @classmethod
@@ -25,7 +25,7 @@ class SomeClass:
         return cls(input_value)
 
     @classmethod
-    def from_date(cls, input_value: datetime.date) -> SomeClass:
+    def from_date(cls, input_value: dt.date) -> SomeClass:
         """
         Initialize from date
 
@@ -35,7 +35,7 @@ class SomeClass:
         return cls(input_value)
 
     @classmethod
-    def from_time(cls, input_value: datetime.time) -> SomeClass:
+    def from_time(cls, input_value: dt.time) -> SomeClass:
         """
         Initialize from time
 
@@ -44,14 +44,14 @@ class SomeClass:
         """
         return cls(input_value)
 
-    def calculate_thing(self, number: float) -> datetime.timedelta:  # ruff:ignore[no-self-use]
+    def calculate_thing(self, number: float) -> dt.timedelta:  # ruff:ignore[no-self-use]
         """
         Calculate a thing
 
         :param number: Input
         :return: result
         """
-        return datetime.timedelta(number)
+        return dt.timedelta(number)
 
 
 __all__ = ["SomeClass"]
