@@ -264,7 +264,8 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
     if full_name == "typing.Annotated":
         return (yield annotation.__origin__)
     if full_name in {"typing.TypeVar", "typing.ParamSpec", "typing.TypeVarTuple"} and not isinstance(annotation, type):
-        params = {k: getattr(annotation, f"__{k}__") for k in ("bound", "covariant", "contravariant")}
+        # typing.TypeVarTuple has neither a bound nor a variance, only the typing_extensions backport adds them
+        params = {k: getattr(annotation, f"__{k}__", None) for k in ("bound", "covariant", "contravariant")}
         params = {k: v for k, v in params.items() if v}
         if "bound" in params:
             bound = yield params["bound"]
