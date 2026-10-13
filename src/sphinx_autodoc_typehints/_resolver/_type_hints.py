@@ -98,7 +98,7 @@ def _get_type_hint(autodoc_mock_imports: list[str], name: str, obj: Any, localns
             # targets; inspect.get_annotations() has no such guard, so use it to still surface
             # annotations in the rendered docs (see issue #680).
             return inspect.get_annotations(obj, locals=localns, eval_str=True)
-        return get_type_hints(obj, None, localns, include_extras=True)
+        return get_type_hints(obj, _module_backed_globals(obj), localns, include_extras=True)
     except (AttributeError, RecursionError):
         return {}
     except (TypeError, NameError, SyntaxError) as exc:
@@ -113,6 +113,18 @@ def _get_type_hint(autodoc_mock_imports: list[str], name: str, obj: Any, localns
                 location=get_obj_location(obj),
             )
         return resolve_string_annotations(obj, _get_unevaluated_annotations(obj), localns)
+
+
+def _module_backed_globals(obj: Any) -> dict[str, Any] | None:
+    """
+    Fill the gaps in a function's globals with its module's names.
+
+    Generated code such as an attrs ``__init__`` runs in a globals dict of its own, which misses the names the module
+    binds afterwards, the ``TYPE_CHECKING`` imports among them.
+    """
+    if (own := getattr(obj, "__globals__", None)) is None or (module := inspect.getmodule(obj)) is None:
+        return None
+    return own if vars(module) is own else {**vars(module), **own}
 
 
 def _get_unevaluated_annotations(obj: Any) -> dict[str, Any]:

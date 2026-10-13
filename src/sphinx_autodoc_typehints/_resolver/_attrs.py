@@ -12,7 +12,13 @@ def backfill_attrs_annotations(obj: Any) -> None:
         return
     if not has(obj):
         return
-    if (annotations := getattr(obj, "__annotations__", None)) is None:
+    try:
+        annotations = getattr(obj, "__annotations__", None)
+    except (NameError, AttributeError, TypeError):  # pragma: >=3.14 cover
+        # PEP 649 evaluates annotations on first read, so one naming something undefined fails here; such a class
+        # keeps its annotations as written rather than failing the build
+        return
+    if annotations is None:
         annotations = {}
         obj.__annotations__ = annotations
     for field in fields(obj):
