@@ -14,7 +14,19 @@ import enum
 import inspect
 import sys
 import types
-from typing import TYPE_CHECKING, Any, AnyStr, ForwardRef, NewType, TypeVar, Union, get_args, get_origin
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AnyStr,
+    Concatenate,
+    ForwardRef,
+    NewType,
+    ParamSpec,
+    TypeVar,
+    Union,
+    get_args,
+    get_origin,
+)
 
 from sphinx.util import rst
 from sphinx.util.inspect import TypeAliasForwardRef
@@ -272,7 +284,13 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
         fmt = []
         for arg in args:
             fmt.append((yield arg))  # ruff:ignore[manual-list-comprehension]  # yield is illegal inside a comprehension
-        formatted_args = f"\\[\\[{', '.join(fmt[:-1])}], {fmt[-1]}]"
+        # a ParamSpec or Concatenate stands for the whole parameter list, so it takes no brackets of its own
+        params = (
+            fmt[0]
+            if isinstance(args[0], ParamSpec) or get_origin(args[0]) is Concatenate
+            else f"\\[{', '.join(fmt[:-1])}]"
+        )
+        formatted_args = f"\\[{params}, {fmt[-1]}]"
     elif full_name == "typing.Literal" and args:
         literal_parts = [_format_literal_arg(arg, config) for arg in args]
         if short_literals:

@@ -356,6 +356,18 @@ _CASES = [
         r":py:class:`~collections.abc.Callable`\ \[\[:py:class:`int`, :py:class:`str`], :py:class:`bool`]",
         id="Callable-int-str-bool",
     ),
+    pytest.param(
+        Callable[P, int],
+        rf":py:class:`~collections.abc.Callable`\ \[:py:class:`~typing.ParamSpec`\ \(``P``{_NONE_BOUND}),"
+        r" :py:class:`int`]",
+        id="Callable-ParamSpec-int",
+    ),
+    pytest.param(
+        Callable[typing_extensions.Concatenate[str, P], int],
+        r":py:class:`~collections.abc.Callable`\ \[:py:data:`~typing.Concatenate`\ \[:py:class:`str`, "
+        rf":py:class:`~typing.ParamSpec`\ \(``P``{_NONE_BOUND})], :py:class:`int`]",
+        id="Callable-Concatenate-int",
+    ),
     pytest.param(re.Pattern, ":py:class:`~re.Pattern`", id="Pattern"),
     pytest.param(re.Pattern[str], r":py:class:`~re.Pattern`\ \[:py:class:`str`]", id="Pattern-str"),
     pytest.param(IO, ":py:class:`~typing.IO`", id="IO"),
