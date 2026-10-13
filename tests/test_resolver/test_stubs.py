@@ -374,6 +374,27 @@ def native_package(tmp_path: Path) -> Iterator[tuple[types.ModuleType, types.Mod
         yield parent, child
 
 
+@pytest.mark.parametrize(
+    ("stub_import", "annotation"),
+    [
+        pytest.param("import subpkg.extra", "subpkg.extra.Extra", id="import"),
+        pytest.param("from . import extra", "extra.Extra", id="from-import"),
+    ],
+)
+def test_get_all_type_hints_imports_stub_submodules(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, stub_import: str, annotation: str
+) -> None:
+    (pkg_dir := tmp_path / "subpkg").mkdir()
+    (pkg_dir / "__init__.py").write_text("def load(src): ...\n")
+    (pkg_dir / "__init__.pyi").write_text(f"{stub_import}\n\ndef load(src: {annotation}) -> int: ...\n")
+    (pkg_dir / "extra.py").write_text("class Extra: ...\n")
+    monkeypatch.syspath_prepend(tmp_path)
+    with patch.dict(sys.modules):
+        load = importlib.import_module("subpkg").load
+        hints = get_all_type_hints([], load, "subpkg.load", {})
+        assert hints == {"src": importlib.import_module("subpkg.extra").Extra, "return": int}
+
+
 def test_backfill_from_stub_no_stub() -> None:
     assert _backfill_from_stub(test_backfill_from_stub_no_stub) == {}
 
