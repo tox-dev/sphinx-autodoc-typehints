@@ -102,6 +102,42 @@ def get_descriptor_type_hint(obj: Any) -> Any | None:
     return _resolve_string_annotations(obj, {"return": annotation}, localns, owner_module)["return"]
 
 
+def _get_type_hint(autodoc_mock_imports: list[str], name: str, obj: Any, localns: Mapping[str, Any]) -> dict[str, Any]:
+    resolve_type_guarded_imports(autodoc_mock_imports, obj)
+    localns = _build_localns(obj, localns)
+    try:
+        if getattr(obj, "__no_type_check__", False):
+            # typing.get_type_hints() unconditionally returns {} for @typing.no_type_check
+            # targets; inspect.get_annotations() has no such guard, so use it to still surface
+            # annotations in the rendered docs (see issue #680).
+            return inspect.get_annotations(obj, locals=localns, eval_str=True)
+        return get_type_hints(obj, None, localns, include_extras=True)
+    except (AttributeError, RecursionError):
+        return {}
+    except (TypeError, NameError, SyntaxError) as exc:
+        if not isinstance(exc, TypeError):
+            _LOGGER.warning(
+                'Cannot resolve forward reference in type annotations of "%s" (module %s): %s',
+                name,
+                getattr(obj, "__module__", "?"),
+                exc,
+                type="sphinx_autodoc_typehints",
+                subtype="forward_reference",
+                location=get_obj_location(obj),
+            )
+        return _resolve_string_annotations(obj, _get_unevaluated_annotations(obj), localns)
+
+
+def _get_unevaluated_annotations(obj: Any) -> dict[str, Any]:
+    if sys.version_info < (3, 14):  # pragma: <3.14 cover
+        return getattr(obj, "__annotations__", {})
+    # ForwardRef proxies keep unevaluatable annotations renderable as their source text — see #712
+    try:  # pragma: >=3.14 cover
+        return annotationlib.get_annotations(obj, format=annotationlib.Format.FORWARDREF)
+    except (NameError, TypeError, AttributeError, RecursionError):  # pragma: >=3.14 cover
+        return {}
+
+
 def _resolve_string_annotations(
     obj: Any, annotations: dict[str, str], localns: dict[str, Any], owner_module: str = ""
 ) -> dict[str, Any]:
@@ -125,51 +161,6 @@ def _resolve_string_annotations(
         else:
             resolved[key] = value
     return resolved
-
-
-def _get_type_hint(autodoc_mock_imports: list[str], name: str, obj: Any, localns: Mapping[str, Any]) -> dict[str, Any]:
-    resolve_type_guarded_imports(autodoc_mock_imports, obj)
-    localns = _build_localns(obj, localns)
-    try:
-        if getattr(obj, "__no_type_check__", False):
-            # typing.get_type_hints() unconditionally returns {} for @typing.no_type_check
-            # targets; inspect.get_annotations() has no such guard, so use it to still surface
-            # annotations in the rendered docs (see issue #680).
-            result = inspect.get_annotations(obj, locals=localns, eval_str=True)
-        else:
-            result = get_type_hints(obj, None, localns, include_extras=True)
-    except (AttributeError, TypeError, RecursionError) as exc:
-        if (
-            isinstance(exc, TypeError) and _future_annotations_imported(obj) and "unsupported operand type" in str(exc)
-        ):  # pragma: <3.14 cover
-            result = obj.__annotations__
-        elif isinstance(exc, TypeError) and sys.version_info >= (3, 14):  # pragma: >=3.14 cover
-            result = _get_forward_ref_annotations(obj)
-        else:
-            result = {}
-    except (NameError, SyntaxError) as exc:
-        _LOGGER.warning(
-            'Cannot resolve forward reference in type annotations of "%s" (module %s): %s',
-            name,
-            getattr(obj, "__module__", "?"),
-            exc,
-            type="sphinx_autodoc_typehints",
-            subtype="forward_reference",
-            location=get_obj_location(obj),
-        )
-        if sys.version_info >= (3, 14):
-            result = annotationlib.get_annotations(obj, format=annotationlib.Format.FORWARDREF)
-        else:
-            result = obj.__annotations__  # pragma: <3.14 cover
-    return result
-
-
-def _get_forward_ref_annotations(obj: Any) -> dict[str, Any]:  # pragma: >=3.14 cover
-    # ForwardRef proxies keep unevaluatable annotations renderable as their source text — see #712
-    try:
-        return annotationlib.get_annotations(obj, format=annotationlib.Format.FORWARDREF)
-    except (NameError, TypeError, AttributeError, RecursionError):
-        return {}
 
 
 def resolve_type_guarded_imports(autodoc_mock_imports: list[str], obj: Any) -> None:
@@ -320,13 +311,6 @@ def _type_params(obj: Any) -> tuple[TypeVar | ParamSpec | TypeVarTuple, ...]:
     # A class owning the __type_params__ slot itself (typing.TypeAliasType) hands back the descriptor, not a tuple
     params = getattr(obj, "__type_params__", ())
     return params if isinstance(params, tuple) else ()
-
-
-def _future_annotations_imported(obj: Any) -> bool:
-    annotations_ = getattr(inspect.getmodule(obj), "annotations", None)
-    if annotations_ is None:
-        return False
-    return bool(annotations_.compiler_flag == 0x1000000)  # ruff:ignore[magic-value-comparison]
 
 
 __all__ = [

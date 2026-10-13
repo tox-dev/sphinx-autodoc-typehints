@@ -15,9 +15,6 @@ from pathlib import Path
 from typing import Any, ParamSpec, Protocol, TypeAliasType, TypeVar, TypeVarTuple, Union, get_args, get_origin
 from unittest.mock import MagicMock, patch
 
-if sys.version_info >= (3, 14):  # pragma: >=3.14 cover
-    import annotationlib
-
 import pytest
 from conftest import make_docstring_app
 
@@ -27,7 +24,6 @@ from sphinx_autodoc_typehints._resolver._type_hints import (
     _TYPE_GUARD_IMPORTS_RESOLVED,
     _build_localns,
     _execute_guarded_code,
-    _future_annotations_imported,
     _get_type_hint,
     _resolve_string_annotations,
     _run_guarded_import,
@@ -42,14 +38,6 @@ STUB_ROOT = Path(__file__).parent.parent / "roots" / "test-pyi-stubs"
 
 def test_no_source_code_type_guard() -> None:
     resolve_type_guarded_imports([], Error)
-
-
-def test_future_annotations_not_imported() -> None:
-    assert not _future_annotations_imported(csv)
-
-
-def test_future_annotations_imported() -> None:
-    assert _future_annotations_imported(test_future_annotations_imported)
 
 
 def _prose(x: "a positive float") -> None: ...  # ruff:ignore[forward-annotation-syntax-error]  # ty: ignore[invalid-syntax-in-forward-annotation]  # the case under test
@@ -598,36 +586,33 @@ def test_get_all_type_hints_crossrefs_names_from_stub_only_modules(tmp_path: Pat
     assert hint.name == "_SeriesLike"
 
 
-@pytest.mark.skipif(sys.version_info < (3, 14), reason="annotationlib requires Python 3.14+")
-def test_get_type_hint_uses_annotationlib_on_name_error() -> None:  # pragma: >=3.14 cover
-    """_get_type_hint falls back to annotationlib.get_annotations on 3.14+ NameError."""
-    sentinel = {"x": int}
-
-    def dummy() -> None: ...
-
-    with (
-        patch(
-            "sphinx_autodoc_typehints._resolver._type_hints.get_type_hints",
-            side_effect=NameError("name 'Foo' is not defined"),
-        ),
-        patch.object(annotationlib, "get_annotations", return_value=sentinel) as mock_get_ann,
-    ):
-        result = _get_type_hint([], "dummy", dummy, {})
-
-    mock_get_ann.assert_called_once_with(dummy, format=annotationlib.Format.FORWARDREF)
-    assert result is sentinel
+def _one_unsubscriptable(first: NotGenericAtRuntime[int], second: int) -> str: ...
 
 
-@pytest.mark.skipif(sys.version_info >= (3, 14), reason="Tests pre-3.14 fallback path")
-def test_get_type_hint_falls_back_to_dunder_annotations_before_314() -> None:  # pragma: <3.14 cover
-    """_get_type_hint falls back to __annotations__ on pre-3.14 NameError."""
+def _one_unresolvable(
+    first: Missing,  # ruff:ignore[undefined-name]  # ty: ignore[unresolved-reference]  # the case under test
+    second: int,
+) -> str: ...
 
-    def dummy(x: int) -> str: ...
 
-    with patch(
-        "sphinx_autodoc_typehints._resolver._type_hints.get_type_hints",
-        side_effect=NameError("name 'Foo' is not defined"),
-    ):
-        result = _get_type_hint([], "dummy", dummy, {})
+@pytest.mark.parametrize(
+    ("func", "unresolved"),
+    [
+        pytest.param(_one_unsubscriptable, r"NotGenericAtRuntime\[int\]", id="type-error"),
+        pytest.param(_one_unresolvable, "Missing", id="name-error"),
+    ],
+)
+def test_process_docstring_keeps_other_hints_when_one_fails(func: types.FunctionType, unresolved: str) -> None:
+    lines = [":param first: the first", ":param second: the second"]
+    process_docstring(make_docstring_app(), "function", f"{__name__}.{func.__name__}", func, None, lines)
+    assert lines == [
+        f":type first: :sphinx_autodoc_typehints_type:`{unresolved}`",
+        ":param first: the first",
+        r":type second: :sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``",
+        ":param second: the second",
+        "",
+        r":rtype: :sphinx_autodoc_typehints_type:`\:py\:class\:\`str\``",
+    ]
 
-    assert result == dummy.__annotations__
+
+class NotGenericAtRuntime: ...
