@@ -7,15 +7,17 @@ from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock
 
 import pytest
-from conftest import normalize_sphinx_text
+from conftest import make_docstring_app, normalize_sphinx_text
 from sphinx.application import Sphinx
 
+from sphinx_autodoc_typehints import process_docstring
 from sphinx_autodoc_typehints._formats import detect_format
 from sphinx_autodoc_typehints._formats._base import InsertIndexInfo
 from sphinx_autodoc_typehints._formats._numpydoc import NumpydocFormat, _convert_numpydoc_to_sphinx_fields
 from sphinx_autodoc_typehints._formats._sphinx import SphinxFieldListFormat
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
     from io import StringIO
 
     from sphinx.testing.util import SphinxTestApp
@@ -101,18 +103,6 @@ def test_convert_raises() -> None:
     assert ":raises TypeError: If x is not an integer." in lines
 
 
-def test_convert_yields_single() -> None:
-    lines = [
-        ":Yields:",
-        "",
-        "    int",
-        "        A number.",
-        "",
-    ]
-    _convert_numpydoc_to_sphinx_fields(lines)
-    assert ":Yields: A number." in lines
-
-
 def test_convert_yields_multiple() -> None:
     lines = [
         ":Yields:",
@@ -154,20 +144,6 @@ def test_no_numpydoc_content_is_noop() -> None:
     lines = list(original)
     _convert_numpydoc_to_sphinx_fields(lines)
     assert lines == original
-
-
-def test_multiline_description() -> None:
-    lines = [
-        ":Parameters:",
-        "",
-        "    **data** : dict",
-        "        The data dictionary.",
-        "        It can span multiple lines.",
-        "",
-    ]
-    _convert_numpydoc_to_sphinx_fields(lines)
-    assert ":param data: The data dictionary. It can span multiple lines." in lines
-    assert ":type data: dict" in lines
 
 
 def test_param_without_type() -> None:
@@ -494,3 +470,92 @@ def test_numpydoc_extension_build(
     result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
     for fragment in expected_fragments:
         assert fragment in result
+
+
+@pytest.mark.parametrize(
+    ("body", "expected"),
+    [
+        pytest.param(["The first,", "wrapped."], [":param first: The first,", "   wrapped."], id="wrapped"),
+        pytest.param(
+            ["The first.", "", "More about it."],
+            [":param first: The first.", "", "   More about it."],
+            id="paragraphs",
+        ),
+        pytest.param(
+            ["The first, one of:", "", "- a", "- b"],
+            [":param first: The first, one of:", "", "   - a", "   - b"],
+            id="list",
+        ),
+    ],
+)
+def test_process_docstring_numpydoc_description_keeps_its_blocks(body: list[str], expected: list[str]) -> None:
+    def two_params(first: int, second: str) -> None: ...
+
+    # numpydoc indents the blank line separating the blocks
+    lines = [
+        ":Parameters:",
+        "",
+        "    **first** : int",
+        *(f"        {line}" for line in body),
+        "",
+        "    **second** : str",
+        "        The second.",
+        "",
+    ]
+    app = make_docstring_app(typehints_document_rtype=False)
+    process_docstring(app, "function", "mod.two_params", two_params, None, lines)
+    assert lines == [
+        *expected,
+        r":type first: :sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``",
+        ":param second: The second.",
+        r":type second: :sphinx_autodoc_typehints_type:`\:py\:class\:\`str\``",
+        "",
+    ]
+
+
+def test_process_docstring_numpydoc_params_sharing_a_type_line() -> None:
+    def coordinates(lat: int, lon: int) -> None: ...
+
+    lines = [":Parameters:", "", "    **lat, lon** : int", "        The coordinates.", ""]
+    app = make_docstring_app(typehints_document_rtype=False)
+    process_docstring(app, "function", "mod.coordinates", coordinates, None, lines)
+    assert lines == [
+        ":param lat: The coordinates.",
+        r":type lat: :sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``",
+        ":param lon: The coordinates.",
+        r":type lon: :sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``",
+        "",
+    ]
+
+
+@pytest.mark.parametrize(
+    ("entry", "expected"),
+    [
+        pytest.param("    int", ":Yields: int -- A number.", id="unnamed"),
+        pytest.param("    **item** : int", ":Yields: **item** (int) -- A number.", id="named"),
+        pytest.param("    **item**", ":Yields: **item** -- A number.", id="named-untyped"),
+    ],
+)
+def test_process_docstring_numpydoc_single_yield_keeps_its_type(entry: str, expected: str) -> None:
+    def counter(bound: int) -> Iterator[int]: ...
+
+    lines = [
+        ":Parameters:",
+        "",
+        "    **bound** : int",
+        "        The bound.",
+        "",
+        ":Yields:",
+        "",
+        entry,
+        "        A number.",
+        "",
+    ]
+    process_docstring(make_docstring_app(), "function", "mod.counter", counter, None, lines)
+    assert lines == [
+        ":param bound: The bound.",
+        r":type bound: :sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``",
+        "",
+        expected,
+        "",
+    ]
