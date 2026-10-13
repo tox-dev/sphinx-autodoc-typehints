@@ -52,3 +52,15 @@ def test_napoleon_class_annotation_lookup(
     app.build()
 
     assert (Path(app.srcdir) / "_build/text/index.txt").read_text() == expected
+
+
+@pytest.mark.sphinx(
+    "doctest",
+    testroot="dummy",
+    confoverrides={"extensions": ["sphinx.ext.autodoc", "sphinx.ext.doctest", "sphinx_autodoc_typehints"]},
+)
+def test_doctest_failure_reports_the_example_line(app: SphinxTestApp, write_rst: Callable[[str], None]) -> None:
+    write_rst("Title\n=====\n\nPara.\n\n>>> 1 + 1\n3\n")
+    app.build()
+
+    assert 'File "index.rst", line 6, in default' in (Path(app.outdir) / "output.txt").read_text()
