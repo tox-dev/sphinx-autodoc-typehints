@@ -415,28 +415,6 @@ def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str
     result = format_annotation(annotation, conf)
     assert result == expected_result
 
-    if re.match(r"^:py:data:`~typing\.Union`\\\[.*``None``.*]", expected_result):  # pragma: <3.14 cover
-        expected_result_not_simplified = expected_result.replace(", ``None``", "")
-        expected_result_not_simplified += ":py:data:`~typing.Optional`\\ \\["
-        expected_result_not_simplified += "]"
-        conf = create_autospec(
-            Config,
-            simplify_optional_unions=False,
-            _annotation_globals=globals(),
-            always_use_bars_union=False,
-        )
-        assert format_annotation(annotation, conf) == expected_result_not_simplified
-
-        if "typing" in expected_result_not_simplified:
-            expected_result_not_simplified = expected_result_not_simplified.replace("~typing", "typing")
-            conf = create_autospec(
-                Config,
-                typehints_fully_qualified=True,
-                simplify_optional_unions=False,
-                _annotation_globals=globals(),
-            )
-            assert format_annotation(annotation, conf) == expected_result_not_simplified
-
     if "typing" in expected_result or __name__ in expected_result:
         expected_result = expected_result.replace("~typing", "typing")
         expected_result = expected_result.replace("~collections.abc", "collections.abc")
@@ -460,6 +438,21 @@ def test_format_annotation(inv: Inventory, annotation: Any, expected_result: str
         if expected_role == "function":  # pragma: no cover -- Python docs inventory always uses "func"
             expected_role = "func"
         assert match.group("role") == expected_role
+
+
+@pytest.mark.skipif(sys.version_info >= (3, 14), reason="Union renders with bars from Python 3.14")
+@pytest.mark.parametrize(
+    ("fully_qualified", "prefix"), [pytest.param(False, "~", id="short"), pytest.param(True, "", id="qualified")]
+)
+def test_format_annotation_unsimplified_optional_union(
+    fully_qualified: bool, prefix: str
+) -> None:  # pragma: <3.14 cover
+    conf = create_autospec(
+        Config, simplify_optional_unions=False, typehints_fully_qualified=fully_qualified, always_use_bars_union=False
+    )
+    assert format_annotation(Union[int, str, None], conf) == (
+        rf":py:data:`{prefix}typing.Optional`\ \[:py:data:`{prefix}typing.Union`\ \[:py:class:`int`, :py:class:`str`]]"
+    )
 
 
 @pytest.mark.parametrize(
