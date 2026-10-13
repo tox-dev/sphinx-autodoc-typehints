@@ -9,6 +9,7 @@ import typing
 import warnings
 from collections.abc import Callable, Mapping
 from io import StringIO
+from pathlib import Path
 from types import EllipsisType, FrameType, FunctionType, ModuleType, NotImplementedType, TracebackType
 from typing import (  # ruff:ignore[deprecated-import]
     IO,
@@ -48,6 +49,7 @@ from sphinx_autodoc_typehints import (
 from sphinx_autodoc_typehints._annotations import MyTypeAliasForwardRef, _get_canonical_type_alias_name
 
 if TYPE_CHECKING:
+    from sphinx.testing.util import SphinxTestApp
     from sphobjinv import Inventory
 
 T = TypeVar("T")
@@ -734,6 +736,30 @@ def test_format_annotation_crossref_alias(crossref: bool, fully_qualified: bool,
     annotation = MyTypeAliasForwardRef("EncoderHook")
     annotation.crossref = crossref
     assert format_annotation(annotation, _config_without_env(fully_qualified=fully_qualified)) == expected_result
+
+
+@pytest.mark.parametrize(
+    ("rst", "href"),
+    [
+        pytest.param(
+            ".. autoclass:: local_widget.Widget\n\n.. autofunction:: local_widget.use\n",
+            "#local_widget.Widget",
+            id="documented-locally",
+        ),
+        pytest.param(
+            ".. autofunction:: local_widget.use\n", "https://example.org/remote/api.html#remote.Widget", id="remote"
+        ),
+    ],
+)
+@pytest.mark.sphinx("html", testroot="intersphinx-local-target")
+def test_intersphinx_mapped_type_prefers_the_local_target(
+    app: SphinxTestApp, write_rst: Callable[[str], None], rst: str, href: str
+) -> None:
+    write_rst(rst)
+    app.build()
+
+    html = (Path(app.outdir) / "index.html").read_text()
+    assert set(re.findall(r'href="([^"]*Widget)"', html)) == {href}
 
 
 def test_format_annotation_type_alias_found_in_py_domain() -> None:

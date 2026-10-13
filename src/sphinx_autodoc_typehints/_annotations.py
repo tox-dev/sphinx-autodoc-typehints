@@ -234,7 +234,9 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
 
     module = _fixup_module_name(config, module)
     internal_path = f"{module}.{class_name}"
+    local_path: str | None = None
     if (mapping := getattr(config, "_intersphinx_type_mapping", None)) and (mapped := mapping.get(internal_path)):
+        local_path = internal_path
         module, _, class_name = mapped.rpartition(".")
     full_name = f"{module}.{class_name}" if module != "builtins" else class_name
     fully_qualified = getattr(config, "typehints_fully_qualified", False)
@@ -324,8 +326,13 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
         formatted_args = args_format.format(", ".join(fmt))
 
     escape = "\\ " if formatted_args else ""
+    reference = f":py:{role}:`{prefix}{full_name}`"
+    if local_path is not None:
+        # a type the project documents itself links there, the intersphinx name is only the fallback
+        local = f":py:{role}:`{'' if fully_qualified else '~'}{local_path}`"
+        reference = defer_alias_choice(config, local, reference) or reference
     # B901: returning a value from a generator is intentional here — the driver reads it via StopIteration
-    return f":py:{role}:`{prefix}{full_name}`{escape}{formatted_args}"  # ruff:ignore[return-in-generator]
+    return f"{reference}{escape}{formatted_args}"  # ruff:ignore[return-in-generator]
 
 
 def get_annotation_module(annotation: Any) -> str:
