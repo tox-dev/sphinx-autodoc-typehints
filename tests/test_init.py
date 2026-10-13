@@ -12,6 +12,7 @@ from docutils.frontend import get_default_settings
 from docutils.parsers.rst import Parser
 from sphinx.application import Sphinx
 from sphinx.config import Config
+from sphinx.ext.autodoc import Options
 from sphinx.ext.autosummary import extract_summary
 
 import sphinx_autodoc_typehints as sat
@@ -298,7 +299,7 @@ def test_process_signature_uses_new_when_init_inherited() -> None:
 class _BothClass:
     def __new__(cls, a: float) -> _BothClass: ...  # ruff:ignore[non-self-return-type]
 
-    def __init__(self, *args: object) -> None: ...
+    def __init__(self, *args: float) -> None: ...
 
 
 class _InitOverridesNew(_BothClass):
@@ -314,7 +315,7 @@ class _InitOverridesNew(_BothClass):
 )
 def test_process_signature_picks_constructor_like_inspect(cls: type, expected: str) -> None:
     app = make_sig_app(typehints_use_signature=True)
-    assert process_signature(app, "class", f"test.{cls.__name__}", cls, MagicMock(), "", "") == (expected, None)
+    assert process_signature(app, "class", f"test.{cls.__name__}", cls, Options(), "", "") == (expected, None)
 
 
 @pytest.mark.parametrize(
