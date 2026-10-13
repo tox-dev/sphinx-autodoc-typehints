@@ -546,6 +546,28 @@ def test_setup_returns_version() -> None:
     assert result["parallel_write_safe"] is True
 
 
+@pytest.mark.sphinx("text", testroot="dummy")
+def test_always_document_param_types_change_rereads_sources(
+    app: SphinxTestApp, make_app: Callable[..., SphinxTestApp], write_rst: Callable[[str], None]
+) -> None:
+    write_rst(".. autofunction:: dummy_module.undocumented_function")
+    app.build()
+
+    make_app("text", srcdir=app.srcdir, confoverrides={"always_document_param_types": True}).build()
+
+    assert (Path(app.srcdir) / "_build/text/index.txt").read_text() == dedent("""\
+        dummy_module.undocumented_function(x)
+
+           Hi
+
+           Parameters:
+              **x** ("int")
+
+           Return type:
+              "str"
+        """)
+
+
 def test_process_docstring_reentrant_call_keeps_outer_state() -> None:
     """A nested call must hand the outer one its own state back (#750)."""
 
