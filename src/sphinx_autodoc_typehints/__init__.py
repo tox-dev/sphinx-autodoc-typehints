@@ -256,9 +256,12 @@ def _inject_overload_signatures(
     obj: Any,
     lines: list[str],
 ) -> bool:
-    if what not in {"function", "method"} or not app.config.typehints_document_overloads:
-        return False
-    if _strip_no_overloads_directive(lines):
+    # strip the directive first, as it must not show even where overloads are not rendered
+    if (
+        _strip_no_overloads_directive(lines)
+        or what not in {"function", "method"}
+        or not app.config.typehints_document_overloads
+    ):
         return False
     if (overloads := _resolve_overloads(obj)) is None:
         return False

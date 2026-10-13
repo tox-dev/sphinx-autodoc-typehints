@@ -902,6 +902,26 @@ def overload_with_complex_types(x: list[int] | dict[str, int]) -> dict[str, int]
     """
 
 
+@expected(
+    """\
+mod.func_with_no_overloads_while_disabled(a)
+
+   Accepts an int.
+
+   Parameters:
+      **a** ("int") -- The thing
+""",
+    typehints_document_overloads=False,
+)
+def func_with_no_overloads_while_disabled(a: int):  # ruff:ignore[missing-return-type-undocumented-public-function]
+    """:no-overloads:
+
+    Accepts an int.
+
+    :param a: The thing
+    """
+
+
 @overload
 def func_with_overload_no_overloads(a: int, b: int) -> None: ...
 
