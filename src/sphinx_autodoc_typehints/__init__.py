@@ -69,7 +69,9 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-return-stateme
         return None
 
     original_obj = obj
-    obj = getattr(obj, "__init__", getattr(obj, "__new__", None)) if inspect.isclass(obj) else obj
+    if inspect.isclass(obj):
+        # a class without its own __init__ (e.g. a NamedTuple) takes its parameters from __new__
+        obj = obj.__new__ if obj.__init__ is object.__init__ and obj.__new__ is not object.__new__ else obj.__init__
     try:
         has_annotations = getattr(obj, "__annotations__", None)
     except (NameError, TypeError, AttributeError):
@@ -81,7 +83,7 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-return-stateme
         return None
 
     try:
-        obj = inspect.unwrap(obj)  # ty: ignore[invalid-argument-type]
+        obj = inspect.unwrap(obj)
     except ValueError:
         return None
     sph_signature = sphinx_signature(obj, type_aliases=app.config["autodoc_type_aliases"])
