@@ -271,6 +271,21 @@ def test_inject_overload_local_no_overloads_directive() -> None:
         _OVERLOADS_CACHE.pop("test_mod", None)
 
 
+def test_process_docstring_strips_no_overloads_while_overloads_are_disabled() -> None:
+    def takes_count(count: int) -> None: ...
+
+    lines = [":no-overloads:", "", "Accepts an int.", "", ":param count: The count"]
+    app = make_docstring_app(typehints_document_overloads=False, typehints_document_rtype=False)
+    process_docstring(app, "function", "mod.takes_count", takes_count, None, lines)
+    assert lines == [
+        "",
+        "Accepts an int.",
+        "",
+        r":type count: :sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``",
+        ":param count: The count",
+    ]
+
+
 def test_inject_overload_local_directive_with_global_enabled() -> None:
     obj = MagicMock()
     obj.__module__ = "test_mod"
