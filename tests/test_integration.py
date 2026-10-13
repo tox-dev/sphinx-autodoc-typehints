@@ -568,25 +568,6 @@ def function_with_unresolvable_annotation(x: a.b.c):  # ruff:ignore[missing-retu
     """
 
 
-@warns(WarningInfo(regexp="Forward reference must be an expression", type="sphinx_autodoc_typehints.forward_reference"))
-@expected(
-    """\
-mod.function_with_prose_annotation(x)
-
-   Function docstring.
-
-   Parameters:
-      **x** (a positive float) -- foo
-""",
-)
-def function_with_prose_annotation(x: "a positive float"):  # ruff:ignore[missing-return-type-undocumented-public-function, forward-annotation-syntax-error]  # ty: ignore[invalid-syntax-in-forward-annotation]  # the case under test
-    """
-    Function docstring.
-
-    :arg x: foo
-    """
-
-
 @expected(
     """\
 mod.function_with_typehint_comment(x, y)

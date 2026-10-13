@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import inspect
-from typing import Any, NamedTuple
+from pathlib import Path
+from textwrap import dedent
+from typing import TYPE_CHECKING, Any, NamedTuple
 from unittest.mock import MagicMock, create_autospec, patch
 
 import pytest
@@ -22,6 +24,11 @@ from sphinx_autodoc_typehints import (
 )
 from sphinx_autodoc_typehints._resolver._util import get_obj_location
 from sphinx_autodoc_typehints.patches import _OVERLOADS_CACHE
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from sphinx.testing.util import SphinxTestApp
 
 
 class _ClassWithPrivate:
@@ -438,6 +445,23 @@ def test_process_signature_annotations_error(error: Exception) -> None:
     app = make_sig_app()
     result = process_signature(app, "function", "test.func", _Func(), MagicMock(), "", "")
     assert result is None
+
+
+@pytest.mark.sphinx(
+    "text", testroot="dummy", confoverrides={"extensions": ["sphinx_autodoc_typehints", "sphinx.ext.autodoc"]}
+)
+def test_setup_loads_autodoc_listed_after_it(app: SphinxTestApp, write_rst: Callable[[str], None]) -> None:
+    write_rst(".. autofunction:: dummy_module.undocumented_function")
+    app.build()
+
+    assert (Path(app.srcdir) / "_build/text/index.txt").read_text() == dedent("""\
+        dummy_module.undocumented_function(x)
+
+           Hi
+
+           Return type:
+              "str"
+        """)
 
 
 def test_setup_returns_version() -> None:
