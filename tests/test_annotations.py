@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import enum
+import pydoc
 import re
 import sys
 import types
 import typing
+import warnings
 from collections.abc import Callable, Mapping
 from io import StringIO
 from types import EllipsisType, FrameType, FunctionType, ModuleType, NotImplementedType, TracebackType
@@ -400,8 +402,8 @@ _CASES = [
         id="Tuple-p-Ellipsis",
     ),
     pytest.param(Annotated[int, "metadata"], r":py:class:`int`", id="Annotated-metadata"),
-    pytest.param(Required[int], r":py:class:`~typing.Required`\ \[:py:class:`int`]", id="Required"),
-    pytest.param(NotRequired[int], r":py:class:`~typing.NotRequired`\ \[:py:class:`int`]", id="NotRequired"),
+    pytest.param(Required[int], r":py:data:`~typing.Required`\ \[:py:class:`int`]", id="Required"),
+    pytest.param(NotRequired[int], r":py:data:`~typing.NotRequired`\ \[:py:class:`int`]", id="NotRequired"),
 ]
 
 
@@ -490,6 +492,27 @@ def test_always_use_bars_union(annotation: str, expected_result: str) -> None:
             rf":py:data:`~typing.Literal`\ \[:py:attr:`~{__name__}.SomeEnum.VALUE`]",
             id="Literal-enum",
         ),
+        pytest.param("Self", None, ":py:data:`~typing.Self`", id="Self"),
+        pytest.param("Never", None, ":py:data:`~typing.Never`", id="Never"),
+        pytest.param("LiteralString", None, ":py:data:`~typing.LiteralString`", id="LiteralString"),
+        pytest.param("TypeAlias", None, ":py:data:`~typing.TypeAlias`", id="TypeAlias"),
+        pytest.param("Final", int, ":py:data:`~typing.Final`\\ \\[:py:class:`int`]", id="Final"),
+        pytest.param("ReadOnly", int, ":py:data:`~typing.ReadOnly`\\ \\[:py:class:`int`]", id="ReadOnly"),
+        pytest.param("TypeGuard", int, ":py:data:`~typing.TypeGuard`\\ \\[:py:class:`int`]", id="TypeGuard"),
+        pytest.param("TypeIs", int, ":py:data:`~typing.TypeIs`\\ \\[:py:class:`int`]", id="TypeIs"),
+        pytest.param("TypeForm", int, ":py:data:`~typing.TypeForm`\\ \\[:py:class:`int`]", id="TypeForm"),
+        pytest.param(
+            "Unpack",
+            tuple[int],
+            ":py:data:`~typing.Unpack`\\ \\[:py:class:`tuple`\\ \\[:py:class:`int`]]",
+            id="Unpack",
+        ),
+        pytest.param(
+            "Concatenate",
+            (int, ...),
+            ":py:data:`~typing.Concatenate`\\ \\[:py:class:`int`, :py:data:`...<Ellipsis>`]",
+            id="Concatenate",
+        ),
         pytest.param("Type", None, ":py:class:`~typing.Type`", id="Type-none"),
         pytest.param("Type", (A,), rf":py:class:`~typing.Type`\ \[:py:class:`~{__name__}.A`]", id="Type-A"),
     ],
@@ -497,12 +520,36 @@ def test_always_use_bars_union(annotation: str, expected_result: str) -> None:
 def test_format_annotation_both_libs(library: ModuleType, annotation: str, params: Any, expected_result: str) -> None:
     try:
         annotation_cls = getattr(library, annotation)
-    except AttributeError:  # pragma: no cover -- all tested annotations exist in both libs on 3.12+
+    except AttributeError:  # pragma: no cover -- typing gained some of these after 3.12
         pytest.skip(f"{annotation} not available in the {library.__name__} module")
 
     ann = annotation_cls if params is None else annotation_cls[params]
     result = format_annotation(ann, create_autospec(Config))
     assert result == expected_result
+
+
+def test_format_annotation_role_matches_python_inventory(inv: Inventory) -> None:
+    # CPython moving a typing/types object between py:class and py:data would leave our reference unresolved.
+    not_rendered_as_itself = {
+        *("types.BuiltinFunctionType", "types.LambdaType", "typing.Text"),  # aliases render as their target
+        *("types.NoneType", "types.UnionType", "typing.ForwardRef"),  # rendered as None, Union, annotationlib
+        *("typing.Annotated", "typing.NewType"),  # only meaningful subscripted or called
+        *("typing.NoDefault", "typing.NoExtraItems", "typing.TYPE_CHECKING"),  # values, not annotations
+    }
+    conf = create_autospec(Config, always_use_bars_union=False)
+    with warnings.catch_warnings(action="ignore", category=DeprecationWarning):  # typing.ByteString on 3.15+
+        mismatches = {
+            entry.name: rendered
+            for entry in inv.objects
+            if entry.domain == "py"
+            and entry.role in {"class", "data"}
+            and entry.name.rpartition(".")[0] in {"typing", "types"}
+            and entry.name not in not_rendered_as_itself
+            and not (rendered := format_annotation(pydoc.locate(entry.name), conf)).startswith(
+                f":py:{entry.role}:`~{entry.name}`"
+            )
+        }
+    assert mismatches == {}
 
 
 def test_format_annotation_tuple() -> None:
