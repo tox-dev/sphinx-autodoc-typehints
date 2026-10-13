@@ -451,30 +451,6 @@ def function_with_multiline_param_defaults(x: int = 5, y: int = 10, z: int = 15)
     """
 
 
-@expected(
-    """\
-mod.function_with_typed_param_defaults(x=5, y=10)
-
-   Function docstring.
-
-   Parameters:
-      * **x** ("int") -- the x (default: "5")
-
-      * **y** ("int") -- the y (default: "10")
-""",
-    typehints_defaults="braces-after",
-)
-def function_with_typed_param_defaults(x: int = 5, y: int = 10):  # ruff:ignore[missing-return-type-undocumented-public-function]
-    """
-    Function docstring.
-
-    :param x: the x
-    :type x: int
-    :param y: the y
-    :type y: int
-    """
-
-
 ArrayLike = Literal["test"]
 
 ALIAS_OPTIONS = {"autodoc_type_aliases": {"ArrayLike": "Array", "AliasedClass": '"Class Alias"'}}
