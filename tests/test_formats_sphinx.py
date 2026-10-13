@@ -109,7 +109,7 @@ def test_get_rtype_insert_info_directive_with_nonempty_preceding_line() -> None:
 
 
 @pytest.mark.parametrize(
-    ("docstring", "expected"),
+    ("lines", "expected"),
     [
         pytest.param(
             [":returns: A string", ":rtype: bytes"],
@@ -128,12 +128,10 @@ def test_get_rtype_insert_info_directive_with_nonempty_preceding_line() -> None:
         ),
     ],
 )
-def test_process_docstring_inline_return_type(docstring: list[str], expected: list[str]) -> None:
-    lines = list(docstring)
+def test_process_docstring_inline_return_type(lines: list[str], expected: list[str]) -> None:
+    def returns_str() -> str: ...
+
     sat.process_docstring(
-        make_docstring_app(typehints_use_rtype=False), "function", "mod._returns_str", _returns_str, None, lines
+        make_docstring_app(typehints_use_rtype=False), "function", "mod.returns_str", returns_str, None, lines
     )
     assert lines == expected
-
-
-def _returns_str() -> str: ...
