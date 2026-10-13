@@ -18,6 +18,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from conftest import normalize_sphinx_text
 
+from sphinx_autodoc_typehints._resolver import get_all_type_hints
 from sphinx_autodoc_typehints._resolver._stubs import (
     _STUB_AST_CACHE,
     _backfill_from_stub,
@@ -320,6 +321,59 @@ def test_backfill_from_stub(stub_mod: Any, attr: str, expected: dict[str, str]) 
     assert _backfill_from_stub(obj) == expected
 
 
+@pytest.mark.parametrize(
+    ("attr", "expected"),
+    [
+        pytest.param("version_gated", {"value": int, "return": bytes}, id="version-gated"),
+        pytest.param("overloaded", {"value": int | str, "return": int | str}, id="overloaded"),
+        pytest.param("extras_only", {"value": float, "return": float}, id="undecidable-condition"),
+    ],
+)
+def test_get_all_type_hints_reads_stub_variants(stub_mod: Any, attr: str, expected: dict[str, type]) -> None:
+    assert get_all_type_hints([], getattr(stub_mod, attr), f"stub_mod.{attr}", {}) == expected
+
+
+@pytest.mark.parametrize(
+    ("reexported", "expected"),
+    [
+        pytest.param(True, {"names": Sequence[str], "count": int, "return": str}, id="reexported"),
+        pytest.param(False, {}, id="only-named-alike"),
+    ],
+)
+def test_get_all_type_hints_reads_parent_stub_only_for_reexports(
+    native_package: tuple[types.ModuleType, types.ModuleType], reexported: bool, expected: dict[str, Any]
+) -> None:
+    def greet(names: int, count: int) -> None: ...
+
+    greet.__annotations__.clear()  # a native function carries no annotations of its own
+    parent, child = native_package
+    greet.__module__, greet.__qualname__ = child.__name__, "greet"
+    child.greet = greet  # type: ignore[attr-defined]
+    if reexported:
+        parent.greet = greet  # type: ignore[attr-defined]
+    assert get_all_type_hints([], greet, "mypkg.greet", {}) == expected
+
+
+@pytest.fixture
+def native_package(tmp_path: Path) -> Iterator[tuple[types.ModuleType, types.ModuleType]]:
+    pkg_dir = tmp_path / "mypkg"
+    pkg_dir.mkdir()
+    (pkg_dir / "__init__.py").write_text("")
+    (pkg_dir / "__init__.pyi").write_text(
+        "from collections.abc import Sequence\n\ndef greet(names: Sequence[str], count: Alias) -> str: ...\n"
+    )
+    ext_file = pkg_dir / "_ext.cpython-314-darwin.so"
+    ext_file.write_bytes(b"")
+    parent = types.ModuleType("mypkg")
+    parent.__file__ = str(pkg_dir / "__init__.py")
+    parent.__path__ = [str(pkg_dir)]
+    parent.Alias = int  # type: ignore[attr-defined]
+    child = types.ModuleType("mypkg._ext")
+    child.__file__ = str(ext_file)
+    with patch.dict(sys.modules, {"mypkg": parent, "mypkg._ext": child}):
+        yield parent, child
+
+
 def test_backfill_from_stub_no_stub() -> None:
     assert _backfill_from_stub(test_backfill_from_stub_no_stub) == {}
 
@@ -464,59 +518,6 @@ def test_sphinx_build_stub_types_produce_crossrefs(app: SphinxTestApp, status: S
     assert "docs.python.org" in result
 
 
-def test_find_stub_path_falls_back_to_parent_package(tmp_path: Path) -> None:
-    pkg_dir = tmp_path / "mypkg"
-    pkg_dir.mkdir()
-    (pkg_dir / "__init__.py").write_text("")
-    (pkg_dir / "__init__.pyi").write_text("def greet(name: str) -> str: ...\n")
-    ext_file = pkg_dir / "_ext.cpython-314-darwin.so"
-    ext_file.write_bytes(b"")
-
-    parent_module = types.ModuleType("mypkg")
-    parent_module.__file__ = str(pkg_dir / "__init__.py")
-    parent_module.__path__ = [str(pkg_dir)]
-
-    child_module = types.ModuleType("mypkg._ext")
-    child_module.__file__ = str(ext_file)
-
-    with (
-        patch.dict(sys.modules, {"mypkg": parent_module, "mypkg._ext": child_module}),
-        patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getmodule", return_value=child_module),
-        patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getfile", side_effect=lambda m: m.__file__),
-    ):
-        result = _find_stub_path(lambda: None)
-    assert result is not None
-    assert result.name == "__init__.pyi"
-    assert result.parent == pkg_dir
-
-
-def test_find_stub_owner_returns_parent_module(tmp_path: Path) -> None:
-    pkg_dir = tmp_path / "mypkg"
-    pkg_dir.mkdir()
-    (pkg_dir / "__init__.py").write_text("")
-    (pkg_dir / "__init__.pyi").write_text("def greet(name: str) -> str: ...\n")
-    ext_file = pkg_dir / "_ext.cpython-314-darwin.so"
-    ext_file.write_bytes(b"")
-
-    parent_module = types.ModuleType("mypkg")
-    parent_module.__file__ = str(pkg_dir / "__init__.py")
-    parent_module.__path__ = [str(pkg_dir)]
-
-    child_module = types.ModuleType("mypkg._ext")
-    child_module.__file__ = str(ext_file)
-
-    with (
-        patch.dict(sys.modules, {"mypkg": parent_module, "mypkg._ext": child_module}),
-        patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getmodule", return_value=child_module),
-        patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getfile", side_effect=lambda m: m.__file__),
-    ):
-        info = _find_stub_owner(lambda: None)
-    assert info is not None
-    stub_path, owner = info
-    assert stub_path.name == "__init__.pyi"
-    assert owner is parent_module
-
-
 def test_find_stub_for_module_returns_none_when_getfile_raises() -> None:
     module = types.ModuleType("fake")
     with patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getfile", side_effect=TypeError):
@@ -560,33 +561,6 @@ def test_get_module_returns_none_when_all_fail() -> None:
     obj = type("Opaque", (), {"__module__": "nonexistent_xyz"})()
     with patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getmodule", return_value=None):
         assert _get_module(obj) is None
-
-
-def test_get_stub_context_includes_owner_module_vars(tmp_path: Path) -> None:
-    pkg_dir = tmp_path / "mypkg"
-    pkg_dir.mkdir()
-    (pkg_dir / "__init__.py").write_text("")
-    (pkg_dir / "__init__.pyi").write_text("from collections.abc import Sequence\ndef greet(name: str) -> str: ...\n")
-    ext_file = pkg_dir / "_ext.cpython-314-darwin.so"
-    ext_file.write_bytes(b"")
-
-    parent_module = types.ModuleType("mypkg")
-    parent_module.__file__ = str(pkg_dir / "__init__.py")
-    parent_module.__path__ = [str(pkg_dir)]
-    parent_module.MyAlias = int  # type: ignore[attr-defined]
-
-    child_module = types.ModuleType("mypkg._ext")
-    child_module.__file__ = str(ext_file)
-
-    with (
-        patch.dict(sys.modules, {"mypkg": parent_module, "mypkg._ext": child_module}),
-        patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getmodule", return_value=child_module),
-        patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getfile", side_effect=lambda m: m.__file__),
-    ):
-        ns, _names, owner = _get_stub_context(lambda: None)
-    assert ns["Sequence"] is Sequence
-    assert ns["MyAlias"] is int
-    assert owner == "mypkg"
 
 
 @pytest.mark.parametrize(

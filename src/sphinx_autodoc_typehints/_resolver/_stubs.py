@@ -15,7 +15,7 @@ from ._type_comments import _load_args
 
 if TYPE_CHECKING:
     import types
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterator
 
 _STUB_AST_CACHE: dict[Path, ast.Module | None] = {}
 
@@ -194,11 +194,19 @@ def _find_stub_owner(obj: Any) -> tuple[Path, types.ModuleType] | None:
     if result := _find_stub_for_module(module):
         return result, module
     # PEP 561 re-export pattern: cbor2.__init__.pyi documents functions living in cbor2._cbor2 (C/Rust). Walk up to
-    # find the parent package whose stub describes the re-exported public API.
+    # find the parent package whose stub describes the re-exported public API; a parent only describes the objects it
+    # re-exports, so the same name there must be this very object.
+    top_name = str(getattr(obj, "__qualname__", "")).partition(".")[0]
+    if (defined := getattr(module, top_name, None)) is None:
+        return None
     module_name = module.__name__
     while "." in module_name:
         module_name = module_name.rsplit(".", 1)[0]
-        if (parent := sys.modules.get(module_name)) and (result := _find_stub_for_module(parent)):
+        if (
+            (parent := sys.modules.get(module_name))
+            and getattr(parent, top_name, None) is defined
+            and (result := _find_stub_for_module(parent))
+        ):
             return result, parent
     return None
 
@@ -264,24 +272,58 @@ def _extract_annotations_from_stub(tree: ast.Module, obj: Any) -> dict[str, str]
     qualname = getattr(obj, "__qualname__", None)
     if not qualname:
         return {}
-    parts = qualname.split(".")
-    if (node := _find_ast_node(tree.body, parts)) is None:
+    if not (nodes := _find_ast_nodes(tree.body, qualname.split("."))):
         return {}
-    if isinstance(node, ast.ClassDef):
-        return _extract_class_annotations(node)
-    if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
-        return _extract_func_annotations(node)
-    return {}  # pragma: no cover
+    if isinstance(nodes[0], ast.ClassDef):
+        return _extract_class_annotations(nodes[0])
+    variants = [node for node in nodes if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef)]
+    # overload variants describe one function together; an implementation signature, when given, says it directly
+    implementations = [node for node in variants if not _is_overload(node)]
+    return _merge_annotations([_extract_func_annotations(node) for node in implementations or variants])
 
 
 def _find_ast_node(body: list[ast.stmt], parts: list[str]) -> ast.stmt | None:
+    return next(iter(_find_ast_nodes(body, parts)), None)
+
+
+def _find_ast_nodes(body: list[ast.stmt], parts: list[str]) -> list[ast.stmt]:
     target, *rest = parts
-    for node in body:
+    functions: list[ast.stmt] = []
+    for node in _live_statements(body):
         if isinstance(node, ast.ClassDef) and node.name == target:
-            return _find_ast_node(node.body, rest) if rest else node
+            return _find_ast_nodes(node.body, rest) if rest else [node]
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == target and not rest:
-            return node
-    return None
+            functions.append(node)
+    return functions
+
+
+def _live_statements(body: list[ast.stmt]) -> Iterator[ast.stmt]:
+    """Stubs gate definitions on the Python version or platform, so follow the branch this interpreter takes."""
+    for node in body:
+        if not isinstance(node, ast.If):
+            yield node
+            continue
+        try:
+            live = eval(  # ruff:ignore[suspicious-eval-usage]  # nothing but sys is in scope
+                compile(ast.Expression(node.test), "<stub>", "eval"), {"__builtins__": {}, "sys": sys}
+            )
+        except Exception:  # ruff:ignore[blind-except]  # a condition on something else keeps both branches
+            yield from _live_statements([*node.body, *node.orelse])
+        else:
+            yield from _live_statements(node.body if live else node.orelse)
+
+
+def _is_overload(node: ast.FunctionDef | ast.AsyncFunctionDef) -> bool:
+    return any(ast.unparse(decorator) in {"overload", "typing.overload"} for decorator in node.decorator_list)
+
+
+def _merge_annotations(variants: list[dict[str, str]]) -> dict[str, str]:
+    """Union the shared parameters' types, since the implementation accepts whatever any variant does."""
+    return {
+        name: " | ".join(dict.fromkeys(variant[name] for variant in variants))
+        for name in variants[0]
+        if all(name in variant for variant in variants)
+    }
 
 
 def _extract_func_annotations(node: ast.FunctionDef | ast.AsyncFunctionDef) -> dict[str, str]:
@@ -330,7 +372,7 @@ def _backfill_descriptor_annotation(obj: Any) -> str | None:
 
 def _extract_class_annotations(node: ast.ClassDef) -> dict[str, str]:
     result: dict[str, str] = {}
-    for child in node.body:
+    for child in _live_statements(node.body):
         if isinstance(child, ast.AnnAssign) and isinstance(child.target, ast.Name):
             result[child.target.id] = ast.unparse(child.annotation)
     return result
