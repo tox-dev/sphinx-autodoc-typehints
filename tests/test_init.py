@@ -239,9 +239,6 @@ def test_inject_overload_local_no_overloads_directive() -> None:
         _OVERLOADS_CACHE.pop("test_mod", None)
 
 
-def _without_overloads(a: int) -> None: ...
-
-
 def test_process_docstring_strips_no_overloads_while_overloads_are_disabled() -> None:
     lines = [":no-overloads:", "", "Accepts an int.", "", ":param a: The thing"]
     app = make_docstring_app(typehints_document_overloads=False, typehints_document_rtype=False)
@@ -253,6 +250,9 @@ def test_process_docstring_strips_no_overloads_while_overloads_are_disabled() ->
         r":type a: :sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``",
         ":param a: The thing",
     ]
+
+
+def _without_overloads(a: int) -> None: ...
 
 
 def test_inject_overload_local_directive_with_global_enabled() -> None:
