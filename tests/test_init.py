@@ -275,8 +275,7 @@ def test_process_signature_strips_types_from_namedtuple() -> None:
 
 def test_process_signature_uses_new_when_init_inherited() -> None:
     class _NewOnlyClass:
-        def __new__(cls, x: int, y: str) -> _NewOnlyClass:  # ruff:ignore[unused-static-method-argument, non-self-return-type]
-            return super().__new__(cls)
+        def __new__(cls, x: int, y: str) -> _NewOnlyClass: ...  # ruff:ignore[non-self-return-type]
 
     app = make_sig_app(typehints_use_signature=True)
     result = process_signature(app, "class", "test._NewOnlyClass", _NewOnlyClass, MagicMock(), "", "")

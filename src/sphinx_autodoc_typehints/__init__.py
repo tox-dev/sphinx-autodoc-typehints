@@ -83,7 +83,7 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-return-stateme
         return None
 
     try:
-        obj = inspect.unwrap(obj)  # ty: ignore[invalid-argument-type]
+        obj = inspect.unwrap(obj)
     except ValueError:
         return None
     sph_signature = sphinx_signature(obj, type_aliases=app.config["autodoc_type_aliases"])
