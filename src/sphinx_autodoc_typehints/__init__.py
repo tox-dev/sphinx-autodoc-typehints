@@ -406,8 +406,6 @@ def _inject_arg_signature(  # ruff:ignore[too-many-arguments, too-many-positiona
         type_annotation, has_preexisting = fmt.find_preexisting_type(lines, arg_name)
     else:
         preexisting_line, has_preexisting = fmt.find_preexisting_type(lines, arg_name)
-        if has_preexisting:
-            insert_index = _remove_preexisting_type(lines, preexisting_line)
         type_annotation = ":type {}: {}".format(
             arg_name,
             add_type_css_class(
@@ -415,6 +413,7 @@ def _inject_arg_signature(  # ruff:ignore[too-many-arguments, too-many-positiona
             ),
         )
 
+    # a braces-after default goes on the :param: line, so append it while insert_index still points there
     if app.config.typehints_defaults and (
         formatted_default := format_default(app, default, annotation is not None or has_preexisting)
     ):
@@ -426,6 +425,8 @@ def _inject_arg_signature(  # ruff:ignore[too-many-arguments, too-many-positiona
             after=app.config.typehints_defaults.endswith("after"),
         )
 
+    if annotation is not None and has_preexisting:
+        insert_index = _remove_preexisting_type(lines, preexisting_line)
     lines.insert(insert_index, type_annotation)
 
 

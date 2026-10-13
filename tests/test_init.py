@@ -381,6 +381,20 @@ def test_process_docstring_preserves_blank_line_after_preexisting_type() -> None
     assert lines[blank_idx + 1] == ".. rubric:: Notes"
 
 
+def test_process_docstring_braces_after_default_stays_on_its_param() -> None:
+    def typed_defaults(width: int = 5, height: int = 10) -> None: ...
+
+    lines = [":param width: the width", ":type width: int", ":param height: the height", ":type height: int"]
+    app = make_docstring_app(typehints_defaults="braces-after", typehints_document_rtype=False)
+    process_docstring(app, "function", "mod.typed_defaults", typed_defaults, None, lines)
+    assert lines == [
+        ":param width: the width (default: ``5``)",
+        r":type width: :sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``",
+        ":param height: the height (default: ``10``)",
+        r":type height: :sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``",
+    ]
+
+
 def test_process_docstring_strips_inline_param_type() -> None:
     def func(x: int) -> None: ...
 
