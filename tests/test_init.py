@@ -667,6 +667,24 @@ def test_setup_loads_autodoc_listed_after_it(app: SphinxTestApp, write_rst: Call
         """)
 
 
+@pytest.mark.parametrize(
+    "type_text",
+    [
+        pytest.param("- item", id="bullet"),
+        pytest.param("#. item", id="enumerated"),
+        pytest.param("* item", id="asterisk-bullet"),
+    ],
+)
+@pytest.mark.sphinx("text", testroot="dummy")
+def test_type_role_renders_list_like_text_inline(
+    app: SphinxTestApp, write_rst: Callable[[str], None], type_text: str
+) -> None:
+    write_rst(f"A :sphinx_autodoc_typehints_type:`{type_text}` b.")
+    app.build()
+
+    assert (Path(app.srcdir) / "_build/text/index.txt").read_text() == f"A {type_text} b.\n"
+
+
 @pytest.mark.parametrize("cls", ["DocumentedTwice", "DocumentedTwiceThroughNew"])
 @pytest.mark.sphinx(
     "text",
