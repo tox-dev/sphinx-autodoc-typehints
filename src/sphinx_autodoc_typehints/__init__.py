@@ -70,8 +70,7 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-return-stateme
 
     original_obj = obj
     if inspect.isclass(obj):
-        # a class without its own __init__ (e.g. a NamedTuple) takes its parameters from __new__
-        obj = obj.__new__ if obj.__init__ is object.__init__ and obj.__new__ is not object.__new__ else obj.__init__
+        obj = _constructor(obj)
     try:
         has_annotations = getattr(obj, "__annotations__", None)
     except (NameError, TypeError, AttributeError):
@@ -148,6 +147,14 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-return-stateme
     )
 
 
+def _constructor(cls: type) -> Any:
+    """Choose the constructor as ``inspect.signature`` does: the one defined lowest in the MRO, ``__new__`` on a tie."""
+    depth = {
+        name: next(i for i, klass in enumerate(cls.__mro__) if name in vars(klass)) for name in ("__new__", "__init__")
+    }
+    return cls.__new__ if cls.__new__ is not object.__new__ and depth["__new__"] <= depth["__init__"] else cls.__init__
+
+
 def _is_dataclass(name: str, what: str, qualname: str) -> bool:
     return (what == "method" and name.endswith(".__init__")) or (what == "class" and qualname.endswith(".__init__"))
 
@@ -173,13 +180,12 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
         ivar_annotations = {}
     use_class_for_signature = False
     cls_for_hints = None
-    if inspect.isclass(obj):
-        if obj.__init__ is object.__init__ and obj.__new__ is not object.__new__:
-            use_class_for_signature = True
-            cls_for_hints = obj
-            obj = obj.__new__
-        else:
-            obj = obj.__init__
+    if inspect.isclass(obj) and (obj := _constructor(obj)) is original_obj.__new__:
+        use_class_for_signature = True
+        if inspect.isfunction(obj) and obj.__module__.startswith("namedtuple_"):
+            # namedtuple builds __new__ in a namespace without builtins, so forward references resolve only via the
+            # class (#657)
+            cls_for_hints = original_obj
     try:
         obj = inspect.unwrap(obj)
     except ValueError:

@@ -271,6 +271,12 @@ def test_process_docstring_uses_new_when_init_inherited() -> None:
     assert ":type y:" in joined
 
 
+class _Shadowed:
+    x: int
+
+    def __new__(cls, x: float) -> _Shadowed: ...  # ruff:ignore[non-self-return-type]
+
+
 def test_process_signature_strips_types_from_namedtuple() -> None:
     class _Point(NamedTuple):
         x: int
@@ -289,19 +295,39 @@ def test_process_signature_uses_new_when_init_inherited() -> None:
     assert result == ("(x: int, y: str)", None)
 
 
-def test_process_docstring_prefers_init_over_new() -> None:
-    class _BothClass:
-        def __new__(cls, a: float) -> _BothClass:  # ruff:ignore[unused-static-method-argument, non-self-return-type]
-            return super().__new__(cls)
+class _BothClass:
+    def __new__(cls, a: float) -> _BothClass: ...  # ruff:ignore[non-self-return-type]
 
-        def __init__(self, x: int) -> None:
-            self.x = x
+    def __init__(self, *args: object) -> None: ...
 
-    app = make_docstring_app(typehints_document_rtype=False)
-    lines: list[str] = [":param x: the x"]
-    process_docstring(app, "class", "test._BothClass", _BothClass, None, lines)
-    joined = "\n".join(lines)
-    assert ":type x:" in joined
+
+class _InitOverridesNew(_BothClass):
+    def __init__(self, x: int) -> None: ...
+
+
+@pytest.mark.parametrize(
+    ("cls", "expected"),
+    [
+        pytest.param(_BothClass, "(a: float)", id="new-beside-init"),
+        pytest.param(_InitOverridesNew, "(x: int)", id="init-overrides-inherited-new"),
+    ],
+)
+def test_process_signature_picks_constructor_like_inspect(cls: type, expected: str) -> None:
+    app = make_sig_app(typehints_use_signature=True)
+    assert process_signature(app, "class", f"test.{cls.__name__}", cls, MagicMock(), "", "") == (expected, None)
+
+
+@pytest.mark.parametrize(
+    ("cls", "param"),
+    [
+        pytest.param(_BothClass, "a", id="new-beside-init"),
+        pytest.param(_Shadowed, "x", id="new-over-shadowing-class-attribute"),
+    ],
+)
+def test_process_docstring_types_params_from_new(cls: type, param: str) -> None:
+    lines: list[str] = [f":param {param}: doc"]
+    process_docstring(make_docstring_app(typehints_document_rtype=False), "class", "test.cls", cls, None, lines)
+    assert lines == [rf":type {param}: :sphinx_autodoc_typehints_type:`\:py\:class\:\`float\``", f":param {param}: doc"]
 
 
 def test_inject_types_no_signature() -> None:
