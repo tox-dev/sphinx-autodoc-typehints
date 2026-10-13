@@ -193,7 +193,7 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
             return f":py:type:`{prefix}{annotation.name}`"
         return annotation.name
 
-    if isinstance(annotation, TypeAliasType):
+    if _is_type_alias(annotation):
         if (crossref := _type_alias_crossref(annotation, config)) is not None:
             return crossref
         reference = _alias_name_reference(annotation, config)
@@ -202,7 +202,7 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
         expanded = yield annotation.__value__
         return defer_alias_choice(config, reference, expanded) or expanded
 
-    if isinstance(alias := get_origin(annotation), TypeAliasType | TypeAliasForwardRef):
+    if _is_type_alias(alias := get_origin(annotation)) or isinstance(alias, TypeAliasForwardRef):
         # A subscripted generic alias, e.g. ``NDArray[np.void]`` for ``type NDArray[ScalarT] = ...``.
         # It is a plain ``types.GenericAlias``, so without unwrapping it here the code below would
         # render it as its wrapper class' name instead of as the alias.
@@ -434,6 +434,14 @@ def _underlying_type_alias(annotation: Any) -> TypeAliasType | None:
     if isinstance(origin := get_origin(annotation), TypeAliasType):
         return origin
     return None
+
+
+def _is_type_alias(annotation: Any) -> bool:
+    # typing_extensions keeps its own TypeAliasType class, and it is not a dependency to import it from
+    return isinstance(annotation, TypeAliasType) or ((kind := type(annotation)).__module__, kind.__qualname__) == (
+        "typing_extensions",
+        "TypeAliasType",
+    )
 
 
 def _can_expand_alias(alias: TypeAliasType, config: Config) -> bool:
