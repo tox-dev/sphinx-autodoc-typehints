@@ -99,9 +99,9 @@ def _get_type_hint(autodoc_mock_imports: list[str], name: str, obj: Any, localns
             # annotations in the rendered docs (see issue #680).
             return inspect.get_annotations(obj, locals=localns, eval_str=True)
         return get_type_hints(obj, _module_backed_globals(obj), localns, include_extras=True)
-    except (AttributeError, RecursionError):
+    except RecursionError:
         return {}
-    except (TypeError, NameError, SyntaxError) as exc:
+    except (TypeError, NameError, AttributeError, SyntaxError) as exc:
         if not isinstance(exc, TypeError):
             _LOGGER.warning(
                 'Cannot resolve forward reference in type annotations of "%s" (module %s): %s',
