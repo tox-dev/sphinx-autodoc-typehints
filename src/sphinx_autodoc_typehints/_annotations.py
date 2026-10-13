@@ -290,7 +290,7 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
             if not simplify_optional_unions:
                 full_name = "typing.Optional"
                 role = "data"
-                args_format = f"\\[:py:data:`{prefix}typing.Union`\\[{{}}]]"
+                args_format = f"\\[:py:data:`{prefix}typing.Union`\\ \\[{{}}]]"
                 args = tuple(x for x in args if x is not type(None))
     elif full_name in {"typing.Callable", "collections.abc.Callable"} and args and args[0] is not ...:
         fmt = []
