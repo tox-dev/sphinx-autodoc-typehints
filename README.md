@@ -195,7 +195,8 @@ typehints_defaults = "braces-after"
 ### Control overload signature display
 
 When a function has [`@overload`](https://docs.python.org/3/library/typing.html#typing.overload) signatures, they are
-rendered automatically in the docstring. To disable this globally:
+rendered automatically in the docstring, with their types cross-referenced like parameter types and without the `self`
+or `cls` parameter of a method. A class lists the overloads of its `__init__` or `__new__`. To disable this globally:
 
 ```python
 typehints_document_overloads = False

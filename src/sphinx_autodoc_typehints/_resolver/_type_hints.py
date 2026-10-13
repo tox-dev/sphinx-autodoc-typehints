@@ -53,7 +53,7 @@ def get_all_type_hints(
         try:
             obj.__annotations__ = result
         except (AttributeError, TypeError):
-            result = _resolve_string_annotations(obj, result, combined_localns, stub_owner_module)
+            result = resolve_string_annotations(obj, result, combined_localns, stub_owner_module)
         else:
             result = _get_type_hint(autodoc_mock_imports, name, obj, combined_localns)
             with contextlib.suppress(AttributeError, TypeError):
@@ -86,7 +86,7 @@ def get_descriptor_type_hint(obj: Any) -> Any | None:
         ref = MyTypeAliasForwardRef(crossref_name)
         ref.crossref = True
         localns[crossref_name] = ref
-    return _resolve_string_annotations(obj, {"return": annotation}, localns, owner_module)["return"]
+    return resolve_string_annotations(obj, {"return": annotation}, localns, owner_module)["return"]
 
 
 def _get_type_hint(autodoc_mock_imports: list[str], name: str, obj: Any, localns: Mapping[str, Any]) -> dict[str, Any]:
@@ -112,7 +112,7 @@ def _get_type_hint(autodoc_mock_imports: list[str], name: str, obj: Any, localns
                 subtype="forward_reference",
                 location=get_obj_location(obj),
             )
-        return _resolve_string_annotations(obj, _get_unevaluated_annotations(obj), localns)
+        return resolve_string_annotations(obj, _get_unevaluated_annotations(obj), localns)
 
 
 def _get_unevaluated_annotations(obj: Any) -> dict[str, Any]:
@@ -125,8 +125,8 @@ def _get_unevaluated_annotations(obj: Any) -> dict[str, Any]:
         return {}
 
 
-def _resolve_string_annotations(
-    obj: Any, annotations: dict[str, str], localns: dict[str, Any], owner_module: str = ""
+def resolve_string_annotations(
+    obj: Any, annotations: dict[str, Any], localns: dict[str, Any], owner_module: str = ""
 ) -> dict[str, Any]:
     # Use the stub owner module's namespace when available — the obj's __module__ may point at a C extension child
     # (e.g. cbor2._cbor2) while the stub lives in the parent (cbor2/__init__.pyi).
@@ -134,19 +134,21 @@ def _resolve_string_annotations(
     globalns = vars(sys.modules[module_name]) if module_name and module_name in sys.modules else {}
     resolved: dict[str, Any] = {}
     for key, value in annotations.items():
-        if isinstance(value, str):
+        resolved[key] = value
+        # a quoted annotation evaluates to the string inside it, which takes a second pass
+        for _ in range(2):
+            if not isinstance(resolved[key], str):
+                break
             try:
-                resolved[key] = eval(value, globalns, localns)  # ruff:ignore[suspicious-eval-usage]
+                resolved[key] = eval(resolved[key], globalns, localns)  # ruff:ignore[suspicious-eval-usage]
             except Exception:  # ruff:ignore[blind-except]
                 _LOGGER.debug(
                     "Failed to resolve annotation %r=%r for %s",
                     key,
-                    value,
+                    resolved[key],
                     getattr(obj, "__qualname__", "?"),
                 )
-                resolved[key] = value
-        else:
-            resolved[key] = value
+                break
     return resolved
 
 
@@ -309,5 +311,6 @@ def _type_params(obj: Any) -> tuple[TypeVar | ParamSpec | TypeVarTuple, ...]:
 
 __all__ = [
     "get_all_type_hints",
+    "resolve_string_annotations",
     "resolve_type_guarded_imports",
 ]

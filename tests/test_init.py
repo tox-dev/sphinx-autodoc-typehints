@@ -244,6 +244,77 @@ def test_inject_overload_keeps_summary_first() -> None:
         _OVERLOADS_CACHE.pop("test_mod", None)
 
 
+@pytest.mark.parametrize(
+    ("directive", "expected"),
+    [
+        pytest.param(
+            "automethod:: dummy_module.ClassWithOverloadedMethods.build",
+            """\
+classmethod ClassWithOverloadedMethods.build(value)
+
+   Build one.
+
+   Overloads:
+      * **value** ("int") → "ClassWithOverloadedMethods"
+
+      * **value** ("str") → "ClassWithOverloadedMethods"
+""",
+            id="classmethod",
+        ),
+        pytest.param(
+            "automethod:: dummy_module.ClassWithOverloadedMethods.convert",
+            """\
+ClassWithOverloadedMethods.convert(value)
+
+   Convert value.
+
+   Overloads:
+      * **value** ("int") → "int"
+
+      * **value** ("str") → "str"
+""",
+            id="method",
+        ),
+        pytest.param(
+            "automethod:: dummy_module.ClassWithOverloadedMethods.parse",
+            """\
+static ClassWithOverloadedMethods.parse(value)
+
+   Parse value.
+
+   Overloads:
+      * **value** ("int") → "int"
+
+      * **value** ("str") → "str"
+""",
+            id="staticmethod",
+        ),
+        pytest.param(
+            "autoclass:: dummy_module.ClassWithOverloadedInit",
+            """\
+class dummy_module.ClassWithOverloadedInit(value)
+
+   Class docstring.
+
+   Overloads:
+      * **value** ("int")
+
+      * **value** ("str")
+""",
+            id="constructor",
+        ),
+    ],
+)
+@pytest.mark.sphinx("text", testroot="dummy")
+def test_overloads_rendered_in_docstring(
+    app: SphinxTestApp, write_rst: Callable[[str], None], directive: str, expected: str
+) -> None:
+    write_rst(f".. {directive}")
+    app.build()
+
+    assert (Path(app.srcdir) / "_build/text/index.txt").read_text() == expected
+
+
 def test_local_function_warning_includes_location() -> None:
     def fake_method(self: object, x: int) -> str: ...
 

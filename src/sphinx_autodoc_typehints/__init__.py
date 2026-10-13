@@ -38,6 +38,7 @@ from ._resolver import (
     get_descriptor_type_hint,
     get_instance_var_annotations,
     get_obj_location,
+    resolve_string_annotations,
     resolve_type_guarded_imports,
 )
 from .patches import _OVERLOADS_CACHE, install_patches
@@ -141,25 +142,6 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-
 
 def _is_dataclass(name: str, what: str, qualname: str) -> bool:
     return (what == "method" and name.endswith(".__init__")) or (what == "class" and qualname.endswith(".__init__"))
-
-
-def _class_member_type(name: str) -> type | None:
-    """
-    Locate the class through the documented name, not ``__qualname__``.
-
-    A class can bind a function defined elsewhere (``add = staticmethod(helper)``).
-    """
-    parts = name.split(".")
-    if (split := next((i for i in range(len(parts) - 1, 0, -1) if ".".join(parts[:i]) in sys.modules), None)) is None:
-        return None
-    owner = sys.modules[".".join(parts[:split])]
-    for part in parts[split:-1]:
-        if (owner := getattr(owner, part, None)) is None:
-            return None
-    attribute = parts[-1]
-    if attribute.startswith("__") and not attribute.endswith("__"):
-        attribute = f"_{owner.__name__.lstrip('_')}{attribute}"
-    return None if (member := inspect.getattr_static(owner, attribute, None)) is None else type(member)
 
 
 def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-arguments]
@@ -270,21 +252,26 @@ def _maybe_inject_descriptor_type(app: Sphinx, what: str, obj: Any, lines: list[
 def _inject_overload_signatures(
     app: Sphinx,
     what: str,
-    name: str,  # ruff:ignore[unused-function-argument]
+    name: str,
     obj: Any,
     lines: list[str],
 ) -> bool:
     # strip the directive first, as it must not show even where overloads are not rendered
     if (
         _strip_no_overloads_directive(lines)
-        or what not in {"function", "method"}
+        or what not in {"function", "method", "class", "exception"}
         or not app.config.typehints_document_overloads
     ):
         return False
     if (overloads := _resolve_overloads(obj)) is None:
         return False
+    if what in {"class", "exception"}:
+        # a class documents its constructor's overloads, which return the instance like the class signature shows
+        overloads = [overload.replace(return_annotation=inspect.Signature.empty) for overload in overloads]
+    # overloads parsed from the source still list a method's self or cls
+    skip = int(what != "function" and (what != "method" or _class_member_type(name) is not staticmethod))
     idx = _summary_end(lines)
-    lines[idx:idx] = ["", *_format_overload_lines(overloads, app)]
+    lines[idx:idx] = ["", *_format_overload_lines(overloads, obj, app, skip)]
     return True
 
 
@@ -313,27 +300,48 @@ def _resolve_overloads(obj: Any) -> list[inspect.Signature] | None:
     return _OVERLOADS_CACHE[module_name].get(qualname) or None
 
 
-def _format_overload_lines(overloads: list[inspect.Signature], app: Sphinx) -> list[str]:
-    short_literals = app.config.python_display_short_literal_types
+def _class_member_type(name: str) -> type | None:
+    """
+    Locate the class through the documented name, not ``__qualname__``.
+
+    A class can bind a function defined elsewhere (``add = staticmethod(helper)``).
+    """
+    parts = name.split(".")
+    if (split := next((i for i in range(len(parts) - 1, 0, -1) if ".".join(parts[:i]) in sys.modules), None)) is None:
+        return None
+    owner = sys.modules[".".join(parts[:split])]
+    for part in parts[split:-1]:
+        if (owner := getattr(owner, part, None)) is None:
+            return None
+    attribute = parts[-1]
+    if attribute.startswith("__") and not attribute.endswith("__"):
+        attribute = f"_{owner.__name__.lstrip('_')}{attribute}"
+    return None if (member := inspect.getattr_static(owner, attribute, None)) is None else type(member)
+
+
+def _format_overload_lines(overloads: list[inspect.Signature], obj: Any, app: Sphinx, skip: int) -> list[str]:
+    render = partial(format_annotation, config=app.config, short_literals=app.config.python_display_short_literal_types)
     result = [":Overloads:"]
     for overload_sig in overloads:
+        # parsed from the source, so the annotations are strings until evaluated in the function's module
+        hints = resolve_string_annotations(
+            obj,
+            {
+                **{param_name: param.annotation for param_name, param in list(overload_sig.parameters.items())[skip:]},
+                "return": overload_sig.return_annotation,
+            },
+            {},
+        )
+        return_hint = hints.pop("return")
         params = []
-        for param_name, param in overload_sig.parameters.items():
-            if param.annotation != inspect.Parameter.empty:
-                formatted_type = format_annotation(param.annotation, app.config, short_literals=short_literals)
-                formatted_type = add_type_css_class(formatted_type)
-                params.append(f"**{param_name}** ({formatted_type})")
-            else:
+        for param_name, hint in hints.items():
+            if hint is inspect.Parameter.empty:
                 params.append(f"**{param_name}**")
-
-        return_annotation = ""
-        if overload_sig.return_annotation != inspect.Signature.empty:
-            formatted_return = format_annotation(
-                overload_sig.return_annotation, app.config, short_literals=short_literals
-            )
-            formatted_return = add_type_css_class(formatted_return)
-            return_annotation = f" \u2192 {formatted_return}"
-
+            else:
+                params.append(f"**{param_name}** ({add_type_css_class(render(hint))})")
+        return_annotation = (
+            "" if return_hint is inspect.Signature.empty else f" \u2192 {add_type_css_class(render(return_hint))}"
+        )
         result.append(f"   * {', '.join(params)}{return_annotation}")
     result.append("")
     return result
