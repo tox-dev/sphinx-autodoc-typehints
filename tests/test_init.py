@@ -72,14 +72,14 @@ def test_process_signature_class_instance() -> None:
     assert sig_str == "(x)"
 
 
-class _ConstructedFromInit:
-    def __init__(self, x: int) -> None: ...
-
-
 def test_process_signature_class_omits_constructor_return() -> None:
     app = make_sig_app(typehints_use_signature=True, typehints_use_signature_return=True)
     result = process_signature(app, "class", "mod._ConstructedFromInit", _ConstructedFromInit, Options(), "", "")
     assert result == ("(x: int)", None)
+
+
+class _ConstructedFromInit:
+    def __init__(self, x: int) -> None: ...
 
 
 def test_process_docstring_sphinx_signature_raises_value_error() -> None:
