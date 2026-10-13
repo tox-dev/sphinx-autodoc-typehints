@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, create_autospec
 
+import pytest
+from conftest import make_docstring_app
 from docutils import nodes
 from sphinx.application import Sphinx
 from sphinx.config import Config
@@ -10,9 +11,6 @@ from sphinx.config import Config
 import sphinx_autodoc_typehints as sat
 from sphinx_autodoc_typehints._formats import InsertIndexInfo
 from sphinx_autodoc_typehints._formats._sphinx import SphinxFieldListFormat, _node_line_no
-
-if TYPE_CHECKING:
-    import pytest
 
 
 def test_inject_rtype_inserts_blank_line_before_rtype(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -108,3 +106,34 @@ def test_get_rtype_insert_info_directive_with_nonempty_preceding_line() -> None:
     result = fmt.get_rtype_insert_info(app, lines)
     assert result is not None
     assert result.insert_index == len(lines)
+
+
+def _returns_str() -> str: ...
+
+
+@pytest.mark.parametrize(
+    ("docstring", "expected"),
+    [
+        pytest.param(
+            [":returns: A string", ":rtype: bytes"],
+            [r":return: :sphinx_autodoc_typehints_type:`\:py\:class\:\`str\`` -- A string"],
+            id="replaces-rtype",
+        ),
+        pytest.param(
+            [":returns:", "   * a string", "   * or another"],
+            [
+                r":return: :sphinx_autodoc_typehints_type:`\:py\:class\:\`str\`` --",
+                "",
+                "   * a string",
+                "   * or another",
+            ],
+            id="description-on-next-line",
+        ),
+    ],
+)
+def test_process_docstring_inline_return_type(docstring: list[str], expected: list[str]) -> None:
+    lines = list(docstring)
+    sat.process_docstring(
+        make_docstring_app(typehints_use_rtype=False), "function", "mod._returns_str", _returns_str, None, lines
+    )
+    assert lines == expected

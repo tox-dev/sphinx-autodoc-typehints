@@ -462,34 +462,6 @@ def test_sphinx_output_formatter_no_use_rtype(app: SphinxTestApp, status: String
 
        Returns:
           "str" -- A string
-
-    dummy_module_simple_no_use_rtype.function_returns_with_rtype(x, y=1)
-
-       Function docstring.
-
-       Parameters:
-          * **x** ("bool") -- foo
-
-          * **y** ("int") -- bar
-
-       Returns:
-          "str" -- A string
-
-    dummy_module_simple_no_use_rtype.function_returns_on_next_line(x, y=1)
-
-       Function docstring.
-
-       Parameters:
-          * **x** ("bool") -- foo
-
-          * **y** ("int") -- bar
-
-       Returns:
-          "str" --
-
-          * a string
-
-          * or another
     """
     assert text_contents == normalize_sphinx_text(dedent(expected_contents))
 
