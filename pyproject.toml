@@ -108,6 +108,9 @@ lint.ignore = [
   "non-empty-init-module",                     # `__init__` module should only contain docstrings and re-exports
   "single-line-implicit-string-concatenation", # Conflict with formatter
 ]
+lint.per-file-ignores."src/sphinx_autodoc_typehints/patches.py" = [
+  "private-member-access", # the module exists to monkeypatch docutils and napoleon internals
+]
 lint.per-file-ignores."tests/**/*.py" = [
   "assert",                               # asserts allowed in tests
   "class-as-data-structure",              # test fixture classes intentionally use plain __init__ without dataclass
