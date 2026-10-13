@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import importlib
+import logging
+import re
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -7,11 +10,13 @@ from typing import TYPE_CHECKING
 import attr
 import attrs
 import pytest
-from conftest import normalize_sphinx_text
+from conftest import make_docstring_app, normalize_sphinx_text
 
+from sphinx_autodoc_typehints import process_docstring
 from sphinx_autodoc_typehints._resolver._attrs import backfill_attrs_annotations
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from io import StringIO
 
     from sphinx.testing.util import SphinxTestApp
@@ -130,3 +135,59 @@ def test_sphinx_build_attrs_types(app: SphinxTestApp, status: StringIO, warning:
     assert "int" in result
     warn_text = warning.getvalue()
     assert "attrs_mod" not in warn_text or "forward reference" not in warn_text
+
+
+@pytest.mark.parametrize(
+    "header",
+    [
+        pytest.param("from __future__ import annotations\n", id="postponed"),
+        pytest.param(
+            "",
+            id="lazy",
+            marks=pytest.mark.skipif(
+                sys.version_info < (3, 14), reason="eager annotations cannot name a guarded import"
+            ),
+        ),
+    ],
+)
+def test_process_docstring_types_attrs_field_from_guarded_import(
+    attrs_module: Callable[[str], type], header: str, caplog: pytest.LogCaptureFixture
+) -> None:
+    price = attrs_module(
+        f"{header}from typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n    from decimal import Decimal\n"
+    )
+    lines = [":param amount: the amount"]
+    process_docstring(make_docstring_app(), "class", f"{price.__module__}.Price", price, None, lines)
+    assert (lines, [record for record in caplog.records if record.levelno == logging.WARNING]) == (
+        [
+            r":type amount: :sphinx_autodoc_typehints_type:`\:py\:class\:\`\~decimal.Decimal\``",
+            ":param amount: the amount",
+        ],
+        [],
+    )
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason="eager annotations fail at import instead")
+def test_process_docstring_survives_attrs_field_naming_nothing(
+    attrs_module: Callable[[str], type],
+) -> None:  # pragma: >=3.14 cover
+    price = attrs_module("")
+    lines = [":param amount: the amount"]
+    process_docstring(make_docstring_app(), "class", f"{price.__module__}.Price", price, None, lines)
+    assert lines == [":type amount: :sphinx_autodoc_typehints_type:`Decimal`", ":param amount: the amount"]
+
+
+@pytest.fixture
+def attrs_module(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest
+) -> Callable[[str], type]:
+    monkeypatch.syspath_prepend(tmp_path)
+    name = re.sub(r"\W", "_", request.node.name)
+
+    def build(header: str) -> type:
+        (tmp_path / f"{name}.py").write_text(
+            f"{header}\nimport attrs\n\n\n@attrs.define\nclass Price:\n    amount: Decimal\n"
+        )
+        return importlib.import_module(name).Price
+
+    return build
