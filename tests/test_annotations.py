@@ -70,6 +70,8 @@ P_kwargs = P.kwargs
 P_co = typing_extensions.ParamSpec("P_co", covariant=True)  # ty: ignore[invalid-paramspec]
 P_contra = typing_extensions.ParamSpec("P_contra", contravariant=True)  # ty: ignore[invalid-paramspec]
 P_bound = typing_extensions.ParamSpec("P_bound", bound=str)  # ty: ignore[invalid-paramspec]
+P_default = typing_extensions.ParamSpec("P_default", default=[int, str])
+T_default = typing_extensions.TypeVar("T_default", bound=int, default=bool)
 RecList = Union[int, List["RecList"]]
 MutualRecA = Union[bool, List["MutualRecB"]]
 MutualRecB = Union[str, List["MutualRecA"]]
@@ -413,6 +415,16 @@ _CASES = [
         id="P-contra",
     ),
     pytest.param(P_bound, r":py:class:`~typing.ParamSpec`\ \(``P_bound``, bound= :py:class:`str`)", id="P-bound"),
+    pytest.param(
+        P_default,
+        rf":py:class:`~typing.ParamSpec`\ \(``P_default``{_NONE_BOUND}, default= \[:py:class:`int`, :py:class:`str`])",
+        id="P-default",
+    ),
+    pytest.param(
+        T_default,
+        r":py:class:`~typing.TypeVar`\ \(``T_default``, bound= :py:class:`int`, default= :py:class:`bool`)",
+        id="T-default",
+    ),
     pytest.param(Tuple[()], ":py:data:`~typing.Tuple`", id="Tuple-p"),
     pytest.param(Tuple[int,], r":py:data:`~typing.Tuple`\ \[:py:class:`int`]", id="Tuple-p-int"),
     pytest.param(

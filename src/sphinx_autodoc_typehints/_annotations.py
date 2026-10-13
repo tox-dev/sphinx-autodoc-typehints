@@ -174,6 +174,12 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
             return f"({parts[0]}, )"
         return f"({', '.join(parts)})"
 
+    if isinstance(annotation, list):  # a ParamSpec's parameter list
+        parts = []
+        for item in annotation:
+            parts.append((yield item))  # yield is illegal inside a comprehension
+        return f"\\[{', '.join(parts)}]"
+
     if isinstance(annotation, TypeAliasForwardRef):
         fully_qualified: bool = getattr(config, "typehints_fully_qualified", False)
         prefix = "" if fully_qualified else "~"
@@ -261,6 +267,10 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
         if "bound" in params:
             bound = yield params["bound"]
             params["bound"] = f" {bound}"
+        # PEP 696 defaults exist on typing from 3.13 and on typing_extensions before that
+        if (has_default := getattr(annotation, "has_default", None)) and has_default():
+            default = yield annotation.__default__
+            params["default"] = f" {default}"
         args_format = f"\\(``{annotation.__name__}``{', {}' if args else ''}"
         if params:
             args_format += "".join(f", {k}={v}" for k, v in params.items())
