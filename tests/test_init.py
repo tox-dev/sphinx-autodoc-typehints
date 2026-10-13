@@ -12,6 +12,7 @@ from docutils.frontend import get_default_settings
 from docutils.parsers.rst import Parser
 from sphinx.application import Sphinx
 from sphinx.config import Config
+from sphinx.ext.autodoc import Options
 from sphinx.ext.autosummary import extract_summary
 
 import sphinx_autodoc_typehints as sat
@@ -34,19 +35,50 @@ if TYPE_CHECKING:
 class _ClassWithPrivate:
     def __secret(self, x: int) -> str: ...
 
+    @staticmethod
+    def __static_secret(value: int) -> str: ...
 
-def test_process_signature_class_attr_lookup_fails() -> None:
-    """Line 111: class name not found on module returns None."""
 
+def _helper(value: int) -> str: ...
+
+
+class _BindsHelper:
+    as_static = staticmethod(_helper)
+    as_method = _helper
+
+
+@pytest.mark.parametrize(
+    ("name", "method", "expected"),
+    [
+        pytest.param(
+            "_ClassWithPrivate._ClassWithPrivate__static_secret",
+            vars(_ClassWithPrivate)["_ClassWithPrivate__static_secret"].__func__,
+            "(value)",
+            id="private-staticmethod-of-private-class",
+        ),
+        pytest.param(
+            "_BindsHelper.as_static", _BindsHelper.as_static, "(value)", id="staticmethod-of-outside-function"
+        ),
+        pytest.param("_BindsHelper.as_method", _BindsHelper.as_method, "()", id="method-of-outside-function"),
+    ],
+)
+def test_process_signature_first_parameter_by_member_kind(name: str, method: Callable[..., str], expected: str) -> None:
+    result = process_signature(make_sig_app(), "method", f"{__name__}.{name}", method, Options(), "", "")
+    assert result == (expected, None)
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        pytest.param(f"{__name__}.NonExistentClass.method", id="class-missing"),
+        pytest.param("not_imported.NonExistentClass.method", id="module-missing"),
+    ],
+)
+def test_process_signature_class_attr_lookup_fails(name: str) -> None:
     def fake_method(self: object, x: int) -> str: ...
 
-    fake_method.__annotations__ = {"x": int, "return": str}
     fake_method.__qualname__ = "NonExistentClass.method"
-    fake_method.__module__ = __name__
-
-    app = make_sig_app()
-    result = process_signature(app, "method", "test.NonExistentClass.method", fake_method, MagicMock(), "", "")
-    assert result is None
+    assert process_signature(make_sig_app(), "method", name, fake_method, Options(), "", "") is None
 
 
 def test_process_signature_private_name_mangling() -> None:
