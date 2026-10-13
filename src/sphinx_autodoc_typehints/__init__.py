@@ -175,8 +175,7 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
     if inspect.isclass(obj):
         obj = getattr(obj, constructor := _constructor_name(obj))
         use_class_for_signature = constructor == "__new__"
-        # namedtuple builds __new__ in a namespace without builtins, so forward references resolve only via the class
-        # (#657)
+        # namedtuple builds __new__ without builtins, so forward references resolve only via the class (#657)
         cls_for_hints = original_obj if inspect.isfunction(obj) and obj.__module__.startswith("namedtuple_") else None
     try:
         obj = inspect.unwrap(obj)
