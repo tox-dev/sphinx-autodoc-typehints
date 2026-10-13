@@ -408,6 +408,17 @@ def test_guarded_version_gated_alias_binds_its_name(
     assert get_all_type_hints([], module.func, f"{module.__name__}.func", {})["value"].name == "Coords"
 
 
+def test_get_all_type_hints_resolves_a_class_nested_beside_the_method() -> None:
+    hints = get_all_type_hints([], Outer.make, f"{__name__}.Outer.make", {})
+    assert hints == {"value": Outer.Inner, "return": Outer.Inner}
+
+
+class Outer:
+    class Inner: ...
+
+    def make(self, value: Inner) -> Inner: ...
+
+
 def test_build_localns_adds_ancestor_classes() -> None:
     import tests.roots.test_nested_attrs_localns as mod  # ruff:ignore[import-outside-top-level]
 
