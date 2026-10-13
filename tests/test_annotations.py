@@ -72,6 +72,7 @@ P_contra = typing_extensions.ParamSpec("P_contra", contravariant=True)  # ty: ig
 P_bound = typing_extensions.ParamSpec("P_bound", bound=str)  # ty: ignore[invalid-paramspec]
 P_default = typing_extensions.ParamSpec("P_default", default=[int, str])
 T_default = typing_extensions.TypeVar("T_default", bound=int, default=bool)
+Ts = typing_extensions.TypeVarTuple("Ts")
 RecList = Union[int, List["RecList"]]
 MutualRecA = Union[bool, List["MutualRecB"]]
 MutualRecB = Union[str, List["MutualRecA"]]
@@ -433,6 +434,7 @@ _CASES = [
         r":py:class:`~typing.TypeVar`\ \(``T_default``, bound= :py:class:`int`, default= :py:class:`bool`)",
         id="T-default",
     ),
+    pytest.param(Ts, r":py:class:`~typing.TypeVarTuple`\ \(``Ts``)", id="Ts"),
     pytest.param(Tuple[()], ":py:data:`~typing.Tuple`", id="Tuple-p"),
     pytest.param(Tuple[int,], r":py:data:`~typing.Tuple`\ \[:py:class:`int`]", id="Tuple-p-int"),
     pytest.param(
