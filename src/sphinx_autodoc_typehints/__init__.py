@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import inspect
 import re
+import sys
 import types
 from contextlib import contextmanager
 from functools import partial
@@ -55,7 +56,7 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 
-def process_signature(  # ruff:ignore[complex-structure, too-many-return-statements, too-many-branches, too-many-arguments, too-many-positional-arguments]
+def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-many-arguments, too-many-positional-arguments]
     app: Sphinx,
     what: str,
     name: str,
@@ -121,17 +122,9 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-return-stateme
                     location=get_obj_location(obj),
                 )
                 return None
-            outer = inspect.getmodule(obj)
-            if outer is None:
+            if (member_type := _class_member_type(name)) is None:
                 return None
-            for class_name in obj.__qualname__.split(".")[:-1]:
-                if (outer := getattr(outer, class_name, None)) is None:
-                    return None
-            method_name = obj.__name__
-            if method_name.startswith("__") and not method_name.endswith("__"):
-                method_name = f"_{obj.__qualname__.split('.')[-2]}{method_name}"
-            method_object = outer.__dict__.get(method_name, obj) if outer else obj
-            if not isinstance(method_object, classmethod | staticmethod) and not inspect.ismethod(obj):
+            if not issubclass(member_type, classmethod | staticmethod) and not inspect.ismethod(obj):
                 start = 1
 
     sph_signature = sph_signature.replace(parameters=parameters[start:])
@@ -149,6 +142,25 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-return-stateme
 
 def _is_dataclass(name: str, what: str, qualname: str) -> bool:
     return (what == "method" and name.endswith(".__init__")) or (what == "class" and qualname.endswith(".__init__"))
+
+
+def _class_member_type(name: str) -> type | None:
+    """
+    Locate the class through the documented name, not ``__qualname__``.
+
+    A class can bind a function defined elsewhere (``add = staticmethod(helper)``).
+    """
+    parts = name.split(".")
+    if (split := next((i for i in range(len(parts) - 1, 0, -1) if ".".join(parts[:i]) in sys.modules), None)) is None:
+        return None
+    owner = sys.modules[".".join(parts[:split])]
+    for part in parts[split:-1]:
+        if (owner := getattr(owner, part, None)) is None:
+            return None
+    attribute = parts[-1]
+    if attribute.startswith("__") and not attribute.endswith("__"):
+        attribute = f"_{owner.__name__.lstrip('_')}{attribute}"
+    return None if (member := inspect.getattr_static(owner, attribute, None)) is None else type(member)
 
 
 def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-arguments]
