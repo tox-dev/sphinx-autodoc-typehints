@@ -3,6 +3,7 @@ from __future__ import annotations
 import ast
 import csv
 import importlib
+import logging
 import re
 import subprocess  # ruff:ignore[suspicious-subprocess-import]
 import sys
@@ -40,13 +41,30 @@ def test_no_source_code_type_guard() -> None:
     resolve_type_guarded_imports([], Error)
 
 
-def _prose(x: "a positive float") -> None: ...  # ruff:ignore[forward-annotation-syntax-error]  # ty: ignore[invalid-syntax-in-forward-annotation]  # the case under test
+def test_process_docstring_keeps_a_prose_annotation_as_written(prose: types.FunctionType) -> None:
+    lines = [":param value: the value"]
+    process_docstring(make_docstring_app(typehints_document_rtype=False), "function", "mod.prose", prose, None, lines)
+    assert lines == [":type value: :sphinx_autodoc_typehints_type:`a positive float`", ":param value: the value"]
 
 
-def test_process_docstring_keeps_a_prose_annotation_as_written() -> None:
-    lines = [":param x: the x"]
-    process_docstring(make_docstring_app(typehints_document_rtype=False), "function", "mod._prose", _prose, None, lines)
-    assert lines == [":type x: :sphinx_autodoc_typehints_type:`a positive float`", ":param x: the x"]
+def test_process_docstring_warns_on_a_prose_annotation(
+    prose: types.FunctionType, caplog: pytest.LogCaptureFixture
+) -> None:
+    process_docstring(make_docstring_app(typehints_document_rtype=False), "function", "mod.prose", prose, None, [])
+    # sphinx rewrites the message once a build has set up its logging, so compare the record's fields
+    warnings = [record for record in caplog.records if record.levelno == logging.WARNING]
+    assert [(vars(record)["subtype"], str(vars(record)["args"][-1])) for record in warnings] == [
+        ("forward_reference", "Forward reference must be an expression -- got 'a positive float'")
+    ]
+
+
+@pytest.fixture
+def prose() -> types.FunctionType:
+    def annotated(value: str) -> None: ...
+
+    # a string that is not an expression, which the type checkers reject when written as an annotation
+    annotated.__annotations__["value"] = "a positive float"
+    return annotated
 
 
 def test_should_skip_module_type() -> None:
