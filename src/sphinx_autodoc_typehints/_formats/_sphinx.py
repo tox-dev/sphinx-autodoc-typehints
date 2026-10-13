@@ -169,13 +169,14 @@ class SphinxFieldListFormat(DocstringFormat):
         return type_annotation, False
 
     def get_rtype_insert_info(self, app: Sphinx, lines: list[str]) -> InsertIndexInfo | None:  # ruff:ignore[no-self-use]
-        if (at := next((i for i, line in enumerate(lines) if line.startswith(":rtype:")), None)) is not None:
-            del lines[at]
-            return InsertIndexInfo(insert_index=at, found_return=True)
-
-        for at, line in enumerate(lines):
-            if line.startswith((":return:", ":returns:")):
-                return InsertIndexInfo(insert_index=at, found_return=True)
+        if (rtype_at := next((i for i, line in enumerate(lines) if line.startswith(":rtype:")), None)) is not None:
+            del lines[rtype_at]
+        return_at = next((i for i, line in enumerate(lines) if line.startswith((":return:", ":returns:"))), None)
+        # inline mode merges the type into the :return: entry, so it replaces a preexisting :rtype: only without one
+        if rtype_at is not None and (app.config.typehints_use_rtype or return_at is None):
+            return InsertIndexInfo(insert_index=rtype_at)
+        if return_at is not None:
+            return InsertIndexInfo(insert_index=return_at, found_return=True)
 
         settings = get_default_settings(RSTParser)  # type: ignore[arg-type]
         settings.env = app.env
@@ -228,9 +229,11 @@ class SphinxFieldListFormat(DocstringFormat):
             lines.insert(insert_index, f":rtype: {formatted_annotation}")
             if info.found_directive:
                 lines.insert(insert_index + 1, "")
+        elif description := lines[insert_index].split(":", 2)[2].strip():
+            lines[insert_index] = f":return: {formatted_annotation} -- {description}"
         else:
-            line = lines[insert_index]
-            lines[insert_index] = f":return: {formatted_annotation} --{line[line.find(' ') :]}"
+            # the description starts on the next line, and a block such as a list cannot follow inline text
+            lines[insert_index : insert_index + 1] = [f":return: {formatted_annotation} --", ""]
 
     def append_default(  # ruff:ignore[no-self-use]
         self,

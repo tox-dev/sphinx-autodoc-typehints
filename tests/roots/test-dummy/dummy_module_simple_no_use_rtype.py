@@ -38,3 +38,26 @@ def function_returns_without_type(x: bool, y: int = 1) -> str:
     :param y: bar
     :returns: A string
     """
+
+
+def function_returns_with_rtype(x: bool, y: int = 1) -> str:
+    """
+    Function docstring.
+
+    :param x: foo
+    :param y: bar
+    :returns: A string
+    :rtype: bytes
+    """
+
+
+def function_returns_on_next_line(x: bool, y: int = 1) -> str:
+    """
+    Function docstring.
+
+    :param x: foo
+    :param y: bar
+    :returns:
+        * a string
+        * or another
+    """
