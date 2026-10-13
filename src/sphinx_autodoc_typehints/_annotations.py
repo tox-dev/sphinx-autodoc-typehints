@@ -261,8 +261,9 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
         return f":py:class:`{newtype_prefix}{newtype_qualified}` ({supertype})"
     if full_name == "typing.Annotated":
         return (yield annotation.__origin__)
-    if full_name in {"typing.TypeVar", "typing.ParamSpec"} and not isinstance(annotation, type):
-        params = {k: getattr(annotation, f"__{k}__") for k in ("bound", "covariant", "contravariant")}
+    if full_name in {"typing.TypeVar", "typing.ParamSpec", "typing.TypeVarTuple"} and not isinstance(annotation, type):
+        # a TypeVarTuple has neither a bound nor a variance
+        params = {k: getattr(annotation, f"__{k}__", None) for k in ("bound", "covariant", "contravariant")}
         params = {k: v for k, v in params.items() if v}
         if "bound" in params:
             bound = yield params["bound"]
@@ -336,7 +337,7 @@ def get_annotation_module(annotation: Any) -> str:
     if (
         is_new_type
         or isinstance(annotation, TypeVar)
-        or type(annotation).__name__ in {"ParamSpec", "ParamSpecArgs", "ParamSpecKwargs"}
+        or type(annotation).__name__ in {"ParamSpec", "ParamSpecArgs", "ParamSpecKwargs", "TypeVarTuple"}
     ):
         return "typing"
     if hasattr(annotation, "__module__"):
