@@ -7,9 +7,7 @@ import contextlib
 import importlib
 import importlib.util
 import inspect
-import re
 import sys
-import textwrap
 import types
 from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar, TypeVarTuple, get_type_hints
 
@@ -30,17 +28,6 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
-_TYPE_GUARD_IMPORT_RE = re.compile(
-    r"""
-    \n                          # leading newline before the guard
-    if[ ](typing\.)?            # "if typing." or "if " prefix
-    TYPE_CHECKING:              # the TYPE_CHECKING constant
-    [^\n]*                      # rest of the if-line
-    ([\s\S]*?)                  # guarded block body (captured, non-greedy)
-    (?=\n\S)                    # lookahead: next non-indented line
-    """,
-    re.VERBOSE,
-)
 _TYPE_GUARD_IMPORTS_RESOLVED: set[str] = set()
 
 
@@ -193,22 +180,26 @@ def _should_skip_guarded_import_resolution(obj: Any) -> bool:
 
 
 def _execute_guarded_code(autodoc_mock_imports: list[str], obj: Any, module_code: str) -> None:
-    for _, part in _TYPE_GUARD_IMPORT_RE.findall(module_code):
+    guards = (
+        node for node in ast.parse(module_code).body if isinstance(node, ast.If) and _names_type_checking(node.test)
+    )
+    # One statement at a time, so an unimportable optional dependency cannot strand the names after it — #741
+    for statement in (statement for guard in guards for statement in guard.body):
         try:
-            # One statement at a time, so an unimportable optional dependency cannot strand the names after it — #741
-            statements = ast.parse(textwrap.dedent(part)).body
-        except SyntaxError as exc:
-            _warn_guarded_import(obj, exc)
-            continue
-        for statement in statements:
-            try:
-                _run_guarded_import(autodoc_mock_imports, obj, statement)
-            except Exception as exc:  # ruff:ignore[blind-except]
-                if any(isinstance(node, ast.Import | ast.ImportFrom) for node in ast.walk(statement)):
-                    _warn_guarded_import(obj, exc)
-                else:
-                    _LOGGER.debug("Skipped guarded statement the interpreter rejects: %r", exc)
-                    _bind_unresolvable_names(obj, statement)
+            _run_guarded_import(autodoc_mock_imports, obj, statement)
+        except Exception as exc:  # ruff:ignore[blind-except]
+            if any(isinstance(node, ast.Import | ast.ImportFrom) for node in ast.walk(statement)):
+                _warn_guarded_import(obj, exc)
+            else:
+                _LOGGER.debug("Skipped guarded statement the interpreter rejects: %r", exc)
+                _bind_unresolvable_names(obj, statement)
+
+
+def _names_type_checking(test: ast.expr) -> bool:
+    """Match ``t.TYPE_CHECKING`` too, whatever the module alias."""
+    return (isinstance(test, ast.Name) and test.id == "TYPE_CHECKING") or (
+        isinstance(test, ast.Attribute) and test.attr == "TYPE_CHECKING"
+    )
 
 
 def _warn_guarded_import(obj: Any, exc: Exception) -> None:

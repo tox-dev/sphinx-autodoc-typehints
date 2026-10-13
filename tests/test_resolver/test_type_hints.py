@@ -12,7 +12,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from csv import Error
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, ParamSpec, Protocol, TypeAliasType, TypeVar, TypeVarTuple, Union, get_args, get_origin
+from typing import Any, Final, ParamSpec, Protocol, TypeAliasType, TypeVar, TypeVarTuple, Union, get_args, get_origin
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -241,24 +241,43 @@ def test_guarded_import_resolves_namedtuple_field_without_prior_function(
     assert get_all_type_hints([], module.P, f"{module.__name__}.P", {}) == {"path": Path}
 
 
-def test_guarded_import_warns_when_the_block_does_not_parse(
-    guarded_module: _GuardedModuleBuilder,
-) -> None:
-    """A block truncated mid-literal by the guard regex is reported rather than raised (issue #741)."""
-    module = guarded_module(
-        "from typing import TYPE_CHECKING\n"
-        "\n"
-        "if TYPE_CHECKING:\n"
-        '    DOC = """\n'
-        "text\n"
-        '"""\n'
-        "\n"
-        "def func(value: int) -> None: ...\n"
-    )
-    mock_logger = MagicMock()
-    with patch("sphinx_autodoc_typehints._resolver._type_hints._LOGGER", mock_logger):
-        get_all_type_hints([], module.func, f"{module.__name__}.func", {})
-    assert "unterminated triple-quoted string literal" in str(mock_logger.warning.call_args)
+_GUARDED_FUNC: Final = "def func(value: Decimal) -> None: ...\n"
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        pytest.param(
+            f"import typing as t\n\nif t.TYPE_CHECKING:\n    from decimal import Decimal\n\n{_GUARDED_FUNC}",
+            id="module-alias",
+        ),
+        pytest.param(
+            f"from typing import TYPE_CHECKING\n\n{_GUARDED_FUNC}\n"
+            "if TYPE_CHECKING:\n    from decimal import Decimal\n",
+            id="end-of-file",
+        ),
+        pytest.param(
+            "from typing import TYPE_CHECKING\n\n"
+            "if TYPE_CHECKING:\n    import os\n# a note\n    from decimal import Decimal\n\n"
+            f"{_GUARDED_FUNC}",
+            id="column-zero-comment",
+        ),
+        pytest.param(
+            f"from typing import TYPE_CHECKING\n\nif TYPE_CHECKING: from decimal import Decimal\n\n{_GUARDED_FUNC}",
+            id="one-line",
+        ),
+        pytest.param(
+            "from typing import TYPE_CHECKING\n\n"
+            'if TYPE_CHECKING:\n    DOC = """\ntext\n"""\n    from decimal import Decimal\n\n'
+            f"{_GUARDED_FUNC}",
+            id="multi-line-string",
+        ),
+    ],
+)
+def test_guarded_import_binds_names_from_any_guard_form(source: str, guarded_module: _GuardedModuleBuilder) -> None:
+    module = guarded_module(f"from __future__ import annotations\n\n{source}")
+    hints = get_all_type_hints([], module.func, f"{module.__name__}.func", {})
+    assert hints == {"value": Decimal, "return": type(None)}
 
 
 @pytest.mark.parametrize(

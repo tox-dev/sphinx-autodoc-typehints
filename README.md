@@ -245,8 +245,9 @@ def process(item: othermodule.OtherClass) -> None: ...
 ### Resolve types from `TYPE_CHECKING` blocks
 
 This extension automatically imports types from
-[`TYPE_CHECKING`](https://docs.python.org/3/library/typing.html#typing.TYPE_CHECKING) blocks at doc-build time. When the
-block imports a dependency your docs environment lacks, the extension mocks it the way
+[`TYPE_CHECKING`](https://docs.python.org/3/library/typing.html#typing.TYPE_CHECKING) blocks at doc-build time. Any
+module-level guard counts, whether it names `TYPE_CHECKING` directly or through a module alias such as
+`t.TYPE_CHECKING`. When the block imports a dependency your docs environment lacks, the extension mocks it the way
 [`autodoc_mock_imports`](https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#confval-autodoc_mock_imports)
 would, so its types still render as cross-references; install it when you want those references to resolve. A statement
 raises a warning when it fails for another reason, such as a dependency you have installed but that fails to import. Fix
