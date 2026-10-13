@@ -64,7 +64,7 @@ def _line_is_param_line_for_arg(line: str, arg_name: str) -> bool:
     if doc_name is None:
         return False
 
-    if keyword not in {"param", "parameter", "arg", "argument"}:
+    if f"{keyword} " not in PARAM_SYNONYMS:
         return False
 
     if any(doc_name == prefix + arg_name for prefix in ("", "\\*", "\\**", "\\*\\*")):
@@ -162,11 +162,9 @@ class SphinxFieldListFormat(DocstringFormat):
         return len(lines) - 1
 
     def find_preexisting_type(self, lines: list[str], arg_name: str) -> tuple[str, bool]:  # ruff:ignore[no-self-use]
-        type_annotation = f":type {arg_name}: "
-        for line in lines:
-            if line.startswith(type_annotation):
-                return line, True
-        return type_annotation, False
+        # napoleon types a keyword argument with kwtype, and paramtype works for both parameter kinds
+        fields = tuple(f":{field} {arg_name}: " for field in ("type", "paramtype", "kwtype"))
+        return next(((line, True) for line in lines if line.startswith(fields)), (fields[0], False))
 
     def get_rtype_insert_info(self, app: Sphinx, lines: list[str]) -> InsertIndexInfo | None:  # ruff:ignore[no-self-use]
         if (rtype_at := next((i for i, line in enumerate(lines) if line.startswith(":rtype:")), None)) is not None:

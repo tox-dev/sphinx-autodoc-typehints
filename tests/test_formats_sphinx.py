@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Final
 from unittest.mock import MagicMock, create_autospec
 
 import pytest
@@ -93,6 +94,30 @@ def test_get_rtype_insert_info_field_list_without_param_synonyms() -> None:
     result = fmt.get_rtype_insert_info(app, lines)
     assert result is not None
     assert result.insert_index == len(lines)
+
+
+_FLAG_TYPE: Final = r":paramtype flag: :sphinx_autodoc_typehints_type:`\:py\:class\:\`bool\``"
+
+
+@pytest.mark.parametrize(
+    ("lines", "always_document_param_types", "expected"),
+    [
+        pytest.param([":keyword flag: on"], False, [_FLAG_TYPE, ":keyword flag: on"], id="keyword"),
+        pytest.param([":keyword flag: on"], True, [_FLAG_TYPE, ":keyword flag: on"], id="keyword-not-duplicated"),
+        pytest.param([":kwarg flag: on"], False, [_FLAG_TYPE, ":kwarg flag: on"], id="kwarg"),
+        pytest.param(
+            [":keyword flag: on", ":kwtype flag: int"], False, [":keyword flag: on", _FLAG_TYPE], id="replaces-kwtype"
+        ),
+    ],
+)
+def test_process_docstring_types_keyword_arguments(
+    lines: list[str], always_document_param_types: bool, expected: list[str]
+) -> None:
+    def takes_flag(*, flag: bool) -> None: ...
+
+    app = make_docstring_app(always_document_param_types=always_document_param_types, typehints_document_rtype=False)
+    sat.process_docstring(app, "function", "mod.takes_flag", takes_flag, None, lines)
+    assert lines == expected
 
 
 def test_get_rtype_insert_info_directive_with_nonempty_preceding_line() -> None:
