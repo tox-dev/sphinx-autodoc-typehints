@@ -374,6 +374,12 @@ _CASES = [
     pytest.param(T, r":py:class:`~typing.TypeVar`\ \(``T``)", id="T"),
     pytest.param(TypeVar, ":py:class:`~typing.TypeVar`", id="TypeVar-class"),
     pytest.param(typing.ParamSpec, ":py:class:`~typing.ParamSpec`", id="ParamSpec-class"),
+    pytest.param(
+        typing.ParamSpecArgs, f":py:{_PARAMSPEC_COMPONENT_ROLE}:`~typing.ParamSpecArgs`", id="ParamSpecArgs-class"
+    ),
+    pytest.param(
+        typing.ParamSpecKwargs, f":py:{_PARAMSPEC_COMPONENT_ROLE}:`~typing.ParamSpecKwargs`", id="ParamSpecKwargs-class"
+    ),
     pytest.param(U_co, r":py:class:`~typing.TypeVar`\ \(``U_co``, covariant=True)", id="U-co"),
     pytest.param(V_contra, r":py:class:`~typing.TypeVar`\ \(``V_contra``, contravariant=True)", id="V-contra"),
     pytest.param(X, r":py:class:`~typing.TypeVar`\ \(``X``, :py:class:`str`, :py:class:`int`)", id="X"),
