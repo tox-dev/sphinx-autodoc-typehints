@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import inspect
-from typing import Any
+from typing import Any, NamedTuple
 from unittest.mock import MagicMock, create_autospec, patch
 
 import pytest
@@ -262,6 +262,25 @@ def test_process_docstring_uses_new_when_init_inherited() -> None:
     joined = "\n".join(lines)
     assert ":type x:" in joined
     assert ":type y:" in joined
+
+
+def test_process_signature_strips_types_from_namedtuple() -> None:
+    class _Point(NamedTuple):
+        x: int
+        y: str
+
+    result = process_signature(make_sig_app(), "class", "test._Point", _Point, MagicMock(), "", "")
+    assert result == ("(x, y)", None)
+
+
+def test_process_signature_uses_new_when_init_inherited() -> None:
+    class _NewOnlyClass:
+        def __new__(cls, x: int, y: str) -> _NewOnlyClass:  # ruff:ignore[unused-static-method-argument, non-self-return-type]
+            return super().__new__(cls)
+
+    app = make_sig_app(typehints_use_signature=True)
+    result = process_signature(app, "class", "test._NewOnlyClass", _NewOnlyClass, MagicMock(), "", "")
+    assert result == ("(x: int, y: str)", None)
 
 
 def test_process_docstring_prefers_init_over_new() -> None:
