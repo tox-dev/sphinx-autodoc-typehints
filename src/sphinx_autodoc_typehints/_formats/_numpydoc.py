@@ -127,15 +127,15 @@ def _convert_numpydoc_to_sphinx_fields(lines: list[str]) -> None:  # ruff:ignore
     lines[:] = result
 
 
+def _field(head: str, description: list[str], indent: str = "   ") -> list[str]:
+    first, *rest = description or [""]
+    return [f"{head} {first}".rstrip(), *(f"{indent}{line}" if line else "" for line in rest)]
+
+
 def _label(entry: _NumpydocEntry) -> str:
     if not entry.name:
         return entry.type
     return f"**{entry.name}** ({entry.type})" if entry.type else f"**{entry.name}**"
-
-
-def _field(head: str, description: list[str], indent: str = "   ") -> list[str]:
-    first, *rest = description or [""]
-    return [f"{head} {first}".rstrip(), *(f"{indent}{line}" if line else "" for line in rest)]
 
 
 class NumpydocFormat(DocstringFormat):
