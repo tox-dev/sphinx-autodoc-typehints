@@ -49,6 +49,7 @@ def make_sig_app(**overrides: object) -> Sphinx:
         "typehints_use_signature": False,
         "typehints_use_signature_return": False,
         "autodoc_type_aliases": {},
+        "strip_signature_backslash": False,
     }
     defaults.update(overrides)
     config = create_autospec(Config, **defaults)  # ty: ignore[invalid-argument-type]

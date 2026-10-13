@@ -494,6 +494,22 @@ def test_process_docstring_strips_complex_inline_param_type() -> None:
     assert "int" in type_lines[0]
 
 
+@pytest.mark.parametrize(
+    ("strip_signature_backslash", "expected"),
+    [
+        pytest.param(False, r"(sep='\n')", id="kept-as-is"),
+        pytest.param(True, r"(sep='\\n')", id="escaped-for-stripping"),
+    ],
+)
+def test_process_signature_escapes_backslashes_only_for_stripping(
+    strip_signature_backslash: bool, expected: str
+) -> None:
+    def join(sep: str = "\n") -> str: ...
+
+    app = make_sig_app(strip_signature_backslash=strip_signature_backslash)
+    assert process_signature(app, "function", "mod.join", join, Options(), "", "") == (expected, None)
+
+
 def _trailing_underscore_func(lambda_: float) -> None: ...
 
 

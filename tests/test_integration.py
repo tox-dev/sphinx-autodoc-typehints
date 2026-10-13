@@ -390,7 +390,7 @@ def function_with_starred_documentation_param_names(*args: int, **kwargs: str): 
 
 @expected(
     """\
-mod.function_with_escaped_default(x='\\\\x08')
+mod.function_with_escaped_default(x='\\x08')
 
    Function docstring.
 
