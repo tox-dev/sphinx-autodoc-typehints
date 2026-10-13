@@ -147,6 +147,16 @@ def test_always_document_param_types_with_defaults_braces_after(
     assert "build succeeded" in status.getvalue()
 
 
+@pytest.mark.sphinx(
+    "text", testroot="dummy", confoverrides={"extensions": ["sphinx_autodoc_typehints", "sphinx.ext.autodoc"]}
+)
+def test_listed_before_autodoc(app: SphinxTestApp) -> None:
+    app.config.master_doc = "simple"  # create flag
+    app.build()
+
+    assert '* **x** ("bool") -- foo' in (Path(app.srcdir) / "_build/text/simple.txt").read_text()
+
+
 @pytest.mark.sphinx("text", testroot="dummy")
 def test_namedtuple_new_no_warning(
     app: SphinxTestApp,
