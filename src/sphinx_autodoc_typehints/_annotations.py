@@ -241,7 +241,7 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
     full_name = f"{module}.{class_name}" if module != "builtins" else class_name
     fully_qualified = getattr(config, "typehints_fully_qualified", False)
     prefix = "" if fully_qualified or full_name == class_name else "~"
-    role = "data" if (module, class_name) in _PYDATA_ANNOTATIONS else "class"
+    role = _inventory_role(config, full_name) or ("data" if (module, class_name) in _PYDATA_ANNOTATIONS else "class")
     args_format = "\\[{}]"
     formatted_args: str | None = ""
 
@@ -411,6 +411,17 @@ def _fixup_module_name(config: Config, module: str) -> str:
     if module == "_io":
         module = "io"
     return module
+
+
+def _inventory_role(config: Config, full_name: str) -> str | None:
+    """
+    Take the role from the inventory the docs link to, which can document another Python version than this one.
+
+    The types module lists its classes as ``py:data`` up to 3.12 and as ``py:class`` from 3.13 on, and intersphinx only
+    resolves a reference whose role matches the inventory entry.
+    """
+    inventory = getattr(getattr(config, "_typehints_env", None), "intersphinx_inventory", None) or {}
+    return next((role for role in ("class", "data") if full_name in inventory.get(f"py:{role}", {})), None)
 
 
 def _format_literal_arg(arg: Any, config: Config) -> str:

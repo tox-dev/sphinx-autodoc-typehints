@@ -762,6 +762,30 @@ def test_intersphinx_mapped_type_prefers_the_local_target(
     assert set(re.findall(r'href="([^"]*Widget)"', html)) == {href}
 
 
+@pytest.mark.parametrize(
+    "role",
+    [
+        pytest.param(
+            role,
+            id=role,
+            marks=pytest.mark.sphinx(
+                "html",
+                testroot="intersphinx-role",
+                confoverrides={"intersphinx_mapping": {"py": (f"https://example.org/{role}/", f"{role}.inv")}},
+            ),
+        )
+        for role in ("class", "data")
+    ],
+)
+def test_inventory_decides_the_role_of_a_type(app: SphinxTestApp, role: str) -> None:
+    app.build()
+
+    html = (Path(app.outdir) / "index.html").read_text()
+    assert set(re.findall(r'href="([^"]*FunctionType)"', html)) == {
+        f"https://example.org/{role}/library/types.html#types.FunctionType"
+    }
+
+
 def test_format_annotation_type_alias_found_in_py_domain() -> None:
     config = MagicMock()
     config.typehints_formatter = None
