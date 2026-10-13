@@ -319,7 +319,8 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
     if args and not formatted_args:
         fmt = []
         for arg in args:
-            fmt.append((yield arg))
+            # typing stores the parameter list filling a ParamSpec slot as a tuple
+            fmt.append((yield list(arg) if isinstance(arg, tuple) else arg))
         formatted_args = args_format.format(", ".join(fmt))
 
     escape = "\\ " if formatted_args else ""
