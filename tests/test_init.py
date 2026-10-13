@@ -355,18 +355,17 @@ def test_process_docstring_preserves_blank_line_after_preexisting_type() -> None
 
 
 def test_process_docstring_braces_after_default_stays_on_its_param() -> None:
-    lines = [":param x: the x", ":type x: int", ":param y: the y", ":type y: int"]
+    def typed_defaults(width: int = 5, height: int = 10) -> None: ...
+
+    lines = [":param width: the width", ":type width: int", ":param height: the height", ":type height: int"]
     app = make_docstring_app(typehints_defaults="braces-after", typehints_document_rtype=False)
-    process_docstring(app, "function", "mod._typed_defaults", _typed_defaults, None, lines)
+    process_docstring(app, "function", "mod.typed_defaults", typed_defaults, None, lines)
     assert lines == [
-        ":param x: the x (default: ``5``)",
-        r":type x: :sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``",
-        ":param y: the y (default: ``10``)",
-        r":type y: :sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``",
+        ":param width: the width (default: ``5``)",
+        r":type width: :sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``",
+        ":param height: the height (default: ``10``)",
+        r":type height: :sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``",
     ]
-
-
-def _typed_defaults(x: int = 5, y: int = 10) -> None: ...
 
 
 def test_process_docstring_strips_inline_param_type() -> None:
