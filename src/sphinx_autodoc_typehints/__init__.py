@@ -421,8 +421,11 @@ def _inject_arg_signature(  # ruff:ignore[too-many-arguments, too-many-positiona
     if annotation is None:
         type_annotation, has_preexisting = fmt.find_preexisting_type(lines, arg_name)
     else:
+        # napoleon gives keyword arguments a field of their own, which reads paramtype but not type
+        type_field = "paramtype" if lines[insert_index].startswith((":keyword ", ":kwarg ", ":kwparam ")) else "type"
         preexisting_line, has_preexisting = fmt.find_preexisting_type(lines, arg_name)
-        type_annotation = ":type {}: {}".format(
+        type_annotation = ":{} {}: {}".format(
+            type_field,
             arg_name,
             add_type_css_class(
                 format_annotation(annotation, app.config, short_literals=app.config.python_display_short_literal_types)
