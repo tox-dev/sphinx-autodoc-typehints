@@ -478,7 +478,7 @@ def test_process_docstring_types_params_from_new(cls: type) -> None:
 
 
 def test_inject_types_no_signature() -> None:
-    """Branch 261->263: signature is None skips _inject_signature."""
+    """A missing signature leaves the parameters alone."""
 
     def sample() -> str: ...
 
@@ -664,6 +664,35 @@ def test_setup_loads_autodoc_listed_after_it(app: SphinxTestApp, write_rst: Call
 
            Return type:
               "str"
+        """)
+
+
+@pytest.mark.parametrize("cls", ["DocumentedTwice", "DocumentedTwiceThroughNew"])
+@pytest.mark.sphinx(
+    "text",
+    testroot="dummy",
+    confoverrides={"autoclass_content": "both", "always_document_param_types": True},
+)
+def test_class_and_constructor_docstrings_list_each_param_once(
+    app: SphinxTestApp, write_rst: Callable[[str], None], cls: str
+) -> None:
+    write_rst(f".. autoclass:: dummy_module.{cls}")
+    app.build()
+
+    assert (Path(app.srcdir) / "_build/text/index.txt").read_text() == dedent(f"""\
+        class dummy_module.{cls}(first, second, third)
+
+           Class docstring.
+
+           Parameters:
+              **first** ("int") -- the first
+
+           Constructor docstring.
+
+           Parameters:
+              * **second** ("str") -- the second
+
+              * **third** ("bool")
         """)
 
 

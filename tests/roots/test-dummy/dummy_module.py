@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, NamedTuple, overload
+from typing import TYPE_CHECKING, NamedTuple, Self, overload
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -113,3 +113,33 @@ class ClassWithOverloadedInit:
     def __init__(self, value: str) -> None: ...
 
     def __init__(self, value: int | str) -> None: ...
+
+
+class DocumentedTwice:
+    """
+    Class docstring.
+
+    :param first: the first
+    """
+
+    def __init__(self, first: int, second: str, third: bool) -> None:
+        """
+        Constructor docstring.
+
+        :param second: the second
+        """
+
+
+class DocumentedTwiceThroughNew:
+    """
+    Class docstring.
+
+    :param first: the first
+    """
+
+    def __new__(cls, first: int, second: str, third: bool) -> Self:
+        """
+        Constructor docstring.
+
+        :param second: the second
+        """
