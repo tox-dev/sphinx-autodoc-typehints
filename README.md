@@ -377,14 +377,14 @@ All warnings can be suppressed via Sphinx's
 [`suppress_warnings`](https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-suppress_warnings) in
 `conf.py`:
 
-| Category                                      | When it's raised                                                                 |
-| --------------------------------------------- | -------------------------------------------------------------------------------- |
-| `sphinx_autodoc_typehints`                    | Catch-all for every warning from this extension.                                 |
-| `sphinx_autodoc_typehints.comment`            | A type comment (`# type: ...`) couldn't be parsed.                               |
-| `sphinx_autodoc_typehints.forward_reference`  | A forward reference (string annotation) couldn't be resolved.                    |
-| `sphinx_autodoc_typehints.guarded_import`     | A `TYPE_CHECKING` statement failed for a reason other than an absent dependency. |
-| `sphinx_autodoc_typehints.local_function`     | A type annotation references a function defined inside another function.         |
-| `sphinx_autodoc_typehints.multiple_ast_nodes` | A type comment matched multiple definitions and the right one is ambiguous.      |
+| Category                                      | When it's raised                                                                       |
+| --------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `sphinx_autodoc_typehints`                    | Catch-all for every warning from this extension.                                       |
+| `sphinx_autodoc_typehints.comment`            | A type comment (`# type: ...`) couldn't be parsed.                                     |
+| `sphinx_autodoc_typehints.forward_reference`  | A string annotation names something undefined or isn't valid Python; shown as written. |
+| `sphinx_autodoc_typehints.guarded_import`     | A `TYPE_CHECKING` statement failed for a reason other than an absent dependency.       |
+| `sphinx_autodoc_typehints.local_function`     | A type annotation references a function defined inside another function.               |
+| `sphinx_autodoc_typehints.multiple_ast_nodes` | A type comment matched multiple definitions and the right one is ambiguous.            |
 
 ## Explanation
 
