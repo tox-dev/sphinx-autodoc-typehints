@@ -91,6 +91,9 @@ class B[T]:
 class C(B[str]): ...
 
 
+class WithParams[**Q]: ...
+
+
 class D(typing_extensions.Protocol): ...
 
 
@@ -371,6 +374,11 @@ _CASES = [
         r":py:class:`~collections.abc.Callable`\ \[:py:data:`~typing.Concatenate`\ \[:py:class:`str`, "
         rf":py:class:`~typing.ParamSpec`\ \(``P``{_NONE_BOUND})], :py:class:`int`]",
         id="Callable-Concatenate-int",
+    ),
+    pytest.param(
+        WithParams[[int, str]],
+        rf":py:class:`~{__name__}.WithParams`\ \[\[:py:class:`int`, :py:class:`str`]]",
+        id="ParamSpec-generic-list",
     ),
     pytest.param(re.Pattern, ":py:class:`~re.Pattern`", id="Pattern"),
     pytest.param(re.Pattern[str], r":py:class:`~re.Pattern`\ \[:py:class:`str`]", id="Pattern-str"),
