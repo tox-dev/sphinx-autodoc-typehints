@@ -93,7 +93,7 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-
     def _get_formatted_annotation(annotation: TypeVar) -> TypeVar:
         if typehints_formatter is None:
             return annotation
-        formatted_name = typehints_formatter(annotation)
+        formatted_name = typehints_formatter(annotation, app.config)
         return annotation if not isinstance(formatted_name, str) else TypeVar(formatted_name)  # ty: ignore[invalid-legacy-type-variable]
 
     if app.config.typehints_use_signature_return:
