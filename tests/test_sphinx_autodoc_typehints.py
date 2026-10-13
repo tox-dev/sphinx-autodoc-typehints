@@ -148,6 +148,18 @@ def test_always_document_param_types_with_defaults_braces_after(
 
 
 @pytest.mark.sphinx("text", testroot="dummy")
+def test_always_document_param_types_change_rereads_sources(
+    app: SphinxTestApp, make_app: Callable[..., SphinxTestApp], write_rst: Callable[[str], None]
+) -> None:
+    write_rst(".. autofunction:: dummy_module.undocumented_function")
+    app.build()
+
+    make_app("text", srcdir=app.srcdir, confoverrides={"always_document_param_types": True}).build()
+
+    assert '**x** ("int")' in (Path(app.srcdir) / "_build/text/index.txt").read_text()
+
+
+@pytest.mark.sphinx("text", testroot="dummy")
 def test_namedtuple_new_no_warning(
     app: SphinxTestApp,
     status: StringIO,
