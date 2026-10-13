@@ -473,54 +473,59 @@ def test_numpydoc_extension_build(
 
 
 @pytest.mark.parametrize(
-    "body",
+    ("body", "expected"),
     [
-        pytest.param(["The x,", "wrapped."], id="wrapped"),
-        pytest.param(["The x.", "", "More about x."], id="paragraphs"),
-        pytest.param(["The x, one of:", "", "- a", "- b"], id="list"),
+        pytest.param(["The first,", "wrapped."], [":param first: The first,", "   wrapped."], id="wrapped"),
+        pytest.param(
+            ["The first.", "", "More about it."],
+            [":param first: The first.", "", "   More about it."],
+            id="paragraphs",
+        ),
+        pytest.param(
+            ["The first, one of:", "", "- a", "- b"],
+            [":param first: The first, one of:", "", "   - a", "   - b"],
+            id="list",
+        ),
     ],
 )
-def test_process_docstring_numpydoc_description_keeps_its_blocks(body: list[str]) -> None:
+def test_process_docstring_numpydoc_description_keeps_its_blocks(body: list[str], expected: list[str]) -> None:
+    def two_params(first: int, second: str) -> None: ...
+
     # numpydoc indents the blank line separating the blocks
     lines = [
         ":Parameters:",
         "",
-        "    **x** : int",
+        "    **first** : int",
         *(f"        {line}" for line in body),
         "",
-        "    **y** : str",
-        "        The y.",
+        "    **second** : str",
+        "        The second.",
         "",
     ]
     app = make_docstring_app(typehints_document_rtype=False)
-    process_docstring(app, "function", "mod._two_params", _two_params, None, lines)
+    process_docstring(app, "function", "mod.two_params", two_params, None, lines)
     assert lines == [
-        f":param x: {body[0]}",
-        *(f"   {line}" if line else "" for line in body[1:]),
-        r":type x: :sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``",
-        ":param y: The y.",
-        r":type y: :sphinx_autodoc_typehints_type:`\:py\:class\:\`str\``",
+        *expected,
+        r":type first: :sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``",
+        ":param second: The second.",
+        r":type second: :sphinx_autodoc_typehints_type:`\:py\:class\:\`str\``",
         "",
     ]
-
-
-def _two_params(x: int, y: str) -> None: ...
 
 
 def test_process_docstring_numpydoc_params_sharing_a_type_line() -> None:
-    lines = [":Parameters:", "", "    **x, y** : int", "        The coordinates.", ""]
+    def coordinates(lat: int, lon: int) -> None: ...
+
+    lines = [":Parameters:", "", "    **lat, lon** : int", "        The coordinates.", ""]
     app = make_docstring_app(typehints_document_rtype=False)
-    process_docstring(app, "function", "mod._coordinates", _coordinates, None, lines)
+    process_docstring(app, "function", "mod.coordinates", coordinates, None, lines)
     assert lines == [
-        ":param x: The coordinates.",
-        r":type x: :sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``",
-        ":param y: The coordinates.",
-        r":type y: :sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``",
+        ":param lat: The coordinates.",
+        r":type lat: :sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``",
+        ":param lon: The coordinates.",
+        r":type lon: :sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``",
         "",
     ]
-
-
-def _coordinates(x: int, y: int) -> None: ...
 
 
 @pytest.mark.parametrize(
@@ -532,10 +537,12 @@ def _coordinates(x: int, y: int) -> None: ...
     ],
 )
 def test_process_docstring_numpydoc_single_yield_keeps_its_type(entry: str, expected: str) -> None:
+    def counter(bound: int) -> Iterator[int]: ...
+
     lines = [
         ":Parameters:",
         "",
-        "    **n** : int",
+        "    **bound** : int",
         "        The bound.",
         "",
         ":Yields:",
@@ -544,14 +551,11 @@ def test_process_docstring_numpydoc_single_yield_keeps_its_type(entry: str, expe
         "        A number.",
         "",
     ]
-    process_docstring(make_docstring_app(), "function", "mod._counter", _counter, None, lines)
+    process_docstring(make_docstring_app(), "function", "mod.counter", counter, None, lines)
     assert lines == [
-        ":param n: The bound.",
-        r":type n: :sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``",
+        ":param bound: The bound.",
+        r":type bound: :sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``",
         "",
         expected,
         "",
     ]
-
-
-def _counter(n: int) -> Iterator[int]: ...

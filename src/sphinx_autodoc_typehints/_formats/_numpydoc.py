@@ -52,35 +52,6 @@ class _NumpydocEntry:
     end: int
 
 
-def _parse_numpydoc_entries(lines: list[str], start: int) -> list[_NumpydocEntry]:
-    entries: list[_NumpydocEntry] = []
-    i = start
-    while i < len(lines):
-        stripped = lines[i].strip()
-        if stripped in _NUMPYDOC_SECTIONS:
-            break
-        if not stripped:
-            i += 1
-            continue
-
-        if m := _NUMPYDOC_BOLD_RE.match(lines[i]):
-            name, typ = m.group(1), m.group(2) or ""
-        elif m := _NUMPYDOC_PLAIN_RE.match(lines[i]):
-            name, typ = "", m.group(1).strip()
-        else:
-            break
-
-        i += 1
-        desc_lines: list[str] = []
-        # numpydoc indents the blank lines inside a description too, so only an unindented one ends it
-        while i < len(lines) and lines[i].startswith("        "):
-            desc_lines.append(lines[i][8:].rstrip())
-            i += 1
-        entries.append(_NumpydocEntry(name=name, type=typ, description=desc_lines, end=i))
-
-    return entries
-
-
 def _convert_numpydoc_to_sphinx_fields(lines: list[str]) -> None:  # ruff:ignore[complex-structure, too-many-branches]
     """Convert numpydoc-formatted sections in ``lines`` to Sphinx field list syntax in-place."""
     if not any(line.strip() in _NUMPYDOC_SECTIONS for line in lines):
@@ -125,6 +96,35 @@ def _convert_numpydoc_to_sphinx_fields(lines: list[str]) -> None:  # ruff:ignore
                 result.extend(_field(f"   * {_label(entry)} --", entry.description, indent="     "))
 
     lines[:] = result
+
+
+def _parse_numpydoc_entries(lines: list[str], start: int) -> list[_NumpydocEntry]:
+    entries: list[_NumpydocEntry] = []
+    i = start
+    while i < len(lines):
+        stripped = lines[i].strip()
+        if stripped in _NUMPYDOC_SECTIONS:
+            break
+        if not stripped:
+            i += 1
+            continue
+
+        if m := _NUMPYDOC_BOLD_RE.match(lines[i]):
+            name, typ = m.group(1), m.group(2) or ""
+        elif m := _NUMPYDOC_PLAIN_RE.match(lines[i]):
+            name, typ = "", m.group(1).strip()
+        else:
+            break
+
+        i += 1
+        desc_lines: list[str] = []
+        # numpydoc indents the blank lines inside a description too, so only an unindented one ends it
+        while i < len(lines) and lines[i].startswith("        "):
+            desc_lines.append(lines[i][8:].rstrip())
+            i += 1
+        entries.append(_NumpydocEntry(name=name, type=typ, description=desc_lines, end=i))
+
+    return entries
 
 
 def _field(head: str, description: list[str], indent: str = "   ") -> list[str]:
