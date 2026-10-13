@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 import inspect
 from pathlib import Path
 from textwrap import dedent
@@ -113,6 +114,25 @@ def test_process_docstring_descriptor_with_existing_type_field() -> None:
     lines = [":type: str"]
     process_docstring(app, "attribute", "array.array.typecode", array.array.typecode, None, lines)
     assert lines == [":type: str"]
+
+
+def test_process_docstring_types_instance_var_from_guarded_import(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "guarded_ivar.py").write_text(
+        "from __future__ import annotations\n\n"
+        "from typing import TYPE_CHECKING\n\n"
+        "if TYPE_CHECKING:\n    from decimal import Decimal\n\n\n"
+        "class Account:\n    def __init__(self) -> None:\n        self.balance: Decimal = Decimal()\n"
+    )
+    monkeypatch.syspath_prepend(tmp_path)
+    account = importlib.import_module("guarded_ivar").Account
+    lines = [":ivar balance: the balance"]
+    process_docstring(make_docstring_app(), "class", "guarded_ivar.Account", account, None, lines)
+    assert lines == [
+        r":vartype balance: :sphinx_autodoc_typehints_type:`\:py\:class\:\`\~decimal.Decimal\``",
+        ":ivar balance: the balance",
+    ]
 
 
 def test_inject_overload_no_qualname() -> None:
