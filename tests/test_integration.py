@@ -847,9 +847,9 @@ mod.func_with_overload(a, b)
    they must both have the same type.
 
    Overloads:
-      * **a** (int), **b** (int) → None
+      * **a** ("int"), **b** ("int") → "None"
 
-      * **a** (str), **b** (str) → None
+      * **a** ("str"), **b** ("str") → "None"
 
    Parameters:
       * **a** ("int" | "str") -- The first thing
@@ -886,9 +886,9 @@ mod.overload_with_complex_types(x)
    Function with overloaded complex types.
 
    Overloads:
-      * **x** (list[int]) → dict[str, int]
+      * **x** ("list"["int"]) → "dict"["str", "int"]
 
-      * **x** (dict[str, int]) → list[int]
+      * **x** ("dict"["str", "int"]) → "list"["int"]
 
    Parameters:
       **x** ("list"["int"] | "dict"["str", "int"]) -- Input value

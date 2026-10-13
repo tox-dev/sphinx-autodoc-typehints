@@ -26,11 +26,11 @@ from sphinx_autodoc_typehints._resolver._type_hints import (
     _build_localns,
     _execute_guarded_code,
     _get_type_hint,
-    _resolve_string_annotations,
     _run_guarded_import,
     _should_skip_guarded_import_resolution,
     get_all_type_hints,
     get_descriptor_type_hint,
+    resolve_string_annotations,
     resolve_type_guarded_imports,
 )
 
@@ -469,7 +469,7 @@ def test_build_localns_preserves_existing_localns() -> None:
 def test_resolve_string_annotations_keeps_unresolvable_strings() -> None:
     obj = MagicMock()
     obj.__module__ = "builtins"
-    result = _resolve_string_annotations(obj, {"x": "NoSuchType", "y": "int"}, {})
+    result = resolve_string_annotations(obj, {"x": "NoSuchType", "y": "int"}, {})
     assert result["x"] == "NoSuchType"
     assert result["y"] is int
 
@@ -477,7 +477,7 @@ def test_resolve_string_annotations_keeps_unresolvable_strings() -> None:
 def test_resolve_string_annotations_passes_non_strings() -> None:
     obj = MagicMock()
     obj.__module__ = "builtins"
-    result = _resolve_string_annotations(obj, {"x": int, "return": str}, {})  # type: ignore[dict-item]
+    result = resolve_string_annotations(obj, {"x": int, "return": str}, {})
     assert result["x"] is int
     assert result["return"] is str
 
@@ -664,3 +664,9 @@ def test_process_docstring_keeps_other_hints_when_one_fails(func: types.Function
 
 
 class NotGenericAtRuntime: ...
+
+
+def test_resolve_string_annotations_evaluates_quoted_annotation() -> None:
+    def func() -> None: ...
+
+    assert resolve_string_annotations(func, {"x": "'Path'"}, {}) == {"x": Path}

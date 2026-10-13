@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING, NamedTuple, overload
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -64,3 +64,52 @@ class NumpyParameterShadowedByAttribute:
     count: str
 
     def __init__(self, count: int) -> None: ...
+
+
+class ClassWithOverloadedMethods:
+    """Class docstring."""
+
+    @overload
+    @classmethod
+    def build(cls, value: int) -> ClassWithOverloadedMethods: ...
+
+    @overload
+    @classmethod
+    def build(cls, value: str) -> ClassWithOverloadedMethods: ...
+
+    @classmethod
+    def build(cls, value: int | str) -> ClassWithOverloadedMethods:
+        """Build one."""
+
+    @overload
+    def convert(self, value: int) -> int: ...
+
+    @overload
+    def convert(self, value: str) -> str: ...
+
+    def convert(self, value: int | str) -> int | str:
+        """Convert value."""
+
+    @overload
+    @staticmethod
+    def parse(value: int) -> int: ...
+
+    @overload
+    @staticmethod
+    def parse(value: str) -> str: ...
+
+    @staticmethod
+    def parse(value: int | str) -> int | str:
+        """Parse value."""
+
+
+class ClassWithOverloadedInit:
+    """Class docstring."""
+
+    @overload
+    def __init__(self, value: int) -> None: ...
+
+    @overload
+    def __init__(self, value: str) -> None: ...
+
+    def __init__(self, value: int | str) -> None: ...
