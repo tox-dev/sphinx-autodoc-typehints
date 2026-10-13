@@ -713,6 +713,27 @@ def test_format_annotation_type_alias_found_in_py_domain() -> None:
     assert format_annotation(annotation, config) == ":py:type:`~mymod.SomeAlias`"
 
 
+_TE_INT_LIST = typing_extensions.TypeAliasType(  # ruff:ignore[non-pep695-type-alias]  # the backport is under test
+    "_TE_INT_LIST", list[int]
+)
+_TE_PAIR = typing_extensions.TypeAliasType(  # ruff:ignore[non-pep695-type-alias]  # the backport is under test
+    "_TE_PAIR", tuple[T, T], type_params=(T,)
+)
+
+
+@pytest.mark.parametrize(
+    ("annotation", "expected"),
+    [
+        pytest.param(_TE_INT_LIST, r":py:class:`list`\ \[:py:class:`int`]", id="plain"),
+        pytest.param(_TE_PAIR[int], r":py:class:`tuple`\ \[:py:class:`int`, :py:class:`int`]", id="subscripted"),
+    ],
+)
+def test_format_annotation_typing_extensions_type_alias(
+    annotation: typing_extensions.TypeAliasType | types.GenericAlias, expected: str
+) -> None:
+    assert format_annotation(annotation, create_autospec(Config)) == expected
+
+
 def test_format_annotation_recursive_type_alias() -> None:
     """A self-referential PEP 695 alias renders as a cross-reference to itself, not forever (#720)."""
     namespace: dict[str, Any] = {}
