@@ -173,6 +173,16 @@ def test_pep695_type_alias_in_function_undocumented(
     assert result.strip() == normalize_sphinx_text(expected)
 
 
+@pytest.mark.sphinx("man", testroot="integration")
+def test_pep695_type_alias_in_function_man_page(app: SphinxTestApp, monkeypatch: pytest.MonkeyPatch) -> None:
+    (Path(app.srcdir) / "index.rst").write_text(".. autofunction:: mod.type_alias_func")
+    monkeypatch.setitem(sys.modules, "mod", _mod_pep695)
+    app.build()
+
+    (page,) = Path(app.outdir).glob("*.1")
+    assert r"\fBx\fP (\fBlist\fP[\fBint\fP]) \-\- List of integers" in page.read_text()
+
+
 @pytest.mark.sphinx("text", testroot="integration")
 def test_pep695_type_alias_in_function_documented(
     app: SphinxTestApp,
