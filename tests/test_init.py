@@ -12,6 +12,7 @@ from docutils.frontend import get_default_settings
 from docutils.parsers.rst import Parser
 from sphinx.application import Sphinx
 from sphinx.config import Config
+from sphinx.ext.autodoc import Options
 from sphinx.ext.autosummary import extract_summary
 
 import sphinx_autodoc_typehints as sat
@@ -69,6 +70,16 @@ def test_process_signature_class_instance() -> None:
     assert result is not None
     sig_str, _ = result
     assert sig_str == "(x)"
+
+
+class _ConstructedFromInit:
+    def __init__(self, x: int) -> None: ...
+
+
+def test_process_signature_class_omits_constructor_return() -> None:
+    app = make_sig_app(typehints_use_signature=True, typehints_use_signature_return=True)
+    result = process_signature(app, "class", "mod._ConstructedFromInit", _ConstructedFromInit, Options(), "", "")
+    assert result == ("(x: int)", None)
 
 
 def test_process_docstring_sphinx_signature_raises_value_error() -> None:
