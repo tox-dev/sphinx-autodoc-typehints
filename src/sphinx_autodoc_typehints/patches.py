@@ -110,7 +110,7 @@ def _patched_body_doctest(
     self: Body, _match: None, _context: None, next_state: str | None
 ) -> tuple[list[Any], str | None, list[Any]]:
     assert self.document.current_line is not None  # ruff:ignore[assert]
-    line = self.document.current_line + 1
+    line = self.document.current_line  # get_text_block moves past the block
     data = "\n".join(self.state_machine.get_text_block())  # ty: ignore[unresolved-attribute]
     n = nodes.doctest_block(data, data)
     n.line = line

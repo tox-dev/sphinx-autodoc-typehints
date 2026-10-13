@@ -195,10 +195,11 @@ class SphinxFieldListFormat(DocstringFormat):
             return InsertIndexInfo(insert_index=at, found_param=True)
 
         for child in doc.children:
-            if _tag_name(child) in {"literal_block", "paragraph", "field_list"}:
+            if (tag := _tag_name(child)) in {"literal_block", "paragraph", "field_list"}:
                 continue
             line_no = _node_line_no(child)
-            at = max(line_no - 2, 0) if line_no else len(lines)
+            # placement before a doctest block was tuned while it reported the line after its first one
+            at = max(line_no - (1 if tag == "doctest_block" else 2), 0) if line_no else len(lines)
             if lines[at - 1]:
                 break
             return InsertIndexInfo(insert_index=at, found_directive=True)
