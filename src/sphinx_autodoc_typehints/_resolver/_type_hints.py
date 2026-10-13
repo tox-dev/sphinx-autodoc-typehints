@@ -147,7 +147,7 @@ def _get_type_hint(autodoc_mock_imports: list[str], name: str, obj: Any, localns
             result = _get_forward_ref_annotations(obj)
         else:
             result = {}
-    except NameError as exc:
+    except (NameError, SyntaxError) as exc:
         _LOGGER.warning(
             'Cannot resolve forward reference in type annotations of "%s" (module %s): %s',
             name,
