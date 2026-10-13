@@ -38,3 +38,29 @@ class DataClass:
     """Class docstring."""
 
     x: int
+
+
+class GoogleAttributes:
+    """
+    Class docstring.
+
+    Attributes:
+        count: the count
+    """
+
+    count: int
+
+
+class NumpyParameterShadowedByAttribute:
+    """
+    Class docstring.
+
+    Parameters
+    ----------
+    count
+        the count
+    """
+
+    count: str
+
+    def __init__(self, count: int) -> None: ...
