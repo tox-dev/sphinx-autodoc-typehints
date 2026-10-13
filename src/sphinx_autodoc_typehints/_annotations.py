@@ -273,7 +273,7 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
         for arg in args:
             fmt.append((yield arg))  # ruff:ignore[manual-list-comprehension]  # yield is illegal inside a comprehension
         formatted_args = f"\\[\\[{', '.join(fmt[:-1])}], {fmt[-1]}]"
-    elif full_name == "typing.Literal":
+    elif full_name == "typing.Literal" and args:
         literal_parts = [_format_literal_arg(arg, config) for arg in args]
         if short_literals:
             return f"\\{' | '.join(literal_parts)}"

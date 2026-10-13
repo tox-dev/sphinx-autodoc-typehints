@@ -485,6 +485,7 @@ def test_always_use_bars_union(annotation: str, expected_result: str) -> None:
     [
         pytest.param("ClassVar", int, ":py:data:`~typing.ClassVar`\\ \\[:py:class:`int`]", id="ClassVar"),
         pytest.param("NoReturn", None, ":py:data:`~typing.NoReturn`", id="NoReturn"),
+        pytest.param("Literal", None, ":py:data:`~typing.Literal`", id="Literal-bare"),
         pytest.param("Literal", ("a", 1), ":py:data:`~typing.Literal`\\ \\[``'a'``, ``1``]", id="Literal"),
         pytest.param(
             "Literal",
@@ -606,10 +607,15 @@ def test_format_annotation_with_formatter_returning_none() -> None:
     assert result == ":py:class:`int`"
 
 
-def test_format_annotation_short_literals() -> None:
-    conf = create_autospec(Config)
-    result = format_annotation(Literal["a", "b"], conf, short_literals=True)
-    assert result == "\\``'a'`` | ``'b'``"
+@pytest.mark.parametrize(
+    ("annotation", "expected_result"),
+    [
+        pytest.param(Literal["a", "b"], "\\``'a'`` | ``'b'``", id="values"),
+        pytest.param(Literal, ":py:data:`~typing.Literal`", id="bare"),
+    ],
+)
+def test_format_annotation_short_literals(annotation: Any, expected_result: str) -> None:
+    assert format_annotation(annotation, create_autospec(Config), short_literals=True) == expected_result
 
 
 def test_get_annotation_module_raises_on_unknown() -> None:
