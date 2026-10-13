@@ -52,6 +52,15 @@ def test_future_annotations_imported() -> None:
     assert _future_annotations_imported(test_future_annotations_imported)
 
 
+def _prose(x: "a positive float") -> None: ...  # ruff:ignore[forward-annotation-syntax-error]  # ty: ignore[invalid-syntax-in-forward-annotation]  # the case under test
+
+
+def test_process_docstring_keeps_a_prose_annotation_as_written() -> None:
+    lines = [":param x: the x"]
+    process_docstring(make_docstring_app(typehints_document_rtype=False), "function", "mod._prose", _prose, None, lines)
+    assert lines == [":type x: :sphinx_autodoc_typehints_type:`a positive float`", ":param x: the x"]
+
+
 def test_should_skip_module_type() -> None:
     assert not _should_skip_guarded_import_resolution(csv)
 
