@@ -128,15 +128,14 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-
                 start = 1
 
     sph_signature = sph_signature.replace(parameters=parameters[start:])
-    return (
-        stringify_signature(
-            sph_signature,
-            # a class signature describes the call building the instance, so its constructor's -> None does not belong
-            show_return_annotation=app.config.typehints_use_signature_return and not inspect.isclass(original_obj),
-            unqualified_typehints=not getattr(app.config, "typehints_fully_qualified", False),
-        ).replace("\\", "\\\\"),
-        None,
+    formatted = stringify_signature(
+        sph_signature,
+        # a class signature describes the call building the instance, so its constructor's -> None does not belong
+        show_return_annotation=app.config.typehints_use_signature_return and not inspect.isclass(original_obj),
+        unqualified_typehints=not getattr(app.config, "typehints_fully_qualified", False),
     )
+    # the directive strips one level of backslashes only under this option, so escaping otherwise doubles them
+    return formatted.replace("\\", "\\\\") if app.config.strip_signature_backslash else formatted, None
 
 
 def _is_dataclass(name: str, what: str, qualname: str) -> bool:
