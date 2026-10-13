@@ -12,8 +12,8 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
 from docutils import nodes
 from sphinx.util import logging
+from sphinx.util.inspect import getdoc, stringify_signature
 from sphinx.util.inspect import signature as sphinx_signature
-from sphinx.util.inspect import stringify_signature
 
 # re-exports for backward compatibility
 from ._annotations import (
@@ -201,7 +201,17 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
         _typehints_resolve_guarded_imports=partial(resolve_type_guarded_imports, app.config.autodoc_mock_imports),
     ):
         has_overloads = _inject_overload_signatures(app, what, name, obj, lines)
-        _inject_types_to_docstring(type_hints, signature, original_obj, app, what, name, lines, has_overloads)
+        _inject_types_to_docstring(
+            type_hints,
+            signature,
+            original_obj,
+            app,
+            what,
+            name,
+            lines,
+            has_overloads,
+            documented_elsewhere=_params_documented_elsewhere(app, name, original_obj, signature, lines),
+        )
         _inject_ivar_types(ivar_annotations, app, lines)
 
 
@@ -360,6 +370,41 @@ def format_default(app: Sphinx, default: Any, is_annotated: bool) -> str | None:
     return f"default: ``{formatted}``"
 
 
+def _params_documented_elsewhere(
+    app: Sphinx, name: str, obj: Any, signature: inspect.Signature | None, lines: list[str]
+) -> frozenset[str]:
+    """
+    With ``autoclass_content = "both"`` Sphinx processes a class and its constructor docstring one after the other.
+
+    Only the constructor's lists the parameters that neither of them documents.
+    """
+    if (
+        not inspect.isclass(obj)
+        or signature is None
+        or (env := getattr(app, "env", None)) is None
+        or not _has_constructor_docstring(app, obj)
+    ):
+        return frozenset()
+    class_docstrings = env.temp_data.setdefault("sphinx_autodoc_typehints_class_docstrings", {})
+    if (class_lines := class_docstrings.pop(name, None)) is None:
+        class_docstrings[name] = lines
+        return frozenset(signature.parameters)
+    fmt = detect_format(class_lines)
+    return frozenset(param for param in signature.parameters if fmt.find_param(class_lines, param) is not None)
+
+
+def _has_constructor_docstring(app: Sphinx, cls: type) -> bool:
+    """Mirror Sphinx's choice of docstrings for ``autoclass_content = "both"``."""
+    if app.config.autoclass_content != "both" or not getdoc(cls):
+        return False
+    inherit = app.config.autodoc_inherit_docstrings
+    init_doc = getdoc(cls.__init__, allow_inherited=inherit, cls=cls, name="__init__")
+    if init_doc and init_doc != object.__init__.__doc__:
+        return True
+    new_doc = getdoc(cls.__new__, allow_inherited=inherit, cls=object, name="__new__")
+    return bool(new_doc) and new_doc != object.__new__.__doc__
+
+
 def _inject_types_to_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-arguments]
     type_hints: dict[str, Any],
     signature: inspect.Signature | None,
@@ -369,23 +414,15 @@ def _inject_types_to_docstring(  # ruff:ignore[too-many-arguments, too-many-posi
     name: str,
     lines: list[str],
     has_overloads: bool = False,  # ruff:ignore[boolean-type-hint-positional-argument, boolean-default-value-positional-argument]
+    *,
+    documented_elsewhere: frozenset[str] = frozenset(),
 ) -> None:
     fmt = detect_format(lines)
     if signature is not None:
-        _inject_signature(type_hints, signature, app, lines, fmt)
+        for arg_name in signature.parameters:
+            _inject_arg_signature(type_hints, signature, app, lines, arg_name, fmt, documented_elsewhere)
     if "return" in type_hints and not has_overloads:
         _inject_rtype(type_hints, original_obj, app, what, name, lines, fmt)
-
-
-def _inject_signature(
-    type_hints: dict[str, Any],
-    signature: inspect.Signature,
-    app: Sphinx,
-    lines: list[str],
-    fmt: Any,
-) -> None:
-    for arg_name in signature.parameters:
-        _inject_arg_signature(type_hints, signature, app, lines, arg_name, fmt)
 
 
 def _inject_arg_signature(  # ruff:ignore[too-many-arguments, too-many-positional-arguments]
@@ -395,6 +432,7 @@ def _inject_arg_signature(  # ruff:ignore[too-many-arguments, too-many-positiona
     lines: list[str],
     arg_name: str,
     fmt: Any,
+    documented_elsewhere: frozenset[str],
 ) -> None:
     annotation = type_hints.get(arg_name)
     default = signature.parameters[arg_name].default
@@ -418,7 +456,12 @@ def _inject_arg_signature(  # ruff:ignore[too-many-arguments, too-many-positiona
     if insert_index is None and doc_description:
         lines.append(f":param {arg_name}: {doc_description}")
         insert_index = len(lines) - 1
-    elif annotation is not None and insert_index is None and app.config.always_document_param_types:
+    elif (
+        annotation is not None
+        and insert_index is None
+        and app.config.always_document_param_types
+        and arg_name not in documented_elsewhere
+    ):
         insert_index = fmt.add_undocumented_param(lines, arg_name)
 
     if insert_index is None:
