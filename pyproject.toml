@@ -142,7 +142,8 @@ lint.per-file-ignores."tests/roots/test-pyi-stubs/stub_mod.py" = [
   "unused-async",            # async function must be async to test async stub resolution
 ]
 lint.per-file-ignores."tests/roots/test-pyi-stubs/stub_mod.pyi" = [
-  "missing-required-import", # stub files don't use `from __future__ import annotations`
+  "complex-if-statement-in-stub", # third-party stubs gate on more than sys.version_info, which the resolver must survive
+  "missing-required-import",      # stub files don't use `from __future__ import annotations`
 ]
 lint.per-file-ignores."tests/roots/test-unexecutable-guard/demo_unexecutable_guard.py" = [
   "non-pep695-generic-function", # the legacy TypeVar spelling is what the guard cannot execute

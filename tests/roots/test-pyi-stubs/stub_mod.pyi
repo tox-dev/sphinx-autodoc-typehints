@@ -1,4 +1,6 @@
+import sys
 from collections.abc import Callable, Sequence
+from typing import overload
 
 type MyAlias = Callable[[str], str]
 
@@ -16,3 +18,19 @@ class Converter:
 
 async def fetch(url: str) -> str: ...
 def transform(value: Sequence[int]) -> list[str]: ...
+
+if sys.version_info >= (3, 99):
+    def version_gated(value: str) -> str: ...
+
+else:
+    def version_gated(value: int) -> bytes: ...
+
+WITH_EXTRAS: bool
+
+if WITH_EXTRAS:
+    def extras_only(value: float) -> float: ...
+
+@overload
+def overloaded(value: int) -> int: ...
+@overload
+def overloaded(value: str) -> str: ...

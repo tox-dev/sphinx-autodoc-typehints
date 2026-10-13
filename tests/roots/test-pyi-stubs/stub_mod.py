@@ -35,3 +35,15 @@ async def fetch(url):
 
 def transform(value):
     return value
+
+
+def version_gated(value):
+    return value
+
+
+def overloaded(value):
+    return value
+
+
+def extras_only(value):
+    return value
