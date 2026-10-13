@@ -7,7 +7,7 @@ import re
 import types
 from contextlib import contextmanager
 from functools import partial
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
 from docutils import nodes
 from sphinx.util import logging
@@ -70,8 +70,7 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-return-stateme
 
     original_obj = obj
     if inspect.isclass(obj):
-        # a class without its own __init__ (e.g. a NamedTuple) takes its parameters from __new__
-        obj = obj.__new__ if obj.__init__ is object.__init__ and obj.__new__ is not object.__new__ else obj.__init__
+        obj = getattr(obj, _constructor_name(obj))
     try:
         has_annotations = getattr(obj, "__annotations__", None)
     except (NameError, TypeError, AttributeError):
@@ -174,12 +173,10 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
     use_class_for_signature = False
     cls_for_hints = None
     if inspect.isclass(obj):
-        if obj.__init__ is object.__init__ and obj.__new__ is not object.__new__:
-            use_class_for_signature = True
-            cls_for_hints = obj
-            obj = obj.__new__
-        else:
-            obj = obj.__init__
+        obj = getattr(obj, constructor := _constructor_name(obj))
+        use_class_for_signature = constructor == "__new__"
+        # namedtuple builds __new__ without builtins, so forward references resolve only via the class (#657)
+        cls_for_hints = original_obj if inspect.isfunction(obj) and obj.__module__.startswith("namedtuple_") else None
     try:
         obj = inspect.unwrap(obj)
     except ValueError:
@@ -212,6 +209,14 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
         has_overloads = _inject_overload_signatures(app, what, name, obj, lines)
         _inject_types_to_docstring(type_hints, signature, original_obj, app, what, name, lines, has_overloads)
         _inject_ivar_types(ivar_annotations, app, lines)
+
+
+def _constructor_name(cls: type) -> Literal["__new__", "__init__"]:
+    """Choose the constructor as ``inspect.signature`` does: the one defined lowest in the MRO, ``__new__`` on a tie."""
+    depth = {
+        name: next(i for i, klass in enumerate(cls.__mro__) if name in vars(klass)) for name in ("__new__", "__init__")
+    }
+    return "__new__" if cls.__new__ is not object.__new__ and depth["__new__"] <= depth["__init__"] else "__init__"
 
 
 @contextmanager

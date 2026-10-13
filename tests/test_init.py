@@ -12,6 +12,7 @@ from docutils.frontend import get_default_settings
 from docutils.parsers.rst import Parser
 from sphinx.application import Sphinx
 from sphinx.config import Config
+from sphinx.ext.autodoc import Options
 from sphinx.ext.autosummary import extract_summary
 
 import sphinx_autodoc_typehints as sat
@@ -289,19 +290,45 @@ def test_process_signature_uses_new_when_init_inherited() -> None:
     assert result == ("(x: int, y: str)", None)
 
 
-def test_process_docstring_prefers_init_over_new() -> None:
-    class _BothClass:
-        def __new__(cls, a: float) -> _BothClass:  # ruff:ignore[unused-static-method-argument, non-self-return-type]
-            return super().__new__(cls)
+class _BothClass:
+    def __new__(cls, value: float) -> _BothClass: ...  # ruff:ignore[non-self-return-type]
 
-        def __init__(self, x: int) -> None:
-            self.x = x
+    def __init__(self, *args: float) -> None: ...
 
-    app = make_docstring_app(typehints_document_rtype=False)
-    lines: list[str] = [":param x: the x"]
-    process_docstring(app, "class", "test._BothClass", _BothClass, None, lines)
-    joined = "\n".join(lines)
-    assert ":type x:" in joined
+
+class _InitOverridesNew(_BothClass):
+    def __init__(self, count: int) -> None: ...
+
+
+@pytest.mark.parametrize(
+    ("cls", "expected"),
+    [
+        pytest.param(_BothClass, "(value: float)", id="new-beside-init"),
+        pytest.param(_InitOverridesNew, "(count: int)", id="init-overrides-inherited-new"),
+    ],
+)
+def test_process_signature_picks_constructor_like_inspect(cls: type, expected: str) -> None:
+    app = make_sig_app(typehints_use_signature=True)
+    assert process_signature(app, "class", f"test.{cls.__name__}", cls, Options(), "", "") == (expected, None)
+
+
+class _Shadowed:
+    value: int
+
+    def __new__(cls, value: float) -> _Shadowed: ...  # ruff:ignore[non-self-return-type]
+
+
+@pytest.mark.parametrize(
+    "cls",
+    [
+        pytest.param(_BothClass, id="new-beside-init"),
+        pytest.param(_Shadowed, id="new-over-shadowing-class-attribute"),
+    ],
+)
+def test_process_docstring_types_params_from_new(cls: type) -> None:
+    lines = [":param value: doc"]
+    process_docstring(make_docstring_app(typehints_document_rtype=False), "class", "test.cls", cls, None, lines)
+    assert lines == [r":type value: :sphinx_autodoc_typehints_type:`\:py\:class\:\`float\``", ":param value: doc"]
 
 
 def test_inject_types_no_signature() -> None:
