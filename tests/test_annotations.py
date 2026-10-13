@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import enum
+import pydoc
 import re
 import sys
 import types
 import typing
+import warnings
 from collections.abc import Callable, Mapping
 from io import StringIO
 from types import EllipsisType, FrameType, FunctionType, ModuleType, NotImplementedType, TracebackType
@@ -524,6 +526,30 @@ def test_format_annotation_both_libs(library: ModuleType, annotation: str, param
     ann = annotation_cls if params is None else annotation_cls[params]
     result = format_annotation(ann, create_autospec(Config))
     assert result == expected_result
+
+
+def test_format_annotation_role_matches_python_inventory(inv: Inventory) -> None:
+    # CPython moving a typing/types object between py:class and py:data would leave our reference unresolved.
+    not_rendered_as_itself = {
+        *("types.BuiltinFunctionType", "types.LambdaType", "typing.Text"),  # aliases render as their target
+        *("types.NoneType", "types.UnionType", "typing.ForwardRef"),  # rendered as None, Union, annotationlib
+        *("typing.Annotated", "typing.NewType"),  # only meaningful subscripted or called
+        *("typing.NoDefault", "typing.NoExtraItems", "typing.TYPE_CHECKING"),  # values, not annotations
+    }
+    conf = create_autospec(Config, always_use_bars_union=False)
+    with warnings.catch_warnings(action="ignore", category=DeprecationWarning):  # typing.ByteString on 3.15+
+        mismatches = {
+            entry.name: rendered
+            for entry in inv.objects
+            if entry.domain == "py"
+            and entry.role in {"class", "data"}
+            and entry.name.rpartition(".")[0] in {"typing", "types"}
+            and entry.name not in not_rendered_as_itself
+            and not (rendered := format_annotation(pydoc.locate(entry.name), conf)).startswith(
+                f":py:{entry.role}:`~{entry.name}`"
+            )
+        }
+    assert mismatches == {}
 
 
 def test_format_annotation_tuple() -> None:

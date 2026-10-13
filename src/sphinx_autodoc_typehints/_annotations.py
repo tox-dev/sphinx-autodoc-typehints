@@ -50,6 +50,7 @@ _PYDATA_ANNOTS_TYPING = {
     "TypeGuard",
     "TypeIs",
     "Unpack",
+    *({"ParamSpecArgs", "ParamSpecKwargs"} if sys.version_info < (3, 13) else set()),
     *({"Union"} if sys.version_info < (3, 14) else set()),
 }
 # The types module documents these as ``py:data`` through 3.12 and as ``py:class`` from 3.13 on.
