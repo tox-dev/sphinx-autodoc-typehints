@@ -147,14 +147,6 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-return-stateme
     )
 
 
-def _constructor_name(cls: type) -> Literal["__new__", "__init__"]:
-    """Choose the constructor as ``inspect.signature`` does: the one defined lowest in the MRO, ``__new__`` on a tie."""
-    depth = {
-        name: next(i for i, klass in enumerate(cls.__mro__) if name in vars(klass)) for name in ("__new__", "__init__")
-    }
-    return "__new__" if cls.__new__ is not object.__new__ and depth["__new__"] <= depth["__init__"] else "__init__"
-
-
 def _is_dataclass(name: str, what: str, qualname: str) -> bool:
     return (what == "method" and name.endswith(".__init__")) or (what == "class" and qualname.endswith(".__init__"))
 
@@ -218,6 +210,14 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
         has_overloads = _inject_overload_signatures(app, what, name, obj, lines)
         _inject_types_to_docstring(type_hints, signature, original_obj, app, what, name, lines, has_overloads)
         _inject_ivar_types(ivar_annotations, app, lines)
+
+
+def _constructor_name(cls: type) -> Literal["__new__", "__init__"]:
+    """Choose the constructor as ``inspect.signature`` does: the one defined lowest in the MRO, ``__new__`` on a tie."""
+    depth = {
+        name: next(i for i, klass in enumerate(cls.__mro__) if name in vars(klass)) for name in ("__new__", "__init__")
+    }
+    return "__new__" if cls.__new__ is not object.__new__ and depth["__new__"] <= depth["__init__"] else "__init__"
 
 
 @contextmanager
