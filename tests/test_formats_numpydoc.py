@@ -472,9 +472,6 @@ def test_numpydoc_extension_build(
         assert fragment in result
 
 
-def _two_params(x: int, y: str) -> None: ...
-
-
 @pytest.mark.parametrize(
     "body",
     [
@@ -507,7 +504,7 @@ def test_process_docstring_numpydoc_description_keeps_its_blocks(body: list[str]
     ]
 
 
-def _coordinates(x: int, y: int) -> None: ...
+def _two_params(x: int, y: str) -> None: ...
 
 
 def test_process_docstring_numpydoc_params_sharing_a_type_line() -> None:
@@ -523,7 +520,7 @@ def test_process_docstring_numpydoc_params_sharing_a_type_line() -> None:
     ]
 
 
-def _counter(n: int) -> Iterator[int]: ...
+def _coordinates(x: int, y: int) -> None: ...
 
 
 @pytest.mark.parametrize(
@@ -555,3 +552,6 @@ def test_process_docstring_numpydoc_single_yield_keeps_its_type(entry: str, expe
         expected,
         "",
     ]
+
+
+def _counter(n: int) -> Iterator[int]: ...
