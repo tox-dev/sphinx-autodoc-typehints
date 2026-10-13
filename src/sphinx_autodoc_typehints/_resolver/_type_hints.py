@@ -295,6 +295,9 @@ def _build_localns(obj: Any, localns: Mapping[str, Any]) -> dict[str, Any]:
             if inspect.isclass(current):
                 result[part] = current
             result.update({p.__name__: p for p in _type_params(current)})
+        if inspect.isroutine(obj) and inspect.isclass(current):
+            # evaluated eagerly, a method's annotations see its class body, so string ones should too
+            result = {**vars(current), **result}
     return result
 
 
