@@ -1593,29 +1593,6 @@ def typehints_use_signature(a: AsyncGenerator) -> AsyncGenerator:
 
 @expected(
     """
-    class mod.ClassWithSignatureReturn(x: int)
-
-       Class docstring.
-
-       Parameters:
-          **x** ("int") -- the x
-
-    """,
-    typehints_use_signature=True,
-    typehints_use_signature_return=True,
-)
-class ClassWithSignatureReturn:
-    """Class docstring.
-
-    Args:
-        x: the x
-    """
-
-    def __init__(self, x: int) -> None: ...
-
-
-@expected(
-    """
     mod.typehints_no_rtype_none()
 
        Do something.

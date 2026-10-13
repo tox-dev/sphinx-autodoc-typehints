@@ -136,13 +136,12 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-return-stateme
                 start = 1
 
     sph_signature = sph_signature.replace(parameters=parameters[start:])
-    # a class signature describes the call that builds the instance, so its constructor's -> None does not belong
-    show_return_annotation = app.config.typehints_use_signature_return and not inspect.isclass(original_obj)
     unqualified_typehints = not getattr(app.config, "typehints_fully_qualified", False)
     return (
         stringify_signature(
             sph_signature,
-            show_return_annotation=show_return_annotation,
+            # a class signature describes the call building the instance, so its constructor's -> None does not belong
+            show_return_annotation=app.config.typehints_use_signature_return and not inspect.isclass(original_obj),
             unqualified_typehints=unqualified_typehints,
         ).replace("\\", "\\\\"),
         None,
