@@ -254,6 +254,8 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
             args_format += "".join(f", {k}={v}" for k, v in params.items())
         args_format += ")"
         formatted_args = None if args else args_format
+    elif full_name in {"typing.ParamSpecArgs", "typing.ParamSpecKwargs"} and not isinstance(annotation, type):
+        formatted_args = f"\\(``{annotation.__origin__.__name__}``)"
     elif full_name == "typing.Optional":  # pragma: <3.14 cover
         args = tuple(x for x in args if x is not type(None))
     elif full_name in {"typing.Union", "types.UnionType"} and type(None) in args:  # pragma: <3.14 cover

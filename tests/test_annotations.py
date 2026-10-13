@@ -17,6 +17,7 @@ from typing import (  # ruff:ignore[deprecated-import]
     Any,
     AnyStr,
     Dict,
+    Final,
     ForwardRef,
     Generic,
     List,
@@ -104,6 +105,7 @@ class Metaclass(type): ...
 # The interpreter reports NoneType instead of None for an unset ParamSpec bound before CPython gh-151955 (fixed at
 # patch level, e.g. present in 3.13.15 but not 3.14.7), so probe the runtime instead of the version.
 _NONE_BOUND = ", bound= :py:obj:`None`" if P.__bound__ is not None else ""
+_PARAMSPEC_COMPONENT_ROLE: Final[str] = "data" if sys.version_info < (3, 13) else "class"
 
 
 @pytest.mark.parametrize(
@@ -379,6 +381,8 @@ _CASES = [
     pytest.param(Z, r":py:class:`~typing.TypeVar`\ \(``Z``, bound= A)", id="Z"),
     pytest.param(S, r":py:class:`~typing.TypeVar`\ \(``S``, bound= miss)", id="S"),
     pytest.param(P, rf":py:class:`~typing.ParamSpec`\ \(``P``{_NONE_BOUND})", id="P"),
+    pytest.param(P_args, rf":py:{_PARAMSPEC_COMPONENT_ROLE}:`~typing.ParamSpecArgs`\ \(``P``)", id="P-args"),
+    pytest.param(P_kwargs, rf":py:{_PARAMSPEC_COMPONENT_ROLE}:`~typing.ParamSpecKwargs`\ \(``P``)", id="P-kwargs"),
     pytest.param(
         P_co,
         rf":py:class:`~typing.ParamSpec`\ \(``P_co``{_NONE_BOUND}, covariant=True)",
