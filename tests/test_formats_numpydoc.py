@@ -110,7 +110,7 @@ def test_convert_yields_single() -> None:
         "",
     ]
     _convert_numpydoc_to_sphinx_fields(lines)
-    assert ":Yields: A number." in lines
+    assert lines == [":Yields: int -- A number.", ""]
 
 
 def test_convert_yields_multiple() -> None:
@@ -166,8 +166,62 @@ def test_multiline_description() -> None:
         "",
     ]
     _convert_numpydoc_to_sphinx_fields(lines)
-    assert ":param data: The data dictionary. It can span multiple lines." in lines
-    assert ":type data: dict" in lines
+    assert lines == [":param data: The data dictionary.", "   It can span multiple lines.", ":type data: dict", ""]
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        pytest.param(["The x.", "", "More about x."], id="paragraphs"),
+        pytest.param(["The x, one of:", "", "- a", "- b"], id="list"),
+    ],
+)
+def test_multi_block_description_keeps_later_params(body: list[str]) -> None:
+    # numpydoc indents the blank line separating the blocks
+    lines = [
+        ":Parameters:",
+        "",
+        "    **x** : int",
+        *(f"        {line}" for line in body),
+        "",
+        "    **y** : str",
+        "        The y.",
+        "",
+    ]
+    _convert_numpydoc_to_sphinx_fields(lines)
+    assert lines == [
+        f":param x: {body[0]}",
+        *(f"   {line}" if line else "" for line in body[1:]),
+        ":type x: int",
+        ":param y: The y.",
+        ":type y: str",
+        "",
+    ]
+
+
+def test_params_sharing_a_type_line() -> None:
+    lines = [":Parameters:", "", "    **x, y** : int", "        The coordinates.", ""]
+    _convert_numpydoc_to_sphinx_fields(lines)
+    assert lines == [
+        ":param x: The coordinates.",
+        ":type x: int",
+        ":param y: The coordinates.",
+        ":type y: int",
+        "",
+    ]
+
+
+@pytest.mark.parametrize(
+    ("entry", "expected"),
+    [
+        pytest.param("    **item** : int", ":Yields: **item** (int) -- A number.", id="named"),
+        pytest.param("    **item**", ":Yields: **item** -- A number.", id="named-untyped"),
+    ],
+)
+def test_convert_yields_single_named(entry: str, expected: str) -> None:
+    lines = [":Yields:", "", entry, "        A number.", ""]
+    _convert_numpydoc_to_sphinx_fields(lines)
+    assert lines == [expected, ""]
 
 
 def test_param_without_type() -> None:

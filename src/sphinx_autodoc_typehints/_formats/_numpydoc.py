@@ -72,8 +72,9 @@ def _parse_numpydoc_entries(lines: list[str], start: int) -> list[_NumpydocEntry
 
         i += 1
         desc_lines: list[str] = []
-        while i < len(lines) and lines[i].startswith("        ") and lines[i].strip():
-            desc_lines.append(lines[i].strip())
+        # numpydoc indents the blank lines inside a description too, so only an unindented one ends it
+        while i < len(lines) and lines[i].startswith("        "):
+            desc_lines.append(lines[i][8:].rstrip())
             i += 1
         entries.append(_NumpydocEntry(name=name, type=typ, description=desc_lines, end=i))
 
@@ -104,42 +105,37 @@ def _convert_numpydoc_to_sphinx_fields(lines: list[str]) -> None:  # ruff:ignore
 
         if section in {"Parameters", "Other Parameters"}:
             for entry in entries:
-                desc = " ".join(entry.description) if entry.description else ""
-                result.append(f":param {entry.name}: {desc}".rstrip())
-                if entry.type:
-                    result.append(f":type {entry.name}: {entry.type}")
-        elif section == "Returns":
-            if len(entries) == 1:
-                entry = entries[0]
-                desc = " ".join(entry.description) if entry.description else ""
-                if desc:
-                    result.append(f":returns: {desc}")
-            else:
-                result.append(":returns:")
-                for entry in entries:
-                    desc = " ".join(entry.description) if entry.description else ""
-                    label = f"**{entry.name}**" if entry.name else ""
-                    type_part = f" ({entry.type})" if entry.type else ""
-                    result.append(f"   * {label}{type_part} -- {desc}".rstrip())
+                for name in entry.name.split(", "):
+                    result.extend(_field(f":param {name}:", entry.description))
+                    if entry.type:
+                        result.append(f":type {name}: {entry.type}")
         elif section == "Raises":
             for entry in entries:
-                desc = " ".join(entry.description) if entry.description else ""
-                exc_name = entry.name or entry.type
-                result.append(f":raises {exc_name}: {desc}".rstrip())
+                result.extend(_field(f":raises {entry.name or entry.type}:", entry.description))
+        elif len(entries) == 1 and section == "Returns":
+            if entries[0].description:
+                result.extend(_field(":returns:", entries[0].description))
         elif len(entries) == 1:
-            entry = entries[0]
-            desc = " ".join(entry.description) if entry.description else ""
-            if desc:
-                result.append(f":Yields: {desc}")
+            # the yielded type is documented here only, the return type is left out when a Yields section exists
+            if entries[0].description:
+                result.extend(_field(f":Yields: {_label(entries[0])} --", entries[0].description))
         else:
-            result.append(":Yields:")
+            result.append(":returns:" if section == "Returns" else ":Yields:")
             for entry in entries:
-                desc = " ".join(entry.description) if entry.description else ""
-                label = f"**{entry.name}**" if entry.name else ""
-                type_part = f" ({entry.type})" if entry.type else ""
-                result.append(f"   * {label}{type_part} -- {desc}".rstrip())
+                result.extend(_field(f"   * {_label(entry)} --", entry.description, indent="     "))
 
     lines[:] = result
+
+
+def _label(entry: _NumpydocEntry) -> str:
+    if not entry.name:
+        return entry.type
+    return f"**{entry.name}** ({entry.type})" if entry.type else f"**{entry.name}**"
+
+
+def _field(head: str, description: list[str], indent: str = "   ") -> list[str]:
+    first, *rest = description or [""]
+    return [f"{head} {first}".rstrip(), *(f"{indent}{line}" if line else "" for line in rest)]
 
 
 class NumpydocFormat(DocstringFormat):
