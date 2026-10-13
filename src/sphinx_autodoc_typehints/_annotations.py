@@ -243,7 +243,7 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
         return f":py:class:`{newtype_prefix}{newtype_qualified}` ({supertype})"
     if full_name == "typing.Annotated":
         return (yield annotation.__origin__)
-    if full_name in {"typing.TypeVar", "typing.ParamSpec"}:
+    if full_name in {"typing.TypeVar", "typing.ParamSpec"} and not isinstance(annotation, type):
         params = {k: getattr(annotation, f"__{k}__") for k in ("bound", "covariant", "contravariant")}
         params = {k: v for k, v in params.items() if v}
         if "bound" in params:
