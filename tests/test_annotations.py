@@ -1026,13 +1026,13 @@ def test_type_variable_parameter_follows_its_equals_sign(app: SphinxTestApp, wri
     app.build()
 
     assert (Path(app.outdir) / "index.txt").read_text() == dedent("""\
-        dummy_module.bounded[T: int](value)
+        dummy_module.bounded(value)
 
            Take a bounded type parameter.
 
            Parameters:
-              **value** ("TypeVar"("T", bound="int")) -- the value
+              **value** ("TypeVar"("Bounded", bound="int")) -- the value
 
            Return type:
-              "TypeVar"("T", bound="int")
+              "TypeVar"("Bounded", bound="int")
         """)

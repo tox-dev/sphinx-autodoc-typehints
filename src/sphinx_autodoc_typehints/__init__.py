@@ -52,7 +52,7 @@ from ._resolver import (
     resolve_string_annotations,
     resolve_type_guarded_imports,
 )
-from ._type_params import add_type_params
+from ._type_params import add_type_params, declared_type_params
 from ._typed_dict import inject_extra_items, mark_optional_keys, typed_dict_keys
 from .patches import _OVERLOADS_CACHE, install_patches
 from .version import __version__
@@ -219,6 +219,7 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
         _annotation_globals=getattr(obj, "__globals__", {}),
         _typehints_env=env,
         _typehints_module_prefix=module_prefix,
+        _typehints_declared_type_params=declared_type_params(original_obj, obj),
         _typehints_resolve_guarded_imports=partial(resolve_type_guarded_imports, app.config.autodoc_mock_imports),
     ):
         has_overloads = _inject_overload_signatures(app, what, name, obj, lines)

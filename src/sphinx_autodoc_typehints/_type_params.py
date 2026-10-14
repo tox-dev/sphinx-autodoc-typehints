@@ -44,6 +44,19 @@ def add_type_params(app: Sphinx, domain: str, _objtype: str, contentnode: addnod
             signode.insert(signode.index(name) + 1, _parse_type_list(text, app.env))
 
 
+def declared_type_params(documented: Any, function: Any) -> frozenset[Any]:
+    """
+    Return the type parameters the signatures of ``documented`` declare.
+
+    That is its own, those of ``function`` documenting it, and those of the class defining ``function``, which a
+    method uses from the header of its class.
+    """
+    owner: Any = sys.modules.get(getattr(function, "__module__", None) or "")
+    for part in getattr(function, "__qualname__", "").split(".")[:-1]:
+        owner = getattr(owner, part, None)
+    return frozenset((*_type_params(documented), *_type_params(function), *_type_params(owner)))
+
+
 def _documented_object(signode: addnodes.desc_signature) -> Any:
     obj = sys.modules.get(signode.get("module") or "")
     for part in (signode.get("fullname") or "").split("."):
@@ -97,4 +110,4 @@ def _stringify(value: Any, mode: _Mode) -> str:
     return stringify_annotation(value, mode)
 
 
-__all__ = ["add_type_params"]
+__all__ = ["add_type_params", "declared_type_params"]
