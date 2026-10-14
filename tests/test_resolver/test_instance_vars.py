@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import contextlib
-from typing import ClassVar, Final, Optional
+from typing import Annotated, ClassVar, Final, Optional
 
 import pytest
+from conftest import make_docstring_app
 
+from sphinx_autodoc_typehints import process_docstring
 from sphinx_autodoc_typehints._resolver._instance_vars import get_class_body_annotations, get_instance_var_annotations
 
 
@@ -157,3 +159,13 @@ class _DeclaredBadly:
 )
 def test_class_body_annotations(cls: type, expected: dict[str, type]) -> None:
     assert get_class_body_annotations(cls) == expected
+
+
+class _Model:
+    name: Annotated[str, {"max_length": 10}] = ""
+
+
+def test_class_body_annotation_with_unhashable_metadata() -> None:
+    lines = [":ivar name: the name"]
+    process_docstring(make_docstring_app(), "class", "mod._Model", _Model, None, lines)
+    assert lines == [r":vartype name: :sphinx_autodoc_typehints_type:`\:py\:class\:\`str\``", ":ivar name: the name"]

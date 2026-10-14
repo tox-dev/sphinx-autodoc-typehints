@@ -4,7 +4,7 @@ import re
 import sys
 from pathlib import Path
 from textwrap import dedent
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Annotated, Final
 
 import pytest
 from conftest import make_docstring_app, normalize_sphinx_text
@@ -172,3 +172,16 @@ def _counts() -> Iterator[int]: ...
 def test_generator_yields_entry_gets_the_yielded_type(lines: list[str], expected: list[str]) -> None:
     process_docstring(make_docstring_app(), "function", "mod.counts", _counts, None, lines)
     assert lines == expected
+
+
+def _names() -> list[Annotated[str, {"max_length": 10}]]: ...
+
+
+def test_yields_section_with_unhashable_return_type() -> None:
+    lines = [":yields: the names"]
+    process_docstring(make_docstring_app(), "function", "mod.names", _names, None, lines)
+    assert lines == [
+        ":yields: the names",
+        "",
+        r":rtype: :sphinx_autodoc_typehints_type:`\:py\:class\:\`list\`\\ \\\[\:py\:class\:\`str\`\]`",
+    ]
