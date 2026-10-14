@@ -1,16 +1,19 @@
 from __future__ import annotations
 
+import importlib
 import re
 from functools import cmp_to_key, partial
 from pathlib import Path
 from textwrap import dedent, indent
 from typing import TYPE_CHECKING, Any
+from unittest.mock import patch
 
 import pytest
 import typing_extensions
 from conftest import make_docstring_app, make_sig_app, normalize_sphinx_text
 from sphinx.errors import ConfigError
 from sphinx.ext.autodoc import Options
+from sphinx.ext.autodoc.mock import mock
 
 from sphinx_autodoc_typehints import process_docstring, process_signature
 
@@ -894,3 +897,30 @@ def test_fully_qualified_follows_autodoc_typehints_format(
         line for line in (Path(app.srcdir) / "_build/text/index.txt").read_text().splitlines() if "**value**" in line
     )
     assert value_line.split("(", 1)[1].startswith(expected)
+
+
+@pytest.fixture
+def mocked_object() -> Any:
+    with mock(["mocked_dependency"]):
+        return importlib.import_module("mocked_dependency").Thing
+
+
+@pytest.mark.parametrize(
+    "process",
+    [
+        pytest.param(
+            lambda obj: process_docstring(make_docstring_app(), "data", "mod.VALUE", obj, None, []), id="docstring"
+        ),
+        pytest.param(
+            lambda obj: process_signature(make_sig_app(), "function", "mod.func", obj, Options(), "(x)", ""),
+            id="signature",
+        ),
+    ],
+)
+def test_process_mock_without_unwrapping(mocked_object: Any, process: Callable[[Any], object]) -> None:
+    mock_class = type(mocked_object)
+    # each attribute of a mock is a mock of a subclass of its class, so the spy sees the whole __wrapped__ chain
+    with patch.object(mock_class, "__getattr__", autospec=True, side_effect=mock_class.__getattr__) as getattr_spy:
+        process(mocked_object)
+    # inspect.unwrap asks whether the mock has a __wrapped__ before it asks whether to stop there
+    assert [call.args[1] for call in getattr_spy.call_args_list].count("__wrapped__") <= 1
