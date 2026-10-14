@@ -1374,6 +1374,30 @@ def napoleon_returns_unindented_sentence() -> CodeType:
 
 @expected(
     """
+    mod.napoleon_returns_type_then_description()
+
+       A function.
+
+       Returns:
+          The info about the whatever.
+
+       Return type:
+          "CodeType"
+    """,
+)
+def napoleon_returns_type_then_description() -> CodeType:
+    """
+    A function.
+
+    Returns
+    -------
+    CodeType
+        The info about the whatever.
+    """
+
+
+@expected(
+    """
     mod.napoleon_returns_type_only()
 
        A function.
