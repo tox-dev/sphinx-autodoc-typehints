@@ -469,6 +469,46 @@ def test_inject_overload_empty_overloads_returns_false() -> None:
         _OVERLOADS_CACHE.pop("test_mod2", None)
 
 
+_P = inspect.Parameter
+_OVERLOAD_INT: Final = r":sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``"
+_OVERLOAD_STR: Final = r":sphinx_autodoc_typehints_type:`\:py\:class\:\`str\``"
+
+
+def _overloaded() -> None: ...
+
+
+@pytest.mark.parametrize(
+    ("parameters", "entry"),
+    [
+        pytest.param(
+            [
+                _P("a", _P.POSITIONAL_ONLY, annotation=int),
+                _P("args", _P.VAR_POSITIONAL, annotation=int),
+                _P("key", _P.KEYWORD_ONLY, annotation=str, default="k"),
+                _P("kw", _P.VAR_KEYWORD, annotation=int),
+            ],
+            rf"**a** ({_OVERLOAD_INT}), /, **\*args** ({_OVERLOAD_INT}), **key** ({_OVERLOAD_STR}) = ``'k'``, "
+            rf"**\*\*kw** ({_OVERLOAD_INT})",
+            id="every-kind",
+        ),
+        pytest.param(
+            [_P("a", _P.POSITIONAL_ONLY, annotation=int), _P("key", _P.KEYWORD_ONLY, annotation=str)],
+            rf"**a** ({_OVERLOAD_INT}), /, \*, **key** ({_OVERLOAD_STR})",
+            id="keyword-only-after-positional-only",
+        ),
+        pytest.param([], "()", id="no-parameters"),
+    ],
+)
+def test_process_docstring_writes_an_overload_like_its_signature(
+    monkeypatch: pytest.MonkeyPatch, parameters: list[inspect.Parameter], entry: str
+) -> None:
+    signature = inspect.Signature(parameters, return_annotation=int)
+    monkeypatch.setitem(_OVERLOADS_CACHE, __name__, {_overloaded.__qualname__: [signature]})
+    lines = ["Summary."]
+    process_docstring(make_docstring_app(), "function", f"{__name__}._overloaded", _overloaded, None, lines)
+    assert lines[:4] == ["Summary.", "", ":Overloads:", f"   * {entry} \u2192 {_OVERLOAD_INT}"]
+
+
 def test_inject_overload_keeps_summary_first() -> None:
     """Overloads must follow the summary so autosummary can still extract it (#730)."""
     obj = MagicMock()
