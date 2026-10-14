@@ -547,6 +547,45 @@ def test_process_docstring_replaces_preexisting_multiline_type() -> None:
     assert "Callable" not in "\n".join(lines)
 
 
+@pytest.mark.parametrize(
+    ("lines", "defaults", "expected"),
+    [
+        pytest.param(
+            [":param y: the y", ":type y: int"],
+            "comma",
+            [":param y: the y", ":type y: int, default: ``1``"],
+            id="comma",
+        ),
+        pytest.param(
+            [":param y: the y", ":type y: int"],
+            "braces",
+            [":param y: the y", ":type y: int (default: ``1``)"],
+            id="braces",
+        ),
+        pytest.param(
+            [":param y: the y", ":type y: int"],
+            "braces-after",
+            [":param y: the y (default: ``1``)", ":type y: int"],
+            id="braces-after",
+        ),
+        pytest.param(
+            [":param y: the y", ":type y: dict[str,", "    int]"],
+            "comma",
+            [":param y: the y", ":type y: dict[str,", "    int], default: ``1``"],
+            id="multi-line-type",
+        ),
+    ],
+)
+def test_process_docstring_keeps_the_default_of_a_docstring_typed_param(
+    lines: list[str], defaults: str, expected: list[str]
+) -> None:
+    def func(y=1) -> None: ...  # ruff:ignore[missing-type-function-argument]  # the docstring types it
+
+    app = make_docstring_app(typehints_document_rtype=False, typehints_defaults=defaults)
+    process_docstring(app, "function", "test.func", func, None, lines)
+    assert lines == expected
+
+
 def test_process_docstring_preserves_blank_line_after_preexisting_type() -> None:
     def func(x: int) -> None: ...
 

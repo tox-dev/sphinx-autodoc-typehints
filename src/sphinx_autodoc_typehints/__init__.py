@@ -470,13 +470,12 @@ def _inject_arg_signature(  # ruff:ignore[too-many-arguments, too-many-positiona
     if insert_index is None:
         return
 
-    has_preexisting = False
+    preexisting_line, has_preexisting = fmt.find_preexisting_type(lines, arg_name)
     if annotation is None:
-        type_annotation, has_preexisting = fmt.find_preexisting_type(lines, arg_name)
+        type_annotation = preexisting_line
     else:
         # napoleon gives keyword arguments a field of their own, which reads paramtype but not type
         type_field = "paramtype" if lines[insert_index].startswith((":keyword ", ":kwarg ", ":kwparam ")) else "type"
-        preexisting_line, has_preexisting = fmt.find_preexisting_type(lines, arg_name)
         type_annotation = ":{} {}: {}".format(
             type_field,
             arg_name,
@@ -497,9 +496,10 @@ def _inject_arg_signature(  # ruff:ignore[too-many-arguments, too-many-positiona
             after=app.config.typehints_defaults.endswith("after"),
         )
 
-    if annotation is not None and has_preexisting:
-        insert_index = _remove_preexisting_type(lines, preexisting_line)
-    lines.insert(insert_index, type_annotation)
+    if has_preexisting:
+        _place_over_preexisting_type(lines, preexisting_line, type_annotation, keep=annotation is None)
+    else:
+        lines.insert(insert_index, type_annotation)
 
 
 def _find_param(lines: list[str], arg_name: str, fmt: Any) -> tuple[str, int | None]:
@@ -559,13 +559,21 @@ def _type_combined_field_entry(app: Sphinx, lines: list[str], arg_name: str, ann
     return True
 
 
-def _remove_preexisting_type(lines: list[str], preexisting_line: str) -> int:
+def _place_over_preexisting_type(lines: list[str], preexisting_line: str, type_annotation: str, *, keep: bool) -> None:
+    """
+    Put the type where the docstring typed the parameter.
+
+    An annotated type replaces the docstring's. Without an annotation, the docstring's type stays as written,
+    continuation lines and all, and only gains the default at its end.
+    """
     idx = lines.index(preexisting_line)
     end = idx + 1
     while end < len(lines) and lines[end] and lines[end][0].isspace():
         end += 1
-    del lines[idx:end]
-    return idx
+    if keep:
+        lines[end - 1] += type_annotation.removeprefix(preexisting_line)
+    else:
+        lines[idx:end] = [type_annotation]
 
 
 def _inject_rtype(  # ruff:ignore[too-many-arguments, too-many-positional-arguments]
