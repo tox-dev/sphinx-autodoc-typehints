@@ -711,6 +711,32 @@ def test_overloads_rendered_in_signature(
     assert (Path(app.srcdir) / "_build/text/index.txt").read_text() == expected
 
 
+@pytest.mark.sphinx("text", testroot="dummy", confoverrides={"typehints_use_signature": True})
+def test_overloads_written_signature_keeps_to_its_own_entry(
+    app: SphinxTestApp, write_rst: Callable[[str], None]
+) -> None:
+    write_rst(
+        ".. autofunction:: dummy_module.overloaded(value)\n\n.. autofunction:: dummy_module.overloaded\n   :no-index:\n"
+    )
+    app.build()
+
+    assert (Path(app.srcdir) / "_build/text/index.txt").read_text() == dedent("""\
+        dummy_module.overloaded(value)
+
+           Overloaded function.
+
+           Overloads:
+              * **value** ("int") → "DataClass"
+
+              * **value** ("str"), *, **strict** = "False" → "MyNamedTuple"
+
+        dummy_module.overloaded(value: int) -> DataClass
+        dummy_module.overloaded(value: str, *, strict=False) -> MyNamedTuple
+
+           Overloaded function.
+        """)
+
+
 @pytest.mark.sphinx(
     "text", testroot="dummy", confoverrides={"typehints_use_signature": True, "autoclass_content": "both"}
 )
