@@ -6,8 +6,10 @@ from hashlib import blake2s
 from typing import TYPE_CHECKING, Any, Final
 
 from docutils import nodes
+from docutils.frontend import get_default_settings
 from sphinx import addnodes
 from sphinx.errors import NoUri
+from sphinx.parsers import RSTParser
 from sphinx.transforms.post_transforms import SphinxPostTransform
 from sphinx.util.docutils import sphinx_domains
 
@@ -110,8 +112,11 @@ class DeferAliasChoice(SphinxPostTransform):
         return [n for n in node.findall(nodes.inline) if ALIAS_CHOICE_KEY in n]
 
     def _parse(self, rst: str) -> nodes.document:
+        # the document being written carries its writer's settings, which lack the rST parser's (man has no tab_width)
+        settings = get_default_settings(RSTParser())
+        settings.env = self.env
         with sphinx_domains(self.env):
-            doc = parse(rst, self.document.settings)
+            doc = parse(rst, settings)
         for xref in doc.findall(addnodes.pending_xref):
             xref.setdefault("refdoc", self.env.docname)
         return doc
