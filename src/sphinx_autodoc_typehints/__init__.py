@@ -29,7 +29,7 @@ from ._formats import detect_format
 from ._formats._numpydoc import _convert_numpydoc_to_sphinx_fields  # ruff:ignore[unused-import]
 from ._formats._sphinx import _has_yields_section, _is_generator_type, _strip_inline_param_type
 from ._intersphinx import build_type_mapping
-from ._parser import parse, unescape
+from ._parser import unescape
 from ._resolver import (
     backfill_attrs_annotations,
     backfill_type_hints,
@@ -630,17 +630,14 @@ def sphinx_autodoc_typehints_type_role(
     _role: str,
     _rawtext: str,
     text: str,
-    _lineno: int,
+    lineno: int,
     inliner: states.Inliner,
     _options: dict[str, Any] | None = None,
     _content: list[str] | None = None,
 ) -> tuple[list[Node], list[Node]]:
-    unescaped = unescape(text)
-    doc = parse(unescaped, inliner.document.settings)
-    n = nodes.inline(text)
-    n["classes"].append("sphinx_autodoc_typehints-type")
-    n += doc.children[0].children
-    return [n], []
+    # a type is inline text, a block parse would turn one such as ``- item`` into a list
+    children, messages = inliner.parse(unescape(text), lineno, inliner, inliner.parent)
+    return [nodes.inline(text, "", *children, classes=["sphinx_autodoc_typehints-type"])], messages
 
 
 def setup(app: Sphinx) -> dict[str, bool | str]:
