@@ -340,7 +340,8 @@ def _called_function(obj: Any) -> Any:
 
 def _declared_signature(obj: Any) -> inspect.Signature | None:
     """Return the signature an object states in ``__signature__``, as a pydantic model does, which callers go by."""
-    return signature if isinstance(signature := getattr(obj, "__signature__", None), inspect.Signature) else None
+    # a property computing it may raise anything, as a metaclass's does for a class it cannot describe yet
+    return signature if isinstance(signature := safe_getattr(obj, "__signature__", None), inspect.Signature) else None
 
 
 def _is_dataclass(name: str, what: str, qualname: str) -> bool:
