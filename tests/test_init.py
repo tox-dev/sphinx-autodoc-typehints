@@ -51,6 +51,13 @@ class _BindsHelper:
     as_static = staticmethod(_helper)
     as_method = _helper
 
+    @classmethod
+    def plain_class(cls, value: int) -> str: ...
+
+    @classmethod
+    @functools.cache
+    def cached_class(cls, value: int) -> str: ...
+
 
 @pytest.mark.parametrize(
     ("name", "method", "expected"),
@@ -65,6 +72,8 @@ class _BindsHelper:
             "_BindsHelper.as_static", _BindsHelper.as_static, "(value)", id="staticmethod-of-outside-function"
         ),
         pytest.param("_BindsHelper.as_method", _BindsHelper.as_method, "()", id="method-of-outside-function"),
+        pytest.param("_BindsHelper.plain_class", _BindsHelper.plain_class, "(value)", id="classmethod"),
+        pytest.param("_BindsHelper.cached_class", _BindsHelper.cached_class, "(value)", id="classmethod-of-wrapper"),
     ],
 )
 def test_process_signature_first_parameter_by_member_kind(name: str, method: Callable[..., str], expected: str) -> None:
