@@ -547,6 +547,8 @@ def test_always_use_bars_union(annotation: str, expected_result: str) -> None:
         pytest.param("TypeGuard", int, ":py:data:`~typing.TypeGuard`\\ \\[:py:class:`int`]", id="TypeGuard"),
         pytest.param("TypeIs", int, ":py:data:`~typing.TypeIs`\\ \\[:py:class:`int`]", id="TypeIs"),
         pytest.param("TypeForm", int, ":py:data:`~typing.TypeForm`\\ \\[:py:class:`int`]", id="TypeForm"),
+        pytest.param("Doc", None, ":py:class:`~typing.Doc`", id="Doc"),
+        pytest.param("TypedDict", None, ":py:class:`~typing.TypedDict`", id="TypedDict"),
         pytest.param(
             "Unpack",
             tuple[int],
@@ -570,8 +572,10 @@ def test_format_annotation_both_libs(library: ModuleType, annotation: str, param
         pytest.skip(f"{annotation} not available in the {library.__name__} module")
 
     ann = annotation_cls if params is None else annotation_cls[params]
-    result = format_annotation(ann, create_autospec(Config))
-    assert result == expected_result
+    if library is typing_extensions and not hasattr(typing, annotation):
+        # a name only typing_extensions has on this Python is documented there
+        expected_result = expected_result.replace("~typing.", "~typing_extensions.")
+    assert format_annotation(ann, create_autospec(Config)) == expected_result
 
 
 def test_format_annotation_role_matches_python_inventory(inv: Inventory) -> None:

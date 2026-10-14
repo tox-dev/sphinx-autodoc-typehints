@@ -14,6 +14,7 @@ import enum
 import inspect
 import sys
 import types
+import typing
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -249,6 +250,9 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
         return str(annotation).strip("'")
 
     module = _fixup_module_name(config, module)
+    # typing_extensions backports names to older Pythons, and a backported name is documented under typing
+    if module == "typing_extensions" and hasattr(typing, class_name):
+        module = "typing"
     internal_path = f"{module}.{class_name}"
     local_path: str | None = None
     if (mapping := getattr(config, "_intersphinx_type_mapping", None)) and (mapped := mapping.get(internal_path)):
@@ -257,7 +261,9 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
     full_name = f"{module}.{class_name}" if module != "builtins" else class_name
     fully_qualified = getattr(config, "typehints_fully_qualified", False)
     prefix = "" if fully_qualified or full_name == class_name else "~"
-    role = _inventory_role(config, full_name) or ("data" if (module, class_name) in _PYDATA_ANNOTATIONS else "class")
+    # a typing_extensions name is the same kind of object as its typing counterpart
+    pydata_key = ("typing" if module == "typing_extensions" else module, class_name)
+    role = _inventory_role(config, full_name) or ("data" if pydata_key in _PYDATA_ANNOTATIONS else "class")
     args_format = "\\[{}]"
     formatted_args: str | None = ""
 
@@ -427,8 +433,6 @@ def get_annotation_args(annotation: Any, module: str, class_name: str) -> tuple[
 def _fixup_module_name(config: Config, module: str) -> str:
     if getattr(config, "typehints_fixup_module_name", None):
         module = config.typehints_fixup_module_name(module)
-    if module == "typing_extensions":  # pragma: <3.14 cover
-        module = "typing"
     if module == "_io":
         module = "io"
     return module
