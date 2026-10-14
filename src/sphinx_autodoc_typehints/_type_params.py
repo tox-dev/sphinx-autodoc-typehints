@@ -6,15 +6,21 @@ import sys
 import types
 from typing import TYPE_CHECKING, Any, Final, Literal, cast, get_args, get_origin
 
+from docutils import nodes
 from sphinx import addnodes
-from sphinx.domains.python._annotations import _parse_type_list  # ruff:ignore[import-private-name]  # no public parser
+from sphinx.domains.python._annotations import (  # ruff:ignore[import-private-name]  # no public parser
+    _parse_annotation,
+    _parse_type_list,
+)
 from sphinx.util.typing import stringify_annotation
 
 if sys.version_info >= (3, 14):  # pragma: >=3.14 cover
     from annotationlib import Format, call_evaluate_function, get_annotations
 
 if TYPE_CHECKING:
+    from docutils.nodes import Node
     from sphinx.application import Sphinx
+    from sphinx.environment import BuildEnvironment
 
 type _Mode = Literal["fully-qualified-except-typing", "smart"]
 
@@ -49,8 +55,22 @@ def add_type_params(app: Sphinx, domain: str, objtype: str, contentnode: addnode
             and (name := next((node for node in signode if isinstance(node, addnodes.desc_name)), None)) is not None
             and (params := _type_params(_documented_object(signode)))
         ):
-            text = ", ".join(_type_param(param, mode) for param in params)
-            signode.insert(signode.index(name) + 1, _parse_type_list(text, app.env))
+            type_params = _parse_type_list(", ".join(_type_param(param, mode) for param in params), app.env)
+            # Sphinx keeps a default as the text it was written as, so a ``~`` would show and no name would link
+            for default in list(type_params.findall(_is_default)):
+                default[:] = _parse_default(default.astext(), app.env)
+            signode.insert(signode.index(name) + 1, type_params)
+
+
+def _is_default(node: Node) -> bool:
+    return isinstance(node, nodes.inline) and "default_value" in node["classes"]
+
+
+def _parse_default(text: str, env: BuildEnvironment) -> list[Node]:
+    # the default of a TypeVarTuple unpacks a tuple, which does not parse as an annotation on its own
+    if text.startswith("*"):
+        return [addnodes.desc_sig_operator("", "*"), *_parse_annotation(text[1:], env)]
+    return _parse_annotation(text, env)
 
 
 def declared_type_params(documented: Any, function: Any, documenting: Any) -> frozenset[Any]:
