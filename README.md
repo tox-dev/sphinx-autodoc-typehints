@@ -307,7 +307,9 @@ equivalent. A docstring with its own `:Extra items:` field keeps it.
 
 When a function has [`@overload`](https://docs.python.org/3/library/typing.html#typing.overload) signatures, they are
 rendered automatically in the docstring, with their types cross-referenced like parameter types and without the `self`
-or `cls` parameter of a method. A class lists the overloads of its `__init__` or `__new__`. To disable this globally:
+or `cls` parameter of a method. Each reads like the overload's signature, with its `/` and `*` markers, the stars of
+`*args` and `**kwargs`, and its defaults as written, and an overload taking nothing shows as `()`. A class lists the
+overloads of its `__init__` or `__new__`. To disable this globally:
 
 ```python
 typehints_document_overloads = False

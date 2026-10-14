@@ -66,7 +66,7 @@ from .patches import _OVERLOADS_CACHE, install_patches
 from .version import __version__
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Callable, Iterator
 
     from docutils.nodes import Node
     from docutils.parsers.rst import states
@@ -488,28 +488,49 @@ def _format_overload_lines(overloads: list[inspect.Signature], obj: Any, app: Sp
     render = partial(format_annotation, config=app.config, short_literals=app.config.python_display_short_literal_types)
     result = [":Overloads:"]
     for overload_sig in overloads:
+        parameters = list(overload_sig.parameters.values())[skip:]
         # parsed from the source, so the annotations are strings until evaluated in the function's module
         hints = resolve_string_annotations(
             obj,
             {
-                **{param_name: param.annotation for param_name, param in list(overload_sig.parameters.items())[skip:]},
+                **{param.name: param.annotation for param in parameters},
                 "return": overload_sig.return_annotation,
             },
             {},
         )
         return_hint = hints.pop("return")
-        params = []
-        for param_name, hint in hints.items():
-            if hint is inspect.Parameter.empty:
-                params.append(f"**{param_name}**")
-            else:
-                params.append(f"**{param_name}** ({add_type_css_class(render(hint))})")
+        entries = _overload_entries(parameters, hints, render)
         return_annotation = (
             "" if return_hint is inspect.Signature.empty else f" \u2192 {add_type_css_class(render(return_hint))}"
         )
-        result.append(f"   * {', '.join(params)}{return_annotation}")
+        result.append(f"   * {', '.join(entries) or '()'}{return_annotation}")
     result.append("")
     return result
+
+
+def _overload_entries(
+    parameters: list[inspect.Parameter], hints: dict[str, Any], render: Callable[[Any], str]
+) -> list[str]:
+    """Write an overload's parameters as its signature does, with the ``/`` and ``*`` markers and the defaults."""
+    entries: list[str] = []
+    for at, param in enumerate(parameters):
+        if param.kind is param.KEYWORD_ONLY and (
+            not at or parameters[at - 1].kind in {param.POSITIONAL_ONLY, param.POSITIONAL_OR_KEYWORD}
+        ):
+            entries.append("\\*")
+        stars = {"VAR_POSITIONAL": "\\*", "VAR_KEYWORD": "\\*\\*"}.get(param.kind.name, "")
+        entry = f"**{stars}{param.name}**"
+        if (hint := hints[param.name]) is not inspect.Parameter.empty:
+            entry += f" ({add_type_css_class(render(hint))})"
+        if param.default is not param.empty:
+            # the source text of the default, as the overload is read from the source
+            entry += f" = ``{object_description(param.default)}``"
+        entries.append(entry)
+        if param.kind is param.POSITIONAL_ONLY and (
+            at + 1 == len(parameters) or parameters[at + 1].kind is not param.POSITIONAL_ONLY
+        ):
+            entries.append("/")
+    return entries
 
 
 def format_default(app: Sphinx, default: Any, is_annotated: bool) -> str | None:  # ruff:ignore[boolean-type-hint-positional-argument]
