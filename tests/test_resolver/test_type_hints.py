@@ -804,3 +804,14 @@ def test_resolve_string_annotations_evaluates_quoted_annotation() -> None:
     def func() -> None: ...
 
     assert resolve_string_annotations(func, {"x": "'Path'"}, {}) == {"x": Path}
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason="annotations evaluate lazily from Python 3.14")
+def test_process_docstring_links_an_attrs_field_beside_one_that_fails(  # pragma: >=3.14 cover
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.syspath_prepend(str(Path(__file__).parent.parent / "roots" / "test-attrs"))
+    mixed = importlib.import_module("attrs_lazy_mod").Mixed
+    lines = [":param b: the b"]
+    process_docstring(make_docstring_app(typehints_document_rtype=False), "class", "mod.Mixed", mixed, None, lines)
+    assert lines == [r":type b: :sphinx_autodoc_typehints_type:`\:py\:class\:\`\~decimal.Decimal\``", ":param b: the b"]

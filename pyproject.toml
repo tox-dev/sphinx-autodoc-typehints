@@ -128,6 +128,10 @@ lint.per-file-ignores."tests/**/*.py" = [
   "too-many-arguments",                   # any number of arguments in tests
   "too-many-positional-arguments",        # any number of arguments in tests
 ]
+lint.per-file-ignores."tests/roots/test-attrs/attrs_lazy_mod.py" = [
+  "missing-required-import",               # intentionally omits `from __future__ import annotations` to keep annotations lazy
+  "runtime-import-in-type-checking-block", # the guarded import is the case under test
+]
 lint.per-file-ignores."tests/roots/test-integration/mod_eager.py" = [
   "missing-required-import", # this file intentionally omits `from __future__ import annotations` to test non-deferred annotations
 ]
