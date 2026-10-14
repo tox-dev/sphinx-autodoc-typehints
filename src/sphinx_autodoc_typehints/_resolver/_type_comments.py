@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 
-def backfill_type_hints(obj: Any, name: str) -> dict[str, Any]:  # ruff:ignore[complex-structure, too-many-return-statements]
+def backfill_type_hints(obj: Any, name: str) -> dict[str, Any]:  # ruff:ignore[complex-structure]
     parse_kwargs = {"type_comments": True}
 
     def _one_child(module: Module) -> stmt | None:
@@ -44,12 +44,8 @@ def backfill_type_hints(obj: Any, name: str) -> dict[str, Any]:  # ruff:ignore[c
     if obj_ast is None:
         return {}
 
-    try:
-        type_comment = obj_ast.type_comment  # type: ignore[attr-defined]
-    except AttributeError:
-        return {}
-
-    if not type_comment:
+    # a lambda's source is the assignment holding it, whose type comment types the variable rather than the call
+    if not isinstance(obj_ast, ast.FunctionDef | ast.AsyncFunctionDef) or not (type_comment := obj_ast.type_comment):
         return {}
 
     try:
@@ -68,7 +64,7 @@ def backfill_type_hints(obj: Any, name: str) -> dict[str, Any]:  # ruff:ignore[c
     if comment_returns:
         rv["return"] = comment_returns
 
-    args = _load_args(obj_ast)  # type: ignore[arg-type]
+    args = _load_args(obj_ast)
     comment_args = _split_type_comment_args(comment_args_str)
     is_inline = len(comment_args) == 1 and comment_args[0] == "..."
     if not is_inline:
