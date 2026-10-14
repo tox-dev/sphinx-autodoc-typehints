@@ -813,6 +813,19 @@ def _config_without_env(*, fully_qualified: bool = False) -> MagicMock:
     return config
 
 
+class _Rejecting:
+    def __class_getitem__(cls, item: object) -> type[_Rejecting]:
+        msg = f"cannot take {item}"
+        raise ValueError(msg)
+
+
+type _RejectedAlias = _Rejecting[int]
+
+
+def test_format_annotation_type_alias_whose_value_raises() -> None:
+    assert format_annotation(_RejectedAlias, _config_without_env()) == f":py:type:`~{__name__}._RejectedAlias`"
+
+
 def test_format_annotation_type_alias_without_env() -> None:
     """TypeAliasForwardRef falls back to plain name when no env is available."""
     assert format_annotation(TypeAliasForwardRef("SomeAlias"), _config_without_env()) == "SomeAlias"

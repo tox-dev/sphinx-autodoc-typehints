@@ -51,7 +51,30 @@ class Unknown[T: Undefined]:  # ruff:ignore[undefined-name]
     """Bound by a name defined nowhere."""
 
 
+class Rejecting:
+    """Rejects every argument, as a class validating its subscript does."""
+
+    def __class_getitem__(cls, item: object) -> type[Rejecting]:
+        msg = f"cannot take {item}"
+        raise ValueError(msg)
+
+
+class Rejected[T: Rejecting[int]]:
+    """Bound by a subscript that raises."""
+
+
 type Pairs[K] = dict[K, K]
+
+type RejectedAlias = Rejecting[int]
+
+
+def takes_rejected(value: RejectedAlias) -> None:
+    """
+    Take an alias whose value raises.
+
+    :param value: the value
+    """
+
 
 D = TypeVar("D", default=int)
 DP = ParamSpec("DP", default=[int, str])

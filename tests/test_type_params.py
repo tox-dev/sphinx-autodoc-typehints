@@ -47,6 +47,12 @@ if TYPE_CHECKING:
             id="bound-not-defined",
         ),
         pytest.param(
+            ".. autoclass:: type_params_module.Rejected",
+            # 3.14 keeps a bound it cannot evaluate as a forward reference
+            f"class type_params_module.Rejected[T{': Rejecting[int]' if sys.version_info >= (3, 14) else ''}]",
+            id="bound-raises",
+        ),
+        pytest.param(
             ".. autotype:: type_params_module.Pairs",
             "type type_params_module.Pairs[K] = dict[K, K]",
             id="type-alias",

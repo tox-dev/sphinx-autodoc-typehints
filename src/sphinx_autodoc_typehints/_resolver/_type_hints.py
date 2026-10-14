@@ -134,7 +134,7 @@ def _get_unevaluated_annotations(obj: Any) -> dict[str, Any]:
     # ForwardRef proxies keep unevaluatable annotations renderable as their source text — see #712
     try:  # pragma: >=3.14 cover
         return annotationlib.get_annotations(obj, format=annotationlib.Format.FORWARDREF)
-    except (NameError, TypeError, AttributeError, RecursionError):  # pragma: >=3.14 cover
+    except Exception:  # pragma: >=3.14 cover  # ruff:ignore[blind-except]  # see _get_type_hint
         return {}
 
 
