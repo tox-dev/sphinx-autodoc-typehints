@@ -43,7 +43,14 @@ from ._deprecated import DEPRECATED_DIRECTIVE, DeprecatedDirective, inject_depre
 from ._factory_defaults import show_factory_defaults
 from ._formats import detect_format
 from ._formats._numpydoc import _convert_numpydoc_to_sphinx_fields  # ruff:ignore[unused-import]
-from ._formats._sphinx import _has_yields_section, _is_generator_type, _last_paragraph_end, _strip_inline_param_type
+from ._formats._sphinx import (
+    _gives_its_type,
+    _has_yields_section,
+    _is_generator_type,
+    _last_paragraph_end,
+    _reads_as_type,
+    _strip_inline_param_type,
+)
 from ._headers import note_documented, render_header_types
 from ._intersphinx import build_type_mapping
 from ._parser import unescape
@@ -888,6 +895,7 @@ def _inject_rtype(  # ruff:ignore[too-many-arguments, too-many-positional-argume
     if not app.config.typehints_document_rtype_none and type_hints["return"] is types.NoneType:
         return
     if _has_yields_section(lines) and _is_generator_type(type_hints["return"]):
+        _type_yields(type_hints["return"], app, lines)
         # the Yields section covers what it produces, leaving the value its return statement gives, the R of
         # Generator[Y, S, R], for a Returns section that describes it
         if (returned := _generator_return(type_hints["return"])) is None or not fmt.has_return_description(lines):
@@ -907,6 +915,24 @@ def _inject_rtype(  # ruff:ignore[too-many-arguments, too-many-positional-argume
     )
 
     fmt.inject_rtype(lines, formatted_annotation, r, use_rtype=app.config.typehints_use_rtype)
+
+
+def _type_yields(annotation: Any, app: Sphinx, lines: list[str]) -> None:
+    """Put what a generator yields, the first argument of its annotation, in a single Yields entry stating no type."""
+    at = next(at for at, line in enumerate(lines) if line.startswith((":Yields:", ":yields:", ":yield:")))
+    _, field, text = lines[at].split(":", 2)
+    text = text.strip()
+    # the text before -- or the whole entry may already be a type, as numpydoc writes a type-only entry, and a bullet,
+    # which starts one of several entries, reads as one too
+    if not (args := get_args(annotation)) or ((stated := text.split(" -- ", 1)[0]) and _reads_as_type(stated)):
+        return
+    short_literals = app.config.python_display_short_literal_types
+    formatted = add_type_css_class(format_annotation(args[0], app.config, short_literals=short_literals))
+    if text:
+        lines[at] = f":{field}: {formatted} -- {text}"
+    else:
+        # the description starts on the next line, and a block such as a list cannot follow inline text
+        lines[at : at + 1] = [f":{field}: {formatted} --", ""]
 
 
 def _generator_return(annotation: Any) -> Any:
@@ -1056,6 +1082,7 @@ def setup(app: Sphinx) -> dict[str, bool | str]:
 
 __all__ = [
     "__version__",
+    "_gives_its_type",
     "backfill_type_hints",
     "format_annotation",
     "get_annotation_args",

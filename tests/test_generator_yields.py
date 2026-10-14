@@ -4,10 +4,12 @@ import re
 import sys
 from pathlib import Path
 from textwrap import dedent
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 import pytest
-from conftest import normalize_sphinx_text
+from conftest import make_docstring_app, normalize_sphinx_text
+
+from sphinx_autodoc_typehints import process_docstring
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, AsyncIterator, Generator, Iterator
@@ -140,3 +142,28 @@ def test_generator_return_value_gets_the_return_type(
     lines = [line.strip() for line in _extract_section(_build_genclass(app, monkeypatch), method).splitlines()]
     found = lines[lines.index("Return type:") + 1] if "Return type:" in lines else None
     assert found == return_type
+
+
+_YIELDED_INT: Final = r":sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``"
+
+
+def _counts() -> Iterator[int]: ...
+
+
+@pytest.mark.parametrize(
+    ("lines", "expected"),
+    [
+        pytest.param([":yields: the numbers"], [f":yields: {_YIELDED_INT} -- the numbers"], id="description"),
+        pytest.param(
+            [":Yields:", "    - one", "    - two"],
+            [f":Yields: {_YIELDED_INT} --", "", "    - one", "    - two"],
+            id="description-on-the-next-line",
+        ),
+        pytest.param([":Yields: *int* -- the numbers"], [":Yields: *int* -- the numbers"], id="typed-by-napoleon"),
+        pytest.param([":Yields: int"], [":Yields: int"], id="type-only"),
+        pytest.param([":Yields: * **a** -- first"], [":Yields: * **a** -- first"], id="several-entries"),
+    ],
+)
+def test_generator_yields_entry_gets_the_yielded_type(lines: list[str], expected: list[str]) -> None:
+    process_docstring(make_docstring_app(), "function", "mod.counts", _counts, None, lines)
+    assert lines == expected

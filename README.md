@@ -560,7 +560,8 @@ comment. A comment that does not parse raises a `sphinx_autodoc_typehints.commen
 
 A function annotated to return a `Generator`, `Iterator`, `AsyncGenerator` or `AsyncIterator` whose docstring has a
 `Yields` section (`:Yields:`, `:yields:` or `:yield:`, as napoleon and numpydoc write it) gets no return type, since the
-`Yields` section already describes what it produces.
+`Yields` section already describes what it produces. Its entry gets the yielded type instead,
+`Yields: int -- the numbers` for `Iterator[int]`, unless it states one.
 
 A generator that also hands back a value with `return`, `Generator[int, None, bool]`, and documents it in a `Returns`
 section gets that value's type, `bool`, as its return type; with napoleon, as here:

@@ -366,14 +366,17 @@ def _gives_its_type(return_line: str) -> bool:
     """
     Whether a ``:returns: X -- text`` field states its type as ``X``, as napoleon writes it without an rtype field.
 
-    Only text that reads as a type counts: napoleon's emphasized ``*int*``, a role or literal, or a single token once
-    its brackets are dropped, so a description that itself contains `` -- `` keeps getting the type.
+    Only text that reads as a type counts, so a description that itself contains `` -- `` keeps getting the type.
     """
     if " -- " not in (description := return_line.split(":", 2)[2].strip()):
         return False
-    stated = description.split(" -- ", 1)[0]
-    if stated.startswith(("*", ":", "`")):
+    return _reads_as_type(description.split(" -- ", 1)[0])
+
+
+def _reads_as_type(text: str) -> bool:
+    """Whether text is a type: napoleon's emphasized ``*int*``, a role or literal, or one token once its brackets go."""
+    if text.startswith(("*", ":", "`")):
         return True
-    while (unbracketed := re.sub(r"\[[^\[\]]*\]", "", stated)) != stated:
-        stated = unbracketed
-    return " " not in stated
+    while (unbracketed := re.sub(r"\[[^\[\]]*\]", "", text)) != text:
+        text = unbracketed
+    return " " not in text
