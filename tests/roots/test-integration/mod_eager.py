@@ -1,7 +1,7 @@
 """Module without deferred annotations to test the globals-scanning path."""
 
 from collections.abc import Generator
-from typing import Annotated, Any, Generic, NewType, TypeVar, Union
+from typing import Annotated, Any, Generic, NewType, TypeVar, Union, overload
 
 from typing_extensions import Doc
 
@@ -90,6 +90,20 @@ def take_ticket(number: Ticket) -> None:
     Args:
         number: The number
     """
+
+
+@overload
+def scale(amount: Count) -> Count: ...
+@overload
+def scale(amount: str) -> str: ...
+def scale(amount: Count | str) -> Count | str:
+    """
+    Scale an amount.
+
+    Args:
+        amount: The amount
+    """
+    return amount
 
 
 class Base(Generic[T]):

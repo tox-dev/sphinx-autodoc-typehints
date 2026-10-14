@@ -79,16 +79,18 @@ def collect_documented_type_aliases(
                 ref = MyTypeAliasForwardRef(annotation)
                 ref.crossref = True
                 deferred[annotation] = ref
-        elif (
-            (name := written.get(key))
-            and not name.startswith("_")
-            and name in obj_globals
-            and obj_globals[name] is annotation
-        ):
-            # whether the alias is documented is only known once every document is read, so rendering decides
-            written_as[key] = WrittenTypeAlias(name, annotation)
+        elif (name := written.get(key)) and (alias := written_type_alias(name, annotation, obj_globals)):
+            written_as[key] = alias
 
     return deferred, written_as
+
+
+def written_type_alias(written: str, value: Any, namespace: Mapping[str, Any]) -> WrittenTypeAlias | None:
+    """Return the module-level alias an annotation ``written`` as its bare name names, if it evaluated to ``value``."""
+    if written.startswith("_") or written not in namespace or namespace[written] is not value:
+        return None
+    # whether the alias is documented is only known once every document is read, so rendering decides
+    return WrittenTypeAlias(written, value)
 
 
 def _collect_module_type_aliases(module_prefix: str, py_objects: dict[str, Any]) -> dict[str, MyTypeAliasForwardRef]:
@@ -128,4 +130,5 @@ __all__ = [
     "documented_type_names",
     "get_obj_location",
     "type_alias_namespace",
+    "written_type_alias",
 ]
