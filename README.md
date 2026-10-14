@@ -760,7 +760,8 @@ with bounds, constraints and defaults, the way [PEP 695](https://peps.python.org
 `def first[T: Sized](items: T)`, `class Stack[T]` and `type Pairs[K] = dict[K, K]`. A class made generic by subclassing
 `Generic[T]` shows its parameters the same way. A type parameter a signature declares this way renders by name where it
 is used, as `items (T)` or `args (P.args)`, while a type variable no signature declares keeps its full
-`TypeVar(T, bound=int)` form.
+`TypeVar(T, bound=int)` form. An overload declaring its own, `def get[S: str](self, key: S) -> list[S]`, renders them by
+name in its entry of the `Overloads` field.
 
 A member inherited from a generic base and documented under a subclass that binds the base's type parameters, as
 `:inherited-members:` lists it or `.. automethod:: mod.Child.get` names it, shows the arguments the subclass gives them.

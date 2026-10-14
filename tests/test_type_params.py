@@ -241,3 +241,27 @@ def test_type_params_bound_by_the_documenting_subclass_vartype(
 
     lines = [line.strip() for line in (Path(app.outdir) / "index.txt").read_text().splitlines()]
     assert '**size** ("int") -- how many it holds' in lines
+
+
+@pytest.mark.parametrize(
+    ("rst", "expected"),
+    [
+        pytest.param(
+            ".. automethod:: type_params_module.Shelf.take",
+            '* **key** ("S") → "list"["S"]',
+            id="own-type-parameter",
+        ),
+        pytest.param(
+            ".. autofunction:: type_params_module.pick", "* **key** (K) → list[K]", id="unregistered-overloads"
+        ),
+    ],
+)
+@pytest.mark.sphinx("text", testroot="type-params")
+def test_type_params_of_an_overload(
+    app: SphinxTestApp, write_rst: Callable[[str], None], rst: str, expected: str
+) -> None:
+    write_rst(rst)
+    app.build()
+
+    lines = (Path(app.outdir) / "index.txt").read_text().splitlines()
+    assert lines[lines.index("   Overloads:") + 1].strip() == expected
