@@ -715,6 +715,25 @@ def test_type_role_renders_list_like_text_inline(
     assert (Path(app.srcdir) / "_build/text/index.txt").read_text() == f"A {type_text} b.\n"
 
 
+@pytest.mark.sphinx("text", testroot="dummy")
+def test_singledispatch_implementation_keeps_its_types(app: SphinxTestApp, write_rst: Callable[[str], None]) -> None:
+    write_rst(".. autofunction:: dummy_module.dispatch")
+    app.build()
+
+    assert (Path(app.srcdir) / "_build/text/index.txt").read_text() == dedent("""\
+        dummy_module.dispatch(arg, flag=False)
+        dummy_module.dispatch(arg: int, flag: bool = False) -> str
+
+           Dispatch on the argument type.
+
+           Parameters:
+              **arg** ("object") -- the argument
+
+           Return type:
+              "str"
+        """)
+
+
 @pytest.mark.parametrize("cls", ["DocumentedTwice", "DocumentedTwiceThroughNew"])
 @pytest.mark.sphinx(
     "text",

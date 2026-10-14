@@ -67,7 +67,9 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-
     return_annotation: str,  # ruff:ignore[unused-function-argument]
 ) -> tuple[str, None] | None:
     """Process the signature."""
-    if not callable(obj):
+    # Sphinx lists each singledispatch implementation under a nameless entry with no docstring to move types into,
+    # and the dispatch type is what tells the implementations apart
+    if not callable(obj) or not name.strip("."):
         return None
 
     original_obj = obj
