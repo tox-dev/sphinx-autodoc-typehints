@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sys
 import types
-from typing import TYPE_CHECKING, Any, Final, Literal, cast
+from typing import TYPE_CHECKING, Any, Final, Literal, cast, get_args, get_origin
 
 from sphinx import addnodes
 from sphinx.domains.python._annotations import _parse_type_list  # ruff:ignore[import-private-name]  # no public parser
@@ -44,17 +44,71 @@ def add_type_params(app: Sphinx, domain: str, _objtype: str, contentnode: addnod
             signode.insert(signode.index(name) + 1, _parse_type_list(text, app.env))
 
 
-def declared_type_params(documented: Any, function: Any) -> frozenset[Any]:
+def declared_type_params(documented: Any, function: Any, documenting: Any) -> frozenset[Any]:
     """
     Return the type parameters the signatures of ``documented`` declare.
 
-    That is its own, those of ``function`` documenting it, and those of the class defining ``function``, which a
-    method uses from the header of its class.
+    That is its own, those of ``function`` documenting it, those of the class defining ``function``, which a method
+    uses from the header of its class, and those of the class ``documenting`` it, whose own replace inherited ones.
     """
     owner: Any = sys.modules.get(getattr(function, "__module__", None) or "")
     for part in getattr(function, "__qualname__", "").split(".")[:-1]:
         owner = getattr(owner, part, None)
-    return frozenset((*_type_params(documented), *_type_params(function), *_type_params(owner)))
+    return frozenset((
+        *_type_params(documented),
+        *_type_params(function),
+        *_type_params(owner),
+        *_type_params(documenting),
+    ))
+
+
+def bound_type_args(documenting: Any, attribute: str) -> dict[Any, Any]:
+    """
+    Map the type parameters of the class defining ``attribute`` to the arguments ``documenting`` gives them.
+
+    A member inherited from ``class Base[T]`` and documented under ``class Child(Base[int])`` then reads ``int`` for
+    ``T``.
+    """
+    if (
+        not isinstance(documenting, type)
+        or (definer := next((klass for klass in documenting.__mro__ if attribute in vars(klass)), documenting))
+        is documenting
+    ):
+        return {}
+    return _arguments(definer, _parametrized(documenting, definer))
+
+
+def specialize(annotation: Any, arguments: dict[Any, Any]) -> Any:
+    """Replace the type parameters in ``annotation`` that ``arguments`` binds."""
+    if type(annotation).__name__ in _KINDS:
+        return arguments.get(annotation, annotation)
+    # a bare generic class lists its parameters too, yet names the class, not an alias to fill in
+    if (
+        isinstance(annotation, type)
+        or not isinstance(params := getattr(annotation, "__parameters__", None), tuple)
+        or not any(param in arguments for param in params)
+    ):
+        return annotation
+    return annotation[tuple(arguments.get(param, param) for param in params)]
+
+
+def _parametrized(cls: type, target: type) -> Any:
+    """Return ``target`` subscripted as ``cls`` subclasses it, through the bases in between."""
+    # a base the class statement names may stand in for the class it adds, as TypedDict does for dict, binding nothing
+    base = next((base for base in types.get_original_bases(cls) if _derives(base, target)), target)
+    if (origin := get_origin(base) or base) is target:
+        return base
+    return specialize(_parametrized(origin, target), _arguments(origin, base))
+
+
+def _derives(base: Any, target: type) -> bool:
+    return isinstance(origin := get_origin(base) or base, type) and issubclass(origin, target)
+
+
+def _arguments(cls: type, alias: Any) -> dict[Any, Any]:
+    params = getattr(cls, "__parameters__", ())
+    # a TypeVarTuple takes any number of arguments, leaving no one-to-one match, and a bare base binds none
+    return dict(zip(params, args, strict=True)) if len(params) == len(args := get_args(alias)) else {}
 
 
 def _documented_object(signode: addnodes.desc_signature) -> Any:
@@ -110,4 +164,4 @@ def _stringify(value: Any, mode: _Mode) -> str:
     return stringify_annotation(value, mode)
 
 
-__all__ = ["add_type_params", "declared_type_params"]
+__all__ = ["add_type_params", "bound_type_args", "declared_type_params", "specialize"]

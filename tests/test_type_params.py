@@ -123,3 +123,57 @@ def test_type_params_declared_param_spec_components_show_by_name(
         '* **args** ("P.args") -- positional',
         '* **kwargs** ("P.kwargs") -- by keyword',
     ]
+
+
+@pytest.mark.parametrize(
+    ("rst", "return_type"),
+    [
+        pytest.param(".. automethod:: type_params_module.IntBox.get", '"int"', id="legacy"),
+        pytest.param(".. automethod:: type_params_module.IntStack.peek", '"int"', id="pep695"),
+        pytest.param(".. automethod:: type_params_module.IntListing.get", '"list"["int"]', id="through-two-bases"),
+        pytest.param(".. automethod:: type_params_module.Listing.get", '"list"["U"]', id="to-own-param"),
+        pytest.param(".. automethod:: type_params_module.Restack.peek", '"V"', id="to-own-param-of-the-name"),
+    ],
+)
+@pytest.mark.sphinx("text", testroot="type-params")
+def test_type_params_bound_by_the_documenting_subclass_return(
+    app: SphinxTestApp, write_rst: Callable[[str], None], rst: str, return_type: str
+) -> None:
+    write_rst(rst)
+    app.build()
+
+    lines = (Path(app.outdir) / "index.txt").read_text().splitlines()
+    assert lines[lines.index("   Return type:") + 1].strip() == return_type
+
+
+@pytest.mark.parametrize(
+    ("rst", "parameter"),
+    [
+        pytest.param(
+            ".. automethod:: type_params_module.IntBox.get", '**default** ("int") -- returned when empty', id="method"
+        ),
+        pytest.param(".. autoclass:: type_params_module.IntStack", '**item** ("int")', id="constructor"),
+    ],
+)
+@pytest.mark.sphinx("text", testroot="type-params", confoverrides={"always_document_param_types": True})
+def test_type_params_bound_by_the_documenting_subclass_parameter(
+    app: SphinxTestApp, write_rst: Callable[[str], None], rst: str, parameter: str
+) -> None:
+    write_rst(rst)
+    app.build()
+
+    assert parameter in [line.strip() for line in (Path(app.outdir) / "index.txt").read_text().splitlines()]
+
+
+@pytest.mark.sphinx(
+    "text",
+    testroot="type-params",
+    confoverrides={"typehints_use_signature": True, "typehints_use_signature_return": True},
+)
+def test_type_params_bound_by_the_documenting_subclass_signature(
+    app: SphinxTestApp, write_rst: Callable[[str], None]
+) -> None:
+    write_rst(".. automethod:: type_params_module.IntBox.get")
+    app.build()
+
+    assert (Path(app.outdir) / "index.txt").read_text().splitlines()[0] == ("IntBox.get(default: int) -> int")

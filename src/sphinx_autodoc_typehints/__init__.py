@@ -54,7 +54,7 @@ from ._resolver import (
     resolve_string_annotations,
     resolve_type_guarded_imports,
 )
-from ._type_params import add_type_params, declared_type_params
+from ._type_params import add_type_params, bound_type_args, declared_type_params, specialize
 from ._typed_dict import inject_extra_items, mark_optional_keys, typed_dict_keys
 from .patches import _OVERLOADS_CACHE, install_patches
 from .version import __version__
@@ -293,11 +293,19 @@ def _resolved_type_hints(
             for key, annotation in (stated | {"return": stated_signature.return_annotation}).items()
             if annotation is not stated_signature.empty
         }
+    # a class documents its constructor, a member is documented under the class listing it, which may be a subclass
+    # binding the type parameters of the base it inherits the member from
+    if inspect.isclass(original_obj):
+        documenting, attribute = original_obj, _constructor_name(original_obj)
+    else:
+        documenting, attribute = _documented_owner(name), name.rsplit(".", maxsplit=1)[-1]
+    if arguments := bound_type_args(documenting, attribute):
+        type_hints = {key: specialize(hint, arguments) for key, hint in type_hints.items()}
     state = {
         "_annotation_globals": getattr(annotated, "__globals__", {}),
         "_typehints_env": env,
         "_typehints_module_prefix": module_prefix,
-        "_typehints_declared_type_params": declared_type_params(original_obj, obj),
+        "_typehints_declared_type_params": declared_type_params(original_obj, obj, documenting),
         "_typehints_resolve_guarded_imports": partial(resolve_type_guarded_imports, app.config.autodoc_mock_imports),
     }
     return type_hints, state

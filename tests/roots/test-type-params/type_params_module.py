@@ -101,3 +101,38 @@ def loose(value: L) -> L:  # ruff:ignore[non-pep695-generic-function]  # no sign
 def plain(value: int) -> int:
     """Not generic."""
     return value
+
+
+E = TypeVar("E")
+
+
+class Box(Generic[E]):  # ruff:ignore[non-pep695-generic-class]  # the pre-PEP 695 way is the case under test
+    """Generic the pre-PEP 695 way, with members its subclasses inherit."""
+
+    def get(self, default: E) -> E:
+        """
+        Return the content.
+
+        :param default: returned when empty
+        """
+        raise NotImplementedError
+
+
+class IntBox(Box[int]):
+    """Binds the type parameter of its base."""
+
+
+class Listing[U](Box[list[U]]):
+    """Binds the type parameter of its base to an alias of its own."""
+
+
+class IntListing(Listing[int]):
+    """Binds the type parameter of its base, which binds that of its own base."""
+
+
+class IntStack(Stack[int]):
+    """Binds the type parameter of a PEP 695 base."""
+
+
+class Restack[V](Stack[V]):
+    """Passes a type parameter of its own on to its base."""
