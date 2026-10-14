@@ -65,7 +65,7 @@ from ._formats._sphinx import (
     _reads_as_type,
     _strip_inline_param_type,
 )
-from ._headers import note_documented, render_header_types
+from ._headers import render_header_types
 from ._intersphinx import build_type_mapping
 from ._parser import unescape
 from ._resolver import (
@@ -76,6 +76,7 @@ from ._resolver import (
     get_descriptor_type_hint,
     get_instance_var_annotations,
     get_obj_location,
+    note_documented,
     object_at,
     resolve_string_annotations,
     resolve_type_guarded_imports,

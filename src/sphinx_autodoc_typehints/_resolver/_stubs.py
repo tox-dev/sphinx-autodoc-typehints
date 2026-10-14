@@ -216,34 +216,33 @@ def _find_stub_owner(obj: Any) -> tuple[Path, types.ModuleType] | None:
         return result, module
     # PEP 561 re-export pattern: cbor2.__init__.pyi documents functions living in cbor2._cbor2 (C/Rust). Walk up to
     # find the parent package whose stub describes the re-exported public API; a parent only describes the objects it
-    # re-exports, so the same name there must be this very object.
+    # re-exports, so the same name there must be this very object. Names are read statically: a package's lazy
+    # ``__getattr__`` imports on access and may raise, or rewrite ``__module__`` so autodoc skips the class as imported.
     top_name = str(getattr(obj, "__qualname__", "")).partition(".")[0]
-    if (defined := getattr(module, top_name, None)) is None:
+    if (defined := inspect.getattr_static(module, top_name, None)) is None:
         return None
     module_name = module.__name__
     while "." in module_name:
         module_name = module_name.rsplit(".", 1)[0]
         if (
             (parent := sys.modules.get(module_name))
-            and getattr(parent, top_name, None) is defined
             and (result := _find_stub_for_module(parent))
+            and inspect.getattr_static(parent, top_name, None) is defined
         ):
             return result, parent
     return None
 
 
 def _find_stub_for_module(module: types.ModuleType) -> Path | None:
-    try:
-        source_file = inspect.getfile(module)
-    except TypeError:
+    # a module lacking an attribute hands the lookup to its ``__getattr__``
+    if not (source_file := inspect.getattr_static(module, "__file__", None)):
         return _find_native_submodule_stub(module)
     source = Path(source_file)
     if (stub := source.with_name(f"{source.name.split('.')[0]}.pyi")).is_file():
         return stub
-    if hasattr(module, "__path__"):
-        for pkg_dir in module.__path__:
-            if (init_stub := Path(pkg_dir) / "__init__.pyi").is_file():
-                return init_stub
+    for pkg_dir in inspect.getattr_static(module, "__path__", ()):
+        if (init_stub := Path(pkg_dir) / "__init__.pyi").is_file():
+            return init_stub
     return None
 
 

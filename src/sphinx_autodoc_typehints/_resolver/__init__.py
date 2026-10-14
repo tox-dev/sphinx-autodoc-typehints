@@ -13,7 +13,15 @@ from ._type_hints import (
     resolve_string_annotations,
     resolve_type_guarded_imports,
 )
-from ._util import documented_type_names, get_obj_location, object_at, type_alias_namespace, written_type_alias
+from ._util import (
+    documented_type_names,
+    get_obj_location,
+    is_documented,
+    note_documented,
+    object_at,
+    type_alias_namespace,
+    written_type_alias,
+)
 
 __all__ = [
     "backfill_attrs_annotations",
@@ -24,6 +32,8 @@ __all__ = [
     "get_descriptor_type_hint",
     "get_instance_var_annotations",
     "get_obj_location",
+    "is_documented",
+    "note_documented",
     "object_at",
     "resolve_annotations",
     "resolve_string_annotations",

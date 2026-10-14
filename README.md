@@ -557,6 +557,9 @@ the type annotations, and they'll be picked up. Beyond that:
   mocked as `autodoc_mock_imports` would, so `npt.NDArray` still renders as a cross-reference.
 - A C attribute (a getset or member descriptor) gets its type from the stub's `@property` or class annotation.
 - Editing a stub rereads the pages documenting what it describes on the next incremental build.
+- Looking for a stub reads a package's attributes without running its [PEP 562](https://peps.python.org/pep-0562/)
+  `__getattr__`, so a package that imports on first access, or renames what it hands out as anyio does, stays as autodoc
+  found it.
 
 ### Use type comments
 
@@ -767,7 +770,8 @@ with bounds, constraints and defaults, the way [PEP 695](https://peps.python.org
 `Generic[T]` shows its parameters the same way. A type parameter a signature declares this way renders by name where it
 is used, as `items (T)` or `args (P.args)`, while a type variable no signature declares keeps its full
 `TypeVar(T, bound=int)` form. An overload declaring its own, `def get[S: str](self, key: S) -> list[S]`, renders them by
-name in its entry of the `Overloads` field.
+name in its entry of the `Overloads` field. A signature written by hand, such as `.. py:function:: first(items)`, shows
+only the type parameters it writes.
 
 A member inherited from a generic base and documented under a subclass that binds the base's type parameters, as
 `:inherited-members:` lists it or `.. automethod:: mod.Child.get` names it, shows the arguments the subclass gives them.

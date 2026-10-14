@@ -84,12 +84,9 @@ def teststub_path_returns_none_for_no_module() -> None:
         assert stub_path(obj) is None
 
 
-def teststub_path_returns_none_when_getfile_fails() -> None:
+def teststub_path_returns_none_for_module_without_file() -> None:
     module = types.ModuleType("fake_mod")
-    with (
-        patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getmodule", return_value=module),
-        patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getfile", side_effect=TypeError),
-    ):
+    with patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getmodule", return_value=module):
         assert stub_path(lambda: None) is None
 
 
@@ -114,10 +111,7 @@ def teststub_path_extension_module(tmp_path: Path, ext_filename: str) -> None:
     (tmp_path / "_mod.pyi").write_text("def f(x: int) -> None: ...\n")
     module = types.ModuleType("_mod")
     module.__file__ = str(tmp_path / ext_filename)
-    with (
-        patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getmodule", return_value=module),
-        patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getfile", return_value=module.__file__),
-    ):
+    with patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getmodule", return_value=module):
         result = stub_path(lambda: None)
     assert result is not None
     assert result.name == "_mod.pyi"
@@ -128,10 +122,7 @@ def teststub_path_extension_module_no_stub(tmp_path: Path) -> None:
     (tmp_path / ext_filename).write_bytes(b"")
     module = types.ModuleType("_mod")
     module.__file__ = str(tmp_path / ext_filename)
-    with (
-        patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getmodule", return_value=module),
-        patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getfile", return_value=module.__file__),
-    ):
+    with patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getmodule", return_value=module):
         assert stub_path(lambda: None) is None
 
 
@@ -144,10 +135,7 @@ def teststub_path_extension_module_package_fallback(tmp_path: Path) -> None:
     module = types.ModuleType("_mod")
     module.__file__ = str(tmp_path / ext_filename)
     module.__path__ = [str(stub_dir)]
-    with (
-        patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getmodule", return_value=module),
-        patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getfile", return_value=module.__file__),
-    ):
+    with patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getmodule", return_value=module):
         result = stub_path(lambda: None)
     assert result is not None
     assert result.name == "__init__.pyi"
@@ -570,10 +558,8 @@ def test_sphinx_build_stub_types_produce_crossrefs(app: SphinxTestApp, status: S
     assert "docs.python.org" in result
 
 
-def test_find_stub_for_module_returns_none_when_getfile_raises() -> None:
-    module = types.ModuleType("fake")
-    with patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getfile", side_effect=TypeError):
-        assert _find_stub_for_module(module) is None
+def test_find_stub_for_module_returns_none_without_file() -> None:
+    assert _find_stub_for_module(types.ModuleType("fake")) is None
 
 
 def test_get_module_returns_inspected_module() -> None:
@@ -943,3 +929,61 @@ def test_editing_a_stub_rereads_the_pages_it_types(
 
     # the module this process already imported keeps the first types, so only the reread shows here
     assert "1 changed" in status.getvalue()
+
+
+@pytest.fixture
+def lazy_package(app: SphinxTestApp) -> Iterator[None]:
+    """Write a package exposing its submodule's names through ``__getattr__``, which imports on first access."""
+    package = Path(app.srcdir) / "lazy_pkg"
+    package.mkdir(exist_ok=True)
+    (package / "__init__.py").write_text(
+        textwrap.dedent("""\
+            import importlib
+
+            _LAZY = {"Handle": "_impl"}
+
+
+            def __getattr__(name):
+                if name == "other":
+                    raise KeyError(name)
+                if name not in _LAZY:
+                    raise AttributeError(name)
+                value = getattr(importlib.import_module(f".{_LAZY[name]}", __name__), name)
+                value.__module__ = __name__
+                globals()[name] = value
+                return value
+        """)
+    )
+    (package / "_impl.py").write_text(
+        textwrap.dedent('''\
+            class Handle:
+                """Handle."""
+
+
+            def other(x: int) -> str:
+                """Other."""
+        ''')
+    )
+    yield
+    for name in ("lazy_pkg", "lazy_pkg._impl"):
+        sys.modules.pop(name, None)
+
+
+@pytest.mark.usefixtures("lazy_package")
+@pytest.mark.sphinx("text", testroot="pyi-stubs")
+def test_sphinx_build_keeps_member_a_lazy_package_would_rename(
+    app: SphinxTestApp, write_rst: Callable[[str], None]
+) -> None:
+    write_rst(".. automodule:: lazy_pkg._impl\n   :members:\n   :exclude-members: other")
+    app.build()
+    assert "class lazy_pkg._impl.Handle" in (Path(app.srcdir) / "_build/text/index.txt").read_text()
+
+
+@pytest.mark.usefixtures("lazy_package")
+@pytest.mark.sphinx("text", testroot="pyi-stubs")
+def test_sphinx_build_survives_lazy_package_raising_on_lookup(
+    app: SphinxTestApp, write_rst: Callable[[str], None]
+) -> None:
+    write_rst(".. autofunction:: lazy_pkg._impl.other")
+    app.build()
+    assert 'Return type:\n      "str"' in (Path(app.srcdir) / "_build/text/index.txt").read_text()
