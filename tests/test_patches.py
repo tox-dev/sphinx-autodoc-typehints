@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -7,6 +8,7 @@ import pytest
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from io import StringIO
 
     from sphinx.testing.util import SphinxTestApp
 
@@ -81,3 +83,15 @@ def test_overloads_stay_visible_to_an_app_without_the_extension(
         "ClassWithOverloadedMethods.convert(value: int) -> int",
         "ClassWithOverloadedMethods.convert(value: str) -> str",
     ]
+
+
+@pytest.mark.sphinx("latex", testroot="dummy")
+def test_admonition_line_counts_within_its_own_file(app: SphinxTestApp, warning: StringIO) -> None:
+    (Path(app.srcdir) / "included.txt").write_text("a\n\nb\n\nc\n")
+    (Path(app.srcdir) / "index.rst").write_text(
+        "Index\n=====\n\n.. include:: included.txt\n\n.. note::\n\n   .. tabularcolumns:: |L|L|\n\n"
+        "   +---------+-----+\n   | ::      | b   |\n   |         |     |\n   |   code  |     |\n   +---------+-----+\n"
+    )
+    app.build()
+
+    assert re.findall(r"index\.rst:(\d+): WARNING: colspec", warning.getvalue()) == ["6"]

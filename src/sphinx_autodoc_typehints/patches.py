@@ -93,7 +93,8 @@ orig_base_admonition_run = BaseAdmonition.run
 
 def _patched_base_admonition_run(self: BaseAdmonition) -> Any:
     result = orig_base_admonition_run(self)
-    result[0].line = self.lineno
+    # the directive counts lines across included files, the node names its place within its own source file
+    result[0].source, result[0].line = self.state_machine.get_source_and_line(self.lineno)
     return result
 
 
