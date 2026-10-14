@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import logging
 from textwrap import dedent
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
 from sphinx_autodoc_typehints._resolver._type_comments import (
@@ -8,6 +10,9 @@ from sphinx_autodoc_typehints._resolver._type_comments import (
     _split_type_comment_args,
     backfill_type_hints,
 )
+
+if TYPE_CHECKING:
+    import pytest
 
 
 def test__normalize_source_lines_async_def() -> None:
@@ -201,3 +206,11 @@ def _inline_typed_func(  # ruff:ignore[missing-return-type-private-function]
 def _mismatched_type_comment(x, y, z):  # ruff:ignore[missing-return-type-private-function]
     # type: (int) -> bool
     ...
+
+
+_square = lambda x: x * x  # type: Callable[[int], int]  # ruff:ignore[lambda-assignment]  # the case under test
+
+
+def test_backfill_type_hints_ignores_a_variable_type_comment(caplog: pytest.LogCaptureFixture) -> None:
+    result = backfill_type_hints(_square, "_square")
+    assert (result, [record for record in caplog.records if record.levelno == logging.WARNING]) == ({}, [])
