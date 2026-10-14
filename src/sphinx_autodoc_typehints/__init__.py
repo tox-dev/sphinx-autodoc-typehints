@@ -103,7 +103,7 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-
     """Process the signature."""
     # autodoc emits this for every object it documents, one it cannot import included, unlike the docstring event
     if (env := getattr(app, "env", None)) is not None:
-        note_documented(env, name)
+        _start_entry(env, name)
     # Sphinx lists each singledispatch implementation under a nameless entry with no docstring to move types into,
     # and the dispatch type is what tells the implementations apart; data and attributes holding a callable show
     # no signature, so Sphinx passes none to replace
@@ -195,6 +195,12 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-
         unqualified_typehints=unqualified,
     )
     return _directive_text(app, formatted), None
+
+
+def _start_entry(env: BuildEnvironment, name: str) -> None:
+    note_documented(env, name)
+    # a page may document the object again, and only the entry this signature heads can have kept it as written
+    _written_signatures(env).discard(name)
 
 
 def _overload_lines(app: Sphinx, name: str, overloads: list[inspect.Signature], *, unqualified: bool) -> str:
