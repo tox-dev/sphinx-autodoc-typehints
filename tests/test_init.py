@@ -17,7 +17,7 @@ from sphinx.application import Sphinx
 from sphinx.config import Config
 from sphinx.ext.autodoc import Options
 from sphinx.ext.autosummary import extract_summary
-from typing_extensions import Doc
+from typing_extensions import Doc, deprecated
 
 import sphinx_autodoc_typehints as sat
 from sphinx_autodoc_typehints import (
@@ -478,11 +478,17 @@ class _InitOverridesNew(_BothClass):
     def __init__(self, count: int) -> None: ...
 
 
+@deprecated("use something else")
+class _Deprecated:
+    def __init__(self, value: float) -> None: ...
+
+
 @pytest.mark.parametrize(
     ("cls", "expected"),
     [
         pytest.param(_BothClass, "(value: float)", id="new-beside-init"),
         pytest.param(_InitOverridesNew, "(count: int)", id="init-overrides-inherited-new"),
+        pytest.param(_Deprecated, "(value: float)", id="new-wrapping-object-new"),  # ty: ignore[deprecated]  # the case under test
     ],
 )
 def test_process_signature_picks_constructor_like_inspect(cls: type, expected: str) -> None:
@@ -501,9 +507,10 @@ class _Shadowed:
     [
         pytest.param(_BothClass, id="new-beside-init"),
         pytest.param(_Shadowed, id="new-over-shadowing-class-attribute"),
+        pytest.param(_Deprecated, id="init-beside-new-wrapping-object-new"),  # ty: ignore[deprecated]  # the case under test
     ],
 )
-def test_process_docstring_types_params_from_new(cls: type) -> None:
+def test_process_docstring_types_params_from_the_constructor(cls: type) -> None:
     lines = [":param value: doc"]
     process_docstring(make_docstring_app(typehints_document_rtype=False), "class", "test.cls", cls, None, lines)
     assert lines == [r":type value: :sphinx_autodoc_typehints_type:`\:py\:class\:\`float\``", ":param value: doc"]

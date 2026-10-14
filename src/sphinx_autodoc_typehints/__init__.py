@@ -226,7 +226,9 @@ def _constructor_name(cls: type) -> Literal["__new__", "__init__"]:
     depth = {
         name: next(i for i, klass in enumerate(cls.__mro__) if name in vars(klass)) for name in ("__new__", "__init__")
     }
-    return "__new__" if cls.__new__ is not object.__new__ and depth["__new__"] <= depth["__init__"] else "__init__"
+    # a __new__ that only wraps object's, as @warnings.deprecated adds, is no constructor of its own to inspect
+    own_new = inspect.unwrap(cls.__new__) is not object.__new__
+    return "__new__" if own_new and depth["__new__"] <= depth["__init__"] else "__init__"
 
 
 @contextmanager
