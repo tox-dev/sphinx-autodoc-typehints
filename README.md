@@ -53,6 +53,7 @@ features above. See [Avoid duplicate types with built-in Sphinx](#avoid-duplicat
   - [Suppress warnings](#suppress-warnings)
 - [Reference](#reference)
   - [Configuration options](#configuration-options)
+  - [Typing constructs](#typing-constructs)
   - [Warning categories](#warning-categories)
 - [Explanation](#explanation)
   - [How it works](#how-it-works)
@@ -389,6 +390,15 @@ To suppress only specific warning types, see [Warning categories](#warning-categ
 | `always_document_param_types`    | `False` | Add types even for parameters that don't have a `:param:` entry in the docstring.                  |
 | `typehints_formatter`            | `None`  | A function `(annotation, Config) -> str \| None` for custom type rendering.                        |
 | `typehints_fixup_module_name`    | `None`  | A function `(str) -> str` to rewrite module paths before generating cross-reference links.         |
+
+### Typing constructs
+
+Some annotations render differently from how they are written:
+
+| Written                    | Rendered                                                      |
+| -------------------------- | ------------------------------------------------------------- |
+| `*args: *Ts`, `tuple[*Ts]` | `Unpack[TypeVarTuple(Ts)]`, `tuple[Unpack[TypeVarTuple(Ts)]]` |
+| `*args: *tuple[int, ...]`  | `Unpack[tuple[int, ...]]`                                     |
 
 ### Warning categories
 

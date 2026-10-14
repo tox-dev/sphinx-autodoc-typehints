@@ -189,6 +189,10 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
         return ":py:data:`...<Ellipsis>`"
     if ismock(annotation) and not annotation.__name__.isidentifier():
         return _format_mock_subscript(annotation)
+    if isinstance(annotation, types.GenericAlias) and annotation.__unpacked__:
+        # ``*tuple[int, ...]`` keeps the class of ``tuple[int, ...]`` and only flags the star, so render it the way
+        # ``*Ts`` renders
+        return (yield typing.Unpack[types.GenericAlias(annotation.__origin__, annotation.__args__)])
 
     if isinstance(annotation, tuple):
         parts = []
