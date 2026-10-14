@@ -514,7 +514,12 @@ def _params_documented_elsewhere(
         class_docstrings[name] = lines
         return frozenset(signature.parameters)
     fmt = detect_format(class_lines)
-    return frozenset(param for param in signature.parameters if fmt.find_param(class_lines, param) is not None)
+    # the docstring may spell a trailing underscore escaped, as _find_param accepts
+    return frozenset(
+        param
+        for param in signature.parameters
+        if any(fmt.find_param(class_lines, spelling) is not None for spelling in {param, _escaped(param)})
+    )
 
 
 def _has_constructor_docstring(app: Sphinx, cls: type) -> bool:
@@ -544,12 +549,30 @@ def _inject_types_to_docstring(  # ruff:ignore[too-many-arguments, too-many-posi
     fmt = detect_format(lines)
     if signature is not None:
         for arg_name in signature.parameters:
-            _inject_arg_signature(type_hints, signature, app, lines, arg_name, fmt, documented_elsewhere, "param")
+            _inject_arg_signature(
+                type_hints,
+                signature,
+                app,
+                lines,
+                arg_name,
+                fmt,
+                documented_elsewhere=arg_name in documented_elsewhere,
+                field="param",
+            )
         if keys := _unpacked_keywords(signature, type_hints):
             # after the parameters, as a docstring describes **kwargs before its keys
             keywords = inspect.Signature([inspect.Parameter(key, inspect.Parameter.KEYWORD_ONLY) for key in keys])
             for key in keys:
-                _inject_arg_signature(keys, keywords, app, lines, key, fmt, documented_elsewhere, "keyword")
+                _inject_arg_signature(
+                    keys,
+                    keywords,
+                    app,
+                    lines,
+                    key,
+                    fmt,
+                    documented_elsewhere=key in documented_elsewhere,
+                    field="keyword",
+                )
     if "return" in type_hints and not has_overloads:
         _inject_rtype(type_hints, original_obj, app, what, name, lines, fmt)
 
@@ -577,7 +600,8 @@ def _inject_arg_signature(  # ruff:ignore[too-many-arguments, too-many-positiona
     lines: list[str],
     arg_name: str,
     fmt: Any,
-    documented_elsewhere: frozenset[str],
+    *,
+    documented_elsewhere: bool,
     field: Literal["param", "keyword"],
 ) -> None:
     annotation = type_hints.get(arg_name)
@@ -603,7 +627,7 @@ def _inject_arg_signature(  # ruff:ignore[too-many-arguments, too-many-positiona
 
     if insert_index is None and (
         doc_description
-        or (annotation is not None and app.config.always_document_param_types and arg_name not in documented_elsewhere)
+        or (annotation is not None and app.config.always_document_param_types and not documented_elsewhere)
     ):
         stars = {"VAR_POSITIONAL": "\\*", "VAR_KEYWORD": "\\*\\*"}.get(kind.name, "")
         entry = f"**{stars}{arg_name}**{f' -- {doc_description}' if doc_description else ''}"
@@ -656,7 +680,7 @@ def _inject_arg_signature(  # ruff:ignore[too-many-arguments, too-many-positiona
 def _find_param(lines: list[str], arg_name: str, fmt: Any) -> tuple[str, int | None]:
     if not arg_name.endswith("_"):
         return arg_name, fmt.find_param(lines, arg_name)
-    escaped_name = f"{arg_name[:-1]}\\_"
+    escaped_name = _escaped(arg_name)
     if (insert_index := fmt.find_param(lines, escaped_name)) is not None:
         return escaped_name, insert_index
     if (insert_index := fmt.find_param(lines, arg_name)) is None:
@@ -668,6 +692,11 @@ def _find_param(lines: list[str], arg_name: str, fmt: Any) -> tuple[str, int | N
         return arg_name, insert_index
     lines[insert_index] = rewritten
     return escaped_name, insert_index
+
+
+def _escaped(name: str) -> str:
+    r"""Spell a trailing underscore the way docutils needs it, ``x\_``, as it reads a bare one as a reference."""
+    return f"{name[:-1]}\\_" if name.endswith("_") else name
 
 
 def _type_combined_field_entry(app: Sphinx, lines: list[str], arg_name: str, annotation: Any, default: Any) -> bool:

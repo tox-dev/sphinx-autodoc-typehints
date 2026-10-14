@@ -1289,6 +1289,32 @@ def test_kept_signature_warns_about_an_unresolvable_annotation_once(
     assert warning.getvalue().count("Cannot resolve forward reference") == 1
 
 
+@pytest.mark.sphinx(
+    "text",
+    testroot="dummy",
+    confoverrides={"autoclass_content": "both", "always_document_param_types": True},
+)
+def test_class_and_constructor_docstrings_list_an_escaped_param_once(
+    app: SphinxTestApp, write_rst: Callable[[str], None]
+) -> None:
+    write_rst(".. autoclass:: dummy_module.DocumentedTwiceWithUnderscore")
+    app.build()
+
+    assert (Path(app.srcdir) / "_build/text/index.txt").read_text() == dedent("""\
+        class dummy_module.DocumentedTwiceWithUnderscore(type_, count)
+
+           Class docstring.
+
+           Parameters:
+              **type_** ("str") -- the type
+
+           Constructor docstring.
+
+           Parameters:
+              **count** ("int") -- the count
+        """)
+
+
 def test_setup_returns_version() -> None:
     """setup() returns metadata dict with version from __version__."""
     app = create_autospec(Sphinx)
