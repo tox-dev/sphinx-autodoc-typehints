@@ -12,7 +12,7 @@ from conftest import make_docstring_app, normalize_sphinx_text
 from sphinx_autodoc_typehints import process_docstring
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator, AsyncIterator, Generator, Iterator
+    from collections.abc import AsyncGenerator, AsyncIterator, Callable, Generator, Iterator
     from io import StringIO
 
     from sphinx.testing.util import SphinxTestApp
@@ -185,3 +185,35 @@ def test_yields_section_with_unhashable_return_type() -> None:
         "",
         r":rtype: :sphinx_autodoc_typehints_type:`\:py\:class\:\`list\`\\ \\\[\:py\:class\:\`str\`\]`",
     ]
+
+
+def _annotated_counts() -> Annotated[Iterator[int], "meters"]: ...
+
+
+def _annotated_returning() -> Annotated[Generator[int, None, str], "meta"]: ...
+
+
+@pytest.mark.parametrize(
+    ("func", "lines", "expected"),
+    [
+        pytest.param(
+            _annotated_counts, [":yields: the numbers"], [f":yields: {_YIELDED_INT} -- the numbers"], id="iterator"
+        ),
+        pytest.param(
+            _annotated_returning,
+            [":yields: the numbers", ":returns: a name"],
+            [
+                f":yields: {_YIELDED_INT} -- the numbers",
+                "",
+                r":rtype: :sphinx_autodoc_typehints_type:`\:py\:class\:\`str\``",
+                ":returns: a name",
+            ],
+            id="generator-returning",
+        ),
+    ],
+)
+def test_annotated_generator_reads_as_the_type_it_wraps(
+    func: Callable[[], object], lines: list[str], expected: list[str]
+) -> None:
+    process_docstring(make_docstring_app(), "function", "mod.annotated", func, None, lines)
+    assert lines == expected

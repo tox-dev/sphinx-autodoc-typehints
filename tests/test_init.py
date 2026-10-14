@@ -1363,6 +1363,22 @@ _A_TYPE: Final = r":type a: :sphinx_autodoc_typehints_type:`\:py\:class\:\`int\`
 _B_TYPE: Final = r":type b: :sphinx_autodoc_typehints_type:`\:py\:class\:\`str\``"
 
 
+def _returns_described_none() -> Annotated[None, Doc("nothing at all")]: ...
+
+
+def test_process_docstring_leaves_off_an_annotated_none_return_type() -> None:
+    lines: list[str] = []
+    process_docstring(
+        make_docstring_app(typehints_document_rtype_none=False),
+        "function",
+        "mod._returns_described_none",
+        _returns_described_none,
+        None,
+        lines,
+    )
+    assert lines == [":return: nothing at all"]
+
+
 def _pair(a: int, b: str) -> None: ...
 
 
