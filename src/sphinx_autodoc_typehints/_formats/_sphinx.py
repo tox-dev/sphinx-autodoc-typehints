@@ -110,13 +110,15 @@ def _safe_parse(inputstr: str, settings: Values | optparse.Values) -> nodes.docu
             return _NoOpDirective, messages
         return cls, messages
 
+    # Whatever this parse has to say about the docstring, the real parse says again with the right line number,
+    # so its warnings are only duplicates; docutils writes them to its own stream, Sphinx logs the rest. The
+    # docstring may not even be rendered: autodoc processes members it then leaves out, imported ones among them
+    settings.warning_stream = False
     doc = new_document("", settings=settings)  # ty: ignore[invalid-argument-type]
     # The read phase already runs inside sphinx_domains; entering it again shadows the intersphinx
     # dispatcher layered on top of it, losing the external+ roles (#753)
     directives.directive = _safe_directive_lookup  # type: ignore[assignment]
     try:
-        # Whatever this parse has to say about the docstring, the real parse says again with the
-        # right line number, so its warnings are only duplicates
         with logging.suppress_logging():
             _RstSnippetParser().parse(inputstr, doc)
     finally:

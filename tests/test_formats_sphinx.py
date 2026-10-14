@@ -189,3 +189,13 @@ def test_rtype_stays_with_params_before_a_sphinx_directive(
 
            Added in version 1.0.
         """)
+
+
+def test_process_docstring_keeps_the_placement_parse_quiet(capsys: pytest.CaptureFixture[str]) -> None:
+    def broken() -> int: ...
+
+    lines = ["Behaves like this:", "- a list item", "    an unexpected indent"]
+    sat.process_docstring(make_docstring_app(), "function", "mod.broken", broken, None, lines)
+    rtype = r":rtype: :sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``"
+    expected = ["Behaves like this:", "- a list item", "    an unexpected indent", "", rtype]
+    assert (lines, capsys.readouterr().err) == (expected, "")
