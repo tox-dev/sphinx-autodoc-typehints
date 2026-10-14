@@ -377,7 +377,9 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
     with annotation_state(app.config, **state):
         part, documented_elsewhere = (
             _docstring_part(env, name, signature, options, lines)
-            if env is not None and signature is not None and _has_constructor_docstring(app, original_obj, options)
+            if env is not None
+            and signature is not None
+            and _has_constructor_docstring(app, name, original_obj, options)
             else ("whole", frozenset())
         )
         # the constructor's overloads describe its part, while the notice heads the entry
@@ -723,9 +725,15 @@ def _docstring_part(
     )
 
 
-def _has_constructor_docstring(app: Sphinx, cls: Any, options: Options | None) -> bool:
+def _has_constructor_docstring(app: Sphinx, name: str, cls: Any, options: Options | None) -> bool:
     """Mirror Sphinx's choice of docstrings for a class showing its constructor's too."""
-    if not inspect.isclass(cls) or _class_doc_from(app, options) != "both" or not getdoc(cls):
+    # Sphinx documents a class under another name as an alias, with no docstring of the class or its constructor
+    if (
+        not inspect.isclass(cls)
+        or name.rpartition(".")[2] != cls.__name__
+        or _class_doc_from(app, options) != "both"
+        or not getdoc(cls)
+    ):
         return False
     inherit = app.config.autodoc_inherit_docstrings
     init_doc = getdoc(cls.__init__, allow_inherited=inherit, cls=cls, name="__init__")

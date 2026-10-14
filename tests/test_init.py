@@ -1647,20 +1647,56 @@ def test_class_doc_from_class_ignores_the_constructor_opting_out_of_overloads(
         """)
 
 
+class _DocumentedTwice:
+    """
+    Class docstring.
+
+    :param first: the first
+    """
+
+    def __init__(self, first: int, second: str) -> None:
+        """Constructor docstring."""
+
+
 @pytest.mark.sphinx(
     "text",
     testroot="dummy",
     confoverrides={"autoclass_content": "both", "always_document_param_types": True},
 )
-def test_class_docstring_part_does_not_carry_to_a_later_directive(
+def test_class_docstring_part_does_not_pair_with_another_directive(
     app: SphinxTestApp, write_rst: Callable[[str], None]
 ) -> None:
-    entry = ".. autoclass:: dummy_module.DocumentedTwiceAlias\n   :no-index:\n"
-    write_rst(f"{entry}\n{entry}")
+    # a finished build ends the app's lifecycle the extension tracks, which a later app could otherwise inherit
+    write_rst("Test\n")
+    app.build()
+    first, second = (["Class docstring.", "", ":param first: the first"] for _ in range(2))
+    process_docstring(app, "class", f"{__name__}._DocumentedTwice", _DocumentedTwice, Options(), first)
+    process_docstring(app, "class", f"{__name__}._DocumentedTwice", _DocumentedTwice, Options(), second)
+
+    assert second == first
+
+
+@pytest.mark.sphinx(
+    "text",
+    testroot="dummy",
+    confoverrides={"autoclass_content": "both", "always_document_param_types": True},
+)
+def test_class_alias_lists_the_constructor_params(app: SphinxTestApp, write_rst: Callable[[str], None]) -> None:
+    write_rst(".. autoclass:: dummy_module.DocumentedTwiceAlias\n")
     app.build()
 
-    first, second = (Path(app.srcdir) / "_build/text/index.txt").read_text().split("\n\ndummy_module.")
-    assert f"dummy_module.{second}" == f"{first}\n"
+    assert (Path(app.srcdir) / "_build/text/index.txt").read_text() == dedent("""\
+        dummy_module.DocumentedTwiceAlias
+
+           An alias.
+
+           Parameters:
+              * **first** ("int")
+
+              * **second** ("str")
+
+              * **third** ("bool")
+        """)
 
 
 @pytest.mark.sphinx("text", testroot="dummy", confoverrides={"typehints_use_signature": True})
