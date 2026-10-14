@@ -309,15 +309,14 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
         params = {k: getattr(annotation, f"__{k}__", None) for k in ("bound", "covariant", "contravariant")}
         params = {k: v for k, v in params.items() if v}
         if "bound" in params:
-            bound = yield params["bound"]
-            params["bound"] = f" {bound}"
+            params["bound"] = yield params["bound"]
         # PEP 696 defaults exist on typing from 3.13 and on typing_extensions before that
         if (has_default := getattr(annotation, "has_default", None)) and has_default():
-            default = yield annotation.__default__
-            params["default"] = f" {default}"
+            params["default"] = yield annotation.__default__
         args_format = f"\\(``{annotation.__name__}``{', {}' if args else ''}"
         if params:
-            args_format += "".join(f", {k}={v}" for k, v in params.items())
+            # the escaped space lets a role follow the = without a visible gap
+            args_format += "".join(f", {k}=\\ {v}" for k, v in params.items())
         args_format += ")"
         formatted_args = None if args else args_format
     elif full_name in {"typing.ParamSpecArgs", "typing.ParamSpecKwargs"} and not isinstance(annotation, type):
