@@ -111,7 +111,9 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-
     # a kept type reads as its field does: the same resolution, aliases, fixups and formatter, written as Python
     shown: dict[str, str] = {}
     if app.config.typehints_use_signature or app.config.typehints_use_signature_return:
-        type_hints, state = _resolved_type_hints(app, name, original_obj, obj, annotated)
+        # the docstring of the same object resolves these hints too, and warns about any that fail there
+        with logging.suppress_logging():
+            type_hints, state = _resolved_type_hints(app, name, original_obj, obj, annotated)
         with _annotation_state(app.config, **state, _typehints_signature=True):
             short_literals = app.config.python_display_short_literal_types
             shown = {

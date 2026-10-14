@@ -48,6 +48,7 @@ from sphinx_autodoc_typehints.patches import _OVERLOADS_CACHE
 if TYPE_CHECKING:
     import types
     from collections.abc import Callable
+    from io import StringIO
 
     from sphinx.testing.util import SphinxTestApp
 
@@ -1264,6 +1265,16 @@ def test_class_and_constructor_docstrings_list_each_param_once(
 
               * **third** ("bool")
         """)
+
+
+@pytest.mark.sphinx("text", testroot="dummy", confoverrides={"typehints_use_signature": True})
+def test_kept_signature_warns_about_an_unresolvable_annotation_once(
+    app: SphinxTestApp, write_rst: Callable[[str], None], warning: StringIO
+) -> None:
+    write_rst(".. autofunction:: dummy_module.unresolvable")
+    app.build()
+
+    assert warning.getvalue().count("Cannot resolve forward reference") == 1
 
 
 def test_setup_returns_version() -> None:
