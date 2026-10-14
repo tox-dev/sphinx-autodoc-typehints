@@ -8,6 +8,7 @@ from pathlib import Path
 from textwrap import dedent
 from typing import TYPE_CHECKING
 from unittest.mock import create_autospec, patch
+from urllib.request import urlopen
 
 import pytest
 from sphinx.application import Sphinx
@@ -101,7 +102,9 @@ def inv(pytestconfig: pytest.Config) -> Inventory:
         inv_dict := pytestconfig.cache.get(cache_path, None)
     ) is None:  # pragma: no cover -- network fetch, CI has cache
         url = f"https://docs.python.org/{sys.version_info.major}.{sys.version_info.minor}/objects.inv"
-        inv_dict = Inventory(url=url).json_dict()  # ty: ignore[unknown-argument]
+        # sphobjinv downloads without a timeout, so a stalled connection would hang the whole run
+        with urlopen(url, timeout=30) as response:
+            inv_dict = Inventory(zlib=response.read()).json_dict()  # ty: ignore[unknown-argument]
         pytestconfig.cache.set(cache_path, inv_dict)
     return Inventory(inv_dict)  # ty: ignore[too-many-positional-arguments]
 
