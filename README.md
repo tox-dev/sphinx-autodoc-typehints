@@ -596,7 +596,8 @@ with bounds, constraints and defaults, the way [PEP 695](https://peps.python.org
 Only parameters that already have a `:param:` line in the docstring get type information added, with two exceptions: a
 parameter whose annotation carries a `Doc(...)` description gets a `:param:` line of its own, and the entries of
 napoleon's combined parameter field get their types in place. Set `always_document_param_types = True` to add types for
-all parameters, even undocumented ones; the added lines follow the signature's order, next to the documented parameters.
+all parameters, even undocumented ones; the added lines follow the signature's order, next to the documented parameters,
+and go into napoleon's combined `Parameters` or `Keyword Arguments` field when the docstring lists the others there.
 
 Parameters are recognized under `:param`, `:parameter`, `:arg`, `:argument`, `:keyword`, `:kwarg` and `:kwparam`, naming
 `*args` and `**kwargs` bare or with escaped stars, `args` or `\*args`. Only fields that start a line count: one indented

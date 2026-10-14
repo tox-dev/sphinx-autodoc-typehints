@@ -706,10 +706,34 @@ _FLOAT_TYPE: Final = r":sphinx_autodoc_typehints_type:`\:py\:class\:\`float\``"
             [
                 f":Parameters: * **a** ({_INT_TYPE}) -- the a",
                 f"             * **b** ({_STR_TYPE}) -- the b",
-                f":type args: {_FLOAT_TYPE}",
-                ":param args:",
+                rf"             * **\*args** ({_FLOAT_TYPE})",
             ],
             id="always-documented",
+        ),
+        pytest.param(
+            [":Parameters: **b** -- the b"],
+            {"always_document_param_types": True},
+            [
+                f":Parameters: * **a** ({_INT_TYPE})",
+                f"             * **b** ({_STR_TYPE}) -- the b",
+                rf"             * **\*args** ({_FLOAT_TYPE})",
+            ],
+            id="always-documented-around-a-single-entry",
+        ),
+        pytest.param(
+            [":Parameters: **a** -- the a", "             more of a", "", "             still a", "", "After."],
+            {"always_document_param_types": True},
+            [
+                f":Parameters: * **a** ({_INT_TYPE}) -- the a",
+                "               more of a",
+                "",
+                "               still a",
+                f"             * **b** ({_STR_TYPE})",
+                rf"             * **\*args** ({_FLOAT_TYPE})",
+                "",
+                "After.",
+            ],
+            id="always-documented-after-a-multi-paragraph-entry",
         ),
         pytest.param(
             [":Keyword Arguments: **b** -- the b"],
@@ -1202,6 +1226,20 @@ _NOT_REQUIRED: Final = (
                 ":keyword alias: the alias",
             ],
             id="undocumented-keys",
+        ),
+        pytest.param(
+            _configure,
+            True,
+            [":param kwargs: the options", ":Keyword Arguments: **verbose** -- be loud"],
+            [
+                f":type kwargs: {_UNPACKED.format('_Options')}",
+                ":param kwargs: the options",
+                f":Keyword Arguments: * **verbose** ({_BOOL}) -- be loud",
+                f"                    * **level** ({_NOT_REQUIRED.format('int')})",
+                f"                    * **name** ({_NOT_REQUIRED.format('str')}) -- the name",
+                f"                    * **alias** ({_NOT_REQUIRED.format('str')}) -- the alias",
+            ],
+            id="combined-keyword-field",
         ),
         pytest.param(
             _odd,
