@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import enum
 import inspect
+import re
 import sys
 import types
 import typing
@@ -29,6 +30,7 @@ from typing import (
     get_origin,
 )
 
+from sphinx.ext.autodoc.mock import ismock
 from sphinx.util import rst
 from sphinx.util.inspect import TypeAliasForwardRef
 
@@ -185,6 +187,8 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
         return ":py:obj:`None`"
     if annotation is Ellipsis:
         return ":py:data:`...<Ellipsis>`"
+    if ismock(annotation) and not annotation.__name__.isidentifier():
+        return _format_mock_subscript(annotation)
 
     if isinstance(annotation, tuple):
         parts = []
@@ -370,6 +374,22 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
         reference = defer_alias_choice(config, local, reference) or reference
     # B901: returning a value from a generator is intentional here — the driver reads it via StopIteration
     return f"{reference}{escape}{formatted_args}"  # ruff:ignore[return-in-generator]
+
+
+def _format_mock_subscript(annotation: Any) -> str:
+    """
+    Render a subscripted mock, such as ``Thing[int]`` of a module in ``autodoc_mock_imports``.
+
+    The mock keeps only ``str()`` of the subscript, ``<class 'int'>`` or ``numpy.float64``, as its name, and the
+    subscripted object as its module, so the arguments are read back from that text.
+    """
+    text = re.sub(r"<class '([^']+)'>", r"\1", annotation.__name__).removeprefix("(").removesuffix(")")
+    parts = [part.strip() for part in text.split(",") if part.strip()]
+    args = ", ".join(
+        (f":py:class:`{'~' if '.' in part else ''}{part}`" if re.fullmatch(r"[\w.]+", part) else f"``{part}``")
+        for part in parts
+    )
+    return f":py:class:`~{annotation.__module__}`\\ \\[{args}]"
 
 
 def get_annotation_module(annotation: Any) -> str:
