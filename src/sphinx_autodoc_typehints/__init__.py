@@ -48,9 +48,7 @@ from ._deferred import ALIAS_CHOICE_ROLE, DeferAliasChoice, alias_choice_role, m
 from ._deprecated import DEPRECATED_DIRECTIVE, DeprecatedDirective, inject_deprecation
 from ._factory_defaults import show_factory_defaults
 from ._formats import detect_format
-from ._formats._numpydoc import _convert_numpydoc_to_sphinx_fields  # ruff:ignore[unused-import]
 from ._formats._sphinx import (
-    _gives_its_type,
     _has_yields_section,
     _is_generator_type,
     _last_paragraph_end,
@@ -68,6 +66,7 @@ from ._resolver import (
     get_descriptor_type_hint,
     get_instance_var_annotations,
     get_obj_location,
+    object_at,
     resolve_string_annotations,
     resolve_type_guarded_imports,
     stub_path,
@@ -478,7 +477,7 @@ def _documenting(name: str, documented: Any) -> tuple[Any, str]:
     """
     if inspect.isclass(documented):
         return documented, _constructor_name(documented)
-    return _documented_owner(name), name.rsplit(".", maxsplit=1)[-1]
+    return _documented_owner(name)
 
 
 def _module_prefix(name: str) -> str:
@@ -601,24 +600,19 @@ def _class_member_type(name: str) -> type | None:
 
     A class can bind a function defined elsewhere (``add = staticmethod(helper)``).
     """
-    if (owner := _documented_owner(name)) is None:
+    owner, attribute = _documented_owner(name)
+    if owner is None:
         return None
-    attribute = name.rsplit(".", maxsplit=1)[-1]
     if attribute.startswith("__") and not attribute.endswith("__"):
         attribute = f"_{owner.__name__.lstrip('_')}{attribute}"
     return None if (member := inspect.getattr_static(owner, attribute, None)) is None else type(member)
 
 
-def _documented_owner(name: str) -> Any:
-    """Return the object holding the documented member ``name``, found through its imported module."""
-    parts = name.split(".")
-    if (split := next((i for i in range(len(parts) - 1, 0, -1) if ".".join(parts[:i]) in sys.modules), None)) is None:
-        return None
-    owner = sys.modules[".".join(parts[:split])]
-    for part in parts[split:-1]:
-        if (owner := getattr(owner, part, None)) is None:
-            return None
-    return owner
+def _documented_owner(name: str) -> tuple[Any, str]:
+    """Return the object holding the documented member ``name``, found through its imported module, and the member."""
+    *path, attribute = name.split(".")
+    split = next((i for i in range(len(path), 0, -1) if ".".join(path[:i]) in sys.modules), None)
+    return (None if split is None else object_at(".".join(path[:split]), path[split:])), attribute
 
 
 def _inject_setter_type(app: Sphinx, name: str, obj: Any, getter_hints: dict[str, Any], lines: list[str]) -> None:
@@ -645,9 +639,9 @@ def _inject_override(app: Sphinx, what: str, name: str, obj: Any, lines: list[st
     """Link the member a ``@typing.override`` method or property overrides."""
     if what not in {"method", "property"} or getattr(obj, "__override__", False) is not True:
         return
-    if not isinstance(owner := _documented_owner(name), type):
+    owner, attribute = _documented_owner(name)
+    if not isinstance(owner, type):
         return
-    attribute = name.rsplit(".", maxsplit=1)[-1]
     # an inherited member overrides what its defining class's bases define, not what that class itself does
     defining = next(index for index, klass in enumerate(owner.__mro__) if attribute in vars(klass))
     if (base := next((klass for klass in owner.__mro__[defining + 1 :] if attribute in vars(klass)), None)) is None:
@@ -1380,7 +1374,6 @@ def setup(app: Sphinx) -> dict[str, bool | str]:
 __all__ = [
     "MyTypeAliasForwardRef",
     "__version__",
-    "_gives_its_type",
     "backfill_type_hints",
     "format_annotation",
     "get_annotation_args",

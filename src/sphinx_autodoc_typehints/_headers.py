@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import inspect
-import sys
 from functools import cached_property, partial
 from typing import TYPE_CHECKING, Any, Final, cast
 
@@ -13,7 +12,13 @@ from sphinx.util import logging
 from sphinx.util.inspect import safe_getattr
 
 from ._annotations import annotation_state, format_annotation, signature_text
-from ._resolver import documented_type_names, resolve_annotations, resolve_type_guarded_imports, type_alias_namespace
+from ._resolver import (
+    documented_type_names,
+    object_at,
+    resolve_annotations,
+    resolve_type_guarded_imports,
+    type_alias_namespace,
+)
 from ._type_params import bound_type_args, specialize
 from ._typed_dict import typed_dict_keys
 
@@ -80,10 +85,8 @@ def _type_annotation(signode: addnodes.desc_signature) -> addnodes.desc_annotati
 
 
 def _hint(app: Sphinx, signode: addnodes.desc_signature, objtype: str, name: str) -> Any:
-    owner: Any = sys.modules.get(signode.get("module") or "")
     *path, attribute = signode.get("fullname", "").split(".")
-    for part in path:
-        owner = getattr(owner, part, None)
+    owner = object_at(signode.get("module"), path)
     # the header's own resolution reports nothing, the docstring of the same object warns about what fails there
     with logging.suppress_logging():
         hint = _declared_hint(app, owner, attribute, objtype, name)

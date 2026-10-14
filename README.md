@@ -660,7 +660,8 @@ typehints_fixup_module_name = fixup_module_name
 
 Editing the function re-reads the documents on the next incremental build, as changing any other option does. The
 extension tells by comparing the function's source, so a change only to a helper it calls or to data it reads goes
-unseen; run `sphinx-build -E` after such a change.
+unseen; run `sphinx-build -E` after such a change. A `functools.partial` or a callable instance has no source to
+compare, so every build re-reads every document; assign a plain function to keep incremental builds incremental.
 
 ### Suppress warnings
 
@@ -753,7 +754,9 @@ of only `*args` and `**kwargs`, which is what autodoc falls back to when it can'
 Autodoc writes the type after the name of data, an attribute or a property itself, evaluating the annotation before any
 event runs, so a name imported under `TYPE_CHECKING` resolved there only when documenting something else had imported it
 first. The extension renders that type again once the header is built, the way it renders a field's type, with the type
-aliases, `typehints_fully_qualified` and the `TYPE_CHECKING` imports applied.
+aliases, `typehints_fully_qualified` and the `TYPE_CHECKING` imports applied. The header therefore reads like the field,
+not like plain autodoc: `RATE: decimal.Decimal` shows as `RATE: Decimal` unless `typehints_fully_qualified` is on, and a
+class from a module in `autodoc_mock_imports` shows by its name, as it does in a field.
 
 Autodoc leaves the type parameters of a generic object out of its signature. The extension adds them after the name,
 with bounds, constraints and defaults, the way [PEP 695](https://peps.python.org/pep-0695/) writes them:
