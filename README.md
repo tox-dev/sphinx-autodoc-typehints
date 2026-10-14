@@ -749,7 +749,9 @@ A signature you write yourself is left as written when it names other parameters
 directive, `.. autofunction:: mod.f(x, y=3)`, or on the docstring's first line with
 [`autodoc_docstring_signature`](https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#confval-autodoc_docstring_signature).
 One with the same parameters, differing only in defaults or types, is replaced by the object's own, and so is one made
-of only `*args` and `**kwargs`, which is what autodoc falls back to when it can't see a class's parameters.
+of only `*args` and `**kwargs`, which is what autodoc falls back to when it can't see a class's parameters. A class
+takes the parameters autodoc reads for it: those of its metaclass's `__call__` ahead of `__new__` and `__init__`, unless
+that `__call__` only passes `*args` and `**kwargs` on.
 
 Autodoc writes the type after the name of data, an attribute or a property itself, evaluating the annotation before any
 event runs, so a name imported under `TYPE_CHECKING` resolved there only when documenting something else had imported it

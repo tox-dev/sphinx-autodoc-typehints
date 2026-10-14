@@ -26,10 +26,20 @@ from typing import (
 
 from docutils import nodes
 from sphinx.errors import ConfigError, PycodeError
+from sphinx.ext.autodoc._dynamic._signatures import (  # ruff:ignore[import-private-name]  # the metaclasses autodoc skips
+    _METACLASS_CALL_BLACKLIST,
+)
 from sphinx.locale import _  # ruff:ignore[import-private-name]  # the translation napoleon labels its fields with
 from sphinx.pycode import ModuleAnalyzer
 from sphinx.util import logging
-from sphinx.util.inspect import getdoc, object_description, signature_from_str, stringify_signature
+from sphinx.util.inspect import (
+    getdoc,
+    is_builtin_class_method,
+    object_description,
+    safe_getattr,
+    signature_from_str,
+    stringify_signature,
+)
 from sphinx.util.inspect import signature as sphinx_signature
 
 # re-exports for backward compatibility
@@ -115,7 +125,7 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-
 
     original_obj = obj
     if inspect.isclass(obj) and _declared_signature(obj) is None:
-        obj = getattr(obj, _constructor_name(obj))
+        obj = _metaclass_call(obj) or getattr(obj, _constructor_name(obj))
     # a wrapper may carry no annotations of its own, like the 3.14 lru_cache one that only copies __annotate__
     try:
         obj = _called_function(obj)
@@ -483,6 +493,23 @@ def _documenting(name: str, documented: Any) -> tuple[Any, str]:
 def _module_prefix(name: str) -> str:
     """Return the dotted path a documented name sits under, which scopes the aliases it can refer to."""
     return name.rpartition(".")[0]
+
+
+def _metaclass_call(cls: type) -> Any:
+    """Return the ``__call__`` of a metaclass, which autodoc takes a class signature from ahead of the constructor."""
+    if (
+        is_builtin_class_method(metaclass := type(cls), "__call__")
+        or not inspect.isfunction(call := safe_getattr(metaclass, "__call__", None))
+        or f"{call.__module__}.{call.__qualname__}" in _METACLASS_CALL_BLACKLIST
+    ):
+        return None
+    try:
+        parameters = sphinx_signature(call, bound_method=True).parameters.values()
+    except ValueError:
+        # autodoc moves on to the constructor too
+        return None
+    # a pass-through says nothing of the parameters, so the constructor shows them as for any catch-all (#903)
+    return None if all(param.kind in {param.VAR_POSITIONAL, param.VAR_KEYWORD} for param in parameters) else call
 
 
 def _constructor_name(cls: type) -> Literal["__new__", "__init__"]:
