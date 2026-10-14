@@ -139,7 +139,7 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-
                 return None
             if (member_type := _class_member_type(name)) is None:
                 return None
-            if not issubclass(member_type, classmethod | staticmethod) and not inspect.ismethod(obj):
+            if not issubclass(member_type, staticmethod) and not inspect.ismethod(obj):
                 start = 1
 
     sph_signature = sph_signature.replace(parameters=parameters[start:])
