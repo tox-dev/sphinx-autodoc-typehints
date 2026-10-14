@@ -53,6 +53,7 @@ from ._resolver import (
     get_obj_location,
     resolve_string_annotations,
     resolve_type_guarded_imports,
+    stub_path,
 )
 from ._type_params import add_type_params, declared_type_params
 from ._typed_dict import inject_extra_items, mark_optional_keys, typed_dict_keys
@@ -216,6 +217,9 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
     """Process the docstring for an entry."""
     original_obj = obj
     obj = obj.fget if isinstance(obj, property) else obj
+    # a stub supplies the types of what it describes, so editing it has to reread the pages documenting them
+    if (env := getattr(app, "env", None)) is not None and (stub := stub_path(obj)) is not None:
+        env.note_dependency(str(stub))
     # before unwrapping, as a decorator marks the function it is given
     declared = obj
     if not callable(obj):

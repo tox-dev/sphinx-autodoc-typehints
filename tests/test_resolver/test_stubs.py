@@ -32,17 +32,17 @@ from sphinx_autodoc_typehints._resolver._stubs import (
     _find_native_submodule_stub,
     _find_stub_for_module,
     _find_stub_owner,
-    _find_stub_path,
     _get_module,
     _get_stub_context,
     _parse_stub_ast,
     _resolve_import_from,
     _resolve_stub_imports,
     _stub_owner_package,
+    stub_path,
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Callable, Iterator
     from io import StringIO
 
     from sphinx.testing.util import SphinxTestApp
@@ -66,31 +66,31 @@ def stub_mod() -> Any:
         sys.modules.pop("stub_mod", None)
 
 
-def test_find_stub_path_locates_sibling_pyi(stub_mod: Any) -> None:
-    result = _find_stub_path(stub_mod.greet)
+def teststub_path_locates_sibling_pyi(stub_mod: Any) -> None:
+    result = stub_path(stub_mod.greet)
     assert result is not None
     assert result.suffix == ".pyi"
     assert result.stem == "stub_mod"
 
 
-def test_find_stub_path_returns_none_for_no_stub() -> None:
-    assert _find_stub_path(test_find_stub_path_returns_none_for_no_stub) is None
+def teststub_path_returns_none_for_no_stub() -> None:
+    assert stub_path(teststub_path_returns_none_for_no_stub) is None
 
 
-def test_find_stub_path_returns_none_for_no_module() -> None:
+def teststub_path_returns_none_for_no_module() -> None:
     obj = MagicMock(spec=[])
     obj.__module__ = None
     with patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getmodule", return_value=None):
-        assert _find_stub_path(obj) is None
+        assert stub_path(obj) is None
 
 
-def test_find_stub_path_returns_none_when_getfile_fails() -> None:
+def teststub_path_returns_none_when_getfile_fails() -> None:
     module = types.ModuleType("fake_mod")
     with (
         patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getmodule", return_value=module),
         patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getfile", side_effect=TypeError),
     ):
-        assert _find_stub_path(lambda: None) is None
+        assert stub_path(lambda: None) is None
 
 
 @pytest.mark.parametrize(
@@ -109,7 +109,7 @@ def test_find_stub_path_returns_none_when_getfile_fails() -> None:
         pytest.param("_mod.pypy39-pp73-x86_64-linux-gnu.so", id="pypy"),
     ],
 )
-def test_find_stub_path_extension_module(tmp_path: Path, ext_filename: str) -> None:
+def teststub_path_extension_module(tmp_path: Path, ext_filename: str) -> None:
     (tmp_path / ext_filename).write_bytes(b"")
     (tmp_path / "_mod.pyi").write_text("def f(x: int) -> None: ...\n")
     module = types.ModuleType("_mod")
@@ -118,12 +118,12 @@ def test_find_stub_path_extension_module(tmp_path: Path, ext_filename: str) -> N
         patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getmodule", return_value=module),
         patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getfile", return_value=module.__file__),
     ):
-        result = _find_stub_path(lambda: None)
+        result = stub_path(lambda: None)
     assert result is not None
     assert result.name == "_mod.pyi"
 
 
-def test_find_stub_path_extension_module_no_stub(tmp_path: Path) -> None:
+def teststub_path_extension_module_no_stub(tmp_path: Path) -> None:
     ext_filename = "_mod.cpython-312-x86_64-linux-gnu.so"
     (tmp_path / ext_filename).write_bytes(b"")
     module = types.ModuleType("_mod")
@@ -132,10 +132,10 @@ def test_find_stub_path_extension_module_no_stub(tmp_path: Path) -> None:
         patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getmodule", return_value=module),
         patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getfile", return_value=module.__file__),
     ):
-        assert _find_stub_path(lambda: None) is None
+        assert stub_path(lambda: None) is None
 
 
-def test_find_stub_path_extension_module_package_fallback(tmp_path: Path) -> None:
+def teststub_path_extension_module_package_fallback(tmp_path: Path) -> None:
     ext_filename = "_mod.cpython-312-x86_64-linux-gnu.so"
     (tmp_path / ext_filename).write_bytes(b"")
     stub_dir = tmp_path / "stubs"
@@ -148,12 +148,12 @@ def test_find_stub_path_extension_module_package_fallback(tmp_path: Path) -> Non
         patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getmodule", return_value=module),
         patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getfile", return_value=module.__file__),
     ):
-        result = _find_stub_path(lambda: None)
+        result = stub_path(lambda: None)
     assert result is not None
     assert result.name == "__init__.pyi"
 
 
-def test_find_stub_path_package_init_pyi(tmp_path: Path) -> None:
+def teststub_path_package_init_pyi(tmp_path: Path) -> None:
     pkg_dir = tmp_path / "mypkg"
     pkg_dir.mkdir()
     (pkg_dir / "__init__.py").write_text("")
@@ -166,12 +166,12 @@ def test_find_stub_path_package_init_pyi(tmp_path: Path) -> None:
     module.__path__ = [str(no_stub_dir), str(stub_dir)]
     module.__file__ = str(pkg_dir / "__init__.py")
     with patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getmodule", return_value=module):
-        result = _find_stub_path(module)
+        result = stub_path(module)
     assert result is not None
     assert result.name == "__init__.pyi"
 
 
-def test_find_stub_path_package_no_init_pyi(tmp_path: Path) -> None:
+def teststub_path_package_no_init_pyi(tmp_path: Path) -> None:
     pkg_dir = tmp_path / "mypkg"
     pkg_dir.mkdir()
     (pkg_dir / "__init__.py").write_text("")
@@ -179,7 +179,7 @@ def test_find_stub_path_package_no_init_pyi(tmp_path: Path) -> None:
     module.__path__ = [str(pkg_dir)]
     module.__file__ = str(pkg_dir / "__init__.py")
     with patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getmodule", return_value=module):
-        assert _find_stub_path(module) is None
+        assert stub_path(module) is None
 
 
 def test_parse_stub_ast_valid_file() -> None:
@@ -189,29 +189,30 @@ def test_parse_stub_ast_valid_file() -> None:
 
 
 def test_parse_stub_ast_caches_result() -> None:
-    stub_path = STUB_ROOT / "stub_mod.pyi"
-    _STUB_AST_CACHE.pop(stub_path, None)
-    first = _parse_stub_ast(stub_path)
-    second = _parse_stub_ast(stub_path)
-    assert first is second
-    _STUB_AST_CACHE.pop(stub_path, None)
+    stub = STUB_ROOT / "stub_mod.pyi"
+    assert _parse_stub_ast(stub) is _parse_stub_ast(stub)
 
 
-def test_parse_stub_ast_caches_none_for_bad_syntax(tmp_path: Path) -> None:
+def test_parse_stub_ast_reads_an_edited_stub_again(tmp_path: Path) -> None:
+    stub = tmp_path / "edited.pyi"
+    stub.write_text("def run(a: int) -> None: ...\n")
+    _parse_stub_ast(stub)
+    stub.write_text("def run(a: bytes) -> None: ...\n")
+    modified = stub.stat().st_mtime_ns + 1_000_000
+    os.utime(stub, ns=(modified, modified))
+    tree = _parse_stub_ast(stub)
+    assert tree is not None
+    assert ast.unparse(tree) == "def run(a: bytes) -> None:\n    ..."
+
+
+def test_parse_stub_ast_returns_none_for_bad_syntax(tmp_path: Path) -> None:
     bad_stub = tmp_path / "bad.pyi"
     bad_stub.write_text("def (broken syntax\n")
-    result = _parse_stub_ast(bad_stub)
-    assert result is None
-    assert bad_stub in _STUB_AST_CACHE
-    assert _STUB_AST_CACHE[bad_stub] is None
-    _STUB_AST_CACHE.pop(bad_stub, None)
+    assert _parse_stub_ast(bad_stub) is None
 
 
 def test_parse_stub_ast_returns_none_for_missing_file() -> None:
-    missing = Path("/nonexistent/stub.pyi")
-    _STUB_AST_CACHE.pop(missing, None)
-    assert _parse_stub_ast(missing) is None
-    _STUB_AST_CACHE.pop(missing, None)
+    assert _parse_stub_ast(Path("/nonexistent/stub.pyi")) is None
 
 
 @pytest.mark.parametrize(
@@ -514,7 +515,6 @@ def test_get_stub_context_returns_empty_for_bad_syntax(stub_mod: Any, tmp_path: 
     assert ns == {}
     assert names == set()
     assert not owner
-    _STUB_AST_CACHE.pop(bad_stub, None)
 
 
 @pytest.mark.sphinx("text", testroot="pyi-stubs")
@@ -921,3 +921,25 @@ def test_sphinx_build_documents_native_class(app: SphinxTestApp, status: StringI
     assert "build succeeded" in status.getvalue()
     result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
     assert "WarcRecord" in result
+
+
+@pytest.mark.sphinx("text", testroot="pyi-stubs")
+def test_editing_a_stub_rereads_the_pages_it_types(
+    app: SphinxTestApp, write_rst: Callable[[str], None], status: StringIO
+) -> None:
+    write_rst(".. autofunction:: stub_mod.greet")
+    app.build()
+    stub = Path(app.srcdir) / "stub_mod.pyi"
+    stub.write_text(
+        stub.read_text().replace(
+            "def greet(name: str, greeting: str) -> str:", "def greet(name: str, greeting: str) -> bytes:"
+        )
+    )
+    modified = stub.stat().st_mtime_ns + 1_000_000
+    os.utime(stub, ns=(modified, modified))
+    status.truncate(0)
+
+    app.build()
+
+    # the module this process already imported keeps the first types, so only the reread shows here
+    assert "1 changed" in status.getvalue()
