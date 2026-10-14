@@ -1745,7 +1745,7 @@ Unformatted = TypeVar("Unformatted")
     """,
     typehints_use_signature=True,
     typehints_use_signature_return=True,
-    typehints_formatter=lambda _, __=None: "Formatted",
+    typehints_formatter=lambda _annotation, _config: "Formatted",
 )
 def typehints_formatter_applied_to_signature[Unformatted](param: Unformatted) -> Unformatted:
     """
