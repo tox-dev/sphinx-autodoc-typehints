@@ -117,10 +117,9 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-
     original_obj = obj
     if inspect.isclass(obj) and _declared_signature(obj) is None:
         obj = getattr(obj, _constructor_name(obj))
-    # a wrapper may carry no annotations of its own, like the 3.14 lru_cache one that only copies __annotate__; one
-    # stating __signature__ is called with that, as inspect.signature and so autodoc go by
+    # a wrapper may carry no annotations of its own, like the 3.14 lru_cache one that only copies __annotate__
     try:
-        obj = inspect.unwrap(obj, stop=lambda func: _declared_signature(func) is not None)
+        obj = _called_function(obj)
         annotated = _annotated_function(obj)
     except ValueError:
         return None
@@ -324,6 +323,11 @@ def _annotated_function(obj: Any) -> Any:
     return inspect.unwrap(obj)
 
 
+def _called_function(obj: Any) -> Any:
+    """Unwrap ``obj`` to the function callers call, stopping at a wrapper stating ``__signature__`` as autodoc does."""
+    return inspect.unwrap(obj, stop=lambda func: _declared_signature(func) is not None)
+
+
 def _declared_signature(obj: Any) -> inspect.Signature | None:
     """Return the signature an object states in ``__signature__``, as a pydantic model does, which callers go by."""
     return signature if isinstance(signature := getattr(obj, "__signature__", None), inspect.Signature) else None
@@ -367,7 +371,7 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
         obj = getattr(obj, constructor := _constructor_name(obj))
         use_class_for_signature = constructor == "__new__" or _declared_signature(original_obj) is not None
     try:
-        obj = inspect.unwrap(obj)
+        obj = _called_function(obj)
         annotated = _annotated_function(obj)
     except ValueError:
         return
