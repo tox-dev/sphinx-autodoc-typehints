@@ -752,7 +752,7 @@ def setup(app: Sphinx) -> dict[str, bool | str]:
     app.add_config_value("typehints_document_overloads", True, "env")  # ruff:ignore[boolean-positional-value-in-call]
     app.add_config_value("typehints_use_signature", False, "env")  # ruff:ignore[boolean-positional-value-in-call]
     app.add_config_value("typehints_use_signature_return", False, "env")  # ruff:ignore[boolean-positional-value-in-call]
-    app.add_config_value("typehints_fixup_module_name", None, "env")
+    app.add_config_value("typehints_fixup_module_name", None, "")
     app.add_role("sphinx_autodoc_typehints_type", sphinx_autodoc_typehints_type_role)
     app.add_role(ALIAS_CHOICE_ROLE, alias_choice_role)
     app.add_post_transform(DeferAliasChoice)

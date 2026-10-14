@@ -508,6 +508,9 @@ def fixup_module_name(module: str) -> str:
 typehints_fixup_module_name = fixup_module_name
 ```
 
+Sphinx can't store a function in its cached environment, so, as with `typehints_formatter`, editing the function doesn't
+rebuild the pages that use it; run `sphinx-build -E` after changing it.
+
 ### Suppress warnings
 
 To silence all warnings from this extension:
