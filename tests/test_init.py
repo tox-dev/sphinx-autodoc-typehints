@@ -191,6 +191,20 @@ def test_process_docstring_types_a_callable_without_annotations(obj: Callable[..
     ]
 
 
+@pytest.mark.parametrize(
+    ("what", "obj"),
+    [
+        pytest.param("data", _Joiner(), id="data-callable-instance"),
+        pytest.param("data", _helper, id="data-function"),
+        pytest.param("attribute", _Joiner(), id="attribute-callable-instance"),
+    ],
+)
+def test_process_docstring_leaves_a_callable_value_untyped(what: str, obj: Callable[..., str]) -> None:
+    lines = ["The converter."]
+    process_docstring(make_docstring_app(), what, "mod.held", obj, None, lines)
+    assert lines == ["The converter."]
+
+
 _SENTINEL: Final = object()
 
 

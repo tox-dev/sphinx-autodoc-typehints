@@ -364,7 +364,8 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
         env.note_dependency(str(stub))
     # before unwrapping, as a decorator marks the function it is given
     declared = obj
-    if not callable(obj):
+    # a data or attribute entry documents the value it holds, which a call to it does not describe
+    if what in {"data", "attribute"} or not callable(obj):
         _maybe_inject_descriptor_type(app, what, name, obj, lines)
         return
     if inspect.isclass(obj):
