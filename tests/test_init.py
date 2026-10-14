@@ -5,6 +5,7 @@ import functools
 import importlib
 import inspect
 import sys
+import types
 from pathlib import Path
 from textwrap import dedent
 from typing import (
@@ -46,7 +47,6 @@ from sphinx_autodoc_typehints._resolver._util import get_obj_location
 from sphinx_autodoc_typehints.patches import _OVERLOADS_CACHE
 
 if TYPE_CHECKING:
-    import types
     from collections.abc import Callable
 
     from sphinx.testing.util import SphinxTestApp
@@ -313,6 +313,18 @@ def test_process_docstring_descriptor_with_existing_type_field() -> None:
     lines = [":type: str"]
     process_docstring(app, "attribute", "array.array.typecode", array.array.typecode, None, lines)
     assert lines == [":type: str"]
+
+
+def test_process_docstring_types_a_descriptor_with_the_role_the_inventory_uses() -> None:
+    import array  # ruff:ignore[import-outside-top-level]
+
+    app = make_docstring_app()
+    app.env = MagicMock(intersphinx_inventory={"py:data": {"types.ModuleType": ()}})
+    lines: list[str] = []
+    # the stub lookup reads files, so stand in for what a stub would say
+    with patch("sphinx_autodoc_typehints.get_descriptor_type_hint", return_value=types.ModuleType):
+        process_docstring(app, "attribute", "array.array.typecode", array.array.typecode, None, lines)
+    assert lines == ["", r":type: :sphinx_autodoc_typehints_type:`\:py\:data\:\`\~types.ModuleType\``"]
 
 
 _GUARDED_ACCOUNT: Final = (

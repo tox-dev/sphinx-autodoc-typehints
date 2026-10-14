@@ -219,7 +219,7 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
     # before unwrapping, as a decorator marks the function it is given
     declared = obj
     if not callable(obj):
-        _maybe_inject_descriptor_type(app, what, obj, lines)
+        _maybe_inject_descriptor_type(app, what, name, obj, lines)
         return
     if inspect.isclass(obj):
         # class and instance variable annotations evaluate in the modules defining the class and its __init__, so
@@ -274,7 +274,7 @@ def _resolved_type_hints(
     localns = {
         key: MyTypeAliasForwardRef(value, configured=True) for key, value in app.config["autodoc_type_aliases"].items()
     }
-    module_prefix = name.rsplit(".", maxsplit=1)[0] if "." in name else ""
+    module_prefix = _module_prefix(name)
     eager_aliases: dict[str, MyTypeAliasForwardRef] = {}
     if (env := getattr(app, "env", None)) is not None:
         deferred, eager_aliases = collect_documented_type_aliases(annotated, module_prefix, env)
@@ -301,6 +301,11 @@ def _resolved_type_hints(
         "_typehints_resolve_guarded_imports": partial(resolve_type_guarded_imports, app.config.autodoc_mock_imports),
     }
     return type_hints, state
+
+
+def _module_prefix(name: str) -> str:
+    """Return the dotted path a documented name sits under, which scopes the aliases it can refer to."""
+    return name.rpartition(".")[0]
 
 
 def _constructor_name(cls: type) -> Literal["__new__", "__init__"]:
@@ -334,7 +339,7 @@ def _annotation_state(config: Config, **values: Any) -> Generator[None, None, No
                 delattr(config, name)
 
 
-def _maybe_inject_descriptor_type(app: Sphinx, what: str, obj: Any, lines: list[str]) -> None:
+def _maybe_inject_descriptor_type(app: Sphinx, what: str, name: str, obj: Any, lines: list[str]) -> None:
     """C data descriptors document as plain attributes; lift their type from the stub."""
     if what != "attribute" or not (inspect.isgetsetdescriptor(obj) or inspect.ismemberdescriptor(obj)):
         return
@@ -342,10 +347,15 @@ def _maybe_inject_descriptor_type(app: Sphinx, what: str, obj: Any, lines: list[
         return
     if (hint := get_descriptor_type_hint(obj)) is None:
         return
-    formatted = add_type_css_class(
-        format_annotation(hint, app.config, short_literals=app.config.python_display_short_literal_types)
-    )
-    lines.extend(["", f":type: {formatted}"])
+    # rendered with the state a parameter's type gets, so aliases and the inventory's roles apply here too
+    with _annotation_state(
+        app.config,
+        _typehints_env=getattr(app, "env", None),
+        _typehints_module_prefix=_module_prefix(name),
+        _typehints_resolve_guarded_imports=partial(resolve_type_guarded_imports, app.config.autodoc_mock_imports),
+    ):
+        formatted = format_annotation(hint, app.config, short_literals=app.config.python_display_short_literal_types)
+    lines.extend(["", f":type: {add_type_css_class(formatted)}"])
 
 
 def _inject_overload_signatures(
