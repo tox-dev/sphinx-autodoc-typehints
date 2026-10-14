@@ -438,7 +438,8 @@ def _format_literal_arg(arg: Any, config: Config) -> str:
             return f":py:attr:`{member}`"
         # a ~ would keep only the member name, and members of different enums would read the same
         return f":py:attr:`{module}.{member}`" if fully_qualified else f":py:attr:`{member} <{module}.{member}>`"
-    return f"``{arg!r}``"
+    # an inline literal cannot hold a backtick, the literal role takes it escaped
+    return f":literal:`{rst.escape(text)}`" if "`" in (text := repr(arg)) else f"``{text}``"
 
 
 def _get_types_type(obj: Any) -> str | None:
