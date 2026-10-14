@@ -345,10 +345,11 @@ mod.f(x: str) -> bool
 ```
 
 Every line shows its return type, as that is what tells the overloads apart, except for a class, whose lines list its
-constructor's parameters. A default an overload writes as `...` shows the implementation's default for that parameter,
-as plain autodoc shows it. Only the first line is the link target of the object. A signature written in the directive,
-`.. autofunction:: f(x)`, shows as written, with the overloads in the `Overloads` field, while `:no-overloads:` keeps
-the signature of the implementation.
+constructor's parameters. A default an overload writes as `...` stays `...`, here and in the `Overloads` field: it says
+the parameter is optional, while the implementation's default may be one the overload's type rules out, as `True` for
+`flag: Literal[False] = ...`. Plain autodoc shows the implementation's default instead. Only the first line is the link
+target of the object. A signature written in the directive, `.. autofunction:: f(x)`, shows as written, with the
+overloads in the `Overloads` field, while `:no-overloads:` keeps the signature of the implementation.
 
 ### Show deprecations from `@deprecated`
 
