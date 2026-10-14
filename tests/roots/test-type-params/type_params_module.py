@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import sys
+from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Generic, overload
+from typing import TYPE_CHECKING, Generic, Protocol, overload
 
 from typing_extensions import ParamSpec, TypeVar, TypeVarTuple
 
@@ -202,6 +203,51 @@ class IntCrate(Crate[int]):
 
     :ivar size: how many it holds
     """
+
+
+class Readable(Protocol):
+    """A protocol that is not runtime checkable."""
+
+    def read(self) -> bytes: ...
+
+
+class File(Readable):
+    """Inherits its constructor from a protocol that is not runtime checkable."""
+
+
+class Feed[T](Protocol):
+    """A generic protocol that is not runtime checkable."""
+
+    def pull(self) -> T: ...
+
+
+class IntFeed(Feed[int]):
+    """Binds the type parameter of a protocol that is not runtime checkable."""
+
+
+class Sink[T](ABC):
+    """An abstract base class others register with."""
+
+    def put(self) -> T:
+        """Put one."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def close(self) -> None: ...
+
+
+class Registered:
+    """Counts as a subclass of the abstract base class without deriving from it."""
+
+
+Sink.register(Registered)
+
+
+class IntSink(Registered, Sink[int]):
+    """Binds the type parameter of its abstract base class, after a base registered with it."""
+
+    def close(self) -> None:
+        """Close it."""
 
 
 class Shelf[T]:
