@@ -171,9 +171,7 @@ def resolve_type_guarded_imports(autodoc_mock_imports: list[str], obj: Any) -> N
     if _should_skip_guarded_import_resolution(obj):
         return
 
-    module = inspect.getmodule(obj)
-
-    if module:
+    if module := _defining_module(obj):
         try:
             module_code = inspect.getsource(module)
         except (TypeError, OSError):
@@ -190,7 +188,13 @@ def _should_skip_guarded_import_resolution(obj: Any) -> bool:
     if not hasattr(obj, "__globals__"):
         return True
 
-    return obj.__module__ in _TYPE_GUARD_IMPORTS_RESOLVED or obj.__module__ in sys.builtin_module_names
+    module_name = obj.__globals__.get("__name__", obj.__module__)
+    return module_name in _TYPE_GUARD_IMPORTS_RESOLVED or module_name in sys.builtin_module_names
+
+
+def _defining_module(obj: Any) -> types.ModuleType | None:
+    # re-exporting reassigns ``__module__``, while the globals stay those of the module defining the object
+    return sys.modules.get(getattr(obj, "__globals__", {}).get("__name__", "")) or inspect.getmodule(obj)
 
 
 def _execute_guarded_code(autodoc_mock_imports: list[str], obj: Any, module_code: str) -> None:
