@@ -952,6 +952,17 @@ _FLOAT_TYPE: Final = r":sphinx_autodoc_typehints_type:`\:py\:class\:\`float\``"
             id="braces-after-default",
         ),
         pytest.param(
+            [":Parameters: * **b** -- the b", "", "               more about b", "             * **a** -- the a"],
+            {"typehints_defaults": "braces-after"},
+            [
+                f":Parameters: * **b** ({_STR_TYPE}) -- the b",
+                "",
+                "               more about b (default: ``'x'``)",
+                f"             * **a** ({_INT_TYPE}) -- the a",
+            ],
+            id="braces-after-default-past-a-paragraph",
+        ),
+        pytest.param(
             [":Parameters: **b** (*str*) -- the b"],
             {"typehints_defaults": "comma"},
             [":Parameters: **b** (*str*, default: ``'x'``) -- the b"],
