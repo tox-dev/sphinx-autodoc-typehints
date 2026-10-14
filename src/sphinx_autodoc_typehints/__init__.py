@@ -35,6 +35,7 @@ from ._annotations import (
     get_annotation_module,
 )
 from ._deferred import ALIAS_CHOICE_ROLE, DeferAliasChoice, alias_choice_role, merge_alias_choices
+from ._deprecated import DEPRECATED_DIRECTIVE, DeprecatedDirective, inject_deprecation
 from ._formats import detect_format
 from ._formats._numpydoc import _convert_numpydoc_to_sphinx_fields  # ruff:ignore[unused-import]
 from ._formats._sphinx import _has_yields_section, _is_generator_type, _strip_inline_param_type
@@ -169,6 +170,8 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
     """Process the docstring for an entry."""
     original_obj = obj
     obj = obj.fget if isinstance(obj, property) else obj
+    # before unwrapping, as a decorator marks the function it is given
+    declared = obj
     if not callable(obj):
         _maybe_inject_descriptor_type(app, what, obj, lines)
         return
@@ -218,6 +221,7 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
         _typehints_resolve_guarded_imports=partial(resolve_type_guarded_imports, app.config.autodoc_mock_imports),
     ):
         has_overloads = _inject_overload_signatures(app, what, name, obj, lines)
+        inject_deprecation(declared, lines, _summary_end(lines))
         _inject_types_to_docstring(
             type_hints,
             signature,
@@ -756,6 +760,7 @@ def setup(app: Sphinx) -> dict[str, bool | str]:
     app.add_config_value("typehints_fixup_module_name", None, "env")
     app.add_role("sphinx_autodoc_typehints_type", sphinx_autodoc_typehints_type_role)
     app.add_role(ALIAS_CHOICE_ROLE, alias_choice_role)
+    app.add_directive(DEPRECATED_DIRECTIVE, DeprecatedDirective)
     app.add_post_transform(DeferAliasChoice)
     app.connect("env-merge-info", merge_alias_choices)
     app.connect("env-before-read-docs", validate_config)
