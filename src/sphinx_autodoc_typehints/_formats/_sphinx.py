@@ -13,6 +13,7 @@ import re
 from itertools import pairwise
 from typing import TYPE_CHECKING, Any
 
+from docutils import nodes
 from docutils.frontend import get_default_settings
 from docutils.parsers.rst import Directive, directives
 from docutils.utils import new_document
@@ -26,7 +27,6 @@ from ._base import DocstringFormat, InsertIndexInfo
 if TYPE_CHECKING:
     import optparse
 
-    from docutils import nodes
     from docutils.frontend import Values
     from docutils.nodes import Node
     from sphinx.application import Sphinx
@@ -129,8 +129,15 @@ class _NoOpDirective(Directive):
     optional_arguments = 99
     final_argument_whitespace = True
 
-    def run(self) -> list[nodes.Node]:  # ruff:ignore[no-self-use]
-        return []
+    def run(self) -> list[nodes.Node]:
+        # a node keeps the directive's place, so the return type lands before it as before a docutils directive
+        placeholder = _SphinxDirectivePlaceholder()
+        placeholder.line = self.lineno
+        return [placeholder]
+
+
+class _SphinxDirectivePlaceholder(nodes.Element):
+    """Stand in for a directive only Sphinx knows, during the parse that finds where the return type goes."""
 
 
 def _node_line_no(node: Node) -> int | None:
@@ -198,7 +205,12 @@ class SphinxFieldListFormat(DocstringFormat):
             return InsertIndexInfo(insert_index=at, found_param=True)
 
         for child in doc.children:
-            if (tag := _tag_name(child)) in {"literal_block", "paragraph", "field_list"}:
+            if (tag := _tag_name(child)) in {
+                "literal_block",
+                "paragraph",
+                "field_list",
+                _SphinxDirectivePlaceholder.__name__,
+            }:
                 continue
             line_no = _node_line_no(child)
             # placement before a doctest block was tuned while it reported the line after its first one

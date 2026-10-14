@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import Final
+from pathlib import Path
+from textwrap import dedent
+from typing import TYPE_CHECKING, Final
 from unittest.mock import MagicMock, create_autospec
 
 import pytest
@@ -12,6 +14,11 @@ from sphinx.config import Config
 import sphinx_autodoc_typehints as sat
 from sphinx_autodoc_typehints._formats import InsertIndexInfo
 from sphinx_autodoc_typehints._formats._sphinx import SphinxFieldListFormat, _node_line_no
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from sphinx.testing.util import SphinxTestApp
 
 
 def test_inject_rtype_inserts_blank_line_before_rtype(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -160,3 +167,25 @@ def test_process_docstring_inline_return_type(lines: list[str], expected: list[s
         make_docstring_app(typehints_use_rtype=False), "function", "mod.returns_str", returns_str, None, lines
     )
     assert lines == expected
+
+
+@pytest.mark.sphinx("text", testroot="dummy")
+def test_rtype_stays_with_params_before_a_sphinx_directive(
+    app: SphinxTestApp, write_rst: Callable[[str], None]
+) -> None:
+    write_rst(".. autofunction:: dummy_module.versioned")
+    app.build()
+
+    assert (Path(app.srcdir) / "_build/text/index.txt").read_text() == dedent("""\
+        dummy_module.versioned(a)
+
+           Do it.
+
+           Parameters:
+              **a** ("int") -- the a
+
+           Return type:
+              "int"
+
+           Added in version 1.0.
+        """)

@@ -159,3 +159,14 @@ def dispatch(arg: object, flag: bool = False) -> str:
 @dispatch.register
 def _(arg: int, flag: bool = False) -> str:
     return f"{arg}{flag}"
+
+
+def versioned(a: int) -> int:
+    """
+    Do it.
+
+    :param a: the a
+
+    .. versionadded:: 1.0
+    """
+    return a
