@@ -11,7 +11,7 @@ from sphinx.domains.python._annotations import _parse_type_list  # ruff:ignore[i
 from sphinx.util.typing import stringify_annotation
 
 if sys.version_info >= (3, 14):  # pragma: >=3.14 cover
-    from annotationlib import Format, call_evaluate_function
+    from annotationlib import Format, call_evaluate_function, get_annotations
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
@@ -80,11 +80,23 @@ def bound_type_args(documenting: Any, attribute: str) -> dict[Any, Any]:
     """
     if (
         not isinstance(documenting, type)
-        or (definer := next((klass for klass in documenting.__mro__ if attribute in vars(klass)), documenting))
+        or (definer := next((klass for klass in documenting.__mro__ if _defines(klass, attribute)), documenting))
         is documenting
     ):
         return {}
     return _arguments(definer, _parametrized(documenting, definer))
+
+
+def _defines(klass: type, attribute: str) -> bool:
+    """Whether ``klass`` sets ``attribute`` or only annotates it in its body, as ``value: T`` does."""
+    return attribute in vars(klass) or attribute in _own_annotations(klass)
+
+
+def _own_annotations(klass: type) -> dict[str, Any]:
+    # an annotation may name what only a type checker imports, so read it without evaluating
+    if sys.version_info >= (3, 14):  # pragma: >=3.14 cover
+        return get_annotations(klass, format=Format.FORWARDREF)
+    return vars(klass).get("__annotations__", {})  # pragma: <3.14 cover
 
 
 def specialize(annotation: Any, arguments: dict[Any, Any]) -> Any:

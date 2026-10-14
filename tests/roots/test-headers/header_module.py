@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 from functools import cached_property
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING, Annotated, Generic, TypeVar
 
 if TYPE_CHECKING:
     from decimal import Decimal
+
+U = TypeVar("U")
 
 LIMIT: Annotated[int, "a cap"] = 3
 """The limit."""
@@ -40,3 +42,33 @@ class Account:
     def kind(cls) -> Annotated[str, "a label"]:
         """The kind."""
         return "account"
+
+
+class Box[T]:
+    """Holds a value."""
+
+    value: T
+    """The value."""
+
+    label: tuple[T, ...] = ()
+    """The label."""
+
+    @property
+    def first(self) -> T:
+        """The first."""
+        raise NotImplementedError
+
+
+class IntBox(Box[int]):
+    """Holds an integer."""
+
+
+class Legacy(Generic[U]):  # ruff:ignore[non-pep695-generic-class]  # the legacy form under test
+    """Holds items the legacy way."""
+
+    items: list[U]
+    """The items."""
+
+
+class StrLegacy(Legacy[str]):
+    """Holds strings the legacy way."""
