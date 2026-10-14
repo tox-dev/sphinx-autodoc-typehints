@@ -539,12 +539,22 @@ class _Deprecated:
     def __init__(self, value: float) -> None: ...
 
 
+_STATED: Final = inspect.Signature([inspect.Parameter("value", inspect.Parameter.KEYWORD_ONLY, annotation=float)])
+
+
+class _StatesSignature:
+    __signature__ = _STATED
+
+    def __init__(self, **data: object) -> None: ...
+
+
 @pytest.mark.parametrize(
     ("cls", "expected"),
     [
         pytest.param(_BothClass, "(value: float)", id="new-beside-init"),
         pytest.param(_InitOverridesNew, "(count: int)", id="init-overrides-inherited-new"),
         pytest.param(_Deprecated, "(value: float)", id="new-wrapping-object-new"),  # ty: ignore[deprecated]  # the case under test
+        pytest.param(_StatesSignature, "(*, value: float)", id="stated-signature"),
     ],
 )
 def test_process_signature_picks_constructor_like_inspect(cls: type, expected: str) -> None:
@@ -571,12 +581,37 @@ _FLOAT_VALUE: Final = [r":type value: :sphinx_autodoc_typehints_type:`\:py\:clas
             ["", ".. sphinx_autodoc_typehints_deprecated::", "", "   use something else", "", *_FLOAT_VALUE],
             id="init-beside-new-wrapping-object-new",
         ),
+        pytest.param(_StatesSignature, _FLOAT_VALUE, id="stated-signature"),
     ],
 )
 def test_process_docstring_types_params_from_the_constructor(cls: type, expected: list[str]) -> None:
     lines = [":param value: doc"]
     process_docstring(make_docstring_app(typehints_document_rtype=False), "class", "test.cls", cls, None, lines)
     assert lines == expected
+
+
+def _stated(*args, **kwargs): ...  # ruff:ignore[missing-type-args, missing-type-kwargs, missing-return-type-private-function]  # stated below
+
+
+_stated.__signature__ = _STATED.replace(return_annotation=str)  # ty: ignore[unresolved-attribute]  # the case under test
+
+
+def test_process_signature_strips_a_stated_signature() -> None:
+    assert process_signature(make_sig_app(), "function", "mod.stated", _stated, Options(), "", "") == (
+        "(*, value)",
+        None,
+    )
+
+
+def test_process_docstring_types_a_stated_signature() -> None:
+    lines = [":param value: doc"]
+    process_docstring(make_docstring_app(), "function", "mod.stated", _stated, None, lines)
+    assert lines == [
+        r":type value: :sphinx_autodoc_typehints_type:`\:py\:class\:\`float\``",
+        ":param value: doc",
+        "",
+        r":rtype: :sphinx_autodoc_typehints_type:`\:py\:class\:\`str\``",
+    ]
 
 
 def test_inject_types_no_signature() -> None:
