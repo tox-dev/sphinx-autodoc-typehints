@@ -622,6 +622,37 @@ def test_get_all_type_hints_class_member_does_not_shadow_global(
     assert hints == expected
 
 
+@pytest.mark.parametrize(
+    "definition",
+    [
+        pytest.param('Kind = typing.TypeVar("Kind")', id="type-var"),
+        pytest.param('Kind = typing.ParamSpec("Kind")', id="param-spec"),
+        pytest.param('Kind = typing.TypeVarTuple("Kind")', id="type-var-tuple"),
+        pytest.param("Kind = tuple[int, int]", id="generic-alias"),
+        pytest.param("Kind = typing.Optional[int]", id="typing-alias"),
+        pytest.param("Kind = int | str", id="union"),
+        pytest.param("type Kind = int", id="type-statement"),
+        pytest.param('Kind = typing_extensions.TypeAliasType("Kind", int)', id="typing-extensions-alias"),
+        pytest.param('Kind = typing.NewType("Kind", int)', id="new-type"),
+    ],
+)
+def test_get_all_type_hints_resolves_a_type_from_the_class_body(
+    guarded_module: _GuardedModuleBuilder, definition: str
+) -> None:
+    module = guarded_module(
+        "from __future__ import annotations\n"
+        "import typing\n"
+        "import typing_extensions\n"
+        "\n"
+        "class Holder:\n"
+        f"    {definition}\n"
+        "\n"
+        "    def take(self, value: Kind) -> None: ...\n"
+    )
+    hints = get_all_type_hints([], module.Holder.take, f"{module.__name__}.Holder.take", {})
+    assert hints == {"value": module.Holder.Kind, "return": type(None)}
+
+
 def test_build_localns_adds_ancestor_classes() -> None:
     import tests.roots.test_nested_attrs_localns as mod  # ruff:ignore[import-outside-top-level]
 

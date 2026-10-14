@@ -9,12 +9,24 @@ import importlib.util
 import inspect
 import sys
 import types
-from typing import TYPE_CHECKING, Any, Final, ForwardRef, ParamSpec, TypeVar, TypeVarTuple, Union, get_type_hints
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Final,
+    ForwardRef,
+    NewType,
+    ParamSpec,
+    TypeVar,
+    TypeVarTuple,
+    Union,
+    get_origin,
+    get_type_hints,
+)
 
 from sphinx.ext.autodoc.mock import mock
 from sphinx.util import logging
 
-from sphinx_autodoc_typehints._annotations import MyTypeAliasForwardRef
+from sphinx_autodoc_typehints._annotations import MyTypeAliasForwardRef, _is_type_alias
 
 from ._stubs import _backfill_descriptor_annotation, _backfill_from_stub, _get_stub_context
 from ._type_comments import backfill_type_hints
@@ -364,10 +376,19 @@ def _build_localns(obj: Any, localns: Mapping[str, Any]) -> dict[str, Any]:
                 result[part] = current
             result.update({p.__name__: p for p in _type_params(current)})
         if inspect.isroutine(obj) and inspect.isclass(current):
-            # nested classes resolve as they would eagerly, but other members (a method named list, a field defaulting
-            # to None) must not shadow the module globals that typing.get_type_hints resolves against
-            result = {**{key: value for key, value in vars(current).items() if inspect.isclass(value)}, **result}
+            # nested classes, type variables and aliases resolve as they would eagerly, but other members (a method
+            # named list, a field defaulting to None) must not shadow the module globals get_type_hints resolves against
+            result = {**{key: value for key, value in vars(current).items() if _is_type_like(value)}, **result}
     return result
+
+
+def _is_type_like(value: Any) -> bool:
+    return (
+        inspect.isclass(value)
+        or isinstance(value, TypeVar | ParamSpec | TypeVarTuple | NewType)
+        or get_origin(value) is not None
+        or _is_type_alias(value)
+    )
 
 
 def _type_params(obj: Any) -> tuple[TypeVar | ParamSpec | TypeVarTuple, ...]:
