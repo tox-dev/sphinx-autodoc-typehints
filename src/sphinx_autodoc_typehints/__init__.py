@@ -53,7 +53,7 @@ from ._resolver import (
     resolve_type_guarded_imports,
 )
 from ._type_params import add_type_params
-from ._typed_dict import typed_dict_keys
+from ._typed_dict import inject_extra_items, mark_optional_keys, typed_dict_keys
 from .patches import _OVERLOADS_CACHE, install_patches
 from .version import __version__
 
@@ -235,6 +235,7 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
             documented_elsewhere=_params_documented_elsewhere(app, name, original_obj, signature, lines),
         )
         _inject_ivar_types(ivar_annotations, app, lines)
+        inject_extra_items(app, original_obj, lines)
 
 
 def _constructor_name(cls: type) -> Literal["__new__", "__init__"]:
@@ -785,6 +786,7 @@ def setup(app: Sphinx) -> dict[str, bool | str]:
     app.connect("autodoc-process-signature", process_signature)
     app.connect("autodoc-process-docstring", process_docstring)
     app.connect("object-description-transform", add_type_params)
+    app.connect("object-description-transform", mark_optional_keys)
     install_patches(app)
     return {
         "version": __version__,

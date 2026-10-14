@@ -48,6 +48,7 @@ features above. See [Avoid duplicate types with built-in Sphinx](#avoid-duplicat
   - [Change how union types look](#change-how-union-types-look)
   - [Show default parameter values](#show-default-parameter-values)
   - [Document `**kwargs` typed with a `TypedDict`](#document-kwargs-typed-with-a-typeddict)
+  - [Document `TypedDict` classes](#document-typeddict-classes)
   - [Control overload signature display](#control-overload-signature-display)
   - [Show deprecations from `@deprecated`](#show-deprecations-from-deprecated)
   - [Keep type hints in function signatures](#keep-type-hints-in-function-signatures)
@@ -269,6 +270,20 @@ def configure(**kwargs: Unpack[Options]) -> None:
 
 renders `verbose` as `bool` and `level` as `NotRequired[int]`, since a caller may leave it out. A key described through
 `Annotated[..., Doc(...)]`, or every key with `always_document_param_types = True`, gets a keyword entry of its own.
+
+### Document `TypedDict` classes
+
+A `TypedDict` documented with `:members:` lists its keys as attributes. A key that may be left out shows as
+`NotRequired[...]`, also when the class's `total=False` makes it so rather than its annotation. The items a
+[PEP 728](https://peps.python.org/pep-0728/) `TypedDict` accepts beyond its keys show as an `Extra items` field:
+
+```python
+class Counts(TypedDict, extra_items=int):
+    total: int
+```
+
+shows `Extra items: int`, and a `closed=True` class, or one inheriting from it, shows `Extra items: Never`, its
+equivalent. A docstring with its own `:Extra items:` field keeps it.
 
 ### Control overload signature display
 
