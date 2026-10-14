@@ -166,9 +166,13 @@ class SphinxFieldListFormat(DocstringFormat):
     def inject_param_type(self, lines: list[str], arg_name: str, formatted_type: str, at: int) -> None:  # ruff:ignore[no-self-use]
         lines.insert(at, f":type {arg_name}: {formatted_type}")
 
-    def add_undocumented_param(self, lines: list[str], arg_name: str) -> int:  # ruff:ignore[no-self-use]
-        lines.append(f":param {arg_name}:")
-        return len(lines) - 1
+    def add_undocumented_param(  # ruff:ignore[no-self-use]
+        self, lines: list[str], arg_name: str, description: str = "", *, before: int | None = None
+    ) -> int:
+        # beside the documented parameters, not after whatever the docstring ends with, such as its examples
+        at = _after_last_param_field(lines) if before is None else before
+        lines.insert(at, f":param {arg_name}: {description}".rstrip())
+        return at
 
     def find_preexisting_type(self, lines: list[str], arg_name: str) -> tuple[str, bool]:  # ruff:ignore[no-self-use]
         # napoleon types a keyword argument with kwtype, and paramtype works for both parameter kinds
@@ -311,3 +315,19 @@ def _last_paragraph_end(lines: list[str], at: int) -> int:
 
 def _indent(line: str) -> int:
     return len(line) - len(line.lstrip())
+
+
+def _after_last_param_field(lines: list[str]) -> int:
+    """Return the index past the last parameter field and its continuation lines, or the end without one."""
+    fields = ("type", *(synonym.strip() for synonym in PARAM_SYNONYMS))
+    found = (
+        at
+        for at, line in enumerate(lines)
+        if (field := _get_sphinx_line_keyword_and_argument(line)) and field[0] in fields
+    )
+    if (last := max(found, default=None)) is None:
+        return len(lines)
+    end = last + 1
+    while end < len(lines) and lines[end][:1].isspace() and lines[end].strip():
+        end += 1
+    return end

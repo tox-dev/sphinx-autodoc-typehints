@@ -441,6 +441,9 @@ def _inject_arg_signature(  # ruff:ignore[too-many-arguments, too-many-positiona
     annotation = type_hints.get(arg_name)
     default = signature.parameters[arg_name].default
     doc_description = _extract_doc_description(annotation) if annotation is not None else None
+    # taken by the signature's own name, as the docstring may spell it escaped (``x\_``)
+    names = list(signature.parameters)
+    later_names = names[names.index(arg_name) + 1 :]
 
     arg_name, insert_index = _find_param(lines, arg_name, fmt)
 
@@ -458,15 +461,18 @@ def _inject_arg_signature(  # ruff:ignore[too-many-arguments, too-many-positiona
         return
 
     if insert_index is None and doc_description:
-        lines.append(f":param {arg_name}: {doc_description}")
-        insert_index = len(lines) - 1
+        insert_index = fmt.add_undocumented_param(
+            lines, arg_name, doc_description, before=_next_documented_param(lines, later_names, fmt)
+        )
     elif (
         annotation is not None
         and insert_index is None
         and app.config.always_document_param_types
         and arg_name not in documented_elsewhere
     ):
-        insert_index = fmt.add_undocumented_param(lines, arg_name)
+        insert_index = fmt.add_undocumented_param(
+            lines, arg_name, before=_next_documented_param(lines, later_names, fmt)
+        )
 
     if insert_index is None:
         return
@@ -558,6 +564,12 @@ def _type_combined_field_entry(app: Sphinx, lines: list[str], arg_name: str, ann
         end += 1
     lines[end] += after
     return True
+
+
+def _next_documented_param(lines: list[str], later_names: list[str], fmt: Any) -> int | None:
+    """Return where the docstring documents the first of the later parameters, so fields keep signature order."""
+    found = (fmt.find_param(lines, name) for name in later_names)
+    return min((at for at in found if at is not None), default=None)
 
 
 def _place_over_preexisting_type(lines: list[str], preexisting_line: str, type_annotation: str, *, keep: bool) -> None:

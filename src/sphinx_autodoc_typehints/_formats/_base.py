@@ -33,7 +33,9 @@ class DocstringFormat(ABC):
         """Insert type annotation for a parameter at the given index."""
 
     @abstractmethod
-    def add_undocumented_param(self, lines: list[str], arg_name: str) -> int:
+    def add_undocumented_param(
+        self, lines: list[str], arg_name: str, description: str = "", *, before: int | None = None
+    ) -> int:
         """Add a :param: line for an undocumented parameter, return its index."""
 
     @abstractmethod
