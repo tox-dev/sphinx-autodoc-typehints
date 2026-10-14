@@ -236,16 +236,13 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
         signature = getattr(config, "_typehints_signature", False)
         if isinstance(annotation, WrittenTypeAlias) and not signature:
             rendered = yield annotation.value
-            # the scopes the annotation looks the name up in, innermost first, then the name documented unqualified
-            parts = module_prefix.split(".")
-            scopes = [f"{'.'.join(parts[:end])}.{annotation.name}" for end in range(len(parts), 0, -1)]
-            for candidate in reversed([*scopes, annotation.name]):
+            for candidate in reversed(alias_lookup_names(module_prefix, annotation.name)):
                 linked = f":py:type:`{prefix}{candidate}`"
                 rendered = defer_alias_choice(config, linked, rendered, objtype="type") or rendered
             return rendered
         if (env := getattr(config, "_typehints_env", None)) is not None:
             py_domain = env.get_domain("py")
-            for candidate in (f"{module_prefix}.{annotation.name}", annotation.name):
+            for candidate in alias_lookup_names(module_prefix, annotation.name):
                 if candidate in py_domain.objects and py_domain.objects[candidate].objtype == "type":
                     return f":py:type:`{prefix}{candidate}`"
         if isinstance(annotation, WrittenTypeAlias):
@@ -429,6 +426,17 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
         reference = defer_alias_choice(config, local, reference) or reference
     # B901: returning a value from a generator is intentional here — the driver reads it via StopIteration
     return f"{reference}{escape}{formatted_args}"  # ruff:ignore[return-in-generator]
+
+
+def alias_lookup_names(module_prefix: str, name: str) -> list[str]:
+    """Return the names an alias used under ``module_prefix`` may be documented as, innermost scope first."""
+    return [*(f"{scope}.{name}" for scope in enclosing_scopes(module_prefix)), name]
+
+
+def enclosing_scopes(module_prefix: str) -> list[str]:
+    """Annotations see the names of the module and the class bodies around them, not those of other modules."""
+    parts = module_prefix.split(".")
+    return [".".join(parts[:end]) for end in range(len(parts), 0, -1)]
 
 
 def _format_mock_subscript(annotation: Any) -> str:

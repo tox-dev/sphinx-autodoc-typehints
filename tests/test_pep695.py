@@ -790,6 +790,25 @@ def test_eager_alias_documented_after_its_use_shows_its_value_in_the_signature(a
     assert "mod_eager.count_eager(amount: int, limit: int)" in result
 
 
+@pytest.mark.parametrize(
+    ("directive", "expected"),
+    [
+        pytest.param("automethod:: mod_eager.Users.get", "Users.get(user_id: UserId)", id="method-signature"),
+        pytest.param("autoproperty:: mod_eager.Users.size", "property Users.size: Count", id="property-header"),
+    ],
+)
+@pytest.mark.sphinx("text", testroot="integration", confoverrides={"typehints_use_signature": True})
+def test_eager_alias_of_the_module_in_a_class_member_signature(
+    app: SphinxTestApp, directive: str, expected: str
+) -> None:
+    (Path(app.srcdir) / "index.rst").write_text(
+        f".. py:type:: mod_eager.UserId\n\n.. py:type:: mod_eager.Count\n\n.. {directive}\n"
+    )
+    app.build()
+
+    assert expected in normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
+
+
 def _special_formatter(annotation: Any, _config: Config) -> str | None:
     return "**SPECIAL**" if getattr(annotation, "__name__", None) == "Special" else None
 

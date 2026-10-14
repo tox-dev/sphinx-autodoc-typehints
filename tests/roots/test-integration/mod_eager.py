@@ -46,6 +46,11 @@ class Users:
         """
         return f"{type(self).__name__} {user_id}"
 
+    @property
+    def size(self) -> Count:
+        """The number of users."""
+        return 0
+
 
 class Special:
     """A class a formatter renders."""
