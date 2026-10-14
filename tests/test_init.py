@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import enum
 import functools
 import importlib
 import inspect
@@ -685,6 +686,36 @@ def test_process_docstring_types_a_combined_parameter_field(
     app = make_docstring_app(typehints_document_rtype=False, **overrides)
     process_docstring(app, "function", "mod.documented", documented, None, lines)
     assert lines == expected
+
+
+class _Mode(enum.Enum):
+    FAST = 1
+
+
+class _MultiLineRepr:
+    def __repr__(self) -> str:
+        return "MultiLine(\n  a=1,\n)"
+
+
+@pytest.mark.parametrize(
+    ("default", "expected"),
+    [
+        pytest.param(object(), "<object object>", id="sentinel"),
+        pytest.param(_Mode.FAST, "_Mode.FAST", id="enum-member"),
+        pytest.param(frozenset({"gamma", "alpha", "beta"}), "frozenset({'alpha', 'beta', 'gamma'})", id="frozenset"),
+        pytest.param(_MultiLineRepr(), "MultiLine(   a=1, )", id="multi-line-repr"),
+    ],
+)
+def test_process_docstring_describes_a_default_like_the_signature(default: object, expected: str) -> None:
+    def func(value: object = default) -> None: ...
+
+    lines = [":param value: the value"]
+    app = make_docstring_app(typehints_document_rtype=False, typehints_defaults="comma")
+    process_docstring(app, "function", "mod.func", func, None, lines)
+    assert lines == [
+        rf":type value: :sphinx_autodoc_typehints_type:`\:py\:class\:\`object\``, default: ``{expected}``",
+        ":param value: the value",
+    ]
 
 
 def test_process_docstring_strips_inline_param_type() -> None:

@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
 from docutils import nodes
 from sphinx.util import logging
-from sphinx.util.inspect import getdoc, stringify_signature
+from sphinx.util.inspect import getdoc, object_description, stringify_signature
 from sphinx.util.inspect import signature as sphinx_signature
 
 # re-exports for backward compatibility
@@ -362,7 +362,7 @@ def _format_overload_lines(overloads: list[inspect.Signature], obj: Any, app: Sp
 def format_default(app: Sphinx, default: Any, is_annotated: bool) -> str | None:  # ruff:ignore[boolean-type-hint-positional-argument]
     if default is inspect.Parameter.empty:
         return None
-    formatted = repr(default).replace("\\", "\\\\")
+    formatted = object_description(default).replace("\\", "\\\\")
 
     if is_annotated:
         if app.config.typehints_defaults.startswith("braces"):
