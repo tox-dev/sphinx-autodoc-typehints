@@ -6,7 +6,7 @@ import importlib
 import inspect
 from pathlib import Path
 from textwrap import dedent
-from typing import TYPE_CHECKING, Any, Final, NamedTuple
+from typing import TYPE_CHECKING, Annotated, Any, Final, NamedTuple
 from unittest.mock import MagicMock, create_autospec, patch
 
 import pytest
@@ -17,6 +17,7 @@ from sphinx.application import Sphinx
 from sphinx.config import Config
 from sphinx.ext.autodoc import Options
 from sphinx.ext.autosummary import extract_summary
+from typing_extensions import Doc
 
 import sphinx_autodoc_typehints as sat
 from sphinx_autodoc_typehints import (
@@ -761,6 +762,53 @@ def test_process_docstring_describes_a_default_like_the_signature(default: objec
         rf":type value: :sphinx_autodoc_typehints_type:`\:py\:class\:\`object\``, default: ``{expected}``",
         ":param value: the value",
     ]
+
+
+_A_TYPE: Final = r":type a: :sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``"
+_B_TYPE: Final = r":type b: :sphinx_autodoc_typehints_type:`\:py\:class\:\`str\``"
+
+
+def _pair(a: int, b: str) -> None: ...
+
+
+def _described(a: Annotated[int, Doc("the a")], b: str) -> None: ...
+
+
+@pytest.mark.parametrize(
+    ("func", "lines", "expected"),
+    [
+        pytest.param(
+            _pair,
+            [":param b: the b", "", "Closing."],
+            [_A_TYPE, ":param a:", _B_TYPE, ":param b: the b", "", "Closing."],
+            id="before-a-later-param",
+        ),
+        pytest.param(
+            _pair,
+            [":param a: the a", "    more", "", "Closing."],
+            [_A_TYPE, ":param a: the a", "    more", _B_TYPE, ":param b:", "", "Closing."],
+            id="after-the-last-param",
+        ),
+        pytest.param(
+            _pair,
+            ["Closing."],
+            ["Closing.", _A_TYPE, ":param a:", _B_TYPE, ":param b:"],
+            id="none-documented",
+        ),
+        pytest.param(
+            _described,
+            [":param b: the b", "", "Closing."],
+            [_A_TYPE, ":param a: the a", _B_TYPE, ":param b: the b", "", "Closing."],
+            id="doc-description",
+        ),
+    ],
+)
+def test_process_docstring_adds_params_in_signature_order(
+    func: Callable[..., None], lines: list[str], expected: list[str]
+) -> None:
+    app = make_docstring_app(always_document_param_types=True, typehints_document_rtype=False)
+    process_docstring(app, "function", "mod.func", func, None, lines)
+    assert lines == expected
 
 
 def test_process_docstring_strips_inline_param_type() -> None:

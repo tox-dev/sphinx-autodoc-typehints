@@ -180,9 +180,11 @@ class NumpydocFormat(DocstringFormat):
     def inject_param_type(self, lines: list[str], arg_name: str, formatted_type: str, at: int) -> None:
         self._sphinx.inject_param_type(lines, arg_name, formatted_type, at)
 
-    def add_undocumented_param(self, lines: list[str], arg_name: str) -> int:
+    def add_undocumented_param(
+        self, lines: list[str], arg_name: str, description: str = "", *, before: int | None = None
+    ) -> int:
         self._ensure_converted(lines)
-        return self._sphinx.add_undocumented_param(lines, arg_name)
+        return self._sphinx.add_undocumented_param(lines, arg_name, description, before=before)
 
     def find_preexisting_type(self, lines: list[str], arg_name: str) -> tuple[str, bool]:
         return self._sphinx.find_preexisting_type(lines, arg_name)
