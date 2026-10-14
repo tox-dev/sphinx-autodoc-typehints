@@ -280,7 +280,16 @@ def _extract_annotations_from_stub(tree: ast.Module, obj: Any) -> dict[str, str]
         return {}
     if isinstance(nodes[0], ast.ClassDef):
         return _extract_class_annotations(nodes[0])
-    variants = [node for node in nodes if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef)]
+    # a property's setter and deleter share its name but not its type, which the getter alone carries
+    variants = [
+        node
+        for node in nodes
+        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef)
+        and not any(
+            ast.unparse(decorator) in {f"{node.name}.setter", f"{node.name}.deleter"}
+            for decorator in node.decorator_list
+        )
+    ]
     # overload variants describe one function together; an implementation signature, when given, says it directly
     implementations = [node for node in variants if not _is_overload(node)]
     return _merge_annotations([_extract_func_annotations(node) for node in implementations or variants])

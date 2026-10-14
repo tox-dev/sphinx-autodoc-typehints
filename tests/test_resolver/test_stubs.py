@@ -11,6 +11,7 @@ import sysconfig
 import textwrap
 import types
 from collections.abc import Sequence
+from operator import attrgetter
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 from unittest.mock import MagicMock, patch
@@ -327,10 +328,11 @@ def test_backfill_from_stub(stub_mod: Any, attr: str, expected: dict[str, str]) 
         pytest.param("version_gated", {"value": int, "return": bytes}, id="version-gated"),
         pytest.param("overloaded", {"value": int | str, "return": int | str}, id="overloaded"),
         pytest.param("extras_only", {"value": float, "return": float}, id="undecidable-condition"),
+        pytest.param("Box.size.fget", {"return": int}, id="property-with-setter-and-deleter"),
     ],
 )
 def test_get_all_type_hints_reads_stub_variants(stub_mod: Any, attr: str, expected: dict[str, type]) -> None:
-    assert get_all_type_hints([], getattr(stub_mod, attr), f"stub_mod.{attr}", {}) == expected
+    assert get_all_type_hints([], attrgetter(attr)(stub_mod), f"stub_mod.{attr}", {}) == expected
 
 
 @pytest.mark.parametrize(
