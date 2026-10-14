@@ -39,6 +39,7 @@ from unittest.mock import MagicMock, create_autospec
 import pytest
 import typing_extensions
 from sphinx.config import Config
+from sphinx.ext.autodoc.mock import mock
 from sphinx.util.inspect import TypeAliasForwardRef
 
 from sphinx_autodoc_typehints import (
@@ -720,6 +721,22 @@ def test_format_annotation_alias_union_leaves_optional_alone() -> None:
     bars = format_annotation(alias | None, config)
     optional_alias = Optional[alias]  # ty: ignore[invalid-type-form]  # the cached runtime Optional is under test
     assert (bars, format_annotation(optional_alias, config)) == ("Json | :py:obj:`None`", optional)
+
+
+@pytest.mark.parametrize(
+    ("subscript", "expected"),
+    [
+        pytest.param(lambda sub: sub.Thing[int], r"\[:py:class:`int`]", id="builtin"),
+        pytest.param(lambda sub: sub.Thing[sub.Other], r"\[:py:class:`~mockedpkg.sub.Other`]", id="mocked"),
+        pytest.param(lambda sub: sub.Thing[int, str], r"\[:py:class:`int`, :py:class:`str`]", id="several"),
+        pytest.param(lambda sub: sub.Thing[Literal["a"]], r"\[``typing.Literal['a']``]", id="not-a-name"),
+    ],
+)
+def test_format_annotation_subscripted_mock(subscript: Callable[[Any], Any], expected: str) -> None:
+    with mock(["mockedpkg"]):
+        sub = importlib.import_module("mockedpkg.sub")
+        annotation = subscript(sub)
+    assert format_annotation(annotation, create_autospec(Config)) == rf":py:class:`~mockedpkg.sub.Thing`\ {expected}"
 
 
 def test_get_annotation_module_raises_on_unknown() -> None:
