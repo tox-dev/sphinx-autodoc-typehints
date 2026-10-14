@@ -22,6 +22,7 @@ documentation -- so you write types once in code and they appear in your docs wi
 - Shows the type parameters of generic classes, functions and type aliases in their signatures
 - Shows the message of [`@deprecated`](https://peps.python.org/pep-0702/) objects as a deprecation notice
 - Links the base class member an [`@override`](https://peps.python.org/pep-0698/) method replaces
+- Shows the type a property's setter accepts when it differs from the type the getter returns
 - Controls union display style (`Union[X, Y]` vs `X | Y`)
 - Automatically fixes cross-references for stdlib types whose runtime module differs from their documented path
 - Supports custom type formatters and module name rewriting
@@ -53,6 +54,7 @@ features above. See [Avoid duplicate types with built-in Sphinx](#avoid-duplicat
   - [Control overload signature display](#control-overload-signature-display)
   - [Show deprecations from `@deprecated`](#show-deprecations-from-deprecated)
   - [Link what an `@override` method overrides](#link-what-an-override-method-overrides)
+  - [Show the type a property setter accepts](#show-the-type-a-property-setter-accepts)
   - [Keep type hints in function signatures](#keep-type-hints-in-function-signatures)
   - [Handle circular imports](#handle-circular-imports)
   - [Resolve types from `TYPE_CHECKING` blocks](#resolve-types-from-type_checking-blocks)
@@ -349,6 +351,25 @@ class Child(Base):
 ```
 
 shows `Overrides: Base.run`. A method marked `@override` that no base class defines gets no field.
+
+### Show the type a property setter accepts
+
+Autodoc puts the type a property's getter returns in its header, and nothing tells the reader what they may assign. When
+the setter's value parameter has a different annotation, the property gets a `Setter accepts` field with it:
+
+```python
+class Box:
+    @property
+    def size(self) -> int:
+        """The size."""
+
+    @size.setter
+    def size(self, new: int | str) -> None: ...
+```
+
+shows `property size: int` followed by `Setter accepts: int | str`. A property without a setter, such as a
+`functools.cached_property`, a setter annotated with the getter's type, or one without an annotation gets no field, and
+a docstring with a `:Setter accepts:` field of its own keeps it.
 
 ### Keep type hints in function signatures
 

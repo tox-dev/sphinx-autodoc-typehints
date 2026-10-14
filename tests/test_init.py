@@ -1531,3 +1531,70 @@ def test_process_docstring_override_outside_an_importable_class() -> None:
     lines = ["Summary."]
     process_docstring(make_docstring_app(), "method", "missing_module.Child.run", _OverrideChild.run, None, lines)
     assert lines == ["Summary.", "", r":rtype: :sphinx_autodoc_typehints_type:`\:py\:class\:\`str\``"]
+
+
+class _Setters:
+    @property
+    def wider(self) -> int: ...
+
+    @wider.setter
+    def wider(self, new: int | str) -> None: ...
+
+    @property
+    def untyped_getter(self): ...  # ruff:ignore[missing-return-type-private-function]  # the case under test
+
+    @untyped_getter.setter
+    def untyped_getter(self, new: int) -> None: ...
+
+    @property
+    def same(self) -> int: ...
+
+    @same.setter
+    def same(self, new: int) -> None: ...
+
+    @property
+    def untyped_setter(self) -> int: ...
+
+    @untyped_setter.setter
+    def untyped_setter(self, new) -> None: ...  # ruff:ignore[missing-type-function-argument]  # the case under test
+
+    @property
+    def read_only(self) -> int: ...
+
+    @functools.cached_property
+    def cached(self) -> int: ...
+
+
+@pytest.mark.parametrize(
+    ("member", "lines", "expected"),
+    [
+        pytest.param(
+            "wider",
+            ["Summary."],
+            [
+                "Summary.",
+                "",
+                r":Setter accepts: :sphinx_autodoc_typehints_type:`\:py\:class\:\`int\` \| \:py\:class\:\`str\``",
+            ],
+            id="setter-wider-than-getter",
+        ),
+        pytest.param("untyped_getter", ["Summary."], ["Summary.", "", f":Setter accepts: {_INT}"], id="untyped-getter"),
+        pytest.param("same", ["Summary."], ["Summary."], id="same-type"),
+        pytest.param("untyped_setter", ["Summary."], ["Summary."], id="untyped-setter"),
+        pytest.param("read_only", ["Summary."], ["Summary."], id="no-setter"),
+        pytest.param("cached", ["Summary."], ["Summary."], id="cached-property"),
+        pytest.param(
+            "wider",
+            ["Summary.", "", ":Setter accepts: a number"],
+            ["Summary.", "", ":Setter accepts: a number"],
+            id="docstring-states-it",
+        ),
+    ],
+)
+def test_process_docstring_shows_the_type_a_property_setter_accepts(
+    member: str, lines: list[str], expected: list[str]
+) -> None:
+    process_docstring(
+        make_docstring_app(), "property", f"test_init._Setters.{member}", vars(_Setters)[member], None, lines
+    )
+    assert lines == expected

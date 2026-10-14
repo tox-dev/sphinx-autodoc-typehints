@@ -264,6 +264,7 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
         )
         _inject_ivar_types(ivar_annotations, app, lines)
         inject_extra_items(app, original_obj, lines)
+        _inject_setter_type(app, name, original_obj, type_hints, lines)
         _inject_override(app, what, name, declared, lines)
 
 
@@ -423,6 +424,21 @@ def _documented_owner(name: str) -> Any:
         if (owner := getattr(owner, part, None)) is None:
             return None
     return owner
+
+
+def _inject_setter_type(app: Sphinx, name: str, obj: Any, getter_hints: dict[str, Any], lines: list[str]) -> None:
+    """Show the type a property's setter accepts where it differs from the getter's, the one its header shows."""
+    if not isinstance(obj, property) or obj.fset is None or any(line.startswith(":Setter accepts:") for line in lines):
+        return
+    setter = inspect.unwrap(obj.fset)
+    hints, _ = _resolved_type_hints(app, name, setter, setter, setter)
+    accepted = hints.get(list(inspect.signature(setter).parameters)[-1], inspect.Parameter.empty)
+    if accepted is inspect.Parameter.empty or accepted == getter_hints.get("return", inspect.Parameter.empty):
+        return
+    formatted = add_type_css_class(
+        format_annotation(accepted, app.config, short_literals=app.config.python_display_short_literal_types)
+    )
+    lines.extend(["", f":Setter accepts: {formatted}"])
 
 
 def _inject_override(app: Sphinx, what: str, name: str, obj: Any, lines: list[str]) -> None:
