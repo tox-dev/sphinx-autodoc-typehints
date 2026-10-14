@@ -14,9 +14,9 @@ def backfill_attrs_annotations(obj: Any) -> None:
         return
     try:
         annotations = getattr(obj, "__annotations__", None)
-    except (NameError, AttributeError, TypeError):  # pragma: >=3.14 cover
-        # PEP 649 evaluates annotations on first read, so one naming something undefined fails here; such a class
-        # keeps its annotations as written rather than failing the build
+    except Exception:  # pragma: >=3.14 cover  # ruff:ignore[blind-except]  # see below
+        # PEP 649 evaluates annotations on first read, running user code, so one naming something undefined or raising
+        # otherwise fails here; such a class keeps its annotations as written rather than failing the build
         return
     if annotations is None:
         annotations = {}

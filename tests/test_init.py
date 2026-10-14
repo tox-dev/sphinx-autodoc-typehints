@@ -1071,13 +1071,23 @@ def test_process_docstring_trailing_underscore_param(
     assert any(line.startswith(":type ") and expected_type_name in line and "float" in line for line in lines)
 
 
+class _Rejecting:
+    def __class_getitem__(cls, item: type) -> type[_Rejecting]:  # pragma: >=3.14 cover
+        msg = f"cannot take {item}"
+        raise ValueError(msg)
+
+
 @pytest.mark.skipif(sys.version_info < (3, 14), reason="annotations evaluate lazily from Python 3.14")
 @pytest.mark.parametrize(
     "annotation",
-    [pytest.param("Undefined", id="name-error"), pytest.param("int[str]", id="type-error")],
+    [
+        pytest.param("Undefined", id="name-error"),
+        pytest.param("int[str]", id="type-error"),
+        pytest.param("_Rejecting[int]", id="value-error"),
+    ],
 )
 def test_process_signature_strips_annotations_that_fail_to_evaluate(annotation: str) -> None:  # pragma: >=3.14 cover
-    namespace: dict[str, Any] = {}
+    namespace: dict[str, Any] = {"_Rejecting": _Rejecting}
     # dont_inherit keeps this file's `from __future__ import annotations` out, so the annotation stays lazy
     source = f"def func(value: {annotation}) -> None: ..."
     exec(compile(source, "<func>", "exec", dont_inherit=True), namespace)  # ruff:ignore[exec-builtin]
