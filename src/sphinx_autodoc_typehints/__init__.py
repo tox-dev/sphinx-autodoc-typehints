@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import collections.abc
 import functools
 import inspect
 import re
@@ -758,7 +759,11 @@ def _inject_rtype(  # ruff:ignore[too-many-arguments, too-many-positional-argume
     if not app.config.typehints_document_rtype_none and type_hints["return"] is types.NoneType:
         return
     if _has_yields_section(lines) and _is_generator_type(type_hints["return"]):
-        return
+        # the Yields section covers what it produces, leaving the value its return statement gives, the R of
+        # Generator[Y, S, R], for a Returns section that describes it
+        if (returned := _generator_return(type_hints["return"])) is None or not fmt.has_return_description(lines):
+            return
+        type_hints = {**type_hints, "return": returned}
 
     if (return_doc := _extract_doc_description(type_hints["return"])) and not fmt.has_return_description(lines):
         lines.append(f":return: {return_doc}")
@@ -773,6 +778,13 @@ def _inject_rtype(  # ruff:ignore[too-many-arguments, too-many-positional-argume
     )
 
     fmt.inject_rtype(lines, formatted_annotation, r, use_rtype=app.config.typehints_use_rtype)
+
+
+def _generator_return(annotation: Any) -> Any:
+    """Return the type a generator's return statement gives, or ``None`` when it gives nothing."""
+    if get_origin(annotation) is not collections.abc.Generator or len(args := get_args(annotation)) != 3:  # ruff:ignore[magic-value-comparison]
+        return None
+    return None if args[2] is types.NoneType else args[2]
 
 
 # Matches a well-formed Sphinx ``:ivar ...:`` field list entry. Supports both

@@ -510,6 +510,20 @@ A function annotated to return a `Generator`, `Iterator`, `AsyncGenerator` or `A
 `Yields` section (`:Yields:`, `:yields:` or `:yield:`, as napoleon and numpydoc write it) gets no return type, since the
 `Yields` section already describes what it produces.
 
+A generator that also hands back a value with `return`, `Generator[int, None, bool]`, and documents it in a `Returns`
+section gets that value's type, `bool`, as its return type:
+
+```python
+def count() -> Generator[int, None, bool]:
+    """
+    Yields:
+        the numbers
+
+    Returns:
+        whether it finished
+    """
+```
+
 ### List parameters once with `autoclass_content = "both"`
 
 With

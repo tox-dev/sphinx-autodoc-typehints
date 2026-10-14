@@ -56,6 +56,23 @@ class GenClass:
     def no_yields_method(self) -> Generator[int, None, None]:
         """Summary without yields section."""
 
+    def returning_method(self) -> Generator[int, None, bool]:
+        """Summary.
+
+        Yields:
+            integers
+
+        Returns:
+            whether it finished
+        """
+
+    def undescribed_return_method(self) -> Generator[int, None, bool]:
+        """Summary.
+
+        Yields:
+            integers
+        """
+
 
 def _extract_section(text: str, method_name: str) -> str:
     pattern = rf"({method_name}\(\).*?)(?=(?:async\s+)?\w+\(\)|$)"
@@ -107,3 +124,19 @@ def test_generator_without_yields_keeps_rtype(
 
     section = _extract_section(text, "no_yields_method")
     assert "Return type" in section
+
+
+@pytest.mark.parametrize(
+    ("method", "return_type"),
+    [
+        pytest.param("returning_method", '"bool"', id="described"),
+        pytest.param("undescribed_return_method", None, id="undescribed"),
+    ],
+)
+@pytest.mark.sphinx("text", testroot="integration")
+def test_generator_return_value_gets_the_return_type(
+    app: SphinxTestApp, monkeypatch: pytest.MonkeyPatch, method: str, return_type: str | None
+) -> None:
+    lines = [line.strip() for line in _extract_section(_build_genclass(app, monkeypatch), method).splitlines()]
+    found = lines[lines.index("Return type:") + 1] if "Return type:" in lines else None
+    assert found == return_type
