@@ -694,6 +694,30 @@ def test_format_annotation_literal_enum_members_keep_their_class(overrides: dict
     assert format_annotation(Literal[SomeEnum.VALUE, _OtherEnum.VALUE], config) == expected
 
 
+@pytest.mark.parametrize(
+    ("build", "expected"),
+    [
+        pytest.param(lambda ref: ref | None, "Json | :py:obj:`None`", id="alias-or-none"),
+        pytest.param(lambda ref: None | ref, ":py:obj:`None` | Json", id="none-or-alias"),
+        pytest.param(lambda ref: int | ref, ":py:class:`int` | Json", id="type-or-alias"),
+        pytest.param(lambda ref: ref | ref, "Json", id="same-alias-twice"),
+    ],
+)
+def test_format_annotation_alias_union_keeps_its_bars(build: Callable[[Any], Any], expected: str) -> None:
+    config = create_autospec(Config, always_use_bars_union=False)
+    assert format_annotation(build(MyTypeAliasForwardRef("Json")), config) == expected
+
+
+def test_format_annotation_alias_union_leaves_optional_alone() -> None:
+    alias = MyTypeAliasForwardRef("Json")
+    config = create_autospec(Config, always_use_bars_union=False)
+    optional = "Json | :py:obj:`None`" if sys.version_info >= (3, 14) else r":py:data:`~typing.Optional`\ \[Json]"
+    # the | form renders first, and the Union typing caches for both must not keep its mark
+    bars = format_annotation(alias | None, config)
+    optional_alias = Optional[alias]  # ty: ignore[invalid-type-form]  # the cached runtime Optional is under test
+    assert (bars, format_annotation(optional_alias, config)) == ("Json | :py:obj:`None`", optional)
+
+
 def test_get_annotation_module_raises_on_unknown() -> None:
     with pytest.raises(ValueError, match="Cannot determine the module"):
         get_annotation_module(42)

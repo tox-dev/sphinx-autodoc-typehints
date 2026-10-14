@@ -92,12 +92,28 @@ class MyTypeAliasForwardRef(TypeAliasForwardRef):
     crossref: bool = False
 
     def __or__(self, value: Any) -> Any:  # ty: ignore[invalid-method-override]
-        return Union[self, value]  # ruff:ignore[non-pep604-annotation-union]
+        return _written_with_bars(Union[self, value])  # ruff:ignore[non-pep604-annotation-union]
+
+    def __ror__(self, value: Any) -> Any:  # ty: ignore[invalid-method-override]
+        return _written_with_bars(Union[value, self])  # ruff:ignore[non-pep604-annotation-union]
 
     def __getitem__(self, item: Any) -> Any:
         # A generic alias stands in for the real one while resolving string annotations, so it has to
         # be subscriptable: evaluating ``"Pair[int]"`` would raise ``TypeError`` and drop the hint.
         return types.GenericAlias(self, item)  # ty: ignore[invalid-argument-type]  # any origin works at runtime
+
+
+def _written_with_bars(union: Any) -> Any:
+    """Mark a union built with ``|`` to render with bars, as the ``types.UnionType`` of real types does."""
+    if sys.version_info >= (3, 14):  # pragma: >=3.14 cover
+        return union
+    if get_origin(union) is not Union:  # pragma: <3.14 cover  # equal members collapse into one
+        return union
+    # typing caches unions, so mark a copy built past the cache: the same union written as Optional must not pick
+    # the mark up
+    marked = type(union)(union.__origin__, union.__args__)  # pragma: <3.14 cover
+    marked.__typehints_bars__ = True  # pragma: <3.14 cover
+    return marked  # pragma: <3.14 cover
 
 
 def format_annotation(annotation: Any, config: Config, *, short_literals: bool = False) -> str:
@@ -250,6 +266,7 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
         (sys.version_info >= (3, 14) and full_name == "typing.Union")
         or full_name == "types.UnionType"
         or (always_use_bars_union and type(annotation).__qualname__ == "_UnionGenericAlias")
+        or getattr(annotation, "__typehints_bars__", False)
     )
     if is_bars_union:
         full_name = ""
