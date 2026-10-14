@@ -236,7 +236,7 @@ class SphinxFieldListFormat(DocstringFormat):
     ) -> None:
         insert_index = info.insert_index
 
-        if not use_rtype and info.found_return and " -- " in lines[insert_index]:
+        if not use_rtype and info.found_return and _gives_its_type(lines[insert_index]):
             return
 
         if info.found_param and insert_index < len(lines) and lines[insert_index].strip():
@@ -345,3 +345,20 @@ def _field_end(lines: list[str], at: int) -> int:
     while end < len(lines) and lines[end][:1].isspace() and lines[end].strip():
         end += 1
     return end
+
+
+def _gives_its_type(return_line: str) -> bool:
+    """
+    Whether a ``:returns: X -- text`` field states its type as ``X``, as napoleon writes it without an rtype field.
+
+    Only text that reads as a type counts: napoleon's emphasized ``*int*``, a role or literal, or a single token once
+    its brackets are dropped, so a description that itself contains `` -- `` keeps getting the type.
+    """
+    if " -- " not in (description := return_line.split(":", 2)[2].strip()):
+        return False
+    stated = description.split(" -- ", 1)[0]
+    if stated.startswith(("*", ":", "`")):
+        return True
+    while (unbracketed := re.sub(r"\[[^\[\]]*\]", "", stated)) != stated:
+        stated = unbracketed
+    return " " not in stated
