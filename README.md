@@ -19,6 +19,7 @@ documentation -- so you write types once in code and they appear in your docs wi
   [dataclass](https://docs.python.org/3/library/dataclasses.html) classes
 - Shows default parameter values alongside types
 - Types the keys of `**kwargs: Unpack[SomeTypedDict]` as keyword arguments
+- Shows the type parameters of generic classes, functions and type aliases in their signatures
 - Controls union display style (`Union[X, Y]` vs `X | Y`)
 - Automatically fixes cross-references for stdlib types whose runtime module differs from their documented path
 - Supports custom type formatters and module name rewriting
@@ -582,6 +583,11 @@ During the Sphinx build, this extension hooks into two
 First, it strips type annotations from function signatures (so they don't appear twice). Then, it reads the annotations
 and adds type information into the docstring -- parameter types go next to each `:param:` entry, and the return type
 becomes an `:rtype:` entry.
+
+Autodoc leaves the type parameters of a generic object out of its signature. The extension adds them after the name,
+with bounds, constraints and defaults, the way [PEP 695](https://peps.python.org/pep-0695/) writes them:
+`def first[T: Sized](items: T)`, `class Stack[T]` and `type Pairs[K] = dict[K, K]`. A class made generic by subclassing
+`Generic[T]` shows its parameters the same way.
 
 Only parameters that already have a `:param:` line in the docstring get type information added, with two exceptions: a
 parameter whose annotation carries a `Doc(...)` description gets a `:param:` line of its own, and the entries of

@@ -51,6 +51,7 @@ from ._resolver import (
     resolve_string_annotations,
     resolve_type_guarded_imports,
 )
+from ._type_params import add_type_params
 from ._typed_dict import typed_dict_keys
 from .patches import _OVERLOADS_CACHE, install_patches
 from .version import __version__
@@ -760,6 +761,7 @@ def setup(app: Sphinx) -> dict[str, bool | str]:
     app.connect("env-before-read-docs", validate_config)
     app.connect("autodoc-process-signature", process_signature)
     app.connect("autodoc-process-docstring", process_docstring)
+    app.connect("object-description-transform", add_type_params)
     install_patches(app)
     return {
         "version": __version__,
