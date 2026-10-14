@@ -993,6 +993,26 @@ def func_literals_short_format(a: Literal["arg1", "arg2"], b: Literal["arg1", "a
 
 
 @expected(
+    r"""mod.func_literal_backslashes(sep)
+
+   A docstring.
+
+   Parameters:
+      **sep** ("Literal"["'\n'", "'\\'"]) -- The separator.
+
+   Return type:
+      "None"
+""",
+)
+def func_literal_backslashes(sep: Literal["\n", "\\"]) -> None:
+    """
+    A docstring.
+
+    :param sep: The separator.
+    """
+
+
+@expected(
     """\
 class mod.TestClassAttributeDocs
 

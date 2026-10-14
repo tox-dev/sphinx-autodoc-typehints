@@ -654,7 +654,7 @@ def test_format_annotation_with_formatter_returning_none() -> None:
 @pytest.mark.parametrize(
     ("annotation", "expected_result"),
     [
-        pytest.param(Literal["a", "b"], "\\``'a'`` | ``'b'``", id="values"),
+        pytest.param(Literal["a", "b"], "``'a'`` | ``'b'``", id="values"),
         pytest.param(Literal, ":py:data:`~typing.Literal`", id="bare"),
     ],
 )

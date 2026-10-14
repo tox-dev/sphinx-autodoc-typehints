@@ -309,7 +309,7 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
     elif full_name == "typing.Literal" and args:
         literal_parts = [_format_literal_arg(arg, config) for arg in args]
         if short_literals:
-            return f"\\{' | '.join(literal_parts)}"
+            return " | ".join(literal_parts)
         formatted_args = f"\\[{', '.join(literal_parts)}]"
     elif is_bars_union:
         if not args:
