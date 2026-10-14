@@ -588,11 +588,12 @@ parameter whose annotation carries a `Doc(...)` description gets a `:param:` lin
 napoleon's combined parameter field get their types in place. Set `always_document_param_types = True` to add types for
 all parameters, even undocumented ones; the added lines follow the signature's order, next to the documented parameters.
 
-Parameters are recognized under `:param`, `:parameter`, `:arg`, `:argument`, `:keyword`, `:kwarg` and `:kwparam`, with
-`*args` and `**kwargs` escaped or not. A type written in the field, `:param int x:`, and a `:type x:` field give way to
-the annotation, and a parameter without one keeps its docstring type. A `@typing.no_type_check` function still gets its
-types, decorated functions are documented through `__wrapped__`, and on Python 3.14 an annotation that fails to evaluate
-shows as written.
+Parameters are recognized under `:param`, `:parameter`, `:arg`, `:argument`, `:keyword`, `:kwarg` and `:kwparam`, naming
+`*args` and `**kwargs` bare or with escaped stars, `args` or `\*args`. Only fields that start a line count: one indented
+into a literal block, a code block or a directive such as a note is left as written. A type written in the field,
+`:param int x:`, and a `:type x:` field give way to the annotation, and a parameter without one keeps its docstring
+type. A `@typing.no_type_check` function still gets its types, decorated functions are documented through `__wrapped__`,
+and on Python 3.14 an annotation that fails to evaluate shows as written.
 
 ### How return type options interact
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from textwrap import dedent
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Annotated, Final
 from unittest.mock import MagicMock, create_autospec
 
 import pytest
@@ -10,13 +10,15 @@ from conftest import make_docstring_app
 from docutils import nodes
 from sphinx.application import Sphinx
 from sphinx.config import Config
+from typing_extensions import Doc
 
 import sphinx_autodoc_typehints as sat
 from sphinx_autodoc_typehints._formats import InsertIndexInfo
 from sphinx_autodoc_typehints._formats._sphinx import SphinxFieldListFormat, _node_line_no
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterator
+    from types import FunctionType
 
     from sphinx.testing.util import SphinxTestApp
 
@@ -245,3 +247,55 @@ def test_process_docstring_inline_return_type_only_where_none_is_stated(line: st
     lines = [line]
     sat.process_docstring(make_docstring_app(typehints_use_rtype=False), "function", "mod.value", value, None, lines)
     assert lines == [expected]
+
+
+def _nested_param(a: int) -> None: ...
+
+
+def _nested_yields() -> Iterator[int]: ...
+
+
+def _nested_returns() -> Annotated[int, Doc("the count")]: ...
+
+
+_INT: Final = r":sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``"
+_NONE: Final = r":rtype: :sphinx_autodoc_typehints_type:`\:py\:obj\:\`None\``"
+_ITERATOR: Final = (
+    r":sphinx_autodoc_typehints_type:`\:py\:class\:\`\~collections.abc.Iterator\`\\ \\\[\:py\:class\:\`int\`\]`"
+)
+
+
+@pytest.mark.parametrize(
+    ("func", "lines", "expected"),
+    [
+        pytest.param(
+            _nested_param,
+            ["Example::", "", "    :param a: in a literal block", "", ":param a: the a"],
+            ["Example::", "", "    :param a: in a literal block", "", f":type a: {_INT}", ":param a: the a", "", _NONE],
+            id="param",
+        ),
+        pytest.param(
+            _nested_yields,
+            ["Example::", "", "    :yields: in a literal block"],
+            [
+                "Example::",
+                "",
+                "    :yields: in a literal block",
+                "",
+                f":rtype: {_ITERATOR}",
+            ],
+            id="yields",
+        ),
+        pytest.param(
+            _nested_returns,
+            ["Example::", "", "    :returns: in a literal block"],
+            ["Example::", "", "    :returns: in a literal block", "", f":rtype: {_INT}", ":return: the count"],
+            id="returns",
+        ),
+    ],
+)
+def test_process_docstring_ignores_fields_nested_in_a_block(
+    func: FunctionType, lines: list[str], expected: list[str]
+) -> None:
+    sat.process_docstring(make_docstring_app(), "function", f"mod.{func.__name__}", func, None, lines)
+    assert lines == expected
