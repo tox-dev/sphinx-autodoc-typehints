@@ -984,7 +984,7 @@ def _injected(*args: object, **kwargs: object) -> bool: ...
 
 
 # a dependency-injecting decorator hides the parameter it supplies
-_injected.__signature__ = inspect.Signature(list(inspect.signature(_handle).parameters.values())[1:])  # ty: ignore[unresolved-attribute]  # the case under test
+_injected.__signature__ = inspect.Signature(list(inspect.signature(_handle, eval_str=True).parameters.values())[1:])  # ty: ignore[unresolved-attribute]  # the case under test
 
 
 def test_process_signature_strips_a_wrapper_stated_signature() -> None:
@@ -993,6 +993,20 @@ def test_process_signature_strips_a_wrapper_stated_signature() -> None:
         "(name, count=1)",
         None,
     )
+
+
+def test_process_docstring_lists_the_parameters_a_wrapper_states() -> None:
+    lines = [":param name: the name"]
+    app = make_docstring_app(always_document_param_types=True, typehints_defaults="comma")
+    process_docstring(app, "function", "mod.injected", _injected, None, lines)
+    assert lines == [
+        r":type name: :sphinx_autodoc_typehints_type:`\:py\:class\:\`str\``",
+        ":param name: the name",
+        r":type count: :sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``, default: ``1``",
+        ":param count:",
+        "",
+        r":rtype: :sphinx_autodoc_typehints_type:`\:py\:class\:\`bool\``",
+    ]
 
 
 def test_process_docstring_types_a_stated_signature() -> None:
