@@ -185,14 +185,12 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
 
     localns = {key: MyTypeAliasForwardRef(value) for key, value in app.config["autodoc_type_aliases"].items()}
     module_prefix = name.rsplit(".", maxsplit=1)[0] if "." in name else ""
-    eager_aliases: dict[int, MyTypeAliasForwardRef] = {}
+    eager_aliases: dict[str, MyTypeAliasForwardRef] = {}
     if (env := getattr(app, "env", None)) is not None:
         deferred, eager_aliases = collect_documented_type_aliases(obj, module_prefix, env)
         localns.update(deferred)
     type_hints = get_all_type_hints(app.config.autodoc_mock_imports, cls_for_hints or obj, name, localns)
-    for param, hint in type_hints.items():
-        if id(hint) in eager_aliases:
-            type_hints[param] = eager_aliases[id(hint)]
+    type_hints |= eager_aliases
     with _annotation_state(
         app.config,
         _annotation_globals=getattr(obj, "__globals__", {}),

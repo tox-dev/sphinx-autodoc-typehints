@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import ast
 import inspect
+import textwrap
 from typing import TYPE_CHECKING, Any
 
 from sphinx_autodoc_typehints._annotations import MyTypeAliasForwardRef
@@ -26,10 +28,10 @@ def get_obj_location(obj: Any) -> str | None:
 
 def collect_documented_type_aliases(
     obj: Any, module_prefix: str, env: BuildEnvironment
-) -> tuple[dict[str, MyTypeAliasForwardRef], dict[int, MyTypeAliasForwardRef]]:
+) -> tuple[dict[str, MyTypeAliasForwardRef], dict[str, MyTypeAliasForwardRef]]:
     py_objects = env.get_domain("py").objects  # ty: ignore[unresolved-attribute]
     deferred = _collect_module_type_aliases(module_prefix, py_objects)
-    eager: dict[int, MyTypeAliasForwardRef] = {}
+    eager: dict[str, MyTypeAliasForwardRef] = {}
 
     # PEP 649 (Python 3.14+): annotation expressions only run on access and may fail at runtime
     # (TYPE_CHECKING-only names, subscripting a non-generic class)
@@ -41,22 +43,23 @@ def collect_documented_type_aliases(
         return deferred, eager
 
     obj_globals = getattr(obj, "__globals__", {})
-    for annotation in raw_annotations.values():
+    # an alias evaluates to the object it names (``Count = int``), so only the annotation as written tells them apart
+    written = _written_annotations(obj)
+    for key, annotation in raw_annotations.items():
         if isinstance(annotation, str):
             if _is_documented_type(annotation, module_prefix, py_objects):
                 ref = MyTypeAliasForwardRef(annotation)
                 ref.crossref = True
                 deferred[annotation] = ref
-        else:
-            for var_name, var_value in obj_globals.items():
-                if (
-                    var_value is annotation
-                    and not var_name.startswith("_")
-                    and _is_documented_type(var_name, module_prefix, py_objects)
-                ):
-                    ref = MyTypeAliasForwardRef(var_name)
-                    ref.crossref = True
-                    eager[id(annotation)] = ref
+        elif (
+            (name := written.get(key))
+            and not name.startswith("_")
+            and obj_globals.get(name) is annotation
+            and _is_documented_type(name, module_prefix, py_objects)
+        ):
+            ref = MyTypeAliasForwardRef(name)
+            ref.crossref = True
+            eager[key] = ref
 
     return deferred, eager
 
@@ -71,6 +74,19 @@ def _collect_module_type_aliases(module_prefix: str, py_objects: dict[str, Any])
             ref.crossref = True
             result[short_name] = ref
     return result
+
+
+def _written_annotations(obj: Any) -> dict[str, str]:
+    try:
+        node = ast.parse(textwrap.dedent(inspect.getsource(obj))).body[0]
+    except (OSError, TypeError, SyntaxError):
+        return {}
+    if not isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
+        return {}
+    arguments = node.args
+    params = [*arguments.posonlyargs, *arguments.args, *arguments.kwonlyargs, arguments.vararg, arguments.kwarg]
+    written = {param.arg: ast.unparse(param.annotation) for param in params if param and param.annotation}
+    return written | ({"return": ast.unparse(node.returns)} if node.returns else {})
 
 
 def _is_documented_type(name: str, module_prefix: str, py_objects: dict[str, Any]) -> bool:

@@ -4,6 +4,7 @@ from typing import Any, Union
 
 UserId = Union[int, str]
 RequestData = dict[str, Any]
+Count = int
 
 
 def get_user_eager(user_id: UserId) -> str:
@@ -14,3 +15,13 @@ def get_user_eager(user_id: UserId) -> str:
         user_id: The user identifier
     """
     return f"User {user_id}"
+
+
+def count_eager(amount: Count, limit: int) -> None:
+    """
+    Count up to a limit.
+
+    Args:
+        amount: The amount
+        limit: The limit
+    """
