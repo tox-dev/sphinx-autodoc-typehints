@@ -895,10 +895,12 @@ def _inject_rtype(  # ruff:ignore[too-many-arguments, too-many-positional-argume
     if not app.config.typehints_document_rtype_none and type_hints["return"] is types.NoneType:
         return
     if _has_yields_section(lines) and _is_generator_type(type_hints["return"]):
+        # asked first, as it turns numpydoc's sections into the fields the Yields entry is read from
+        described = fmt.has_return_description(lines)
         _type_yields(type_hints["return"], app, lines)
         # the Yields section covers what it produces, leaving the value its return statement gives, the R of
         # Generator[Y, S, R], for a Returns section that describes it
-        if (returned := _generator_return(type_hints["return"])) is None or not fmt.has_return_description(lines):
+        if (returned := _generator_return(type_hints["return"])) is None or not described:
             return
         type_hints = {**type_hints, "return": returned}
 
@@ -925,6 +927,10 @@ def _type_yields(annotation: Any, app: Sphinx, lines: list[str]) -> None:
     # the text before -- or the whole entry may already be a type, as numpydoc writes a type-only entry, and a bullet,
     # which starts one of several entries, reads as one too
     if not (args := get_args(annotation)) or ((stated := text.split(" -- ", 1)[0]) and _reads_as_type(stated)):
+        return
+    # numpydoc lists several yielded values as typed bullets under an empty entry
+    following = next((line.strip() for line in lines[at + 1 :] if line.strip()), "")
+    if not text and following.startswith("* ") and _reads_as_type(following[2:].split(" -- ", 1)[0]):
         return
     short_literals = app.config.python_display_short_literal_types
     formatted = add_type_css_class(format_annotation(args[0], app.config, short_literals=short_literals))

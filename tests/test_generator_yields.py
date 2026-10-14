@@ -155,13 +155,18 @@ def _counts() -> Iterator[int]: ...
     [
         pytest.param([":yields: the numbers"], [f":yields: {_YIELDED_INT} -- the numbers"], id="description"),
         pytest.param(
-            [":Yields:", "    - one", "    - two"],
-            [f":Yields: {_YIELDED_INT} --", "", "    - one", "    - two"],
+            [":yields:", "    - one", "    - two"],
+            [f":yields: {_YIELDED_INT} --", "", "    - one", "    - two"],
             id="description-on-the-next-line",
         ),
         pytest.param([":Yields: *int* -- the numbers"], [":Yields: *int* -- the numbers"], id="typed-by-napoleon"),
         pytest.param([":Yields: int"], [":Yields: int"], id="type-only"),
         pytest.param([":Yields: * **a** -- first"], [":Yields: * **a** -- first"], id="several-entries"),
+        pytest.param(
+            [":Yields:", "", "    str", "        the key", "    int", "        its count", ""],
+            [":Yields:", "   * str -- the key", "   * int -- its count", ""],
+            id="several-numpydoc-entries",
+        ),
     ],
 )
 def test_generator_yields_entry_gets_the_yielded_type(lines: list[str], expected: list[str]) -> None:
