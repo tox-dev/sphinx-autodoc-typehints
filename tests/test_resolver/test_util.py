@@ -97,12 +97,25 @@ def test_collect_documented_type_aliases_ignores_annotations_not_written_as_the_
     assert eager == {}
 
 
-def test_collect_documented_type_aliases_ignores_other_module_types() -> None:
-    env = _make_env_with_types(["other.Foo"])
+@pytest.mark.parametrize(
+    "documented",
+    [pytest.param("other.Foo", id="other-module"), pytest.param("mymod.sub.Foo", id="submodule")],
+)
+def test_collect_documented_type_aliases_ignores_other_module_types(documented: str) -> None:
+    env = _make_env_with_types([documented])
     obj = MagicMock(spec=[])
     deferred, eager = collect_documented_type_aliases(obj, "mymod", env)
     assert "Foo" not in deferred
     assert eager == {}
+
+
+@pytest.mark.parametrize(
+    "documented",
+    [pytest.param("am.Vector", id="module"), pytest.param("am.Ops.Vector", id="class-body")],
+)
+def test_collect_documented_type_aliases_sees_the_scopes_around_a_method(documented: str) -> None:
+    deferred, _ = collect_documented_type_aliases(MagicMock(spec=[]), "am.Ops", _make_env_with_types([documented]))
+    assert list(deferred) == ["Vector"]
 
 
 def test_collect_documented_type_aliases_ignores_unqualified_names() -> None:

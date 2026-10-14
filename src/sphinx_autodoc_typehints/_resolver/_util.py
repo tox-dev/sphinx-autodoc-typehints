@@ -65,15 +65,21 @@ def collect_documented_type_aliases(
 
 
 def _collect_module_type_aliases(module_prefix: str, py_objects: dict[str, Any]) -> dict[str, MyTypeAliasForwardRef]:
-    prefix_dot = f"{module_prefix}."
+    scopes = _enclosing_scopes(module_prefix)
     result: dict[str, MyTypeAliasForwardRef] = {}
     for fqn, obj_info in py_objects.items():
-        if obj_info.objtype == "type" and (fqn.startswith(prefix_dot) or fqn == module_prefix):
+        if obj_info.objtype == "type" and fqn.rpartition(".")[0] in scopes:
             short_name = fqn.rsplit(".", 1)[-1]
             ref = MyTypeAliasForwardRef(short_name)
             ref.crossref = True
             result[short_name] = ref
     return result
+
+
+def _enclosing_scopes(module_prefix: str) -> set[str]:
+    """Annotations see the names of the module and the class bodies around them, not those of other modules."""
+    parts = module_prefix.split(".")
+    return {".".join(parts[:end]) for end in range(1, len(parts) + 1)}
 
 
 def _written_annotations(obj: Any) -> dict[str, str]:
@@ -92,7 +98,7 @@ def _written_annotations(obj: Any) -> dict[str, str]:
 def _is_documented_type(name: str, module_prefix: str, py_objects: dict[str, Any]) -> bool:
     return any(
         candidate in py_objects and py_objects[candidate].objtype == "type"
-        for candidate in (f"{module_prefix}.{name}", name)
+        for candidate in (*(f"{scope}.{name}" for scope in _enclosing_scopes(module_prefix)), name)
     )
 
 

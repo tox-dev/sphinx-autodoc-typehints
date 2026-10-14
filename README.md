@@ -290,7 +290,8 @@ typehints_fully_qualified = True
 
 The extension preserves alias names only when they have a `.. py:type::` directive in your docs. Without that entry, the
 alias is expanded to its underlying type. Add a documentation entry for the alias, and it will render as a clickable
-link instead.
+link instead. The entry has to name the alias where the annotation looks it up: `.. py:type:: pkg.Vector` serves the
+functions and methods of `pkg`, while an alias documented in a submodule such as `pkg.compat` does not.
 
 A plain assignment such as `Count = int` evaluates to the very type it names, so without
 `from __future__ import annotations` the extension reads the function's source to tell `limit: Count` from `limit: int`.

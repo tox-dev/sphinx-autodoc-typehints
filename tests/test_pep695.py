@@ -722,6 +722,31 @@ def test_eager_alias_renders_only_where_written(app: SphinxTestApp) -> None:
 
 
 @pytest.mark.sphinx("text", testroot="integration")
+def test_eager_alias_in_a_method(app: SphinxTestApp) -> None:
+    (Path(app.srcdir) / "index.rst").write_text(
+        ".. py:type:: mod_eager.UserId\n\n.. automethod:: mod_eager.Users.get\n"
+    )
+    app.build()
+
+    result = (Path(app.srcdir) / "_build/text/index.txt").read_text()
+    assert normalize_sphinx_text(result) == normalize_sphinx_text(
+        dedent("""\
+        type mod_eager.UserId
+
+        Users.get(user_id)
+
+           Get a user by ID.
+
+           Parameters:
+              **user_id** ("UserId") -- The user identifier
+
+           Return type:
+              "str"
+        """)
+    )
+
+
+@pytest.mark.sphinx("text", testroot="integration")
 def test_alias_documented_in_a_later_document(
     app: SphinxTestApp,
     status: StringIO,
