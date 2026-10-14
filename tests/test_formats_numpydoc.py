@@ -314,7 +314,6 @@ def test_convert_section_without_blank_line_after_header() -> None:
 
 
 def test_convert_yields_single_no_description_then_params() -> None:
-    """Branch 133->90: single Yields entry without description followed by another section."""
     lines = [
         ":Yields:",
         "",
@@ -327,9 +326,7 @@ def test_convert_yields_single_no_description_then_params() -> None:
         "",
     ]
     _convert_numpydoc_to_sphinx_fields(lines)
-    assert not any(line.startswith(":Yields:") for line in lines)
-    assert ":param x: The x." in lines
-    assert ":type x: int" in lines
+    assert lines == [":Yields: **result** (int)", "", ":param x: The x.", ":type x: int", ""]
 
 
 def test_detect_format_returns_numpydoc_for_numpydoc_lines() -> None:
@@ -529,14 +526,15 @@ def test_process_docstring_numpydoc_params_sharing_a_type_line() -> None:
 
 
 @pytest.mark.parametrize(
-    ("entry", "expected"),
+    ("entry", "description", "expected"),
     [
-        pytest.param("    int", ":Yields: int -- A number.", id="unnamed"),
-        pytest.param("    **item** : int", ":Yields: **item** (int) -- A number.", id="named"),
-        pytest.param("    **item**", ":Yields: **item** -- A number.", id="named-untyped"),
+        pytest.param("    int", "        A number.", ":Yields: int -- A number.", id="unnamed"),
+        pytest.param("    **item** : int", "        A number.", ":Yields: **item** (int) -- A number.", id="named"),
+        pytest.param("    **item**", "        A number.", ":Yields: **item** -- A number.", id="named-untyped"),
+        pytest.param("    int", "        ..", ":Yields: int", id="placeholder-description"),
     ],
 )
-def test_process_docstring_numpydoc_single_yield_keeps_its_type(entry: str, expected: str) -> None:
+def test_process_docstring_numpydoc_single_yield_keeps_its_type(entry: str, description: str, expected: str) -> None:
     def counter(bound: int) -> Iterator[int]: ...
 
     lines = [
@@ -548,7 +546,7 @@ def test_process_docstring_numpydoc_single_yield_keeps_its_type(entry: str, expe
         ":Yields:",
         "",
         entry,
-        "        A number.",
+        description,
         "",
     ]
     process_docstring(make_docstring_app(), "function", "mod.counter", counter, None, lines)
@@ -559,3 +557,11 @@ def test_process_docstring_numpydoc_single_yield_keeps_its_type(entry: str, expe
         expected,
         "",
     ]
+
+
+def test_process_docstring_numpydoc_returns_without_descriptions() -> None:
+    def pair(bound: int) -> tuple[int, str]: ...
+
+    lines = [":Returns:", "", "    **x** : int", "        ..", "    **y** : str", "        ..", ""]
+    process_docstring(make_docstring_app(), "function", "mod.pair", pair, None, lines)
+    assert lines[-4:] == [":returns:", "   * **x** (int)", "   * **y** (str)", ""]
