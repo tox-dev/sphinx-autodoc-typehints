@@ -174,6 +174,26 @@ def test_process_docstring_types_a_callable_without_annotations(obj: Callable[..
     ]
 
 
+_SENTINEL: Final = object()
+
+
+def _explicitly_signed(a: int, b: object = _SENTINEL) -> None: ...
+
+
+@pytest.mark.parametrize(
+    ("given", "expected"),
+    [
+        pytest.param("(x, y=3)", None, id="written-with-other-names"),
+        pytest.param("(a, *, b)", None, id="written-with-other-kinds"),
+        pytest.param("(a: int, b: object = _SENTINEL)", ("(a, b=<object object>)", None), id="introspected"),
+        pytest.param("(a: int, b: object = <object object>)", ("(a, b=<object object>)", None), id="unreadable"),
+    ],
+)
+def test_process_signature_keeps_a_written_signature(given: str, expected: tuple[str, None] | None) -> None:
+    app = make_sig_app()
+    assert process_signature(app, "function", "mod.signed", _explicitly_signed, Options(), given, "") == expected
+
+
 def test_process_signature_class_omits_constructor_return() -> None:
     class ConstructedFromInit:
         def __init__(self, count: int) -> None: ...

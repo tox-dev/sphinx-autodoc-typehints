@@ -665,6 +665,11 @@ First, it strips type annotations from function signatures (so they don't appear
 and adds type information into the docstring -- parameter types go next to each `:param:` entry, and the return type
 becomes an `:rtype:` entry.
 
+A signature you write yourself is left as written when it names other parameters than the object takes: one in the
+directive, `.. autofunction:: mod.f(x, y=3)`, or on the docstring's first line with
+[`autodoc_docstring_signature`](https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#confval-autodoc_docstring_signature).
+One with the same parameters, differing only in defaults or types, is replaced by the object's own.
+
 Autodoc leaves the type parameters of a generic object out of its signature. The extension adds them after the name,
 with bounds, constraints and defaults, the way [PEP 695](https://peps.python.org/pep-0695/) writes them:
 `def first[T: Sized](items: T)`, `class Stack[T]` and `type Pairs[K] = dict[K, K]`. A class made generic by subclassing

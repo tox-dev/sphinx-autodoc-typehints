@@ -24,7 +24,7 @@ from typing import (
 from docutils import nodes
 from sphinx.errors import ConfigError
 from sphinx.util import logging
-from sphinx.util.inspect import getdoc, object_description, stringify_signature
+from sphinx.util.inspect import getdoc, object_description, signature_from_str, stringify_signature
 from sphinx.util.inspect import signature as sphinx_signature
 
 # re-exports for backward compatibility
@@ -72,7 +72,7 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 
-def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-many-arguments, too-many-positional-arguments]
+def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-many-return-statements, too-many-arguments, too-many-positional-arguments]
     app: Sphinx,
     what: str,
     name: str,
@@ -151,6 +151,8 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-
             if not issubclass(member_type, staticmethod) and not inspect.ismethod(obj):
                 start = 1
 
+    if _names_other_parameters(signature, parameters[start:]):
+        return None
     sph_signature = sph_signature.replace(parameters=parameters[start:])
     formatted = stringify_signature(
         sph_signature,
@@ -160,6 +162,23 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-
     )
     # the directive strips one level of backslashes only under this option, so escaping otherwise doubles them
     return formatted.replace("\\", "\\\\") if app.config.strip_signature_backslash else formatted, None
+
+
+def _names_other_parameters(signature: str, parameters: list[inspect.Parameter]) -> bool:
+    """
+    Whether the signature autodoc passes lists other parameters than the object takes.
+
+    That is one written in the directive, ``.. autofunction:: f(x, y=3)``, or on a docstring's first line, which the
+    reader asked for over the object's own, so it stays as written.
+    """
+    try:
+        written = signature_from_str(signature)
+    except SyntaxError:
+        # autodoc writes some defaults it introspects, such as <object object>, in a form Python cannot read back
+        return False
+    return [(param.name, param.kind) for param in written.parameters.values()] != [
+        (param.name, param.kind) for param in parameters
+    ]
 
 
 def _annotated_function(obj: Any) -> Any:
