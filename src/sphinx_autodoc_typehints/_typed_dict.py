@@ -27,7 +27,7 @@ def typed_dict_keys(typed_dict: Any) -> dict[str, Any]:
         return {}
     try:
         hints = get_type_hints(typed_dict, include_extras=True)
-    except (NameError, TypeError):
+    except Exception:  # ruff:ignore[blind-except]  # an annotation runs user code, which may raise anything
         return {}
     return {
         key: _key_annotation(annotation, optional=key in typed_dict.__optional_keys__)

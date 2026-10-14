@@ -97,8 +97,8 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-
     except ValueError:
         return None
     try:
-        has_annotations = getattr(annotated, "__annotations__", None)
-    except (NameError, TypeError, AttributeError):  # pragma: >=3.14 cover
+        has_annotations = annotated.__annotations__
+    except Exception:  # ruff:ignore[blind-except]  # an annotation runs user code, which may raise anything
         # PEP 649 (Python 3.14+): annotation expressions only run on access and may fail at runtime
         # (TYPE_CHECKING-only names, subscripting a non-generic class). __annotate__ still signals
         # annotations exist, and sphinx_signature renders them without evaluation via FORWARDREF.

@@ -140,6 +140,7 @@ def test_collect_documented_type_aliases_ignores_unqualified_names() -> None:
     [
         pytest.param(NameError("Callable"), id="name-error"),
         pytest.param(TypeError("type 'DiGraph' is not subscriptable"), id="type-error"),
+        pytest.param(ValueError("a shape takes an int"), id="value-error"),
     ],
 )
 def test_collect_documented_type_aliases_annotations_error(error: Exception) -> None:

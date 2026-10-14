@@ -80,6 +80,27 @@ def test_process_docstring_warns_on_an_unresolvable_annotation(
     ]
 
 
+class _Shape:
+    def __class_getitem__(cls, item: type) -> type[_Shape]:
+        msg = f"a shape cannot take {item}"
+        raise ValueError(msg)
+
+
+def _rejected(value: _Shape[int]) -> None: ...
+
+
+def test_process_docstring_shows_an_annotation_that_raises_as_written(caplog: pytest.LogCaptureFixture) -> None:
+    lines = [":param value: the value"]
+    process_docstring(
+        make_docstring_app(typehints_document_rtype=False), "function", "mod.rejected", _rejected, None, lines
+    )
+    expected = [
+        r":type value: :sphinx_autodoc_typehints_type:`\_Shape\[int\]`",
+        ":param value: the value",
+    ]
+    assert (lines, [record for record in caplog.records if record.levelno >= logging.WARNING]) == (expected, [])
+
+
 @pytest.fixture
 def unresolvable(annotation: str) -> types.FunctionType:
     def annotated(count: int, value: str) -> None: ...

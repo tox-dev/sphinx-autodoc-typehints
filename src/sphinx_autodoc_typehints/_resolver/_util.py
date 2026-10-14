@@ -40,7 +40,7 @@ def collect_documented_type_aliases(
     # (TYPE_CHECKING-only names, subscripting a non-generic class)
     try:
         raw_annotations = getattr(obj, "__annotations__", {})
-    except (NameError, TypeError, AttributeError):
+    except Exception:  # ruff:ignore[blind-except]  # an annotation runs user code, which may raise anything
         return deferred, eager
     if not raw_annotations:
         return deferred, eager
