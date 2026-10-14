@@ -524,8 +524,9 @@ def _type_alias_crossref(annotation: TypeAliasType, config: Config) -> str | Non
     Render a PEP 695 type alias as a reStructuredText cross-reference, or ``None`` when it is not a known target.
 
     Look the alias up in the py domain under the names it could be documented as: walk up the current module
-    prefix (so a ``T`` documented in the module being built wins), then its canonical module (so an alias
-    imported from elsewhere still resolves), then its bare name. An alias owned by a different top-level
+    prefix (so a ``T`` documented where the module being built re-exports it wins, while a same-named alias that
+    module does not bind is skipped), then its canonical module (so an alias imported from elsewhere still
+    resolves), then its bare name. An alias owned by a different top-level
     package falls back to an intersphinx-style reference. Only a document already read can answer, so
     ``None`` means "not known yet", and the caller defers the choice to the resolve phase.
     """
@@ -538,7 +539,11 @@ def _type_alias_crossref(annotation: TypeAliasType, config: Config) -> str | Non
     module_prefix = getattr(config, "_typehints_module_prefix", "")
     prefix_parts = module_prefix.split(".") if module_prefix else []
     canonical = _get_canonical_type_alias_name(annotation)
-    candidates = [".".join((*prefix_parts[:n], annotation.__name__)) for n in range(len(prefix_parts), 0, -1)]
+    candidates = [
+        f"{module}.{annotation.__name__}"
+        for module in (".".join(prefix_parts[:n]) for n in range(len(prefix_parts), 0, -1))
+        if getattr(sys.modules.get(module), annotation.__name__, None) is annotation
+    ]
     if canonical:
         candidates.append(canonical)
     candidates.append(annotation.__name__)
