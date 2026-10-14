@@ -126,11 +126,12 @@ def _strip_class_decorators(node: ast.ClassDef) -> ast.ClassDef:
 def _resolve_import_node(node: ast.Import, ns: dict[str, Any]) -> None:
     for alias in node.names:
         with contextlib.suppress(ImportError):
+            module = importlib.import_module(alias.name)
             if alias.asname:
-                ns[alias.asname] = importlib.import_module(alias.name)
+                ns[alias.asname] = module
             else:
                 top = alias.name.split(".")[0]
-                ns[top] = importlib.import_module(top)
+                ns[top] = sys.modules[top]
 
 
 def _resolve_import_from_node(
@@ -142,7 +143,10 @@ def _resolve_import_from_node(
         if alias.name == "*":
             continue
         name = alias.asname or alias.name
-        if mod is not None and (val := getattr(mod, alias.name, None)) is not None:
+        if mod is not None and (
+            (val := getattr(mod, alias.name, None)) is not None
+            or (val := _import_module_or_none(f"{module_name}.{alias.name}")) is not None
+        ):
             ns[name] = val
         else:
             unresolved.add(name)
