@@ -1602,10 +1602,10 @@ def docstring_with_definition_list_after_params_no_blank_line(param: int) -> Non
        Do something.
 
        Parameters:
-          **param** ("TypeVar"("T")) -- A parameter.
+          **param** ("T") -- A parameter.
 
        Return type:
-          "TypeVar"("T")
+          "T"
 
     """,
 )

@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Generic
 from typing_extensions import ParamSpec, TypeVar, TypeVarTuple
 
 if TYPE_CHECKING:
-    from collections.abc import Sized
+    from collections.abc import Callable, Sized
 
 
 def bounded[T: Path](value: T) -> T:
@@ -23,11 +23,24 @@ def variadic[*Ts, **P](*args: *Ts) -> None:
     """Take variadic type parameters."""
 
 
+def forward[**P](call: Callable[P, None], *args: P.args, **kwargs: P.kwargs) -> None:
+    """
+    Call with the arguments it takes.
+
+    :param args: positional
+    :param kwargs: by keyword
+    """
+
+
 class Stack[T]:
     """A stack."""
 
     def __init__(self, item: T) -> None:
         """Make a stack."""
+
+    def peek(self) -> T:
+        """Look at the top."""
+        raise NotImplementedError
 
 
 class Sizes[T: Sized]:
@@ -48,6 +61,18 @@ DTs = TypeVarTuple("DTs", default=next(iter(tuple[int, ...])))
 
 class Legacy(Generic[D, DP, *DTs]):
     """Generic the pre-PEP 695 way."""
+
+    def first(self) -> D:
+        """Return the first."""
+        raise NotImplementedError
+
+
+L = TypeVar("L")
+
+
+def loose(value: L) -> L:  # ruff:ignore[non-pep695-generic-function]  # no signature declares L
+    """Use a type variable no signature declares."""
+    return value
 
 
 def plain(value: int) -> int:

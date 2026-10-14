@@ -306,6 +306,9 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
     if full_name == "typing.Annotated":
         return (yield annotation.__origin__)
     if full_name in {"typing.TypeVar", "typing.ParamSpec", "typing.TypeVarTuple"} and not isinstance(annotation, type):
+        # the signature lists it with its bound, constraints and default already
+        if annotation in getattr(config, "_typehints_declared_type_params", ()):
+            return f"``{annotation.__name__}``"
         # typing.TypeVarTuple has neither a bound nor a variance, only the typing_extensions backport adds them
         params = {k: getattr(annotation, f"__{k}__", None) for k in ("bound", "covariant", "contravariant")}
         params = {k: v for k, v in params.items() if v}
@@ -321,6 +324,9 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
         args_format += ")"
         formatted_args = None if args else args_format
     elif full_name in {"typing.ParamSpecArgs", "typing.ParamSpecKwargs"} and not isinstance(annotation, type):
+        if annotation.__origin__ in getattr(config, "_typehints_declared_type_params", ()):
+            # its repr is the P.args form a signature writes
+            return f"``{annotation!r}``"
         formatted_args = f"\\(``{annotation.__origin__.__name__}``)"
     elif full_name == "typing.Optional":  # pragma: <3.14 cover
         args = tuple(x for x in args if x is not type(None))

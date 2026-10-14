@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import singledispatch
-from typing import TYPE_CHECKING, NamedTuple, Self, Union, overload
+from typing import TYPE_CHECKING, NamedTuple, Self, TypeVar, Union, overload
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -184,7 +184,11 @@ def takes_configured_alias(x: ConfiguredAlias) -> None:
     """
 
 
-def bounded[T: int](value: T) -> T:
+Bounded = TypeVar("Bounded", bound=int)
+
+
+# a module-level type variable shows in full, as no signature declares it
+def bounded(value: Bounded) -> Bounded:  # ruff:ignore[non-pep695-generic-function]
     """
     Take a bounded type parameter.
 

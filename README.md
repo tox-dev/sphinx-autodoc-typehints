@@ -600,17 +600,18 @@ To suppress only specific warning types, see [Warning categories](#warning-categ
 
 Some annotations render differently from how they are written:
 
-| Written                                                  | Rendered                                                          |
-| -------------------------------------------------------- | ----------------------------------------------------------------- |
-| `*args: *Ts`, `tuple[*Ts]`                               | `Unpack[TypeVarTuple(Ts)]`, `tuple[Unpack[TypeVarTuple(Ts)]]`     |
-| `*args: *tuple[int, ...]`                                | `Unpack[tuple[int, ...]]`                                         |
-| `def f[T: int](value: T)`, `T = TypeVar("T", bound=int)` | `TypeVar(T, bound=int)`                                           |
-| `P.args`, `P.kwargs` for `P = ParamSpec("P")`            | `ParamSpecArgs(P)`, `ParamSpecKwargs(P)`                          |
-| `UserId = NewType("UserId", int)`                        | `UserId (int)`                                                    |
-| `Annotated[int, ...]`                                    | `int`, with a `Doc(...)` in the metadata becoming the description |
-| `Literal[Color.RED]`                                     | `Literal[Color.RED]`, linking the enum member                     |
-| `tuple[()]`                                              | `tuple[()]`, the empty tuple                                      |
-| `typing_extensions.Self`                                 | `Self`, linking to `typing.Self` where `typing` has it            |
+| Written                                                  | Rendered                                                                               |
+| -------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `*args: *Ts`, `tuple[*Ts]`                               | `Unpack[TypeVarTuple(Ts)]`, `tuple[Unpack[TypeVarTuple(Ts)]]`                          |
+| `*args: *tuple[int, ...]`                                | `Unpack[tuple[int, ...]]`                                                              |
+| `def f[T: int](value: T)`, `class Box(Generic[T])`       | `T`, with the bound in the signature                                                   |
+| `T = TypeVar("T", bound=int)` in a non-generic signature | `TypeVar(T, bound=int)`                                                                |
+| `P.args`, `P.kwargs` for `P = ParamSpec("P")`            | `ParamSpecArgs(P)`, `ParamSpecKwargs(P)`, as written when the signature declares `**P` |
+| `UserId = NewType("UserId", int)`                        | `UserId (int)`                                                                         |
+| `Annotated[int, ...]`                                    | `int`, with a `Doc(...)` in the metadata becoming the description                      |
+| `Literal[Color.RED]`                                     | `Literal[Color.RED]`, linking the enum member                                          |
+| `tuple[()]`                                              | `tuple[()]`, the empty tuple                                                           |
+| `typing_extensions.Self`                                 | `Self`, linking to `typing.Self` where `typing` has it                                 |
 
 With Sphinx's
 [`python_display_short_literal_types`](https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-python_display_short_literal_types)
@@ -647,7 +648,9 @@ becomes an `:rtype:` entry.
 Autodoc leaves the type parameters of a generic object out of its signature. The extension adds them after the name,
 with bounds, constraints and defaults, the way [PEP 695](https://peps.python.org/pep-0695/) writes them:
 `def first[T: Sized](items: T)`, `class Stack[T]` and `type Pairs[K] = dict[K, K]`. A class made generic by subclassing
-`Generic[T]` shows its parameters the same way.
+`Generic[T]` shows its parameters the same way. A type parameter a signature declares this way renders by name where it
+is used, as `items (T)` or `args (P.args)`, while a type variable no signature declares keeps its full
+`TypeVar(T, bound=int)` form.
 
 Only parameters that already have a `:param:` line in the docstring get type information added, with two exceptions: a
 parameter whose annotation carries a `Doc(...)` description gets a `:param:` line of its own, and the entries of
