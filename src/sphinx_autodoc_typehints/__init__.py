@@ -613,9 +613,15 @@ def _class_member_type(name: str) -> type | None:
     owner, attribute = _documented_owner(name)
     if owner is None:
         return None
+    member = inspect.getattr_static(owner, _stored_name(owner, attribute), None)
+    return None if member is None else type(member)
+
+
+def _stored_name(owner: Any, attribute: str) -> str:
+    """Return the name the body of ``owner`` stores ``attribute`` under, mangled for a private name."""
     if attribute.startswith("__") and not attribute.endswith("__"):
-        attribute = f"_{owner.__name__.lstrip('_')}{attribute}"
-    return None if (member := inspect.getattr_static(owner, attribute, None)) is None else type(member)
+        return f"_{owner.__name__.lstrip('_')}{attribute}"
+    return attribute
 
 
 def _documented_owner(name: str) -> tuple[Any, str]:
@@ -652,9 +658,10 @@ def _inject_override(app: Sphinx, what: str, name: str, obj: Any, lines: list[st
     owner, attribute = _documented_owner(name)
     if not isinstance(owner, type):
         return
+    stored = _stored_name(owner, attribute)
     # an inherited member overrides what its defining class's bases define, not what that class itself does
-    defining = next(index for index, klass in enumerate(owner.__mro__) if attribute in vars(klass))
-    if (base := next((klass for klass in owner.__mro__[defining + 1 :] if attribute in vars(klass)), None)) is None:
+    definers = [klass for klass in owner.__mro__ if stored in vars(klass)]
+    if (base := next(iter(definers[1:]), None)) is None:
         return
     target = f"{fixup_module_name(app.config, base.__module__)}.{base.__qualname__}.{attribute}"
     # the class names which override this is, a bare member name would not; an explicit title keeps the parentheses

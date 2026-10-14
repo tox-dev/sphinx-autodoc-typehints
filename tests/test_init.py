@@ -2036,6 +2036,8 @@ def test_process_docstring_types_the_keys_of_unpacked_kwargs(
 class _OverrideBase:
     def run(self) -> str: ...
 
+    def __hook(self) -> None: ...
+
     @property
     def size(self) -> int: ...
 
@@ -2052,6 +2054,9 @@ class _OverrideChild(_OverrideBase):
     def extra(self) -> str: ...  # ty: ignore[invalid-explicit-override]  # the case under test
 
     def plain(self) -> str: ...
+
+    @override
+    def __hook(self) -> None: ...  # ty: ignore[invalid-explicit-override]  # the case under test
 
 
 class _OverrideGrandchild(_OverrideChild):
@@ -2122,6 +2127,18 @@ def test_process_docstring_links_what_an_override_overrides(
     app = make_docstring_app(typehints_document_rtype=False, **overrides)
     process_docstring(app, what, f"test_init.{member}", obj, None, lines)
     assert lines == ["Summary.", *([""] if expected else []), *expected]
+
+
+@pytest.mark.parametrize(
+    "owner", [pytest.param("_OverrideChild", id="own"), pytest.param("_OverrideInheritor", id="inherited")]
+)
+def test_process_docstring_override_of_a_private_member_links_nothing(owner: str) -> None:
+    lines = ["Summary."]
+    obj = inspect.getattr_static(_OverrideChild, "_OverrideChild__hook")
+    process_docstring(
+        make_docstring_app(typehints_document_rtype=False), "method", f"test_init.{owner}.__hook", obj, None, lines
+    )
+    assert lines == ["Summary."]
 
 
 def test_process_docstring_override_outside_an_importable_class() -> None:
