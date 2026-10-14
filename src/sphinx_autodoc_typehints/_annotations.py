@@ -92,6 +92,11 @@ _TYPES_DICT[types.FunctionType] = "FunctionType"
 class MyTypeAliasForwardRef(TypeAliasForwardRef):
     crossref: bool = False
 
+    def __init__(self, name: str, *, configured: bool = False) -> None:
+        super().__init__(name)
+        # an autodoc_type_aliases target
+        self.configured = configured
+
     def __or__(self, value: Any) -> Any:  # ty: ignore[invalid-method-override]
         return _written_with_bars(Union[self, value])  # ruff:ignore[non-pep604-annotation-union]
 
@@ -208,6 +213,11 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
                     return f":py:type:`{prefix}{candidate}`"
         if isinstance(annotation, MyTypeAliasForwardRef) and annotation.crossref:
             return f":py:type:`{prefix}{annotation.name}`"
+        if isinstance(annotation, MyTypeAliasForwardRef) and annotation.configured:
+            # the target may be documented as data or in a document read later, and the value may be display text
+            # alone, so link it only where the reference resolves once every document is read
+            linked = f":py:obj:`{prefix}{annotation.name}`"
+            return defer_alias_choice(config, linked, annotation.name) or annotation.name
         return annotation.name
 
     if _is_type_alias(annotation):

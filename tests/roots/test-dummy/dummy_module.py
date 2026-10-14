@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import singledispatch
-from typing import TYPE_CHECKING, NamedTuple, Self, overload
+from typing import TYPE_CHECKING, NamedTuple, Self, Union, overload
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -170,3 +170,15 @@ def versioned(a: int) -> int:
     .. versionadded:: 1.0
     """
     return a
+
+
+ConfiguredAlias = Union[int, str]  # documented as data, not a type statement
+"""An alias the configuration maps."""
+
+
+def takes_configured_alias(x: ConfiguredAlias) -> None:
+    """
+    Take it.
+
+    :param x: the x
+    """

@@ -802,6 +802,41 @@ def test_format_annotation_crossref_alias(crossref: bool, fully_qualified: bool,
 
 
 @pytest.mark.parametrize(
+    ("documents", "href"),
+    [
+        pytest.param(
+            {
+                "index": ".. autodata:: dummy_module.ConfiguredAlias\n\n"
+                ".. autofunction:: dummy_module.takes_configured_alias\n"
+            },
+            "#dummy_module.ConfiguredAlias",
+            id="same-document",
+        ),
+        pytest.param(
+            {
+                "index": ".. toctree::\n\n   later\n\n.. autofunction:: dummy_module.takes_configured_alias\n",
+                "later": ".. autodata:: dummy_module.ConfiguredAlias\n",
+            },
+            "later.html#dummy_module.ConfiguredAlias",
+            id="later-document",
+        ),
+    ],
+)
+@pytest.mark.sphinx(
+    "html",
+    testroot="dummy",
+    confoverrides={"autodoc_type_aliases": {"ConfiguredAlias": "dummy_module.ConfiguredAlias"}},
+)
+def test_configured_alias_links_its_data_entry(app: SphinxTestApp, documents: dict[str, str], href: str) -> None:
+    for name, content in documents.items():
+        (Path(app.srcdir) / f"{name}.rst").write_text(content)
+    app.build()
+
+    html = (Path(app.outdir) / "index.html").read_text()
+    assert set(re.findall(r'class="reference internal" href="([^"]*ConfiguredAlias)"', html)) == {href}
+
+
+@pytest.mark.parametrize(
     ("rst", "href"),
     [
         pytest.param(
