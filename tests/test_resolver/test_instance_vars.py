@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import contextlib
-from typing import Optional
+from typing import ClassVar, Final, Optional
 
 import pytest
 
-from sphinx_autodoc_typehints._resolver._instance_vars import get_instance_var_annotations
+from sphinx_autodoc_typehints._resolver._instance_vars import get_class_body_annotations, get_instance_var_annotations
 
 
 class _Simple:
@@ -127,3 +127,33 @@ def test_instance_vars_beyond_top_level_statements(cls: type, expected: dict[str
 )
 def test_no_instance_vars(cls: type) -> None:
     assert get_instance_var_annotations(cls) == {}
+
+
+class _Declared:
+    plain: int
+    shared: ClassVar[str] = ""
+    fixed: Final[float] = 1.0
+    bare: Final = 2
+
+
+class _DeclaredChild(_Declared):
+    extra: bytes
+
+
+class _DeclaredBadly:
+    broken: Undefined  # ruff:ignore[undefined-name]  # ty: ignore[unresolved-reference]  # the case under test
+
+
+@pytest.mark.parametrize(
+    ("cls", "expected"),
+    [
+        pytest.param(_Declared, {"plain": int, "shared": str, "fixed": float}, id="qualifiers-unwrapped"),
+        pytest.param(
+            _DeclaredChild, {"plain": int, "shared": str, "fixed": float, "extra": bytes}, id="through-the-bases"
+        ),
+        pytest.param(_DeclaredBadly, {}, id="unresolvable"),
+        pytest.param(_NoAnnotations, {}, id="none"),
+    ],
+)
+def test_class_body_annotations(cls: type, expected: dict[str, type]) -> None:
+    assert get_class_body_annotations(cls) == expected

@@ -59,7 +59,7 @@ features above. See [Avoid duplicate types with built-in Sphinx](#avoid-duplicat
   - [Handle circular imports](#handle-circular-imports)
   - [Resolve types from `TYPE_CHECKING` blocks](#resolve-types-from-type_checking-blocks)
   - [Show types for `attrs` or `dataclass` fields](#show-types-for-attrs-or-dataclass-fields)
-  - [Type instance attributes documented with `:ivar:`](#type-instance-attributes-documented-with-ivar)
+  - [Type attributes documented with `:ivar:` or `:cvar:`](#type-attributes-documented-with-ivar-or-cvar)
   - [Write a custom type formatter](#write-a-custom-type-formatter)
   - [Document a `type` alias without expanding it](#document-a-type-alias-without-expanding-it)
   - [Add types for C extensions or packages without annotations](#add-types-for-c-extensions-or-packages-without-annotations)
@@ -443,9 +443,10 @@ The extension backfills annotations from [attrs](https://www.attrs.org/) field m
 the class is documented with `.. autoclass::` and both `:members:` and `:undoc-members:`, since a field without a
 docstring is otherwise skipped.
 
-### Type instance attributes documented with `:ivar:`
+### Type attributes documented with `:ivar:` or `:cvar:`
 
-An attribute annotated where `__init__` assigns it gets a `:vartype:` for its `:ivar:` field:
+An attribute annotated in the class body, or where `__init__` assigns it, gets a `:vartype:` for its `:ivar:`, `:cvar:`
+or `:var:` field:
 
 ```python
 class Job:
@@ -459,8 +460,10 @@ class Job:
         self.retries: int = 0
 ```
 
-renders `retries` as `int`. Assignments inside `if`, `try` and `with` blocks count, ones in nested functions do not, and
-an `:ivar int retries:` or an existing `:vartype retries:` stays as written.
+renders `retries` as `int`, as does `retries: int` in the class body, the way a `__slots__` class declares it. A
+`ClassVar[...]` or `Final[...]` shows the type it holds, and where both declare an attribute the `__init__` annotation
+wins. Assignments inside `if`, `try` and `with` blocks count, ones in nested functions do not, and an
+`:ivar int retries:` or an existing `:vartype retries:` stays as written.
 
 ### Write a custom type formatter
 

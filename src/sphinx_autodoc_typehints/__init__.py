@@ -52,6 +52,7 @@ from ._resolver import (
     backfill_type_hints,
     collect_documented_type_aliases,
     get_all_type_hints,
+    get_class_body_annotations,
     get_descriptor_type_hint,
     get_instance_var_annotations,
     get_obj_location,
@@ -246,7 +247,8 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
         resolve_type_guarded_imports(app.config.autodoc_mock_imports, obj)
         resolve_type_guarded_imports(app.config.autodoc_mock_imports, inspect.unwrap(obj.__init__))
         backfill_attrs_annotations(obj)
-        ivar_annotations = get_instance_var_annotations(obj)
+        # an assignment in __init__ is the more specific declaration of the two
+        ivar_annotations = get_class_body_annotations(obj) | get_instance_var_annotations(obj)
     else:
         ivar_annotations = {}
     use_class_for_signature = False
@@ -922,7 +924,7 @@ def _generator_return(annotation: Any) -> Any:
 # rather than crashing the parser — see issue #683.
 _IVAR_FIELD_RE = re.compile(
     r"""
-    ^:ivar                       # literal field marker
+    ^:(?:ivar|cvar|var)          # a variable field, which :vartype types
     (?:\s+(?P<type>\S.*?))?      # optional inline type expression
     \s+(?P<name>\w+)             # attribute name (Python identifier)
     \s*:                         # closing colon of the field name
