@@ -44,6 +44,44 @@ class Account:
         return "account"
 
 
+class Proxy:
+    """Hands out the property it wraps only when read from the class."""
+
+    def __init__(self, wrapped: property) -> None:
+        self.wrapped = wrapped
+        self.__doc__ = wrapped.__doc__
+
+    def __get__(self, instance: object, owner: type | None = None) -> object:
+        return self.wrapped if instance is None else self.wrapped.__get__(instance, owner)
+
+
+class Proxied:
+    """Holds a proxied property."""
+
+    @Proxy
+    @property
+    def size(self) -> Annotated[int, "a count"]:
+        """The size."""
+        return 0
+
+
+class Vault:
+    """Holds members autodoc reaches through their mangled names."""
+
+    @property
+    def __code(self) -> int:
+        """The code."""
+        return 0
+
+    class __Lock:
+        """A lock."""
+
+        @property
+        def pins(self) -> int:
+            """The pins."""
+            return 0
+
+
 class Box[T]:
     """Holds a value."""
 
