@@ -44,6 +44,9 @@ _GENERATOR_TYPES = frozenset({
 
 
 def _get_sphinx_line_keyword_and_argument(line: str) -> tuple[str, str | None] | None:
+    # an indented field belongs to the block around it, such as a literal block or a note, not to the object
+    if not line.startswith(":"):
+        return None
     param_line_without_description = line.split(":", maxsplit=2)
     if len(param_line_without_description) != 3:  # ruff:ignore[magic-value-comparison]
         return None
@@ -94,7 +97,7 @@ def _is_generator_type(annotation: Any) -> bool:
 
 
 def _has_yields_section(lines: list[str]) -> bool:
-    return any(line.lstrip().startswith((":Yields:", ":yields:", ":yield:")) for line in lines)
+    return any(line.startswith((":Yields:", ":yields:", ":yield:")) for line in lines)
 
 
 def _safe_parse(inputstr: str, settings: Values | optparse.Values) -> nodes.document:
@@ -188,7 +191,7 @@ class SphinxFieldListFormat(DocstringFormat):
         return next(((line, True) for line in lines if line.startswith(fields)), (fields[0], False))
 
     def has_return_description(self, lines: list[str]) -> bool:  # ruff:ignore[no-self-use]
-        return any(line.lstrip().startswith((":return:", ":returns:")) for line in lines)
+        return any(line.startswith((":return:", ":returns:")) for line in lines)
 
     def get_rtype_insert_info(self, app: Sphinx, lines: list[str]) -> InsertIndexInfo | None:  # ruff:ignore[no-self-use]
         rtype_at = _remove_rtype(lines)
