@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 from typing import Optional
 
 import pytest
@@ -29,7 +30,8 @@ class _NestedFunction:
         self.outer: int = 0
 
         def inner() -> None:
-            fake_self_attr: str = ""  # ruff:ignore[unused-variable]
+            fake_self_attr: str = ""
+            self.leaked: str = fake_self_attr
 
         inner()
 
@@ -43,6 +45,23 @@ class _ComplexTypes:
 
 class _NoInit:
     pass
+
+
+class _InBlocks:
+    def __init__(self) -> None:
+        with contextlib.nullcontext():
+            self.label: str = ""
+        try:
+            self.port: int = 0
+        finally:
+            self.ready: bool = True
+        if not self.port:
+            self.flag: bool = True
+
+
+class _PositionalOnlySelf:
+    def __init__(self, /, size: int = 0) -> None:
+        self.size: int = size
 
 
 def test_basic_instance_var() -> None:
@@ -85,6 +104,18 @@ def test_complex_types(cls: type, attr: str, expected: object) -> None:
     cls()  # cover __init__
     result = get_instance_var_annotations(cls)
     assert result[attr] == expected
+
+
+@pytest.mark.parametrize(
+    ("cls", "expected"),
+    [
+        pytest.param(_InBlocks, {"label": str, "port": int, "ready": bool, "flag": bool}, id="inside-blocks"),
+        pytest.param(_PositionalOnlySelf, {"size": int}, id="positional-only-self"),
+    ],
+)
+def test_instance_vars_beyond_top_level_statements(cls: type, expected: dict[str, type]) -> None:
+    cls()  # cover __init__
+    assert get_instance_var_annotations(cls) == expected
 
 
 @pytest.mark.parametrize(

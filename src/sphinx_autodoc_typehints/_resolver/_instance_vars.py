@@ -3,7 +3,10 @@ from __future__ import annotations
 import ast
 import inspect
 import textwrap
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 
 def get_instance_var_annotations(cls: type) -> dict[str, Any]:
@@ -12,8 +15,8 @@ def get_instance_var_annotations(cls: type) -> dict[str, Any]:
 
     ``self.x: T = ...`` is not stored in ``cls.__annotations__`` at runtime, so
     ``typing.get_type_hints`` cannot see it — AST inspection is the only option.
-    Only top-level statements of ``__init__`` are scanned to avoid picking up
-    annotations from nested functions.
+    Statements inside blocks such as ``if``, ``try`` and ``with`` count, those of
+    nested functions and classes do not, as they belong to a scope that may never run.
     """
     init = cls.__init__
     if init is object.__init__:
@@ -27,8 +30,9 @@ def get_instance_var_annotations(cls: type) -> dict[str, Any]:
     raw: dict[str, str] = {}
     for node in ast.walk(tree):
         if isinstance(node, ast.FunctionDef) and node.name == "__init__":
-            self_name = node.args.args[0].arg if node.args.args else "self"
-            for stmt in node.body:
+            params = [*node.args.posonlyargs, *node.args.args]
+            self_name = params[0].arg if params else "self"
+            for stmt in _own_nodes(node):
                 if (
                     isinstance(stmt, ast.AnnAssign)
                     and isinstance(stmt.target, ast.Attribute)
@@ -50,6 +54,13 @@ def get_instance_var_annotations(cls: type) -> dict[str, Any]:
         except Exception:  # ruff:ignore[blind-except]
             resolved[attr_name] = ann_str
     return resolved
+
+
+def _own_nodes(node: ast.AST) -> Iterator[ast.AST]:
+    for child in ast.iter_child_nodes(node):
+        yield child
+        if not isinstance(child, ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef):
+            yield from _own_nodes(child)
 
 
 __all__ = ["get_instance_var_annotations"]
