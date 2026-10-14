@@ -430,9 +430,11 @@ def _format_literal_arg(arg: Any, config: Config) -> str:
         enum_cls = type(arg)
         module = _fixup_module_name(config, enum_cls.__module__)
         fully_qualified = getattr(config, "typehints_fully_qualified", False)
-        qualified = f"{module}.{enum_cls.__qualname__}.{arg.name}" if module else f"{enum_cls.__qualname__}.{arg.name}"
-        prefix = "" if fully_qualified or not module else "~"
-        return f":py:attr:`{prefix}{qualified}`"
+        member = f"{enum_cls.__qualname__}.{arg.name}"
+        if not module:
+            return f":py:attr:`{member}`"
+        # a ~ would keep only the member name, and members of different enums would read the same
+        return f":py:attr:`{module}.{member}`" if fully_qualified else f":py:attr:`{member} <{module}.{member}>`"
     return f"``{arg!r}``"
 
 

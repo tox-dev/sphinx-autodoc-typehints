@@ -534,7 +534,7 @@ def test_always_use_bars_union(annotation: str, expected_result: str) -> None:
         pytest.param(
             "Literal",
             (SomeEnum.VALUE,),
-            rf":py:data:`~typing.Literal`\ \[:py:attr:`~{__name__}.SomeEnum.VALUE`]",
+            rf":py:data:`~typing.Literal`\ \[:py:attr:`SomeEnum.VALUE <{__name__}.SomeEnum.VALUE>`]",
             id="Literal-enum",
         ),
         pytest.param("Self", None, ":py:data:`~typing.Self`", id="Self"),
@@ -660,6 +660,37 @@ def test_format_annotation_with_formatter_returning_none() -> None:
 )
 def test_format_annotation_short_literals(annotation: Any, expected_result: str) -> None:
     assert format_annotation(annotation, create_autospec(Config), short_literals=True) == expected_result
+
+
+class _OtherEnum(enum.Enum):
+    VALUE = 1
+
+
+@pytest.mark.parametrize(
+    ("overrides", "expected"),
+    [
+        pytest.param(
+            {},
+            rf":py:data:`~typing.Literal`\ \[:py:attr:`SomeEnum.VALUE <{__name__}.SomeEnum.VALUE>`, "
+            rf":py:attr:`_OtherEnum.VALUE <{__name__}._OtherEnum.VALUE>`]",
+            id="short",
+        ),
+        pytest.param(
+            {"typehints_fully_qualified": True},
+            rf":py:data:`typing.Literal`\ \[:py:attr:`{__name__}.SomeEnum.VALUE`, "
+            rf":py:attr:`{__name__}._OtherEnum.VALUE`]",
+            id="fully-qualified",
+        ),
+        pytest.param(
+            {"typehints_fixup_module_name": lambda module: "" if module == __name__ else module},
+            r":py:data:`~typing.Literal`\ \[:py:attr:`SomeEnum.VALUE`, :py:attr:`_OtherEnum.VALUE`]",
+            id="without-module",
+        ),
+    ],
+)
+def test_format_annotation_literal_enum_members_keep_their_class(overrides: dict[str, Any], expected: str) -> None:
+    config = create_autospec(Config, **overrides)
+    assert format_annotation(Literal[SomeEnum.VALUE, _OtherEnum.VALUE], config) == expected
 
 
 def test_get_annotation_module_raises_on_unknown() -> None:
