@@ -213,6 +213,49 @@ def test_process_signature_keeps_a_written_signature(given: str, expected: tuple
     assert process_signature(app, "function", "mod.signed", _explicitly_signed, Options(), given, "") == expected
 
 
+class _Lock:
+    def __init__(self, path: str, timeout: float = -1) -> None: ...
+
+
+class _ExtendingMeta(type):
+    def __call__(cls, path: str, timeout: float = -1, **kwargs: Any) -> Any: ...
+
+
+class _PassingMeta(type):
+    def __call__(cls, *args: Any, **kwargs: Any) -> Any: ...
+
+
+class _LoopingMeta(type):
+    def __call__(cls, path: str) -> Any: ...
+
+
+# a wrapper loop, which no signature can be read through
+functools.update_wrapper(_LoopingMeta.__call__, _LoopingMeta.__call__)
+
+
+class _ExtendedLock(_Lock, metaclass=_ExtendingMeta): ...
+
+
+class _PassedLock(_Lock, metaclass=_PassingMeta): ...
+
+
+class _LoopedLock(_Lock, metaclass=_LoopingMeta): ...
+
+
+@pytest.mark.parametrize(
+    ("cls", "given", "expected"),
+    [
+        pytest.param(
+            _ExtendedLock, "(path: str, timeout: float = -1, **kwargs: Any)", "(path, timeout=-1, **kwargs)", id="own"
+        ),
+        pytest.param(_PassedLock, "(*args: Any, **kwargs: Any)", "(path, timeout=-1)", id="pass-through"),
+        pytest.param(_LoopedLock, "(path: str, timeout: float = -1)", "(path, timeout=-1)", id="unreadable"),
+    ],
+)
+def test_process_signature_class_strips_types_from_metaclass_call(cls: type, given: str, expected: str) -> None:
+    assert process_signature(make_sig_app(), "class", "mod.Lock", cls, Options(), given, "") == (expected, None)
+
+
 def test_process_signature_class_omits_constructor_return() -> None:
     class ConstructedFromInit:
         def __init__(self, count: int) -> None: ...
