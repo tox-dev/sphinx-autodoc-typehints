@@ -83,6 +83,7 @@ if TYPE_CHECKING:
     from docutils.nodes import Node
     from docutils.parsers.rst import states
     from sphinx.application import Sphinx
+    from sphinx.config import Config
     from sphinx.environment import BuildEnvironment
     from sphinx.ext.autodoc import Options
 
@@ -1242,6 +1243,42 @@ def validate_config(app: Sphinx, env: BuildEnvironment, docnames: list[str]) -> 
     app.config._intersphinx_type_mapping = build_type_mapping(env)  # ruff:ignore[private-member-access]
 
 
+def cache_fixup_module_name(_app: Sphinx, config: Config) -> None:
+    if (function := config.typehints_fixup_module_name) is not None:
+        config.typehints_fixup_module_name = _FixupModuleName(function)
+
+
+class _FixupModuleName:
+    """
+    A ``typehints_fixup_module_name`` function that pickles as its source.
+
+    Sphinx can't pickle a function into its cached environment, so on the next build it couldn't tell whether the
+    function changed; comparing the source re-reads the documents only when the function was edited.
+    """
+
+    __hash__ = None
+
+    def __init__(self, function: Callable[[str], str]) -> None:
+        self._function = function
+        try:
+            self._source = inspect.getsource(function)
+        except (OSError, TypeError):
+            # with no source to compare, the repr carries the object's id, so every build counts as a change
+            self._source = repr(function)
+
+    def __call__(self, module: str) -> str:
+        return self._function(module)
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, _FixupModuleName) and self._source == other._source
+
+    def __repr__(self) -> str:
+        return self._source
+
+    def __getstate__(self) -> dict[str, str]:
+        return {"_source": self._source}
+
+
 def sphinx_autodoc_typehints_type_role(
     _role: str,
     _rawtext: str,
@@ -1273,11 +1310,12 @@ def setup(app: Sphinx) -> dict[str, bool | str]:
     app.add_config_value("typehints_document_overloads", True, "env")  # ruff:ignore[boolean-positional-value-in-call]
     app.add_config_value("typehints_use_signature", False, "env")  # ruff:ignore[boolean-positional-value-in-call]
     app.add_config_value("typehints_use_signature_return", False, "env")  # ruff:ignore[boolean-positional-value-in-call]
-    app.add_config_value("typehints_fixup_module_name", None, "")
+    app.add_config_value("typehints_fixup_module_name", None, "env")
     app.add_role("sphinx_autodoc_typehints_type", sphinx_autodoc_typehints_type_role)
     app.add_role(ALIAS_CHOICE_ROLE, alias_choice_role)
     app.add_directive(DEPRECATED_DIRECTIVE, DeprecatedDirective)
     app.add_post_transform(DeferAliasChoice)
+    app.connect("config-inited", cache_fixup_module_name)
     app.connect("env-merge-info", merge_alias_choices)
     app.connect("env-before-read-docs", validate_config)
     app.connect("autodoc-process-signature", process_signature)

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from functools import cmp_to_key
+from functools import cmp_to_key, partial
 from pathlib import Path
 from textwrap import dedent, indent
 from typing import TYPE_CHECKING, Any
@@ -618,23 +618,71 @@ def test_default_annotation_without_typehints(app: SphinxTestApp, status: String
     assert text_contents == normalize_sphinx_text(dedent(expected_contents))
 
 
-@pytest.mark.sphinx("text", testroot="dummy")
+def _fixup_wrong_module_path(mod: str) -> str:
+    if not mod.startswith("wrong_module_path"):
+        return mod
+    return "export_module" + mod.removeprefix("wrong_module_path")
+
+
+@pytest.mark.sphinx("text", testroot="dummy", confoverrides={"typehints_fixup_module_name": _fixup_wrong_module_path})
 def test_wrong_module_path(app: SphinxTestApp, status: StringIO, warning: StringIO) -> None:
     app.config.master_doc = "wrong_module_path"  # create flag
     app.config.default_role = "literal"
     app.config.nitpicky = True
     app.config.nitpick_ignore = {("py:data", "typing.Optional")}
-
-    def fixup_module_name(mod: str) -> str:
-        if not mod.startswith("wrong_module_path"):
-            return mod
-        return "export_module" + mod.removeprefix("wrong_module_path")
-
-    app.config.typehints_fixup_module_name = fixup_module_name
     app.build()
 
     assert "build succeeded" in status.getvalue()
     assert not warning.getvalue().strip()
+
+
+def _fixup_to_first(mod: str) -> str:
+    return mod.replace("wrong_module_path", "first")
+
+
+def _fixup_to_second(mod: str) -> str:
+    return mod.replace("wrong_module_path", "second")
+
+
+@pytest.mark.parametrize(
+    ("first", "second"),
+    [
+        pytest.param(_fixup_to_first, _fixup_to_second, id="function"),
+        pytest.param(partial(_fixup_to_first), partial(_fixup_to_second), id="no-source"),
+    ],
+)
+@pytest.mark.sphinx("text", testroot="dummy")
+def test_fixup_module_name_change_rereads_documents(
+    app: SphinxTestApp,
+    write_rst: Callable[[str], None],
+    make_app: Callable[..., SphinxTestApp],
+    first: Callable[[str], str],
+    second: Callable[[str], str],
+) -> None:
+    write_rst(".. autofunction:: wrong_module_path.f")
+    for fixup in (first, second):
+        rebuilt = make_app(
+            "text",
+            srcdir=Path(app.srcdir),
+            confoverrides={"typehints_fixup_module_name": fixup, "typehints_fully_qualified": True},
+        )
+        rebuilt.build()
+
+    assert '"second.A"' in (Path(rebuilt.outdir) / "index.txt").read_text()
+
+
+@pytest.mark.sphinx("text", testroot="dummy")
+def test_fixup_module_name_unchanged_keeps_environment(
+    app: SphinxTestApp, write_rst: Callable[[str], None], make_app: Callable[..., SphinxTestApp]
+) -> None:
+    write_rst(".. autofunction:: wrong_module_path.f")
+    for _ in range(2):
+        rebuilt = make_app(
+            "text", srcdir=Path(app.srcdir), confoverrides={"typehints_fixup_module_name": _fixup_to_first}
+        )
+        rebuilt.build()
+
+    assert "typehints_fixup_module_name" not in rebuilt.status.getvalue()
 
 
 class _IvarClass:
