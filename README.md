@@ -435,7 +435,9 @@ The return type options combine as follows:
 - **Both defaults** (`typehints_document_rtype = True`, `typehints_use_rtype = True`) -- return type appears as a
   separate `:rtype:` block below the description.
 - **Inline mode** (`typehints_document_rtype = True`, `typehints_use_rtype = False`) -- return type is appended to the
-  `:return:` text. If there's no `:return:` entry, it falls back to a separate block.
+  `:return:` text. If there's no `:return:` entry, it falls back to a separate block. A `:return:` entry that already
+  states its type, such as napoleon's `*int* -- the value`, is left as it is, while a description that only contains a
+  `--`, such as `the value -- or None when missing`, still gets the type.
 - **Disabled** (`typehints_document_rtype = False`) -- no return type shown, regardless of other settings.
 - **Skip None** (`typehints_document_rtype_none = False`) -- hides `None` return types specifically, other return types
   still appear.

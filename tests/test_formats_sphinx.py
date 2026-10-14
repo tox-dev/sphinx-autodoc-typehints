@@ -221,3 +221,27 @@ def test_process_docstring_replaces_a_multi_line_rtype(use_rtype: bool, expected
         make_docstring_app(typehints_use_rtype=use_rtype), "function", "mod.mapping", mapping, None, lines
     )
     assert lines == expected
+
+
+@pytest.mark.parametrize(
+    ("line", "expected"),
+    [
+        pytest.param(
+            ":returns: the value -- or None when missing",
+            r":return: :sphinx_autodoc_typehints_type:`\:py\:class\:\`int\`` -- the value -- or None when missing",
+            id="description-with-dashes",
+        ),
+        pytest.param(":returns: *int* -- the value", ":returns: *int* -- the value", id="napoleon-emphasis"),
+        pytest.param(":returns: ``int`` -- the value", ":returns: ``int`` -- the value", id="literal"),
+        pytest.param(":returns: int -- the value", ":returns: int -- the value", id="plain-type"),
+        pytest.param(
+            ":returns: dict[str, int] -- the value", ":returns: dict[str, int] -- the value", id="bracketed-type"
+        ),
+    ],
+)
+def test_process_docstring_inline_return_type_only_where_none_is_stated(line: str, expected: str) -> None:
+    def value() -> int: ...
+
+    lines = [line]
+    sat.process_docstring(make_docstring_app(typehints_use_rtype=False), "function", "mod.value", value, None, lines)
+    assert lines == [expected]
