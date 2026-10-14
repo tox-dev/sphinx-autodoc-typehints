@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-import re
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING
 
 from docutils.utils import new_document
 from sphinx.parsers import RSTParser
@@ -14,14 +13,6 @@ if TYPE_CHECKING:
     from docutils import nodes
     from docutils.frontend import Values
     from docutils.statemachine import StringList
-
-_UNESCAPE_RE: Final = re.compile(
-    r"""
-    \\          # literal backslash
-    ([^ ])      # followed by any non-space character (captured)
-    """,
-    re.VERBOSE,
-)
 
 
 class _RstSnippetParser(RSTParser):
@@ -40,8 +31,8 @@ def parse(inputstr: str, settings: Values | optparse.Values) -> nodes.document:
 
 
 def unescape(escaped: str) -> str:
-    escaped = escaped.replace("\x00", "")
-    return _UNESCAPE_RE.sub(r"\1", escaped)
+    # docutils already resolved the escapes, leaving a null marker before each escaped character
+    return escaped.replace("\x00", "")
 
 
 __all__ = ["parse", "unescape"]
