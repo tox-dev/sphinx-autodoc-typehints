@@ -248,6 +248,11 @@ default next to that type the same way. With `"braces-after"`, the default close
 description. A list, a directive such as `.. note::`, or a literal block at the end of the description stays as written,
 and a paragraph introducing a literal block keeps its `::` last.
 
+A dataclass field declared with `field(default_factory=list)`, or an attrs one with `attrs.field(factory=list)`, gets a
+fresh value on each call, and its default reads as that call, `list()`, in both the signature and the parameter list. An
+attrs factory taking the instance reads as `make(self)`. A lambda, or any other factory without a name to look up, keeps
+the `<factory>` placeholder, since its source is not reliably recoverable from a generated `__init__`.
+
 ### Document `**kwargs` typed with a `TypedDict`
 
 [PEP 692](https://peps.python.org/pep-0692/) types `**kwargs` key by key through a
