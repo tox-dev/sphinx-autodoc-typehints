@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any
 import pytest
 import typing_extensions
 from conftest import make_docstring_app, make_sig_app, normalize_sphinx_text
+from sphinx.errors import ConfigError
 from sphinx.ext.autodoc import Options
 
 from sphinx_autodoc_typehints import process_docstring, process_signature
@@ -253,7 +254,7 @@ def test_sphinx_output_default_role(app: SphinxTestApp, status: StringIO) -> Non
         ("comma", '("int", default: "1") -- bar'),
         ("braces", '("int" (default: "1")) -- bar'),
         ("braces-after", '("int") -- bar (default: "1")'),
-        ("comma-after", Exception("needs to be one of")),
+        ("comma-after", ConfigError("needs to be one of")),
     ],
 )
 @pytest.mark.sphinx("text", testroot="dummy")
@@ -266,7 +267,7 @@ def test_sphinx_output_defaults(
     app.config.master_doc = "simple"  # create flag
     app.config.typehints_defaults = defaults_config_val  # create flag
     if isinstance(expected, Exception):
-        with pytest.raises(Exception, match=re.escape(str(expected))):
+        with pytest.raises(type(expected), match=re.escape(str(expected))):
             app.build()
         return
     app.build()
@@ -297,7 +298,7 @@ def test_sphinx_output_defaults(
     [
         (None, ['("bool") -- foo', '("int") -- bar', '"str"']),
         (lambda ann, conf: "Test", ["(Test) -- foo", "(Test) -- bar", "Test"]),  # ruff:ignore[unused-lambda-argument]
-        ("some string", Exception("needs to be callable or `None`")),
+        ("some string", ConfigError("needs to be callable or `None`")),
     ],
 )
 @pytest.mark.sphinx("text", testroot="dummy")
@@ -310,7 +311,7 @@ def test_sphinx_output_formatter(
     app.config.master_doc = "simple"  # create flag
     app.config.typehints_formatter = formatter_config_val  # create flag
     if isinstance(expected, Exception):
-        with pytest.raises(Exception, match=re.escape(str(expected))):
+        with pytest.raises(type(expected), match=re.escape(str(expected))):
             app.build()
         return
     app.build()

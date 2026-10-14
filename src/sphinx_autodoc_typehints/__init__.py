@@ -11,6 +11,7 @@ from functools import partial
 from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
 from docutils import nodes
+from sphinx.errors import ConfigError
 from sphinx.util import logging
 from sphinx.util.inspect import getdoc, object_description, stringify_signature
 from sphinx.util.inspect import signature as sphinx_signature
@@ -665,12 +666,12 @@ def validate_config(app: Sphinx, env: BuildEnvironment, docnames: list[str]) -> 
     valid = {None, "comma", "braces", "braces-after"}
     if app.config.typehints_defaults not in valid | {False}:
         msg = f"typehints_defaults needs to be one of {valid!r}, not {app.config.typehints_defaults!r}"
-        raise ValueError(msg)
+        raise ConfigError(msg)
 
     formatter = app.config.typehints_formatter
     if formatter is not None and not callable(formatter):
         msg = f"typehints_formatter needs to be callable or `None`, not {formatter}"
-        raise ValueError(msg)
+        raise ConfigError(msg)
 
     app.config._intersphinx_type_mapping = build_type_mapping(env)  # ruff:ignore[private-member-access]
 
