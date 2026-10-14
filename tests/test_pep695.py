@@ -695,6 +695,33 @@ def test_eager_annotations(
 
 
 @pytest.mark.sphinx("text", testroot="integration")
+def test_eager_alias_renders_only_where_written(app: SphinxTestApp) -> None:
+    (Path(app.srcdir) / "index.rst").write_text(
+        ".. py:type:: mod_eager.Count\n\n.. autofunction:: mod_eager.count_eager\n"
+    )
+    app.build()
+
+    result = (Path(app.srcdir) / "_build/text/index.txt").read_text()
+    assert normalize_sphinx_text(result) == normalize_sphinx_text(
+        dedent("""\
+        type mod_eager.Count
+
+        mod_eager.count_eager(amount, limit)
+
+           Count up to a limit.
+
+           Parameters:
+              * **amount** ("Count") -- The amount
+
+              * **limit** ("int") -- The limit
+
+           Return type:
+              "None"
+        """)
+    )
+
+
+@pytest.mark.sphinx("text", testroot="integration")
 def test_alias_documented_in_a_later_document(
     app: SphinxTestApp,
     status: StringIO,

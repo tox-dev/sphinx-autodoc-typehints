@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from typing import Any
+import importlib
+import re
+from operator import attrgetter
+from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock, create_autospec, patch
 
 import pytest
@@ -8,6 +11,9 @@ from sphinx.environment import BuildEnvironment
 
 from sphinx_autodoc_typehints._annotations import MyTypeAliasForwardRef
 from sphinx_autodoc_typehints._resolver._util import collect_documented_type_aliases, get_obj_location
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def _typed_func(x: int, y: str) -> bool: ...
@@ -63,16 +69,32 @@ def test_collect_documented_type_aliases_no_annotations() -> None:
     assert eager == {}
 
 
-def test_collect_documented_type_aliases_preserves_eager_path() -> None:
-    env = _make_env_with_types(["mymod.MyAlias"])
-
-    def func(x: int) -> str: ...
-
-    func.__annotations__ = {"x": int}
-    func.__globals__["MyAlias"] = int
-    deferred, eager = collect_documented_type_aliases(func, "mymod", env)
-    assert "MyAlias" in deferred
-    assert id(int) in eager
+@pytest.mark.parametrize(
+    "attr",
+    [
+        pytest.param("func", id="written-as-the-type"),
+        pytest.param("lam", id="lambda"),
+        pytest.param("Point.__init__", id="generated-without-source"),
+    ],
+)
+def test_collect_documented_type_aliases_ignores_annotations_not_written_as_the_alias(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest, attr: str
+) -> None:
+    name = re.sub(r"\W", "_", request.node.name)
+    (tmp_path / f"{name}.py").write_text(
+        "from dataclasses import dataclass\n\n"
+        "MyAlias = int\n\n\n"
+        "def func(x: int) -> None: ...\n\n\n"
+        "lam = lambda x: None\n"
+        "lam.__annotations__ = {'x': int}\n\n\n"
+        "@dataclass\n"
+        "class Point:\n"
+        "    x: int\n"
+    )
+    monkeypatch.syspath_prepend(tmp_path)
+    obj = attrgetter(attr)(importlib.import_module(name))
+    _, eager = collect_documented_type_aliases(obj, name, _make_env_with_types([f"{name}.MyAlias"]))
+    assert eager == {}
 
 
 def test_collect_documented_type_aliases_ignores_other_module_types() -> None:
