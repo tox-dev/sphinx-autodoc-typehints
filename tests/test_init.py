@@ -954,6 +954,16 @@ class _StatesSignature:
     def __init__(self, **data: object) -> None: ...
 
 
+class _UnreadyMeta(type):
+    @property
+    def __signature__(cls) -> inspect.Signature:  # ruff:ignore[bad-dunder-method-name]  # inspect reads it
+        raise ValueError
+
+
+class _Unready(metaclass=_UnreadyMeta):
+    def __init__(self, value: float) -> None: ...
+
+
 @pytest.mark.parametrize(
     ("cls", "expected"),
     [
@@ -961,6 +971,7 @@ class _StatesSignature:
         pytest.param(_InitOverridesNew, "(count: int)", id="init-overrides-inherited-new"),
         pytest.param(_Deprecated, "(value: float)", id="new-wrapping-object-new"),  # ty: ignore[deprecated]  # the case under test
         pytest.param(_StatesSignature, "(*, value: float)", id="stated-signature"),
+        pytest.param(_Unready, "(value: float)", id="signature-raises"),
     ],
 )
 def test_process_signature_picks_constructor_like_inspect(cls: type, expected: str) -> None:
@@ -988,6 +999,7 @@ _FLOAT_VALUE: Final = [r":type value: :sphinx_autodoc_typehints_type:`\:py\:clas
             id="init-beside-new-wrapping-object-new",
         ),
         pytest.param(_StatesSignature, _FLOAT_VALUE, id="stated-signature"),
+        pytest.param(_Unready, _FLOAT_VALUE, id="signature-raises"),
     ],
 )
 def test_process_docstring_types_params_from_the_constructor(cls: type, expected: list[str]) -> None:
@@ -1007,6 +1019,24 @@ def test_process_signature_strips_a_stated_signature() -> None:
         "(*, value)",
         None,
     )
+
+
+class _UnreadyWrapper:
+    @property
+    def __signature__(self) -> inspect.Signature:  # ruff:ignore[bad-dunder-method-name]  # inspect reads it
+        raise RuntimeError
+
+    def __call__(self, value: float) -> None: ...
+
+
+def _wrapped(value: float) -> None: ...
+
+
+def test_process_docstring_unwraps_past_a_signature_that_raises() -> None:
+    lines = [":param value: doc"]
+    obj = functools.update_wrapper(_UnreadyWrapper(), _wrapped)
+    process_docstring(make_docstring_app(typehints_document_rtype=False), "function", "mod.wrapped", obj, None, lines)
+    assert lines == _FLOAT_VALUE
 
 
 def _handle(ctx: object, name: str, count: int = 1) -> bool: ...
