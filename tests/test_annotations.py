@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import enum
 import importlib
 import pydoc
@@ -155,6 +156,7 @@ _PARAMSPEC_COMPONENT_ROLE: Final[str] = "data" if sys.version_info < (3, 13) els
         pytest.param(re.Match[str], "re", "Match", (str,), id="Match_parametrized"),
         pytest.param(IO, "typing", "IO", (), id="IO"),
         pytest.param(W, "typing", "NewType", (str,), id="W"),
+        pytest.param(dataclasses.InitVar[str], "dataclasses", "InitVar", (str,), id="InitVar"),
         pytest.param(P, "typing", "ParamSpec", (), id="P"),
         pytest.param(P_args, "typing", "ParamSpecArgs", (), id="P_args"),
         pytest.param(P_kwargs, "typing", "ParamSpecKwargs", (), id="P_kwargs"),
@@ -400,6 +402,11 @@ _CASES = [
     pytest.param(E, f":py:class:`~{__name__}.E`", id="E"),
     pytest.param(E[int], rf":py:class:`~{__name__}.E`\ \[:py:class:`int`]", id="E-int"),
     pytest.param(W, f":py:class:`~{__name__}.W` (:py:class:`str`)", id="W"),
+    pytest.param(
+        dataclasses.InitVar[list[int]],
+        r":py:class:`~dataclasses.InitVar`\ \[:py:class:`list`\ \[:py:class:`int`]]",
+        id="InitVar",
+    ),
     pytest.param(T, r":py:class:`~typing.TypeVar`\ \(``T``)", id="T"),
     pytest.param(TypeVar, ":py:class:`~typing.TypeVar`", id="TypeVar-class"),
     pytest.param(typing.ParamSpec, ":py:class:`~typing.ParamSpec`", id="ParamSpec-class"),
