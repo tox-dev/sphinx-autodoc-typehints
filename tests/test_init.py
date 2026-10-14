@@ -1054,7 +1054,7 @@ def _described(a: Annotated[int, Doc("the a")], b: str) -> None: ...
         pytest.param(
             _pair,
             ["Closing."],
-            ["Closing.", _A_TYPE, ":param a:", _B_TYPE, ":param b:"],
+            ["Closing.", "", _A_TYPE, ":param a:", _B_TYPE, ":param b:"],
             id="none-documented",
         ),
         pytest.param(

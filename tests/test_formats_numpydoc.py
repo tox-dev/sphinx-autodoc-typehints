@@ -602,3 +602,20 @@ def test_process_docstring_numpydoc_other_parameters_keep_their_section() -> Non
         "   * **y** (int) -- Shared.",
         "",
     ]
+
+
+def test_process_docstring_numpydoc_separates_an_added_param_from_its_comment() -> None:
+    def ratio(a: int) -> None: ...
+
+    lines = ["Summary.", "", "..", "    !! processed by numpydoc !!"]
+    app = make_docstring_app(typehints_document_rtype=False, always_document_param_types=True)
+    process_docstring(app, "function", "mod.ratio", ratio, None, lines)
+    assert lines == [
+        "Summary.",
+        "",
+        "..",
+        "    !! processed by numpydoc !!",
+        "",
+        r":type a: :sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``",
+        ":param a:",
+    ]

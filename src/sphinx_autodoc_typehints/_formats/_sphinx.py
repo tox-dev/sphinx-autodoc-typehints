@@ -182,7 +182,13 @@ class SphinxFieldListFormat(DocstringFormat):
         field: Literal["param", "keyword"] = "param",
     ) -> int:
         # beside the documented parameters, not after whatever the docstring ends with, such as its examples
-        at = _after_last_param_field(lines) if before is None else before
+        if before is not None:
+            at = before
+        elif (at := _after_last_param_field(lines)) is None:
+            # the first field after text, which a blank line has to separate a field list from
+            if lines and lines[-1].strip():
+                lines.append("")
+            at = len(lines)
         lines.insert(at, f":{field} {arg_name}: {description}".rstrip())
         return at
 
@@ -329,17 +335,15 @@ def _indent(line: str) -> int:
     return len(line) - len(line.lstrip())
 
 
-def _after_last_param_field(lines: list[str]) -> int:
-    """Return the index past the last parameter field and its continuation lines, or the end without one."""
+def _after_last_param_field(lines: list[str]) -> int | None:
+    """Return the index past the last parameter field and its continuation lines, if the docstring has one."""
     fields = ("type", *(synonym.strip() for synonym in PARAM_SYNONYMS))
     found = (
         at
         for at, line in enumerate(lines)
         if (field := _get_sphinx_line_keyword_and_argument(line)) and field[0] in fields
     )
-    if (last := max(found, default=None)) is None:
-        return len(lines)
-    return _field_end(lines, last)
+    return None if (last := max(found, default=None)) is None else _field_end(lines, last)
 
 
 def _remove_rtype(lines: list[str]) -> int | None:
