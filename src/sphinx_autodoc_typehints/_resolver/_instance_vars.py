@@ -66,9 +66,14 @@ def get_class_body_annotations(cls: type) -> dict[str, Any]:
         hints = get_type_hints(cls, include_extras=True)
     except Exception:  # ruff:ignore[blind-except]  # an annotation runs user code, which may raise anything
         return {}
-    held = {name: get_args(hint)[0] if get_origin(hint) in {ClassVar, Final} else hint for name, hint in hints.items()}
+    held = {name: get_args(hint)[0] if _is_qualifier(get_origin(hint)) else hint for name, hint in hints.items()}
     # a bare ClassVar or Final names no type
-    return {name: hint for name, hint in held.items() if hint not in {ClassVar, Final}}
+    return {name: hint for name, hint in held.items() if not _is_qualifier(hint)}
+
+
+def _is_qualifier(hint: Any) -> bool:
+    # matched by identity, as a set lookup would hash the annotation, which Annotated with dict metadata cannot do
+    return hint is ClassVar or hint is Final
 
 
 def _own_nodes(node: ast.AST) -> Iterator[ast.AST]:

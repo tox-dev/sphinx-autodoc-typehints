@@ -94,7 +94,8 @@ def _strip_inline_param_type(line: str, arg_name: str) -> tuple[str, str] | None
 
 def _is_generator_type(annotation: Any) -> bool:
     origin = getattr(annotation, "__origin__", None)
-    return origin in _GENERATOR_TYPES or annotation in _GENERATOR_TYPES
+    # matched by identity, as a set lookup would hash the annotation, which Annotated with dict metadata cannot do
+    return any(kind is origin or kind is annotation for kind in _GENERATOR_TYPES)
 
 
 def _has_yields_section(lines: list[str]) -> bool:
