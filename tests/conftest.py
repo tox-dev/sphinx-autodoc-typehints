@@ -54,6 +54,7 @@ def make_sig_app(**overrides: object) -> Sphinx:
         "python_display_short_literal_types": False,
         "always_use_bars_union": False,
         "strip_signature_backslash": False,
+        "typehints_document_overloads": True,
     }
     defaults.update(overrides)
     config = create_autospec(Config, **defaults)  # ty: ignore[invalid-argument-type]
@@ -77,6 +78,7 @@ def make_docstring_app(**overrides: object) -> Sphinx:
         "always_document_param_types": False,
         "python_display_short_literal_types": False,
         "typehints_document_overloads": True,
+        "typehints_use_signature": False,
     }
     defaults.update(overrides)
     config = create_autospec(Config, **defaults)  # ty: ignore[invalid-argument-type]

@@ -336,6 +336,20 @@ The overloads go right after the summary paragraph, so
 function documented through its overloads gets no separate return type, since each overload states its own. An exception
 class lists its constructor overloads like any other class, and a static method keeps its first parameter.
 
+With `typehints_use_signature = True` the overloads replace the signature instead, one line each, as plain autodoc shows
+them, and the `Overloads` field goes away:
+
+```text
+mod.f(x: int) -> str
+mod.f(x: str) -> bool
+```
+
+Every line shows its return type, as that is what tells the overloads apart, except for a class, whose lines list its
+constructor's parameters. A default an overload writes as `...` shows the implementation's default for that parameter,
+as plain autodoc shows it. Only the first line is the link target of the object. A signature written in the directive,
+`.. autofunction:: f(x)`, shows as written, with the overloads in the `Overloads` field, while `:no-overloads:` keeps
+the signature of the implementation.
+
 ### Show deprecations from `@deprecated`
 
 A function, method or class decorated with
@@ -404,6 +418,10 @@ The kept types read the same as the fields below them: `typehints_formatter`, `t
 `NewType` shows by its name, `UserId` rather than the field's `UserId (int)`, a type variable no signature declares
 shows as `~module.T`, and the markup a formatter returns becomes the name it refers to, so `` :class:`bool` `` turns
 into `bool`, which Sphinx then links as it links any annotation.
+
+A function with [`@overload`](https://docs.python.org/3/library/typing.html#typing.overload) signatures shows those in
+its signature, one line each, in place of the implementation's, see
+[Control overload signature display](#control-overload-signature-display).
 
 ### Handle circular imports
 

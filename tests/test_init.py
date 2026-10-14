@@ -30,6 +30,7 @@ import pytest
 from conftest import make_docstring_app, make_sig_app
 from docutils.frontend import get_default_settings
 from docutils.parsers.rst import Parser
+from sphinx import addnodes
 from sphinx.application import Sphinx
 from sphinx.config import Config
 from sphinx.ext.autodoc import Options
@@ -597,6 +598,156 @@ def test_overloads_rendered_in_docstring(
     app.build()
 
     assert (Path(app.srcdir) / "_build/text/index.txt").read_text() == expected
+
+
+@pytest.mark.parametrize(
+    ("directive", "expected"),
+    [
+        pytest.param(
+            "autofunction:: dummy_module.overloaded",
+            """\
+dummy_module.overloaded(value: int) -> DataClass
+dummy_module.overloaded(value: str, *, strict=False) -> MyNamedTuple
+
+   Overloaded function.
+""",
+            id="function",
+        ),
+        pytest.param(
+            "automethod:: dummy_module.ClassWithOverloadedMethods.build",
+            """\
+classmethod ClassWithOverloadedMethods.build(value: int) -> ClassWithOverloadedMethods
+classmethod ClassWithOverloadedMethods.build(value: str) -> ClassWithOverloadedMethods
+
+   Build one.
+""",
+            id="classmethod",
+        ),
+        pytest.param(
+            "automethod:: dummy_module.ClassWithOverloadedMethods.convert",
+            """\
+ClassWithOverloadedMethods.convert(value: int) -> int
+ClassWithOverloadedMethods.convert(value: str) -> str
+
+   Convert value.
+""",
+            id="method",
+        ),
+        pytest.param(
+            "automethod:: dummy_module.ClassWithOverloadedMethods.parse",
+            """\
+static ClassWithOverloadedMethods.parse(value: int) -> int
+static ClassWithOverloadedMethods.parse(value: str) -> str
+
+   Parse value.
+""",
+            id="staticmethod",
+        ),
+        pytest.param(
+            "autoclass:: dummy_module.ClassWithOverloadedInit",
+            """\
+class dummy_module.ClassWithOverloadedInit(value: int)
+class dummy_module.ClassWithOverloadedInit(value: str)
+
+   Class docstring.
+""",
+            id="constructor",
+        ),
+        pytest.param(
+            "autofunction:: dummy_module.overloaded_generic",
+            """\
+dummy_module.overloaded_generic[T: int](value: T) -> T
+dummy_module.overloaded_generic[T: int](value: list[T]) -> T
+
+   Generic function.
+""",
+            id="type-params",
+        ),
+        pytest.param(
+            "autofunction:: dummy_module.overloaded_opt_out",
+            """\
+dummy_module.overloaded_opt_out(value: int | str)
+
+   Opted out.
+
+   Return type:
+      "int" | "str"
+""",
+            id="no-overloads",
+        ),
+        pytest.param(
+            "autofunction:: dummy_module.overloaded_options",
+            """\
+dummy_module.overloaded_options(value: int) -> int
+dummy_module.overloaded_options(value: str, *, flag: bool = ...) -> str
+
+   Overloaded function taking options.
+""",
+            id="default-the-implementation-lacks",
+        ),
+        pytest.param(
+            "autofunction:: dummy_module.overloaded(value)",
+            """\
+dummy_module.overloaded(value)
+
+   Overloaded function.
+
+   Overloads:
+      * **value** ("int") → "DataClass"
+
+      * **value** ("str"), *, **strict** = "False" → "MyNamedTuple"
+""",
+            id="written-signature",
+        ),
+    ],
+)
+@pytest.mark.sphinx("text", testroot="dummy", confoverrides={"typehints_use_signature": True})
+def test_overloads_rendered_in_signature(
+    app: SphinxTestApp, write_rst: Callable[[str], None], directive: str, expected: str
+) -> None:
+    write_rst(f".. {directive}")
+    app.build()
+
+    assert (Path(app.srcdir) / "_build/text/index.txt").read_text() == expected
+
+
+@pytest.mark.sphinx(
+    "text", testroot="dummy", confoverrides={"typehints_use_signature": True, "autoclass_content": "both"}
+)
+def test_overloads_in_signature_opted_out_by_constructor_docstring(
+    app: SphinxTestApp, write_rst: Callable[[str], None]
+) -> None:
+    write_rst(".. autoclass:: dummy_module.ClassWithOverloadedInitOptingOut")
+    app.build()
+
+    assert (
+        (Path(app.srcdir) / "_build/text/index.txt").read_text()
+        == """\
+class dummy_module.ClassWithOverloadedInitOptingOut(value: int | str)
+
+   Class docstring.
+
+   Constructor docstring.
+"""
+    )
+
+
+@pytest.mark.sphinx("text", testroot="dummy", confoverrides={"typehints_use_signature": True})
+def test_overload_signature_cross_references_types(app: SphinxTestApp, write_rst: Callable[[str], None]) -> None:
+    write_rst(".. autofunction:: dummy_module.overloaded")
+    app.build()
+
+    second = list(app.env.get_doctree("index").findall(addnodes.desc_signature))[1]
+    assert [xref["reftarget"] for xref in second.findall(addnodes.pending_xref)] == ["str", "dummy_module.MyNamedTuple"]
+
+
+@pytest.mark.sphinx("text", testroot="dummy", confoverrides={"typehints_use_signature": True})
+def test_overload_signature_targets_only_the_first_line(app: SphinxTestApp, write_rst: Callable[[str], None]) -> None:
+    write_rst(".. autofunction:: dummy_module.overloaded")
+    app.build()
+
+    signatures = app.env.get_doctree("index").findall(addnodes.desc_signature)
+    assert [signature["ids"] for signature in signatures] == [["dummy_module.overloaded"], []]
 
 
 def test_local_function_warning_includes_location() -> None:

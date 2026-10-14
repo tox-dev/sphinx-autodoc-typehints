@@ -8,20 +8,24 @@ import inspect
 import re
 import sys
 import types
+from contextlib import suppress
 from functools import partial
 from keyword import iskeyword
 from typing import (
     TYPE_CHECKING,
     Any,
+    Final,
     Literal,
     Unpack,
+    cast,
     get_args,
     get_origin,
 )
 
 from docutils import nodes
-from sphinx.errors import ConfigError
+from sphinx.errors import ConfigError, PycodeError
 from sphinx.locale import _  # ruff:ignore[import-private-name]  # the translation napoleon labels its fields with
+from sphinx.pycode import ModuleAnalyzer
 from sphinx.util import logging
 from sphinx.util.inspect import getdoc, object_description, signature_from_str, stringify_signature
 from sphinx.util.inspect import signature as sphinx_signature
@@ -69,11 +73,11 @@ from ._resolver import (
 )
 from ._type_params import add_type_params, bound_type_args, declared_type_params, specialize
 from ._typed_dict import inject_extra_items, typed_dict_keys
-from .patches import _OVERLOADS_CACHE, install_patches
+from .patches import _OVERLOADS_CACHE, add_signature_lines, install_patches
 from .version import __version__
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
+    from collections.abc import Callable, Iterator, Mapping
 
     from docutils.nodes import Node
     from docutils.parsers.rst import states
@@ -84,6 +88,7 @@ if TYPE_CHECKING:
     from ._annotations import WrittenTypeAlias
 
 _LOGGER = logging.getLogger(__name__)
+_OVERLOADED_KINDS: Final = frozenset({"function", "method", "class", "exception"})
 
 
 def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-many-return-statements, too-many-arguments, too-many-positional-arguments]
@@ -121,7 +126,8 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-
         # (TYPE_CHECKING-only names, subscripting a non-generic class). __annotate__ still signals
         # annotations exist, and sphinx_signature renders them without evaluation via FORWARDREF.
         has_annotations = getattr(annotated, "__annotate__", None)
-    if not has_annotations and _declared_signature(obj) is None:
+    overloads = _signature_overloads(app, what, original_obj, obj)
+    if not has_annotations and _declared_signature(obj) is None and not overloads:
         return None
 
     sph_signature = sphinx_signature(obj, type_aliases=app.config["autodoc_type_aliases"])
@@ -134,11 +140,8 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-
         with logging.suppress_logging():
             type_hints, state = _resolved_type_hints(app, name, original_obj, obj, annotated)
         with annotation_state(app.config, **state, _typehints_signature=True):
-            short_literals = app.config.python_display_short_literal_types
-            shown = {
-                key: signature_text(format_annotation(hint, app.config, short_literals=short_literals))
-                for key, hint in type_hints.items()
-            }
+            shown = {key: _signature_type(app, hint) for key, hint in type_hints.items()}
+            overloads = [_shown_overload(app, what, name, obj, overload) for overload in overloads]
 
     if app.config.typehints_use_signature_return:
         sph_signature = sph_signature.replace(return_annotation=shown.get("return", sph_signature.return_annotation))
@@ -174,16 +177,93 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-
                 start = 1
 
     if _names_other_parameters(signature, parameters[start:]):
+        if overloads:
+            # the header keeps the written signature, so the overloads go to the docstring field instead
+            _written_signatures(app.env).add(name)
         return None
+    unqualified = not getattr(app.config, "typehints_fully_qualified", False)
+    if overloads:
+        return _overload_lines(app, name, overloads, unqualified=unqualified), None
     sph_signature = sph_signature.replace(parameters=parameters[start:])
     formatted = stringify_signature(
         sph_signature,
         # a class signature describes the call building the instance, so its constructor's -> None does not belong
         show_return_annotation=app.config.typehints_use_signature_return and not inspect.isclass(original_obj),
-        unqualified_typehints=not getattr(app.config, "typehints_fully_qualified", False),
+        unqualified_typehints=unqualified,
     )
+    return _directive_text(app, formatted), None
+
+
+def _overload_lines(app: Sphinx, name: str, overloads: list[inspect.Signature], *, unqualified: bool) -> str:
+    """Return the first overload's signature, and have the directive show the others on lines of their own."""
+    # the return is what tells overloads apart, so each shows it
+    texts = [
+        _directive_text(app, stringify_signature(overload, unqualified_typehints=unqualified)) for overload in overloads
+    ]
+    add_signature_lines(app.env, name, texts)
+    return texts[0]
+
+
+def _signature_overloads(app: Sphinx, what: str, documented: Any, obj: Any) -> list[inspect.Signature]:
+    """Return the overloads the header shows in place of the signature of ``obj``."""
+    if (
+        not app.config.typehints_use_signature
+        or not app.config.typehints_document_overloads
+        or what not in _OVERLOADED_KINDS
+        or (overloads := _resolve_overloads(obj)) is None
+        or _opts_out_of_overloads(app, documented, obj)
+    ):
+        return []
+    return overloads
+
+
+def _opts_out_of_overloads(app: Sphinx, documented: Any, constructor: Any) -> bool:
+    """
+    Whether a docstring autodoc shows for the object holds ``:no-overloads:``.
+
+    autodoc hands the docstring to process_docstring only after the signature is built, so it is read here directly.
+    """
+    sources = [documented]
+    if inspect.isclass(documented) and app.config.autoclass_content != "class":
+        sources.append(constructor)
+    return any(
+        line.strip() == ":no-overloads:"
+        for source in sources
+        for line in (getdoc(source, allow_inherited=app.config.autodoc_inherit_docstrings) or "").splitlines()
+    )
+
+
+def _signature_type(app: Sphinx, hint: Any) -> Any:
+    if hint is inspect.Parameter.empty:
+        return hint
+    return signature_text(
+        format_annotation(hint, app.config, short_literals=app.config.python_display_short_literal_types)
+    )
+
+
+def _shown_overload(app: Sphinx, what: str, name: str, obj: Any, overload: inspect.Signature) -> inspect.Signature:
+    params = list(overload.parameters.values())[_overload_skip(what, name) :]
+    # parsed from the source, so the annotations are strings until evaluated in the function's module
+    hints = resolve_string_annotations(
+        obj, {param.name: param.annotation for param in params} | {"return": overload.return_annotation}, {}
+    )
+    return overload.replace(
+        parameters=[param.replace(annotation=_signature_type(app, hints[param.name])) for param in params],
+        # a class signature describes the call building the instance, so its constructor's -> None does not belong
+        return_annotation=(
+            inspect.Signature.empty if what in {"class", "exception"} else _signature_type(app, hints["return"])
+        ),
+    )
+
+
+def _overload_skip(what: str, name: str) -> int:
+    """Count the leading parameters to drop from an overload, which lists a method's self or cls as parsed."""
+    return int(what != "function" and (what != "method" or _class_member_type(name) is not staticmethod))
+
+
+def _directive_text(app: Sphinx, signature: str) -> str:
     # the directive strips one level of backslashes only under this option, so escaping otherwise doubles them
-    return formatted.replace("\\", "\\\\") if app.config.strip_signature_backslash else formatted, None
+    return signature.replace("\\", "\\\\") if app.config.strip_signature_backslash else signature
 
 
 def _names_other_parameters(signature: str, parameters: list[inspect.Parameter]) -> bool:
@@ -390,20 +470,26 @@ def _inject_overload_signatures(
     # strip the directive first, as it must not show even where overloads are not rendered
     if (
         _strip_no_overloads_directive(lines)
-        or what not in {"function", "method", "class", "exception"}
+        or what not in _OVERLOADED_KINDS
         or not app.config.typehints_document_overloads
     ):
         return False
     if (overloads := _resolve_overloads(obj)) is None:
         return False
+    # the signature lines show them then, unless a written signature took their place
+    if app.config.typehints_use_signature and name not in _written_signatures(app.env):
+        return True
     if what in {"class", "exception"}:
         # a class documents its constructor's overloads, which return the instance like the class signature shows
         overloads = [overload.replace(return_annotation=inspect.Signature.empty) for overload in overloads]
-    # overloads parsed from the source still list a method's self or cls
-    skip = int(what != "function" and (what != "method" or _class_member_type(name) is not staticmethod))
     idx = _summary_end(lines)
-    lines[idx:idx] = ["", *_format_overload_lines(overloads, obj, app, skip)]
+    lines[idx:idx] = ["", *_format_overload_lines(overloads, obj, app, _overload_skip(what, name))]
     return True
+
+
+def _written_signatures(env: BuildEnvironment) -> set[str]:
+    """Name the objects whose signature autodoc kept as written, so their overloads show as a field."""
+    return cast("set[str]", env.temp_data.setdefault("sphinx_autodoc_typehints_written_signatures", set()))
 
 
 def _summary_end(lines: list[str]) -> int:
@@ -426,13 +512,30 @@ def _strip_no_overloads_directive(lines: list[str]) -> bool:
 
 
 def _resolve_overloads(obj: Any) -> list[inspect.Signature] | None:
-    module_name = getattr(obj, "__module__", None)
-    if not module_name or module_name not in _OVERLOADS_CACHE:
+    if not (module_name := getattr(obj, "__module__", None)) or not (qualname := getattr(obj, "__qualname__", None)):
         return None
-    qualname = getattr(obj, "__qualname__", None)
-    if not qualname:
+    # the analysis fills the cache, and autodoc runs it only after it emits autodoc-process-signature
+    if module_name not in _OVERLOADS_CACHE:
+        with suppress(PycodeError):
+            ModuleAnalyzer.for_module(module_name).analyze()
+    if not (overloads := _OVERLOADS_CACHE.get(module_name, {}).get(qualname)):
         return None
-    return _OVERLOADS_CACHE[module_name].get(qualname) or None
+    implementation = sphinx_signature(obj).parameters
+    return [
+        overload.replace(
+            parameters=[_implementation_default(param, implementation) for param in overload.parameters.values()]
+        )
+        for overload in overloads
+    ]
+
+
+def _implementation_default(
+    param: inspect.Parameter, implementation: Mapping[str, inspect.Parameter]
+) -> inspect.Parameter:
+    """Show the default an overload writes as ``...``, which tells a reader nothing, as the implementation has it."""
+    if param.default != "..." or (actual := implementation.get(param.name)) is None or actual.default is actual.empty:
+        return param
+    return param.replace(default=actual.default)
 
 
 def _class_member_type(name: str) -> type | None:
