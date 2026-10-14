@@ -122,13 +122,17 @@ class DeferAliasChoice(SphinxPostTransform):
         return doc
 
     def _reference(self, linked: str) -> list[Node] | None:
-        """Render the reference ``linked`` describes, or ``None`` if nothing documents its target."""
+        """
+        Render the reference ``linked`` describes, or ``None`` if nothing documents its target.
+
+        The target is the first reference: the type arguments after it resolve, or not, like any other reference.
+        """
         doc = self._parse(linked)
-        for xref in list(doc.findall(addnodes.pending_xref)):
-            if (resolved := self._resolve(xref)) is None:
-                return None
-            xref.replace_self(resolved)
-        return list(doc.children[0].children) if doc.children else []
+        target = next(doc.findall(addnodes.pending_xref))
+        if (resolved := self._resolve(target)) is None:
+            return None
+        target.replace_self(resolved)
+        return list(doc.children[0].children)
 
     def _resolve(self, xref: addnodes.pending_xref) -> Node | None:
         contnode = xref.children[0].deepcopy() if xref.children else nodes.literal(text=xref["reftarget"])

@@ -770,6 +770,36 @@ def test_alias_documented_in_a_later_document(
     assert '"list"["int"]' not in result
 
 
+_mod_pair = types.ModuleType("mod_pair")
+_mod_pair.__file__ = __file__
+exec(  # ruff:ignore[exec-builtin]
+    dedent("""\
+    type Pair[T] = tuple[T, T]
+
+    class Undocumented: ...
+
+    def take_pair(x: Pair[Undocumented]) -> None:
+        \"\"\"Take a pair.
+
+        :param x: the pair
+        \"\"\"
+    """),
+    _mod_pair.__dict__,
+)
+
+
+@pytest.mark.sphinx("text", testroot="integration")
+def test_documented_alias_links_with_an_undocumented_argument(
+    app: SphinxTestApp, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (Path(app.srcdir) / "index.rst").write_text(".. autofunction:: mod_pair.take_pair\n\n.. py:type:: mod_pair.Pair\n")
+    monkeypatch.setitem(sys.modules, "mod_pair", _mod_pair)
+    app.build()
+
+    result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
+    assert '**x** ("Pair"["Undocumented"]) -- the pair' in result
+
+
 _mod_nested = types.ModuleType("mod_nested")
 _mod_nested.__file__ = __file__
 exec(  # ruff:ignore[exec-builtin]
