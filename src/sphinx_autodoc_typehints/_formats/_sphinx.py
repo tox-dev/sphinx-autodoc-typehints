@@ -168,6 +168,9 @@ class SphinxFieldListFormat(DocstringFormat):
         fields = tuple(f":{field} {arg_name}: " for field in ("type", "paramtype", "kwtype"))
         return next(((line, True) for line in lines if line.startswith(fields)), (fields[0], False))
 
+    def has_return_description(self, lines: list[str]) -> bool:  # ruff:ignore[no-self-use]
+        return any(line.lstrip().startswith((":return:", ":returns:")) for line in lines)
+
     def get_rtype_insert_info(self, app: Sphinx, lines: list[str]) -> InsertIndexInfo | None:  # ruff:ignore[no-self-use]
         if (rtype_at := next((i for i, line in enumerate(lines) if line.startswith(":rtype:")), None)) is not None:
             del lines[rtype_at]

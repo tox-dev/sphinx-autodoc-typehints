@@ -85,10 +85,11 @@ def test_sphinx_field_list(
 
 
 @pytest.mark.parametrize(
-    ("func_name", "expected"),
+    ("func_name", "expected", "not_expected"),
     [
-        pytest.param("transform", ["The input data", "The transformed result"], id="doc-injected"),
-        pytest.param("compute", ["Placeholder", "The sum"], id="existing-params-preserved"),
+        pytest.param("transform", ["The input data", "The transformed result"], [], id="doc-injected"),
+        pytest.param("compute", ["Placeholder", "The sum"], [], id="existing-params-preserved"),
+        pytest.param("count", ["Number of items"], ["The count"], id="docstring-return-without-params"),
     ],
 )
 @pytest.mark.sphinx("text", testroot="annotated-doc-numpydoc")
@@ -98,7 +99,10 @@ def test_numpydoc(
     monkeypatch: pytest.MonkeyPatch,
     func_name: str,
     expected: list[str],
+    not_expected: list[str],
 ) -> None:
     result = _load_and_build(app, status, monkeypatch, "annotated-doc-numpydoc", func_name)
     for text in expected:
         assert text in result
+    for text in not_expected:
+        assert text not in result

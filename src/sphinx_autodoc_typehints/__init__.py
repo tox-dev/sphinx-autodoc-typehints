@@ -596,9 +596,7 @@ def _inject_rtype(  # ruff:ignore[too-many-arguments, too-many-positional-argume
     if _has_yields_section(lines) and _is_generator_type(type_hints["return"]):
         return
 
-    if (return_doc := _extract_doc_description(type_hints["return"])) and not any(
-        line.lstrip().startswith((":return:", ":returns:")) for line in lines
-    ):
+    if (return_doc := _extract_doc_description(type_hints["return"])) and not fmt.has_return_description(lines):
         lines.append(f":return: {return_doc}")
 
     r = fmt.get_rtype_insert_info(app, lines)

@@ -173,6 +173,10 @@ class NumpydocFormat(DocstringFormat):
     def find_preexisting_type(self, lines: list[str], arg_name: str) -> tuple[str, bool]:
         return self._sphinx.find_preexisting_type(lines, arg_name)
 
+    def has_return_description(self, lines: list[str]) -> bool:
+        self._ensure_converted(lines)
+        return self._sphinx.has_return_description(lines)
+
     def get_rtype_insert_info(self, app: Sphinx, lines: list[str]) -> InsertIndexInfo | None:
         self._ensure_converted(lines)
         return self._sphinx.get_rtype_insert_info(app, lines)
