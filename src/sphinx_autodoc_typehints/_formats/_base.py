@@ -16,6 +16,7 @@ class InsertIndexInfo:
     found_param: bool = False
     found_return: bool = False
     found_directive: bool = False
+    found_rtype: bool = False
 
 
 class DocstringFormat(ABC):

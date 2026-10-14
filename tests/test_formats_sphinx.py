@@ -151,6 +151,11 @@ def test_get_rtype_insert_info_directive_with_nonempty_preceding_line() -> None:
             id="replaces-rtype",
         ),
         pytest.param(
+            [":returns: value -- or None when missing", ":rtype: bytes"],
+            [r":return: :sphinx_autodoc_typehints_type:`\:py\:class\:\`str\`` -- value -- or None when missing"],
+            id="replaces-rtype-beside-text-reading-as-a-type",
+        ),
+        pytest.param(
             [":returns:", "   * a string", "   * or another"],
             [
                 r":return: :sphinx_autodoc_typehints_type:`\:py\:class\:\`str\`` --",

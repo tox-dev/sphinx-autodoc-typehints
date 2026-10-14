@@ -200,7 +200,7 @@ class SphinxFieldListFormat(DocstringFormat):
         if rtype_at is not None and (app.config.typehints_use_rtype or return_at is None):
             return InsertIndexInfo(insert_index=rtype_at)
         if return_at is not None:
-            return InsertIndexInfo(insert_index=return_at, found_return=True)
+            return InsertIndexInfo(insert_index=return_at, found_return=True, found_rtype=rtype_at is not None)
 
         settings = get_default_settings(RSTParser)  # type: ignore[arg-type]
         settings.env = app.env
@@ -245,7 +245,8 @@ class SphinxFieldListFormat(DocstringFormat):
     ) -> None:
         insert_index = info.insert_index
 
-        if not use_rtype and info.found_return and _gives_its_type(lines[insert_index]):
+        # beside an :rtype: field, the :returns: text describes the value rather than stating its type
+        if not use_rtype and info.found_return and not info.found_rtype and _gives_its_type(lines[insert_index]):
             return
 
         if info.found_param and insert_index < len(lines) and lines[insert_index].strip():
