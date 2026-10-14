@@ -571,6 +571,83 @@ def test_process_docstring_braces_after_default_stays_on_its_param() -> None:
     ]
 
 
+_INT_TYPE: Final = r":sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``"
+_STR_TYPE: Final = r":sphinx_autodoc_typehints_type:`\:py\:class\:\`str\``"
+_FLOAT_TYPE: Final = r":sphinx_autodoc_typehints_type:`\:py\:class\:\`float\``"
+
+
+@pytest.mark.parametrize(
+    ("lines", "overrides", "expected"),
+    [
+        pytest.param(
+            [":Parameters: * **a** -- the a", "             * **b** -- the b"],
+            {},
+            [f":Parameters: * **a** ({_INT_TYPE}) -- the a", f"             * **b** ({_STR_TYPE}) -- the b"],
+            id="bulleted",
+        ),
+        pytest.param(
+            [":Parameters: * **a** -- the a", "             * **b** -- the b"],
+            {"always_document_param_types": True},
+            [
+                f":Parameters: * **a** ({_INT_TYPE}) -- the a",
+                f"             * **b** ({_STR_TYPE}) -- the b",
+                f":type args: {_FLOAT_TYPE}",
+                ":param args:",
+            ],
+            id="always-documented",
+        ),
+        pytest.param(
+            [":Keyword Arguments: **b** -- the b"],
+            {},
+            [f":Keyword Arguments: **b** ({_STR_TYPE}) -- the b"],
+            id="keyword",
+        ),
+        pytest.param(
+            [r":Parameters: **\*args** -- extra"],
+            {},
+            [rf":Parameters: **\*args** ({_FLOAT_TYPE}) -- extra"],
+            id="star-args",
+        ),
+        pytest.param(
+            [":Parameters: **a** (*int*) -- the a"],
+            {},
+            [":Parameters: **a** (*int*) -- the a"],
+            id="typed-in-the-docstring",
+        ),
+        pytest.param(
+            [":Parameters: **b** -- the b"],
+            {"typehints_defaults": "comma"},
+            [f":Parameters: **b** ({_STR_TYPE}, default: ``'x'``) -- the b"],
+            id="comma-default",
+        ),
+        pytest.param(
+            [":Parameters: **b** -- the b"],
+            {"typehints_defaults": "braces"},
+            [f":Parameters: **b** ({_STR_TYPE}) (default: ``'x'``) -- the b"],
+            id="braces-default",
+        ),
+        pytest.param(
+            [":Parameters: * **b** -- the b", "               continued", "             * **a** -- the a"],
+            {"typehints_defaults": "braces-after"},
+            [
+                f":Parameters: * **b** ({_STR_TYPE}) -- the b",
+                "               continued (default: ``'x'``)",
+                f"             * **a** ({_INT_TYPE}) -- the a",
+            ],
+            id="braces-after-default",
+        ),
+    ],
+)
+def test_process_docstring_types_a_combined_parameter_field(
+    lines: list[str], overrides: dict[str, object], expected: list[str]
+) -> None:
+    def documented(a: int, b: str = "x", *args: float) -> None: ...
+
+    app = make_docstring_app(typehints_document_rtype=False, **overrides)
+    process_docstring(app, "function", "mod.documented", documented, None, lines)
+    assert lines == expected
+
+
 def test_process_docstring_strips_inline_param_type() -> None:
     def func(x: int) -> None: ...
 

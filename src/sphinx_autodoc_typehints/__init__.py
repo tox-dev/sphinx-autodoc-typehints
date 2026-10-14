@@ -439,10 +439,7 @@ def _inject_arg_signature(  # ruff:ignore[too-many-arguments, too-many-positiona
     default = signature.parameters[arg_name].default
     doc_description = _extract_doc_description(annotation) if annotation is not None else None
 
-    if arg_name.endswith("_"):
-        arg_name, insert_index = _find_trailing_underscore_param(lines, arg_name, fmt)
-    else:
-        insert_index = fmt.find_param(lines, arg_name)
+    arg_name, insert_index = _find_param(lines, arg_name, fmt)
 
     if (
         insert_index is not None
@@ -453,6 +450,9 @@ def _inject_arg_signature(  # ruff:ignore[too-many-arguments, too-many-positiona
 
     if insert_index is not None and hasattr(fmt, "get_arg_name_from_line"):
         arg_name = fmt.get_arg_name_from_line(lines[insert_index]) or arg_name
+
+    if insert_index is None and _type_combined_field_entry(app, lines, arg_name, annotation, default):
+        return
 
     if insert_index is None and doc_description:
         lines.append(f":param {arg_name}: {doc_description}")
@@ -500,7 +500,9 @@ def _inject_arg_signature(  # ruff:ignore[too-many-arguments, too-many-positiona
     lines.insert(insert_index, type_annotation)
 
 
-def _find_trailing_underscore_param(lines: list[str], arg_name: str, fmt: Any) -> tuple[str, int | None]:
+def _find_param(lines: list[str], arg_name: str, fmt: Any) -> tuple[str, int | None]:
+    if not arg_name.endswith("_"):
+        return arg_name, fmt.find_param(lines, arg_name)
     escaped_name = f"{arg_name[:-1]}\\_"
     if (insert_index := fmt.find_param(lines, escaped_name)) is not None:
         return escaped_name, insert_index
@@ -513,6 +515,46 @@ def _find_trailing_underscore_param(lines: list[str], arg_name: str, fmt: Any) -
         return arg_name, insert_index
     lines[insert_index] = rewritten
     return escaped_name, insert_index
+
+
+def _type_combined_field_entry(app: Sphinx, lines: list[str], arg_name: str, annotation: Any, default: Any) -> bool:
+    """
+    Type the ``**name** -- text`` entry of a combined field, where one field lists every parameter.
+
+    Napoleon writes these with ``napoleon_use_param`` or ``napoleon_use_keyword`` off, and puts a docstring type in
+    parentheses right after the name, which a type from the annotation follows too.
+    """
+    if annotation is None:
+        return False
+    names = "|".join(re.escape(f"{prefix}{arg_name}") for prefix in ("", "\\*", "\\*\\*"))
+    entry = re.compile(rf"^(?::[^:]+: +|\s+)(?:\* )?\*\*(?:{names})\*\*(?P<typed> \()?")
+    if (found := next(((at, match) for at, line in enumerate(lines) if (match := entry.match(line))), None)) is None:
+        return False
+    at, match = found
+    if match["typed"]:
+        return True
+    formatted = add_type_css_class(
+        format_annotation(annotation, app.config, short_literals=app.config.python_display_short_literal_types)
+    )
+    inline, after = "", ""
+    if app.config.typehints_defaults and (formatted_default := format_default(app, default, is_annotated=True)):
+        if app.config.typehints_defaults == "comma":
+            formatted += formatted_default
+        elif app.config.typehints_defaults == "braces":
+            inline = formatted_default
+        else:
+            after = formatted_default
+    lines[at] = f"{lines[at][: match.end()]} ({formatted}){inline}{lines[at][match.end() :]}"
+    end = at
+    while (
+        end + 1 < len(lines)
+        and lines[end + 1][:1].isspace()
+        and lines[end + 1].strip()
+        and not lines[end + 1].lstrip().startswith("* **")
+    ):
+        end += 1
+    lines[end] += after
+    return True
 
 
 def _remove_preexisting_type(lines: list[str], preexisting_line: str) -> int:

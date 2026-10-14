@@ -141,6 +141,11 @@ See
 [`napoleon_use_rtype`](https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html#confval-napoleon_use_rtype)
 in the Sphinx docs.
 
+With
+[`napoleon_use_param`](https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html#confval-napoleon_use_param)
+or `napoleon_use_keyword` set to `False`, napoleon lists all parameters in one field, and the types go in parentheses
+after each name, where napoleon puts a type written in the docstring. A type written in the docstring is kept.
+
 ### Control return type display
 
 By default, return types appear as a separate block in your docs. You can change this:
