@@ -1599,6 +1599,70 @@ def test_class_and_constructor_docstrings_list_each_param_once(
         """)
 
 
+@pytest.mark.parametrize(
+    ("autoclass_content", "class_doc_from", "body"),
+    [
+        pytest.param(
+            "both",
+            "class",
+            '   Parameters:\n      * **first** ("int") -- the first\n\n      * **second** ("str")\n\n'
+            '      * **third** ("bool")\n',
+            id="class",
+        ),
+        pytest.param(
+            "class",
+            "both",
+            '   Parameters:\n      **first** ("int") -- the first\n\n   Constructor docstring.\n\n'
+            '   Parameters:\n      * **second** ("str") -- the second\n\n      * **third** ("bool")\n',
+            id="both",
+        ),
+    ],
+)
+@pytest.mark.sphinx("text", testroot="dummy", confoverrides={"always_document_param_types": True})
+def test_class_doc_from_option_picks_the_docstrings_listing_params(
+    app: SphinxTestApp, write_rst: Callable[[str], None], autoclass_content: str, class_doc_from: str, body: str
+) -> None:
+    app.config.autoclass_content = autoclass_content
+    write_rst(f".. autoclass:: dummy_module.DocumentedTwice\n   :class-doc-from: {class_doc_from}\n")
+    app.build()
+
+    text = (Path(app.srcdir) / "_build/text/index.txt").read_text()
+    assert text.partition("\n\n")[2] == f"   Class docstring.\n\n{body}"
+
+
+@pytest.mark.sphinx(
+    "text", testroot="dummy", confoverrides={"typehints_use_signature": True, "autoclass_content": "both"}
+)
+def test_class_doc_from_class_ignores_the_constructor_opting_out_of_overloads(
+    app: SphinxTestApp, write_rst: Callable[[str], None]
+) -> None:
+    write_rst(".. autoclass:: dummy_module.ClassWithOverloadedInitOptingOut\n   :class-doc-from: class\n")
+    app.build()
+
+    assert (Path(app.srcdir) / "_build/text/index.txt").read_text() == dedent("""\
+        class dummy_module.ClassWithOverloadedInitOptingOut(value: int)
+        class dummy_module.ClassWithOverloadedInitOptingOut(value: str)
+
+           Class docstring.
+        """)
+
+
+@pytest.mark.sphinx(
+    "text",
+    testroot="dummy",
+    confoverrides={"autoclass_content": "both", "always_document_param_types": True},
+)
+def test_class_docstring_part_does_not_carry_to_a_later_directive(
+    app: SphinxTestApp, write_rst: Callable[[str], None]
+) -> None:
+    entry = ".. autoclass:: dummy_module.DocumentedTwiceAlias\n   :no-index:\n"
+    write_rst(f"{entry}\n{entry}")
+    app.build()
+
+    first, second = (Path(app.srcdir) / "_build/text/index.txt").read_text().split("\n\ndummy_module.")
+    assert f"dummy_module.{second}" == f"{first}\n"
+
+
 @pytest.mark.sphinx("text", testroot="dummy", confoverrides={"typehints_use_signature": True})
 def test_kept_signature_warns_about_an_unresolvable_annotation_once(
     app: SphinxTestApp, write_rst: Callable[[str], None], warning: StringIO
