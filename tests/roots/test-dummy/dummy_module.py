@@ -133,6 +133,10 @@ class DocumentedTwice:
         """
 
 
+#: An alias.
+DocumentedTwiceAlias = DocumentedTwice
+
+
 class DocumentedTwiceWithUnderscore:
     r"""
     Class docstring.

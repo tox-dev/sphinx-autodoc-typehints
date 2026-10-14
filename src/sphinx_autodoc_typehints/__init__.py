@@ -98,7 +98,7 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-
     what: str,
     name: str,
     obj: Any,
-    options: Options,  # ruff:ignore[unused-function-argument]
+    options: Options,
     signature: str | None,
     return_annotation: str,  # ruff:ignore[unused-function-argument]
 ) -> tuple[str, None] | None:
@@ -129,7 +129,7 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-
         # (TYPE_CHECKING-only names, subscripting a non-generic class). __annotate__ still signals
         # annotations exist, and sphinx_signature renders them without evaluation via FORWARDREF.
         has_annotations = getattr(annotated, "__annotate__", None)
-    overloads = _signature_overloads(app, what, original_obj, obj)
+    overloads = _signature_overloads(app, what, original_obj, obj, options)
     if not has_annotations and _declared_signature(obj) is None and not overloads:
         return None
 
@@ -215,33 +215,40 @@ def _overload_lines(app: Sphinx, name: str, overloads: list[inspect.Signature], 
     return texts[0]
 
 
-def _signature_overloads(app: Sphinx, what: str, documented: Any, obj: Any) -> list[inspect.Signature]:
+def _signature_overloads(
+    app: Sphinx, what: str, documented: Any, obj: Any, options: Options
+) -> list[inspect.Signature]:
     """Return the overloads the header shows in place of the signature of ``obj``."""
     if (
         not app.config.typehints_use_signature
         or not app.config.typehints_document_overloads
         or what not in _OVERLOADED_KINDS
         or (overloads := _resolve_overloads(obj)) is None
-        or _opts_out_of_overloads(app, documented, obj)
+        or _opts_out_of_overloads(app, documented, obj, options)
     ):
         return []
     return overloads
 
 
-def _opts_out_of_overloads(app: Sphinx, documented: Any, constructor: Any) -> bool:
+def _opts_out_of_overloads(app: Sphinx, documented: Any, constructor: Any, options: Options) -> bool:
     """
     Whether a docstring autodoc shows for the object holds ``:no-overloads:``.
 
     autodoc hands the docstring to process_docstring only after the signature is built, so it is read here directly.
     """
     sources = [documented]
-    if inspect.isclass(documented) and app.config.autoclass_content != "class":
+    if inspect.isclass(documented) and _class_doc_from(app, options) != "class":
         sources.append(constructor)
     return any(
         line.strip() == ":no-overloads:"
         for source in sources
         for line in (getdoc(source, allow_inherited=app.config.autodoc_inherit_docstrings) or "").splitlines()
     )
+
+
+def _class_doc_from(app: Sphinx, options: Options | None) -> str:
+    """Name the docstrings autodoc shows for a class, which the directive's ``:class-doc-from:`` picks first."""
+    return getattr(options, "class_doc_from", None) or app.config.autoclass_content
 
 
 def _signature_type(app: Sphinx, hint: Any) -> Any:
@@ -330,7 +337,7 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
     what: str,
     name: str,
     obj: Any,
-    options: Options | None,  # ruff:ignore[unused-function-argument]
+    options: Options | None,
     lines: list[str],
 ) -> None:
     """Process the docstring for an entry."""
@@ -375,7 +382,13 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
 
     type_hints, written_as, state = _resolved_type_hints(app, name, original_obj, obj, annotated)
     with annotation_state(app.config, **state):
-        part, documented_elsewhere = _docstring_part(app, name, original_obj, signature, lines)
+        part, documented_elsewhere = (
+            _docstring_part(env, name, signature, options, lines)
+            if env is not None
+            and signature is not None
+            and _has_constructor_docstring(app, name, original_obj, options)
+            else ("whole", frozenset())
+        )
         # the constructor's overloads describe its part, while the notice heads the entry
         has_overloads = part != "class" and _inject_overload_signatures(app, what, name, original_obj, obj, lines)
         if part != "constructor":
@@ -717,27 +730,24 @@ def format_default(app: Sphinx, default: Any, is_annotated: bool) -> str | None:
 
 
 def _docstring_part(
-    app: Sphinx, name: str, obj: Any, signature: inspect.Signature | None, lines: list[str]
-) -> tuple[Literal["whole", "class", "constructor"], frozenset[str]]:
+    env: BuildEnvironment, name: str, signature: inspect.Signature, options: Options | None, lines: list[str]
+) -> tuple[Literal["class", "constructor"], frozenset[str]]:
     """
-    Tell which part of an object's documentation ``lines`` is, and which parameters another part documents.
+    Tell which part of a class entry ``lines`` is, and which parameters another part documents.
 
-    With ``autoclass_content = "both"`` Sphinx processes a class and its constructor docstring one after the other, as
-    two parts of one entry. What the extension adds goes in one of them: only the constructor's lists the parameters
-    that neither documents.
+    Showing the docstrings of both, Sphinx processes a class and its constructor docstring one after the other, as two
+    parts of one entry. What the extension adds goes in one of them: only the constructor's lists the parameters that
+    neither documents.
     """
-    if (
-        not inspect.isclass(obj)
-        or signature is None
-        or (env := getattr(app, "env", None)) is None
-        or not _has_constructor_docstring(app, obj)
-    ):
-        return "whole", frozenset()
-    class_docstrings = env.temp_data.setdefault("sphinx_autodoc_typehints_class_docstrings", {})
-    if (class_lines := class_docstrings.pop(name, None)) is None:
-        class_docstrings[name] = lines
+    class_docstrings = cast(
+        "dict[str, tuple[Options | None, list[str]]]",
+        env.temp_data.setdefault("sphinx_autodoc_typehints_class_docstrings", {}),
+    )
+    # autodoc hands both parts the options of their directive, so a part another directive left can never pair up
+    if (stashed := class_docstrings.pop(name, None)) is None or stashed[0] is not options:
+        class_docstrings[name] = options, lines
         return "class", frozenset(signature.parameters)
-    fmt = detect_format(class_lines)
+    fmt = detect_format(class_lines := stashed[1])
     # the docstring may spell a trailing underscore escaped, as _find_param accepts
     return "constructor", frozenset(
         param
@@ -746,9 +756,15 @@ def _docstring_part(
     )
 
 
-def _has_constructor_docstring(app: Sphinx, cls: type) -> bool:
-    """Mirror Sphinx's choice of docstrings for ``autoclass_content = "both"``."""
-    if app.config.autoclass_content != "both" or not getdoc(cls):
+def _has_constructor_docstring(app: Sphinx, name: str, cls: Any, options: Options | None) -> bool:
+    """Mirror Sphinx's choice of docstrings for a class showing its constructor's too."""
+    # Sphinx documents a class under another name as an alias, with no docstring of the class or its constructor
+    if (
+        not inspect.isclass(cls)
+        or name.rpartition(".")[2] != cls.__name__
+        or _class_doc_from(app, options) != "both"
+        or not getdoc(cls)
+    ):
         return False
     inherit = app.config.autodoc_inherit_docstrings
     init_doc = getdoc(cls.__init__, allow_inherited=inherit, cls=cls, name="__init__")
