@@ -63,6 +63,11 @@ if TYPE_CHECKING:
             id="written-out",
         ),
         pytest.param(".. js:function:: bounded(value)", "bounded(value)", id="other-domain"),
+        pytest.param(
+            ".. autodata:: type_params_module.default_stack",
+            "type_params_module.default_stack: Stack[int] = <type_params_module.Stack object>",
+            id="data-holding-a-generic-instance",
+        ),
     ],
 )
 @pytest.mark.sphinx("text", testroot="type-params")
