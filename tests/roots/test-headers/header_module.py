@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from functools import cached_property
-from typing import TYPE_CHECKING, Annotated, Generic, TypeVar
+from typing import TYPE_CHECKING, Annotated, Generic, TypedDict, TypeVar
 
 if TYPE_CHECKING:
     from decimal import Decimal
@@ -72,3 +72,28 @@ class Legacy(Generic[U]):  # ruff:ignore[non-pep695-generic-class]  # the legacy
 
 class StrLegacy(Legacy[str]):
     """Holds strings the legacy way."""
+
+
+Num = int | float
+
+SCORE: Num = 1
+"""The score."""
+
+
+class Scored:
+    """Something scored."""
+
+    points: Num = 0
+    """The points."""
+
+    @property
+    def best(self) -> Num:
+        """The best."""
+        return 0
+
+
+class Totals(TypedDict):
+    """Totals."""
+
+    count: Num
+    """The count."""

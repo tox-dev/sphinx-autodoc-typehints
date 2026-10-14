@@ -12,7 +12,7 @@ from sphinx.domains.python._annotations import _parse_annotation  # ruff:ignore[
 from sphinx.util import logging
 
 from ._annotations import annotation_state, format_annotation, signature_text
-from ._resolver import resolve_annotations, resolve_type_guarded_imports
+from ._resolver import resolve_annotations, resolve_type_guarded_imports, type_alias_namespace
 from ._type_params import bound_type_args, specialize
 from ._typed_dict import typed_dict_keys
 
@@ -92,11 +92,19 @@ def _declared_hint(app: Sphinx, owner: Any, attribute: str, objtype: str, name: 
         # a class property is a classmethod wrapping the property
         member = getattr(member := inspect.getattr_static(owner, attribute), "__func__", member)
         getter = member.func if isinstance(member, cached_property) else member.fget
-        return resolve_annotations(app.config.autodoc_mock_imports, getter, name).get("return", _MISSING)
+        return _resolved_hints(app, getter, name).get("return", _MISSING)
+    return _resolved_hints(app, owner, name).get(attribute, _MISSING)
+
+
+def _resolved_hints(app: Sphinx, annotated: Any, name: str) -> dict[str, Any]:
+    """Resolve the annotations of ``annotated`` as the fields and signature of the same build do, aliases included."""
+    localns, written_aliases = type_alias_namespace(
+        app.config.autodoc_type_aliases, annotated, name.rpartition(".")[0], app.env
+    )
     # a TypedDict key also shows whether a caller may leave it out
-    if keys := typed_dict_keys(owner):
-        return keys.get(attribute, _MISSING)
-    return resolve_annotations(app.config.autodoc_mock_imports, owner, name).get(attribute, _MISSING)
+    if keys := typed_dict_keys(annotated, localns):
+        return keys
+    return resolve_annotations(app.config.autodoc_mock_imports, annotated, name, localns) | written_aliases
 
 
 __all__ = ["note_documented", "render_header_types"]
