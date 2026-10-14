@@ -656,8 +656,9 @@ def fixup_module_name(module: str) -> str:
 typehints_fixup_module_name = fixup_module_name
 ```
 
-Sphinx can't store a function in its cached environment, so, as with `typehints_formatter`, editing the function doesn't
-rebuild the pages that use it; run `sphinx-build -E` after changing it.
+Editing the function re-reads the documents on the next incremental build, as changing any other option does. The
+extension tells by comparing the function's source, so a change only to a helper it calls or to data it reads goes
+unseen; run `sphinx-build -E` after such a change.
 
 ### Suppress warnings
 
