@@ -500,6 +500,7 @@ def _inject_arg_signature(  # ruff:ignore[too-many-arguments, too-many-positiona
 ) -> None:
     annotation = type_hints.get(arg_name)
     default = signature.parameters[arg_name].default
+    kind = signature.parameters[arg_name].kind
     doc_description = _extract_doc_description(annotation) if annotation is not None else None
     # taken by the signature's own name, as the docstring may spell it escaped (``x\_``)
     names = list(signature.parameters)
@@ -518,18 +519,17 @@ def _inject_arg_signature(  # ruff:ignore[too-many-arguments, too-many-positiona
     if insert_index is None and _type_combined_field_entry(app, lines, arg_name, annotation, default):
         return
 
-    if insert_index is None and doc_description:
-        insert_index = fmt.add_undocumented_param(
-            lines, arg_name, doc_description, before=_next_documented_param(lines, later_names, fmt), field=field
-        )
-    elif (
-        annotation is not None
-        and insert_index is None
-        and app.config.always_document_param_types
-        and arg_name not in documented_elsewhere
+    if insert_index is None and (
+        doc_description
+        or (annotation is not None and app.config.always_document_param_types and arg_name not in documented_elsewhere)
     ):
+        stars = {"VAR_POSITIONAL": "\\*", "VAR_KEYWORD": "\\*\\*"}.get(kind.name, "")
+        entry = f"**{stars}{arg_name}**{f' -- {doc_description}' if doc_description else ''}"
+        if _add_combined_field_entry(lines, field, entry, later_names):
+            _type_combined_field_entry(app, lines, arg_name, annotation, default)
+            return
         insert_index = fmt.add_undocumented_param(
-            lines, arg_name, before=_next_documented_param(lines, later_names, fmt), field=field
+            lines, arg_name, doc_description or "", before=_next_documented_param(lines, later_names, fmt), field=field
         )
 
     if insert_index is None:
@@ -641,6 +641,40 @@ def _closing_parenthesis(line: str, start: int) -> int | None:
         if not depth:
             return at + 1
     return None
+
+
+def _add_combined_field_entry(
+    lines: list[str], field: Literal["param", "keyword"], entry: str, later_names: list[str]
+) -> bool:
+    """
+    Add a parameter the docstring leaves out to napoleon's combined field, when the docstring lists the others there.
+
+    A field with one entry has no bullet, which it needs once it has two, and the entry goes before the first of the
+    later parameters the field lists, keeping signature order.
+    """
+    heading = ":Parameters: " if field == "param" else ":Keyword Arguments: "
+    if (start := next((at for at, line in enumerate(lines) if line.startswith(heading)), None)) is None:
+        return False
+    indent = " " * len(heading)
+    end = start + 1
+    while end < len(lines):
+        # a blank line belongs to the field only inside an entry's description, which goes on indented after it
+        if not (lines[end] or "".join(lines[end + 1 : end + 2])).startswith(indent):
+            break
+        end += 1
+    if not lines[start].startswith(f"{heading}* "):
+        lines[start] = f"{heading}* {lines[start][len(heading) :]}"
+        lines[start + 1 : end] = [f"  {line}" if line else line for line in lines[start + 1 : end]]
+    names = "|".join(re.escape(name) for name in later_names)
+    later = re.compile(rf"(?:{re.escape(heading)}|{indent})\* \*\*(?:\\\*){{0,2}}(?:{names})\*\*")
+    at = next((at for at in range(start, end) if later_names and later.match(lines[at])), end)
+    if at == start:
+        # the first entry shares its line with the heading, which the new entry takes over
+        lines[start] = f"{indent}{lines[start][len(heading) :]}"
+        lines.insert(start, f"{heading}* {entry}")
+    else:
+        lines.insert(at, f"{indent}* {entry}")
+    return True
 
 
 def _next_documented_param(lines: list[str], later_names: list[str], fmt: Any) -> int | None:
