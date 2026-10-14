@@ -144,7 +144,8 @@ in the Sphinx docs.
 With
 [`napoleon_use_param`](https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html#confval-napoleon_use_param)
 or `napoleon_use_keyword` set to `False`, napoleon lists all parameters in one field, and the types go in parentheses
-after each name, where napoleon puts a type written in the docstring. A type written in the docstring is kept.
+after each name, where napoleon puts a type written in the docstring. A type written in the docstring is kept. With
+[numpydoc](https://numpydoc.readthedocs.io/), an `Other Parameters` section renders this way too, under its own heading.
 
 ### Control return type display
 

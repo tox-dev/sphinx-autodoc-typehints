@@ -10,7 +10,7 @@ operations to `SphinxFieldListFormat`.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING
 
 from ._base import DocstringFormat, InsertIndexInfo
@@ -74,12 +74,14 @@ def _convert_numpydoc_to_sphinx_fields(lines: list[str]) -> None:  # ruff:ignore
         entries = _parse_numpydoc_entries(lines, i)
         i = entries[-1].end if entries else i
 
-        if section in {"Parameters", "Other Parameters"}:
+        if section == "Parameters":
             for entry in entries:
                 for name in entry.name.split(", "):
                     result.extend(_field(f":param {name}:", entry.description))
                     if entry.type:
                         result.append(f":type {name}: {entry.type}")
+        elif section == "Other Parameters":
+            result.extend(_other_parameters(entries))
         elif section == "Raises":
             for entry in entries:
                 result.extend(_field(f":raises {entry.name or entry.type}:", entry.description))
@@ -94,6 +96,21 @@ def _convert_numpydoc_to_sphinx_fields(lines: list[str]) -> None:  # ruff:ignore
                 result.extend(_field(f"   * {_label(entry)}", entry.description, indent="     "))
 
     lines[:] = result
+
+
+def _other_parameters(entries: list[_NumpydocEntry]) -> list[str]:
+    """
+    Convert Other Parameters into one field, the way napoleon writes it, so the section keeps its heading.
+
+    Its entries then take their types from the annotations in parentheses after the name, as napoleon's do.
+    """
+    named = [replace(entry, name=name) for entry in entries for name in entry.name.split(", ")]
+    if len(named) == 1:
+        return _field(f":Other Parameters: {_label(named[0])}", named[0].description)
+    converted = [":Other Parameters:"]
+    for entry in named:
+        converted.extend(_field(f"   * {_label(entry)}", entry.description, indent="     "))
+    return converted
 
 
 def _single_return(entry: _NumpydocEntry) -> list[str]:

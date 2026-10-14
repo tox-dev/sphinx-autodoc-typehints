@@ -128,8 +128,7 @@ def test_convert_other_parameters() -> None:
         "",
     ]
     _convert_numpydoc_to_sphinx_fields(lines)
-    assert ":param flag: A flag." in lines
-    assert ":type flag: bool" in lines
+    assert lines == [":Other Parameters: **flag** (bool) -- A flag.", ""]
 
 
 def test_no_numpydoc_content_is_noop() -> None:
@@ -585,3 +584,21 @@ def test_process_docstring_numpydoc_unnamed_return_keeps_its_type(func: Callable
     lines = [":Returns:", "", "    float", "        The ratio.", ""]
     process_docstring(make_docstring_app(), "function", "mod.ratio", func, None, lines)
     assert lines == [f":rtype: {rtype}", ":returns: The ratio.", ""]
+
+
+def test_process_docstring_numpydoc_other_parameters_keep_their_section() -> None:
+    def tune(a: int, *, flag: bool = False, x: int = 0, y: int = 0) -> None: ...
+
+    lines = [":Parameters:", "", "    **a**", "        The a.", "", ":Other Parameters:", "", "    **flag**"]
+    lines += ["        A flag.", "    **x, y** : int", "        Shared.", ""]
+    process_docstring(make_docstring_app(typehints_document_rtype=False), "function", "mod.tune", tune, None, lines)
+    assert lines == [
+        r":type a: :sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``",
+        ":param a: The a.",
+        "",
+        ":Other Parameters:",
+        r"   * **flag** (:sphinx_autodoc_typehints_type:`\:py\:class\:\`bool\``) -- A flag.",
+        "   * **x** (int) -- Shared.",
+        "   * **y** (int) -- Shared.",
+        "",
+    ]
