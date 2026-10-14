@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import importlib
 import re
 from operator import attrgetter
@@ -38,6 +39,14 @@ def test_get_obj_location_with_class() -> None:
 
 def test_get_obj_location_non_inspectable() -> None:
     assert get_obj_location(42) is None
+
+
+def test_get_obj_location_of_generated_code() -> None:
+    @dataclasses.dataclass
+    class Generated:
+        value: int
+
+    assert get_obj_location(Generated.__init__) is None
 
 
 def test_get_obj_location_no_source_lines() -> None:
