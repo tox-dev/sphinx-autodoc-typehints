@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import sys
+import types
 import typing
 from typing import TYPE_CHECKING, Annotated, Any, Final, Never, NotRequired, get_args, get_origin, get_type_hints
 
 from ._annotations import add_type_css_class, format_annotation
+from ._type_params import specialize, type_arguments
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
@@ -20,16 +22,44 @@ def typed_dict_keys(typed_dict: Any) -> dict[str, Any]:
 
     Empty for anything else, and for a TypedDict whose annotations do not resolve.
     """
-    if not hasattr(typed_dict, "__optional_keys__"):
+    if not hasattr(origin := get_origin(typed_dict) or typed_dict, "__optional_keys__"):
         return {}
     try:
-        hints = get_type_hints(typed_dict, include_extras=True)
+        hints = _bound_hints(typed_dict)
     except Exception:  # ruff:ignore[blind-except]  # an annotation runs user code, which may raise anything
         return {}
     return {
-        key: _key_annotation(annotation, optional=key in typed_dict.__optional_keys__)
-        for key, annotation in hints.items()
+        key: _key_annotation(annotation, optional=key in origin.__optional_keys__) for key, annotation in hints.items()
     }
+
+
+def _bound_hints(typed_dict: Any) -> dict[str, Any]:
+    """
+    Return the annotations of a TypedDict, or of one it subscripts, with the type arguments bound.
+
+    A TypedDict lists the keys of its bases as its own, with their type parameters unbound, and keeps no base in its
+    MRO, so each base the class statement names supplies its keys bound by the arguments it is given there.
+    """
+    origin = get_origin(typed_dict) or typed_dict
+    # a key written as a string names the type parameters of the class declaring it, which may be a base
+    hints = get_type_hints(origin, localns=_type_params_in_scope(origin), include_extras=True)
+    for base in _typed_dict_bases(origin):
+        hints |= _bound_hints(base)
+    arguments = type_arguments(origin, typed_dict)
+    return {key: specialize(annotation, arguments) for key, annotation in hints.items()}
+
+
+def _type_params_in_scope(typed_dict: type) -> dict[str, Any]:
+    scope: dict[str, Any] = {}
+    for base in _typed_dict_bases(typed_dict):
+        scope |= _type_params_in_scope(get_origin(base) or base)
+    return scope | {param.__name__: param for param in getattr(typed_dict, "__parameters__", ())}
+
+
+def _typed_dict_bases(typed_dict: type) -> list[Any]:
+    return [
+        base for base in types.get_original_bases(typed_dict) if hasattr(get_origin(base) or base, "__optional_keys__")
+    ]
 
 
 def _key_annotation(annotation: Any, *, optional: bool) -> Any:

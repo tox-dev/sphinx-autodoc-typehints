@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Generic
+from typing import TYPE_CHECKING, Generic, overload
 
 from typing_extensions import ParamSpec, TypeVar, TypeVarTuple
 
@@ -149,3 +149,55 @@ class IntStack(Stack[int]):
 
 class Restack[V](Stack[V]):
     """Passes a type parameter of its own on to its base."""
+
+
+class Pool[T]:
+    """
+    Holds the members its subclasses inherit, one annotated in its body and one overloaded.
+
+    :ivar size: how many it holds
+    """
+
+    size: T
+
+    @overload
+    def take(self, key: T) -> T: ...
+    @overload
+    def take(self, key: bytes) -> bytes: ...
+    def take(self, key: T | bytes) -> T | bytes:
+        """Take one."""
+        raise NotImplementedError
+
+
+class IntPool(Pool[int]):
+    """
+    Binds the type parameter of a PEP 695 base.
+
+    :ivar size: how many it holds
+    """
+
+
+class Crate(Generic[E]):  # ruff:ignore[non-pep695-generic-class]  # the pre-PEP 695 way is the case under test
+    """
+    Holds the members its subclasses inherit the pre-PEP 695 way.
+
+    :ivar size: how many it holds
+    """
+
+    size: E
+
+    @overload
+    def take(self, key: E) -> E: ...
+    @overload
+    def take(self, key: bytes) -> bytes: ...
+    def take(self, key: E | bytes) -> E | bytes:
+        """Take one."""
+        raise NotImplementedError
+
+
+class IntCrate(Crate[int]):
+    """
+    Binds the type parameter of its base.
+
+    :ivar size: how many it holds
+    """

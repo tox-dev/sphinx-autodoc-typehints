@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -60,3 +61,37 @@ def test_typed_dict_extra_items(
     lines = (Path(app.outdir) / "index.txt").read_text().splitlines()
     shown = lines[lines.index("   Extra items:") + 1].strip() if "   Extra items:" in lines else None
     assert shown == expected
+
+
+@pytest.mark.parametrize(
+    ("function", "expected"),
+    [
+        pytest.param("configure", '"int"', id="pep695"),
+        pytest.param("configure_legacy", '"str"', id="legacy"),
+    ],
+)
+@pytest.mark.sphinx("text", testroot="typed-dict")
+def test_typed_dict_unpacked_from_a_subscripted_generic(
+    app: SphinxTestApp, write_rst: Callable[[str], None], function: str, expected: str
+) -> None:
+    write_rst(f".. autofunction:: typed_dict_module.{function}")
+    app.build()
+
+    lines = [line.strip() for line in (Path(app.outdir) / "index.txt").read_text().splitlines()]
+    assert f"**limit** ({expected}) -- the limit" in lines
+
+
+@pytest.mark.sphinx("text", testroot="typed-dict")
+def test_typed_dict_key_inherited_from_a_generic_base(
+    app: SphinxTestApp, write_rst: Callable[[str], None], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # autodoc lists the keys a TypedDict inherits only on the build importing its module
+    monkeypatch.delitem(sys.modules, "typed_dict_module", raising=False)
+    write_rst(".. autoclass:: typed_dict_module.IntOptions\n   :members:\n   :undoc-members:")
+    app.build()
+
+    lines = (Path(app.outdir) / "index.txt").read_text().splitlines()
+    assert [line for line in lines if line.startswith("   ") and ": " in line] == [
+        "   extra: NotRequired[list[int]]",
+        "   limit: int",
+    ]

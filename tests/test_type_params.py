@@ -202,3 +202,42 @@ def test_type_params_bound_by_the_documenting_subclass_signature(
     app.build()
 
     assert (Path(app.outdir) / "index.txt").read_text().splitlines()[0] == ("IntBox.get(default: int) -> int")
+
+
+@pytest.mark.parametrize("cls", [pytest.param("IntPool", id="pep695"), pytest.param("IntCrate", id="legacy")])
+@pytest.mark.sphinx("text", testroot="type-params")
+def test_type_params_bound_by_the_documenting_subclass_overloads(
+    app: SphinxTestApp, write_rst: Callable[[str], None], cls: str
+) -> None:
+    write_rst(f".. automethod:: type_params_module.{cls}.take")
+    app.build()
+
+    lines = (Path(app.outdir) / "index.txt").read_text().splitlines()
+    assert lines[lines.index("   Overloads:") + 1].strip() == '* **key** ("int") \u2192 "int"'
+
+
+@pytest.mark.parametrize("cls", [pytest.param("IntPool", id="pep695"), pytest.param("IntCrate", id="legacy")])
+@pytest.mark.sphinx(
+    "text",
+    testroot="type-params",
+    confoverrides={"typehints_use_signature": True, "typehints_use_signature_return": True},
+)
+def test_type_params_bound_by_the_documenting_subclass_overload_signature(
+    app: SphinxTestApp, write_rst: Callable[[str], None], cls: str
+) -> None:
+    write_rst(f".. automethod:: type_params_module.{cls}.take")
+    app.build()
+
+    assert (Path(app.outdir) / "index.txt").read_text().splitlines()[0] == f"{cls}.take(key: int) -> int"
+
+
+@pytest.mark.parametrize("cls", [pytest.param("IntPool", id="pep695"), pytest.param("IntCrate", id="legacy")])
+@pytest.mark.sphinx("text", testroot="type-params")
+def test_type_params_bound_by_the_documenting_subclass_vartype(
+    app: SphinxTestApp, write_rst: Callable[[str], None], cls: str
+) -> None:
+    write_rst(f".. autoclass:: type_params_module.{cls}")
+    app.build()
+
+    lines = [line.strip() for line in (Path(app.outdir) / "index.txt").read_text().splitlines()]
+    assert '**size** ("int") -- how many it holds' in lines

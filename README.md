@@ -764,9 +764,11 @@ A member inherited from a generic base and documented under a subclass that bind
 With `class Child(Base[int])`, `Base.get(self) -> T` documents as returning `int` under `Child`, while `Base.get` keeps
 `T`. The binding follows the bases through every level, so `class B(A[list[U]])` and `class C(B[int])` turn `A`'s `T`
 into `list[int]` under `C`, and it covers the parameters and return type of methods and of the constructor a class
-documents, and the header of an attribute or property, so `value: T` reads `value: int` under `Child`. A type parameter
-the subclass leaves unbound, `class Child(Base)`, stays as it is, and one it passes on, `class Child[U](Base[U])`,
-renders by name as a parameter the subclass declares.
+documents, the overloads of either, the header of an attribute or property, so `value: T` reads `value: int` under
+`Child`, and the `:vartype:` a class-body annotation gives an `:ivar:`. A TypedDict binds the same way:
+`class IntOptions(Options[int])` shows the keys it inherits with `int`, as does `**kwargs: Unpack[Options[int]]`. A type
+parameter the subclass leaves unbound, `class Child(Base)`, stays as it is, and one it passes on,
+`class Child[U](Base[U])`, renders by name as a parameter the subclass declares.
 
 Only parameters that already have a `:param:` line in the docstring get type information added, with two exceptions: a
 parameter whose annotation carries a `Doc(...)` description gets a `:param:` line of its own, and the entries of

@@ -429,7 +429,7 @@ def test_inject_overload_no_qualname() -> None:
     _OVERLOADS_CACHE["some_module"] = {}
     try:
         app = make_docstring_app()
-        assert _inject_overload_signatures(app, "function", "name", obj, []) is False
+        assert _inject_overload_signatures(app, "function", "name", obj, obj, []) is False
     finally:
         _OVERLOADS_CACHE.pop("some_module", None)
 
@@ -447,7 +447,7 @@ def test_inject_overload_unannotated_param_and_no_return() -> None:
     app = make_docstring_app()
     lines: list[str] = []
     try:
-        result = _inject_overload_signatures(app, "function", "name", obj, lines)
+        result = _inject_overload_signatures(app, "function", "name", obj, obj, lines)
         assert result is True
         joined = "\n".join(lines)
         assert "**x**" in joined
@@ -465,7 +465,7 @@ def test_inject_overload_empty_overloads_returns_false() -> None:
     _OVERLOADS_CACHE["test_mod2"] = {"other_func": []}
     try:
         app = make_docstring_app()
-        assert _inject_overload_signatures(app, "function", "name", obj, []) is False
+        assert _inject_overload_signatures(app, "function", "name", obj, obj, []) is False
     finally:
         _OVERLOADS_CACHE.pop("test_mod2", None)
 
@@ -523,7 +523,7 @@ def test_inject_overload_keeps_summary_first() -> None:
     try:
         app = make_docstring_app()
         lines = ["Run the thing.", "", ":param x: the x"]
-        assert _inject_overload_signatures(app, "function", "name", obj, lines) is True
+        assert _inject_overload_signatures(app, "function", "name", obj, obj, lines) is True
         assert extract_summary(lines, get_default_settings(Parser())) == "Run the thing."
     finally:
         _OVERLOADS_CACHE.pop("test_mod", None)
@@ -806,7 +806,7 @@ def test_inject_overload_global_disable() -> None:
     try:
         app = make_docstring_app(typehints_document_overloads=False)
         lines: list[str] = []
-        assert _inject_overload_signatures(app, "function", "name", obj, lines) is False
+        assert _inject_overload_signatures(app, "function", "name", obj, obj, lines) is False
         assert lines == []
     finally:
         _OVERLOADS_CACHE.pop("test_mod", None)
@@ -825,7 +825,7 @@ def test_inject_overload_local_no_overloads_directive() -> None:
     try:
         app = make_docstring_app()
         lines = [":no-overloads:", "", "Some docstring."]
-        assert _inject_overload_signatures(app, "function", "name", obj, lines) is False
+        assert _inject_overload_signatures(app, "function", "name", obj, obj, lines) is False
         assert ":no-overloads:" not in lines
         assert lines == ["", "Some docstring."]
     finally:
@@ -860,7 +860,7 @@ def test_inject_overload_local_directive_with_global_enabled() -> None:
     try:
         app = make_docstring_app(typehints_document_overloads=True)
         lines = [":no-overloads:", "", "Docs here."]
-        assert _inject_overload_signatures(app, "function", "name", obj, lines) is False
+        assert _inject_overload_signatures(app, "function", "name", obj, obj, lines) is False
         assert ":no-overloads:" not in lines
     finally:
         _OVERLOADS_CACHE.pop("test_mod", None)
