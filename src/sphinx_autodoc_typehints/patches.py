@@ -46,8 +46,13 @@ def napoleon_numpy_docstring_return_type_processor(  # ruff:ignore[too-many-argu
         return
 
     end = next((index for index in range(pos, len(lines)) if not lines[index].strip()), len(lines))
-    # an unindented sentence reads as a type to napoleon; indented under the empty field it becomes the description
-    if (paragraph := lines[pos:end]) and not paragraph[0][:1].isspace() and paragraph[-1].rstrip().endswith("."):
+    # an unindented sentence reads as a type to napoleon; indented under the empty field it becomes the description.
+    # A type line has its description indented under it, so only a paragraph with no indented line is a sentence.
+    if (
+        (paragraph := lines[pos:end])
+        and not any(line[:1].isspace() for line in paragraph)
+        and paragraph[-1].rstrip().endswith(".")
+    ):
         lines[pos:end] = [f"    {line}" for line in paragraph]
     lines.insert(pos, ":")
 
