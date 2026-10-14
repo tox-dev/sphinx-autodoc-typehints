@@ -1012,6 +1012,7 @@ class _MultiLineRepr:
         pytest.param(_Mode.FAST, "_Mode.FAST", id="enum-member"),
         pytest.param(frozenset({"gamma", "alpha", "beta"}), "frozenset({'alpha', 'beta', 'gamma'})", id="frozenset"),
         pytest.param(_MultiLineRepr(), "MultiLine(   a=1, )", id="multi-line-repr"),
+        pytest.param("x\\y", r"'x\\y'", id="backslash"),
     ],
 )
 def test_process_docstring_describes_a_default_like_the_signature(default: object, expected: str) -> None:

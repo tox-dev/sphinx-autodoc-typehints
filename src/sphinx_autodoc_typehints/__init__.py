@@ -471,7 +471,7 @@ def _format_overload_lines(overloads: list[inspect.Signature], obj: Any, app: Sp
 def format_default(app: Sphinx, default: Any, is_annotated: bool) -> str | None:  # ruff:ignore[boolean-type-hint-positional-argument]
     if default is inspect.Parameter.empty:
         return None
-    formatted = object_description(default).replace("\\", "\\\\")
+    formatted = object_description(default)
 
     if is_annotated:
         if app.config.typehints_defaults.startswith("braces"):
