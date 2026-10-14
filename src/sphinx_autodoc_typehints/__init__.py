@@ -15,7 +15,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
-    TypeVar,
     Unpack,
     get_args,
     get_origin,
@@ -35,6 +34,7 @@ from ._annotations import (
     get_annotation_args,
     get_annotation_class_name,
     get_annotation_module,
+    signature_text,
 )
 from ._deferred import ALIAS_CHOICE_ROLE, DeferAliasChoice, alias_choice_role, merge_alias_choices
 from ._deprecated import DEPRECATED_DIRECTIVE, DeprecatedDirective, inject_deprecation
@@ -60,7 +60,7 @@ from .patches import _OVERLOADS_CACHE, install_patches
 from .version import __version__
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Generator
+    from collections.abc import Generator
 
     from docutils.nodes import Node
     from docutils.parsers.rst import states
@@ -108,22 +108,23 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-
         return None
 
     sph_signature = sphinx_signature(obj, type_aliases=app.config["autodoc_type_aliases"])
-    typehints_formatter: Callable[..., str | None] | None = getattr(app.config, "typehints_formatter", None)
-
-    def _get_formatted_annotation(annotation: TypeVar) -> TypeVar:
-        if typehints_formatter is None:
-            return annotation
-        formatted_name = typehints_formatter(annotation, app.config)
-        return annotation if not isinstance(formatted_name, str) else TypeVar(formatted_name)  # ty: ignore[invalid-legacy-type-variable]
+    # a kept type reads as its field does: the same resolution, aliases, fixups and formatter, written as Python
+    shown: dict[str, str] = {}
+    if app.config.typehints_use_signature or app.config.typehints_use_signature_return:
+        type_hints, state = _resolved_type_hints(app, name, original_obj, obj, annotated)
+        with _annotation_state(app.config, **state, _typehints_signature=True):
+            short_literals = app.config.python_display_short_literal_types
+            shown = {
+                key: signature_text(format_annotation(hint, app.config, short_literals=short_literals))
+                for key, hint in type_hints.items()
+            }
 
     if app.config.typehints_use_signature_return:
-        sph_signature = sph_signature.replace(
-            return_annotation=_get_formatted_annotation(sph_signature.return_annotation)
-        )
+        sph_signature = sph_signature.replace(return_annotation=shown.get("return", sph_signature.return_annotation))
 
     if app.config.typehints_use_signature:
         parameters = [
-            param.replace(annotation=_get_formatted_annotation(param.annotation))
+            param.replace(annotation=shown.get(param.name, param.annotation))
             for param in sph_signature.parameters.values()
         ]
     else:
@@ -211,12 +212,9 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
     else:
         ivar_annotations = {}
     use_class_for_signature = False
-    cls_for_hints = None
     if inspect.isclass(obj):
         obj = getattr(obj, constructor := _constructor_name(obj))
         use_class_for_signature = constructor == "__new__" or _declared_signature(original_obj) is not None
-        # namedtuple builds __new__ without builtins, so forward references resolve only via the class (#657)
-        cls_for_hints = original_obj if inspect.isfunction(obj) and obj.__module__.startswith("namedtuple_") else None
     try:
         obj = inspect.unwrap(obj)
         annotated = _annotated_function(obj)
@@ -230,32 +228,8 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
     except (ValueError, TypeError):
         signature = None
 
-    localns = {
-        key: MyTypeAliasForwardRef(value, configured=True) for key, value in app.config["autodoc_type_aliases"].items()
-    }
-    module_prefix = name.rsplit(".", maxsplit=1)[0] if "." in name else ""
-    eager_aliases: dict[str, MyTypeAliasForwardRef] = {}
-    if (env := getattr(app, "env", None)) is not None:
-        deferred, eager_aliases = collect_documented_type_aliases(annotated, module_prefix, env)
-        localns.update(deferred)
-    type_hints = get_all_type_hints(app.config.autodoc_mock_imports, cls_for_hints or annotated, name, localns)
-    type_hints |= eager_aliases
-    if (stated_signature := _declared_signature(original_obj)) is not None:
-        # the parameters it lists, such as a pydantic model's fields, may be ones no annotation of the constructor names
-        stated = {key: param.annotation for key, param in stated_signature.parameters.items()}
-        type_hints |= {
-            key: annotation
-            for key, annotation in (stated | {"return": stated_signature.return_annotation}).items()
-            if annotation is not stated_signature.empty
-        }
-    with _annotation_state(
-        app.config,
-        _annotation_globals=getattr(annotated, "__globals__", {}),
-        _typehints_env=env,
-        _typehints_module_prefix=module_prefix,
-        _typehints_declared_type_params=declared_type_params(original_obj, obj),
-        _typehints_resolve_guarded_imports=partial(resolve_type_guarded_imports, app.config.autodoc_mock_imports),
-    ):
+    type_hints, state = _resolved_type_hints(app, name, original_obj, obj, annotated)
+    with _annotation_state(app.config, **state):
         has_overloads = _inject_overload_signatures(app, what, name, obj, lines)
         inject_deprecation(declared, lines, _summary_end(lines))
         _inject_types_to_docstring(
@@ -272,6 +246,42 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
         _inject_ivar_types(ivar_annotations, app, lines)
         inject_extra_items(app, original_obj, lines)
         _inject_override(app, what, name, declared, lines)
+
+
+def _resolved_type_hints(
+    app: Sphinx, name: str, original_obj: Any, obj: Any, annotated: Any
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Return the types the docs show for the parameters and return of ``obj``, and the state rendering them reads."""
+    localns = {
+        key: MyTypeAliasForwardRef(value, configured=True) for key, value in app.config["autodoc_type_aliases"].items()
+    }
+    module_prefix = name.rsplit(".", maxsplit=1)[0] if "." in name else ""
+    eager_aliases: dict[str, MyTypeAliasForwardRef] = {}
+    if (env := getattr(app, "env", None)) is not None:
+        deferred, eager_aliases = collect_documented_type_aliases(annotated, module_prefix, env)
+        localns.update(deferred)
+    # namedtuple builds __new__ without builtins, so forward references resolve only via the class (#657)
+    namedtuple_new = (
+        inspect.isclass(original_obj) and inspect.isfunction(obj) and obj.__module__.startswith("namedtuple_")
+    )
+    owner = original_obj if namedtuple_new else annotated
+    type_hints = get_all_type_hints(app.config.autodoc_mock_imports, owner, name, localns) | eager_aliases
+    if (stated_signature := _declared_signature(original_obj)) is not None:
+        # the parameters it lists, such as a pydantic model's fields, may be ones no annotation of the constructor names
+        stated = {key: param.annotation for key, param in stated_signature.parameters.items()}
+        type_hints |= {
+            key: annotation
+            for key, annotation in (stated | {"return": stated_signature.return_annotation}).items()
+            if annotation is not stated_signature.empty
+        }
+    state = {
+        "_annotation_globals": getattr(annotated, "__globals__", {}),
+        "_typehints_env": env,
+        "_typehints_module_prefix": module_prefix,
+        "_typehints_declared_type_params": declared_type_params(original_obj, obj),
+        "_typehints_resolve_guarded_imports": partial(resolve_type_guarded_imports, app.config.autodoc_mock_imports),
+    }
+    return type_hints, state
 
 
 def _constructor_name(cls: type) -> Literal["__new__", "__init__"]:

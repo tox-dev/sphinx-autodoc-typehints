@@ -7,7 +7,21 @@ import inspect
 import sys
 from pathlib import Path
 from textwrap import dedent
-from typing import TYPE_CHECKING, Annotated, Any, Final, NamedTuple, NotRequired, Required, TypedDict, Unpack, override
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Final,
+    Literal,
+    NamedTuple,
+    NewType,
+    NotRequired,
+    Required,
+    TypedDict,
+    TypeVar,
+    Unpack,
+    override,
+)
 from unittest.mock import MagicMock, create_autospec, patch
 
 import pytest
@@ -181,6 +195,60 @@ def test_process_signature_class_omits_constructor_return() -> None:
     app = make_sig_app(typehints_use_signature=True, typehints_use_signature_return=True)
     result = process_signature(app, "class", "mod.ConstructedFromInit", ConstructedFromInit, Options(), "", "")
     assert result == ("(count: int)", None)
+
+
+_UserId = NewType("_UserId", int)
+_Bounded = TypeVar("_Bounded", bound=int)
+
+
+def _kept_path(value: Path) -> Path: ...
+def _kept_flag(value: bool) -> None: ...  # the case under test
+def _kept_new_type(value: _UserId) -> None: ...
+def _kept_type_var(value: _Bounded) -> None: ...  # ruff:ignore[non-pep695-generic-function]  # no signature declares it
+def _kept_declared[T: int](value: T) -> None: ...
+def _kept_param_spec[**P](*args: P.args, **kwargs: P.kwargs) -> None: ...
+def _kept_literal(value: Literal["a", 1]) -> None: ...
+def _kept_callable(value: Callable[..., int]) -> None: ...
+
+
+type _Pair = tuple[int, int]
+
+
+def _kept_alias(value: _Pair) -> None: ...
+
+
+def _bool_as_rst(annotation: object, _config: object) -> str | None:
+    return ":class:`bool`" if annotation is bool else None
+
+
+@pytest.mark.parametrize(
+    ("func", "overrides", "expected"),
+    [
+        pytest.param(_kept_path, {}, "(value: ~pathlib.Path) -> ~pathlib.Path", id="class"),
+        pytest.param(
+            _kept_path, {"typehints_fully_qualified": True}, "(value: pathlib.Path) -> pathlib.Path", id="qualified"
+        ),
+        pytest.param(
+            _kept_path,
+            {"typehints_fixup_module_name": lambda module: "pl" if module == "pathlib" else module},
+            "(value: ~pl.Path) -> ~pl.Path",
+            id="fixed-up-module",
+        ),
+        pytest.param(_kept_flag, {"typehints_formatter": _bool_as_rst}, "(value: bool) -> None", id="formatter-markup"),
+        pytest.param(_kept_new_type, {}, "(value: ~test_init._UserId) -> None", id="new-type"),
+        pytest.param(_kept_type_var, {}, "(value: ~test_init._Bounded) -> None", id="type-var"),
+        pytest.param(_kept_declared, {}, "(value: T) -> None", id="declared-type-param"),
+        pytest.param(_kept_param_spec, {}, "(*args: P.args, **kwargs: P.kwargs) -> None", id="param-spec-components"),
+        pytest.param(_kept_literal, {}, "(value: ~typing.Literal['a', 1]) -> None", id="literal"),
+        pytest.param(_kept_callable, {}, "(value: ~collections.abc.Callable[..., int]) -> None", id="callable"),
+        pytest.param(_kept_alias, {}, "(value: ~test_init._Pair) -> None", id="type-alias"),
+    ],
+)
+def test_process_signature_keeps_types_as_the_fields_render_them(
+    func: types.FunctionType, overrides: dict[str, object], expected: str
+) -> None:
+    app = make_sig_app(typehints_use_signature=True, typehints_use_signature_return=True, **overrides)
+    assert process_signature(app, "function", f"mod.{func.__name__}", func, Options(), "", "") == (expected, None)
 
 
 def test_process_docstring_sphinx_signature_raises_value_error() -> None:

@@ -360,6 +360,12 @@ typehints_use_signature = True  # show parameter types in signature
 typehints_use_signature_return = True  # show return type in signature
 ```
 
+The kept types read the same as the fields below them: `typehints_formatter`, `typehints_fixup_module_name`,
+`typehints_fully_qualified` and documented type aliases apply to both. They are written as Python writes them, so a
+`NewType` shows by its name, `UserId` rather than the field's `UserId (int)`, a type variable no signature declares
+shows as `~module.T`, and the markup a formatter returns becomes the name it refers to, so `` :class:`bool` `` turns
+into `bool`, which Sphinx then links as it links any annotation.
+
 ### Handle circular imports
 
 When two modules need to reference each other's types, you'll get circular import errors. Fix this by using
@@ -435,7 +441,8 @@ typehints_formatter = my_formatter
 ```
 
 With `typehints_use_signature` or `typehints_use_signature_return`, the formatter also decides the types kept in the
-signature. A value that is not callable stops the build with a configuration error.
+signature, where its markup becomes the name it refers to. A value that is not callable stops the build with a
+configuration error.
 
 To always show the full module path for types (e.g., `collections.OrderedDict` instead of `OrderedDict`):
 

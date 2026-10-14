@@ -50,11 +50,17 @@ def make_sig_app(**overrides: object) -> Sphinx:
         "typehints_use_signature": False,
         "typehints_use_signature_return": False,
         "autodoc_type_aliases": {},
+        "autodoc_mock_imports": [],
+        "python_display_short_literal_types": False,
+        "always_use_bars_union": False,
         "strip_signature_backslash": False,
     }
     defaults.update(overrides)
     config = create_autospec(Config, **defaults)  # ty: ignore[invalid-argument-type]
-    return create_autospec(Sphinx, config=config)
+    config.__getitem__.side_effect = lambda key: getattr(config, key)
+    app = create_autospec(Sphinx, config=config)
+    app.env = None
+    return app
 
 
 def make_docstring_app(**overrides: object) -> Sphinx:
