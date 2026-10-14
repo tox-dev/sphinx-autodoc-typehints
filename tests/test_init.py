@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 import importlib
 import inspect
 from pathlib import Path
@@ -102,6 +103,17 @@ def test_process_signature_class_instance() -> None:
     assert result is not None
     sig_str, _ = result
     assert sig_str == "(x)"
+
+
+@pytest.mark.parametrize(
+    "decorator",
+    [pytest.param(functools.cache, id="cache"), pytest.param(functools.lru_cache, id="lru_cache")],
+)
+def test_process_signature_strips_types_from_a_cached_function(decorator: Callable[..., Any]) -> None:
+    def compute(value: int) -> str: ...
+
+    result = process_signature(make_sig_app(), "function", "mod.compute", decorator(compute), Options(), "", "")
+    assert result == ("(value)", None)
 
 
 def test_process_signature_class_omits_constructor_return() -> None:
