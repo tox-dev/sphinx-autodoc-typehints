@@ -10,6 +10,7 @@ This is a leaf module with no internal package imports to keep the dependency gr
 
 from __future__ import annotations
 
+import dataclasses
 import enum
 import inspect
 import re
@@ -459,6 +460,8 @@ def get_annotation_args(annotation: Any, module: str, class_name: str) -> tuple[
         return (annotation.__supertype__,)
     if class_name == "Generic":
         return annotation.__parameters__
+    if class_name == "InitVar" and isinstance(annotation, dataclasses.InitVar):
+        return (annotation.type,)
     result = getattr(annotation, "__args__", ())
     return () if len(result) == 1 and result[0] == () else result  # type: ignore[misc]
 
