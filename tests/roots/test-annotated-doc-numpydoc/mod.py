@@ -24,3 +24,15 @@ def compute(
 def transform(data: Annotated[str, Doc("The input data")]) -> Annotated[str, Doc("The transformed result")]:
     """Transform data."""
     return data.upper()
+
+
+def count() -> Annotated[int, Doc("The count")]:
+    """
+    Count the items.
+
+    Returns
+    -------
+    int
+        Number of items.
+    """
+    return 0

@@ -41,6 +41,10 @@ class DocstringFormat(ABC):
         """Check if a type annotation already exists for arg_name."""
 
     @abstractmethod
+    def has_return_description(self, lines: list[str]) -> bool:
+        """Return True if the docstring already describes the return value."""
+
+    @abstractmethod
     def get_rtype_insert_info(self, app: Sphinx, lines: list[str]) -> InsertIndexInfo | None:
         """Find where to insert return type information."""
 
