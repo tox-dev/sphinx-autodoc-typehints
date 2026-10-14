@@ -648,6 +648,7 @@ Some annotations render differently from how they are written:
 | `Literal[Color.RED]`                                     | `Literal[Color.RED]`, linking the enum member                                          |
 | `tuple[()]`                                              | `tuple[()]`, the empty tuple                                                           |
 | `typing_extensions.Self`                                 | `Self`, linking to `typing.Self` where `typing` has it                                 |
+| `MISSING = sentinel("MISSING")` (PEP 661)                | `MISSING`, linking it as module data                                                   |
 
 With Sphinx's
 [`python_display_short_literal_types`](https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-python_display_short_literal_types)
