@@ -950,6 +950,25 @@ def test_process_signature_strips_a_stated_signature() -> None:
     )
 
 
+def _handle(ctx: object, name: str, count: int = 1) -> bool: ...
+
+
+@functools.wraps(_handle)
+def _injected(*args: object, **kwargs: object) -> bool: ...
+
+
+# a dependency-injecting decorator hides the parameter it supplies
+_injected.__signature__ = inspect.Signature(list(inspect.signature(_handle).parameters.values())[1:])  # ty: ignore[unresolved-attribute]  # the case under test
+
+
+def test_process_signature_strips_a_wrapper_stated_signature() -> None:
+    given = "(name: str, count: int = 1)"
+    assert process_signature(make_sig_app(), "function", "mod.injected", _injected, Options(), given, "") == (
+        "(name, count=1)",
+        None,
+    )
+
+
 def test_process_docstring_types_a_stated_signature() -> None:
     lines = [":param value: doc"]
     process_docstring(make_docstring_app(), "function", "mod.stated", _stated, None, lines)
