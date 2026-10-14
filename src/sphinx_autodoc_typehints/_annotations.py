@@ -34,6 +34,7 @@ from typing import (
 from sphinx.ext.autodoc.mock import ismock
 from sphinx.util import rst
 from sphinx.util.inspect import TypeAliasForwardRef
+from sphinx.util.typing import _INVALID_BUILTIN_CLASSES  # ruff:ignore[import-private-name]  # Sphinx's own table
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator
@@ -268,6 +269,9 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
     except ValueError:
         return str(annotation).strip("'")
 
+    # where the docs place a class Python defines elsewhere, such as pathlib.Path living in pathlib._local from 3.13
+    if documented := _INVALID_BUILTIN_CLASSES.get((module, class_name)):
+        module, _, class_name = documented.rpartition(".")
     module = _fixup_module_name(config, module)
     # typing_extensions backports names to older Pythons, and a backported name is documented under typing
     if module == "typing_extensions" and hasattr(typing, class_name):
@@ -301,14 +305,22 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
         newtype_name = annotation.__name__
         newtype_qualified = f"{newtype_module}.{newtype_name}" if newtype_module else newtype_name
         newtype_prefix = "" if fully_qualified or not newtype_module else "~"
+        reference = f":py:class:`{newtype_prefix}{newtype_qualified}`"
+        # a signature names the type alone, as Python writes it
+        if getattr(config, "_typehints_signature", False):
+            return reference
         supertype = yield annotation.__supertype__
-        return f":py:class:`{newtype_prefix}{newtype_qualified}` ({supertype})"
+        return f"{reference} ({supertype})"
     if full_name == "typing.Annotated":
         return (yield annotation.__origin__)
     if full_name in {"typing.TypeVar", "typing.ParamSpec", "typing.TypeVarTuple"} and not isinstance(annotation, type):
         # the signature lists it with its bound, constraints and default already
         if annotation in getattr(config, "_typehints_declared_type_params", ()):
             return f"``{annotation.__name__}``"
+        # a signature names a module-level one by where it is defined, as Python writes it
+        if getattr(config, "_typehints_signature", False):
+            module = _fixup_module_name(config, annotation.__module__)
+            return f":py:class:`{'' if fully_qualified else '~'}{module}.{annotation.__name__}`"
         # typing.TypeVarTuple has neither a bound nor a variance, only the typing_extensions backport adds them
         params = {k: getattr(annotation, f"__{k}__", None) for k in ("bound", "covariant", "contravariant")}
         params = {k: v for k, v in params.items() if v}
@@ -324,7 +336,9 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
         args_format += ")"
         formatted_args = None if args else args_format
     elif full_name in {"typing.ParamSpecArgs", "typing.ParamSpecKwargs"} and not isinstance(annotation, type):
-        if annotation.__origin__ in getattr(config, "_typehints_declared_type_params", ()):
+        if annotation.__origin__ in getattr(config, "_typehints_declared_type_params", ()) or getattr(
+            config, "_typehints_signature", False
+        ):
             # its repr is the P.args form a signature writes
             return f"``{annotation!r}``"
         formatted_args = f"\\(``{annotation.__origin__.__name__}``)"
@@ -676,3 +690,24 @@ def _get_canonical_type_alias_name(annotation: TypeAliasType) -> str:
 
 def add_type_css_class(type_rst: str) -> str:
     return f":sphinx_autodoc_typehints_type:`{rst.escape(type_rst)}`"
+
+
+def signature_text(type_rst: str) -> str:
+    """
+    Turn the markup :func:`format_annotation` writes into the text a signature holds, such as ``~pathlib.Path``.
+
+    The Python domain links the names in that text again. A role with an explicit title shows its title there too, as
+    ``...`` for ``Ellipsis``.
+    """
+
+    def plain(match: re.Match[str]) -> str:
+        if (role := match["role"]) is not None:
+            text = re.sub(r"\\(.)", r"\1", role)
+            return titled[1] if (titled := re.fullmatch(r"(.*?)\s*<.+>", text, re.DOTALL)) else text
+        if (literal := match["literal"]) is not None:
+            return literal
+        # an escaped space only separates markup, as between a role and the [ after it
+        return "" if match["escaped"] == " " else match["escaped"]
+
+    markup = r":(?:[\w-]+:)+`(?P<role>(?:[^`\\]|\\.)*)`|``(?P<literal>.+?)``|\\(?P<escaped>.)"
+    return re.sub(markup, plain, type_rst, flags=re.DOTALL)

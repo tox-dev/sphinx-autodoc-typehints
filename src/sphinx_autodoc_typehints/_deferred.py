@@ -55,6 +55,9 @@ def defer_alias_choice(config: Config, linked: str, expanded: str) -> str | None
     signature to where its document sorts (and to how ``-j`` hands documents out). Hand both renderings
     to the post-transform instead, which runs once every document is in.
     """
+    # signature text is final once written, and names an alias the way Python writes it
+    if getattr(config, "_typehints_signature", False):
+        return linked
     env = getattr(config, "_typehints_env", None)
     if env is None or linked == expanded:
         return None
