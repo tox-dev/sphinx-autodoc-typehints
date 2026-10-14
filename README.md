@@ -443,6 +443,10 @@ To always show the full module path for types (e.g., `collections.OrderedDict` i
 typehints_fully_qualified = True
 ```
 
+It follows Sphinx's
+[`autodoc_typehints_format`](https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#confval-autodoc_typehints_format)
+unless set, so `autodoc_typehints_format = "fully-qualified"` turns it on.
+
 ### Document a `type` alias without expanding it
 
 The extension preserves alias names only when they have a `.. py:type::` directive in your docs. Without that entry, the

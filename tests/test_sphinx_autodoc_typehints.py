@@ -823,3 +823,26 @@ def test_ivar_injection_accepts_parameterised_inline_type(inline_typed_line: str
     app = make_docstring_app()
     process_docstring(app, "class", "_IvarClass", _IvarClass, None, lines)
     assert not any(line.startswith(":vartype bar:") for line in lines)
+
+
+@pytest.mark.parametrize(
+    ("overrides", "expected"),
+    [
+        pytest.param({}, '"typing.TypeVar"', id="follows-autodoc"),
+        pytest.param({"typehints_fully_qualified": False}, '"TypeVar"', id="set-explicitly"),
+    ],
+)
+@pytest.mark.sphinx("text", testroot="dummy")
+def test_fully_qualified_follows_autodoc_typehints_format(
+    app: SphinxTestApp, write_rst: Callable[[str], None], overrides: dict[str, bool], expected: str
+) -> None:
+    app.config.autodoc_typehints_format = "fully-qualified"
+    for key, value in overrides.items():
+        setattr(app.config, key, value)
+    write_rst(".. autofunction:: dummy_module.bounded")
+    app.build()
+
+    value_line = next(
+        line for line in (Path(app.srcdir) / "_build/text/index.txt").read_text().splitlines() if "**value**" in line
+    )
+    assert value_line.split("(", 1)[1].startswith(expected)
