@@ -18,6 +18,9 @@ def get_obj_location(obj: Any) -> str | None:
         filepath = inspect.getsourcefile(obj) or inspect.getfile(obj)
     except TypeError:
         return None
+    # code without a file, such as the __init__ a dataclass generates, is named like <string>
+    if filepath.startswith("<"):
+        return None
     try:
         lineno = inspect.getsourcelines(obj)[1]
     except (OSError, TypeError):
