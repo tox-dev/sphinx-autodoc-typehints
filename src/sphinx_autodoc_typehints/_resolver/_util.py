@@ -6,7 +6,7 @@ import ast
 import inspect
 import sys
 import textwrap
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final, cast
 
 from sphinx_autodoc_typehints._annotations import (
     MyTypeAliasForwardRef,
@@ -19,6 +19,23 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
 
     from sphinx.environment import BuildEnvironment
+
+_DOCUMENTED: Final = "sphinx_autodoc_typehints_documented"
+
+
+def note_documented(env: BuildEnvironment, name: str) -> None:
+    """Remember that autodoc documents ``name`` on the page being read, so its header is the extension's to render."""
+    cast("set[str]", env.temp_data.setdefault(_DOCUMENTED, set())).add(name)
+
+
+def is_documented(env: BuildEnvironment, name: str) -> bool:
+    """
+    Tell whether autodoc documents ``name`` on the page being read.
+
+    autodoc already looked such a name up, so looking it up again runs no package ``__getattr__`` autodoc did not run;
+    looking up a name written by hand could import, raise, or rename what autodoc documents later.
+    """
+    return name in (env.temp_data.get(_DOCUMENTED) or ())
 
 
 def get_obj_location(obj: Any) -> str | None:
@@ -140,6 +157,8 @@ __all__ = [
     "collect_documented_type_aliases",
     "documented_type_names",
     "get_obj_location",
+    "is_documented",
+    "note_documented",
     "object_at",
     "type_alias_namespace",
     "written_type_alias",

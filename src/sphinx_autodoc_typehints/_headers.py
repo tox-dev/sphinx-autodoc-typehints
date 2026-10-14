@@ -14,6 +14,7 @@ from sphinx.util.inspect import safe_getattr
 from ._annotations import annotation_state, format_annotation, signature_text
 from ._resolver import (
     documented_type_names,
+    is_documented,
     object_at,
     resolve_annotations,
     resolve_type_guarded_imports,
@@ -24,18 +25,11 @@ from ._typed_dict import typed_dict_keys
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
-    from sphinx.environment import BuildEnvironment
 
-_DOCUMENTED: Final = "sphinx_autodoc_typehints_documented"
 _MISSING: Final = object()
 #: The hints resolved per owner while one document is read, keyed by that document; resolving an owner evaluates every
 #: annotation it holds, which a module of many documented globals would otherwise repeat for each of their headers.
 _RESOLVED: Final[dict[object, dict[tuple[str, frozenset[str]], dict[str, Any]]]] = {}
-
-
-def note_documented(env: BuildEnvironment, name: str) -> None:
-    """Remember that autodoc documents ``name`` on the page being read, so its header is the extension's to render."""
-    cast("set[str]", env.temp_data.setdefault(_DOCUMENTED, set())).add(name)
 
 
 def render_header_types(app: Sphinx, domain: str, objtype: str, contentnode: addnodes.desc_content) -> None:
@@ -48,12 +42,11 @@ def render_header_types(app: Sphinx, domain: str, objtype: str, contentnode: add
     """
     if domain != "py" or objtype not in {"data", "attribute", "property"}:
         return
-    documented = app.env.temp_data.get(_DOCUMENTED) or frozenset()
     for signode in cast("addnodes.desc", contentnode.parent).children:
         if (
             isinstance(signode, addnodes.desc_signature)
             and (typed := _type_annotation(signode)) is not None
-            and (name := f"{signode.get('module')}.{signode.get('fullname')}") in documented
+            and is_documented(app.env, name := f"{signode.get('module')}.{signode.get('fullname')}")
             and (hint := _hint(app, signode, objtype, name)) is not _MISSING
         ):
             with annotation_state(
@@ -138,4 +131,4 @@ def _resolved_hints(app: Sphinx, annotated: Any, name: str) -> dict[str, Any]:
     return resolve_annotations(app.config.autodoc_mock_imports, annotated, name, localns) | written_aliases
 
 
-__all__ = ["note_documented", "render_header_types"]
+__all__ = ["render_header_types"]

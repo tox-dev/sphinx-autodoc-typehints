@@ -14,7 +14,7 @@ from sphinx.domains.python._annotations import (  # ruff:ignore[import-private-n
 )
 from sphinx.util.typing import stringify_annotation
 
-from ._resolver import object_at
+from ._resolver import is_documented, object_at
 
 if sys.version_info >= (3, 14):  # pragma: >=3.14 cover
     from annotationlib import Format, call_evaluate_function, get_annotations
@@ -55,6 +55,7 @@ def add_type_params(app: Sphinx, domain: str, objtype: str, contentnode: addnode
             isinstance(signode, addnodes.desc_signature)
             and not any(isinstance(node, addnodes.desc_type_parameter_list) for node in signode)
             and (name := next((node for node in signode if isinstance(node, addnodes.desc_name)), None)) is not None
+            and is_documented(app.env, f"{signode.get('module')}.{signode.get('fullname')}")
             and (params := _type_params(object_at(signode.get("module"), (signode.get("fullname") or "").split("."))))
         ):
             type_params = _parse_type_list(", ".join(_type_param(param, mode) for param in params), app.env)

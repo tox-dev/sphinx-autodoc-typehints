@@ -93,6 +93,19 @@ def test_type_params_follow_the_name(
     assert (Path(app.outdir) / "index.txt").read_text().splitlines()[0] == header
 
 
+@pytest.mark.sphinx("text", testroot="type-params")
+def test_type_params_not_read_for_a_written_out_signature(app: SphinxTestApp, write_rst: Callable[[str], None]) -> None:
+    # autodoc imports the module, so the handwritten name could be looked up in it
+    write_rst(
+        ".. autofunction:: type_params_module.plain\n\n"
+        ".. py:currentmodule:: type_params_module\n\n"
+        ".. py:function:: bounded(value)"
+    )
+    app.build()
+
+    assert "type_params_module.bounded(value)" in (Path(app.outdir) / "index.txt").read_text().splitlines()
+
+
 @pytest.mark.sphinx("text", testroot="type-params", confoverrides={"typehints_fully_qualified": True})
 def test_type_params_fully_qualified(app: SphinxTestApp, write_rst: Callable[[str], None]) -> None:
     write_rst(".. autofunction:: type_params_module.bounded")
