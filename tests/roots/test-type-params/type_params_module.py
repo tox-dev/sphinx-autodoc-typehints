@@ -43,6 +43,10 @@ class Stack[T]:
         raise NotImplementedError
 
 
+#: A stack ready to use.
+default_stack: Stack[int] = Stack(0)
+
+
 class Sizes[T: Sized]:
     """Bound by a type imported only for type checking."""
 

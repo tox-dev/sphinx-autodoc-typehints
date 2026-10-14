@@ -22,14 +22,23 @@ _KINDS: Final = {"TypeVar": "", "TypeVarTuple": "*", "ParamSpec": "**"}
 _UNKNOWN: Final = object()
 
 
-def add_type_params(app: Sphinx, domain: str, _objtype: str, contentnode: addnodes.desc_content) -> None:
+def add_type_params(app: Sphinx, domain: str, objtype: str, contentnode: addnodes.desc_content) -> None:
     """
     Show the type parameters of a generic object after its name, as in ``class Stack[T: int]``.
 
     autodoc writes no type parameters into the directive it generates, and it leaves no hook to add them for a type
     alias, so they go into the signature the Python domain built from that directive.
     """
-    if domain != "py":
+    # data or an attribute holding a generic instance reads the class's type parameters off it, which it doesn't declare
+    if domain != "py" or objtype not in {
+        "class",
+        "exception",
+        "function",
+        "method",
+        "classmethod",
+        "staticmethod",
+        "type",
+    }:
         return
     mode: _Mode = "fully-qualified-except-typing" if app.config.typehints_fully_qualified else "smart"
     # the signatures are the siblings of the content, which may nest the signatures of members
