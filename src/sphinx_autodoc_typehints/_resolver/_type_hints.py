@@ -9,7 +9,7 @@ import importlib.util
 import inspect
 import sys
 import types
-from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar, TypeVarTuple, get_type_hints
+from typing import TYPE_CHECKING, Any, Final, ForwardRef, ParamSpec, TypeVar, TypeVarTuple, Union, get_type_hints
 
 from sphinx.ext.autodoc.mock import mock
 from sphinx.util import logging
@@ -29,6 +29,7 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 _TYPE_GUARD_IMPORTS_RESOLVED: set[str] = set()
+_UNION: Final = "__sphinx_autodoc_typehints_union__"
 
 
 def get_all_type_hints(
@@ -147,21 +148,40 @@ def resolve_string_annotations(
     resolved: dict[str, Any] = {}
     for key, value in annotations.items():
         resolved[key] = value
+        # Python 3.14 hands back an annotation it could not evaluate as a ForwardRef holding its source
+        source = value.__forward_arg__ if type(value) is ForwardRef else value
         # a quoted annotation evaluates to the string inside it, which takes a second pass
         for _ in range(2):
-            if not isinstance(resolved[key], str):
+            if not isinstance(source, str):
                 break
             try:
-                resolved[key] = eval(resolved[key], globalns, localns)  # ruff:ignore[suspicious-eval-usage]
+                resolved[key] = source = _evaluate(source, globalns, localns)
             except Exception:  # ruff:ignore[blind-except]
                 _LOGGER.debug(
-                    "Failed to resolve annotation %r=%r for %s",
-                    key,
-                    resolved[key],
-                    getattr(obj, "__qualname__", "?"),
+                    "Failed to resolve annotation %r=%r for %s", key, source, getattr(obj, "__qualname__", "?")
                 )
                 break
     return resolved
+
+
+def _evaluate(source: str, globalns: dict[str, Any], localns: dict[str, Any]) -> Any:
+    try:
+        return eval(source, globalns, localns)  # ruff:ignore[suspicious-eval-usage]
+    except TypeError:
+        # X | Y means Union[X, Y], which also accepts operands that don't support |, such as the objects
+        # autodoc_mock_imports puts in place of a missing module's
+        tree = ast.fix_missing_locations(_PipeAsUnion().visit(ast.parse(source, mode="eval")))
+        code = compile(tree, "<annotation>", "eval")
+        return eval(code, globalns, {**localns, _UNION: Union})  # ruff:ignore[suspicious-eval-usage]
+
+
+class _PipeAsUnion(ast.NodeTransformer):
+    def visit_BinOp(self, node: ast.BinOp) -> ast.expr:
+        self.generic_visit(node)
+        if not isinstance(node.op, ast.BitOr):
+            return node
+        members = ast.Tuple(elts=[node.left, node.right], ctx=ast.Load())
+        return ast.Subscript(value=ast.Name(id=_UNION, ctx=ast.Load()), slice=members, ctx=ast.Load())
 
 
 def resolve_type_guarded_imports(autodoc_mock_imports: list[str], obj: Any) -> None:
