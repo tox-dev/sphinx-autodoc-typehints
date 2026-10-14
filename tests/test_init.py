@@ -81,6 +81,11 @@ def test_process_signature_first_parameter_by_member_kind(name: str, method: Cal
     assert result == (expected, None)
 
 
+def test_process_signature_leaves_data_holding_a_callable_alone() -> None:
+    # Sphinx shows no signature for data, and passes none to replace
+    assert process_signature(make_sig_app(), "data", f"{__name__}.alias", _helper, Options(), None, "") is None
+
+
 @pytest.mark.parametrize(
     "name",
     [
