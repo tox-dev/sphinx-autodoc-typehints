@@ -21,6 +21,7 @@ from typing import (
     cast,
     get_args,
     get_origin,
+    get_overloads,
 )
 
 from docutils import nodes
@@ -674,27 +675,46 @@ def _typed_overloads(  # ruff:ignore[too-many-arguments, too-many-positional-arg
     app: Sphinx, name: str, obj: Any, overloads: list[inspect.Signature], skip: int, arguments: dict[Any, Any]
 ) -> Iterator[tuple[list[inspect.Parameter], dict[str, Any]]]:
     """
-    Yield the parameters of each overload past ``skip`` and their types.
+    Yield the parameters of each overload past ``skip`` and their types, rendered as its type parameters declare.
 
     Parsed from the source, the annotations are strings until evaluated in the function's module, where the aliases the
-    parameters resolve to and the PEP 695 type parameters of the function and its class are no globals.
+    parameters resolve to and the PEP 695 type parameters of the overload, the function and its class are no globals.
     """
     aliases = type_alias_namespace(app.config["autodoc_type_aliases"], obj, _module_prefix(name), app.env)[0]
     scope = aliases | {param.__name__: param for param in declared_type_params(None, obj, None)}
     namespace = getattr(obj, "__globals__", {})
-    for overload in overloads:
+    declared = getattr(app.config, "_typehints_declared_type_params", frozenset())
+    for overload, function in zip(overloads, _overload_functions(obj, len(overloads)), strict=True):
+        own = declared_type_params(function, None, None)
         parameters = list(overload.parameters.values())[skip:]
         written = {param.name: param.annotation for param in parameters} | {"return": overload.return_annotation}
-        hints = resolve_string_annotations(obj, written, scope)
+        hints = resolve_string_annotations(obj, written, scope | {param.__name__: param for param in own})
         written_aliases = {
             key: written_type_alias(source, hints[key], namespace)
             for key, source in written.items()
             if isinstance(source, str)
         }
-        yield (
-            parameters,
-            {key: _as_written(specialize(hint, arguments), written_aliases.get(key)) for key, hint in hints.items()},
-        )
+        with annotation_state(app.config, _typehints_declared_type_params=declared | own):
+            yield (
+                parameters,
+                {
+                    key: _as_written(specialize(hint, arguments), written_aliases.get(key))
+                    for key, hint in hints.items()
+                },
+            )
+
+
+def _overload_functions(obj: Any, count: int) -> list[Any]:
+    """
+    Return the functions defining the ``count`` overloads of ``obj`` the source lists, in their order.
+
+    typing holds them only while its registry does, which ``clear_overloads`` empties, and never sees overloads a
+    ``TYPE_CHECKING`` block keeps from running.
+    """
+    if len(functions := get_overloads(obj)) != count:
+        return [None] * count
+    # a staticmethod or classmethod overload registers the descriptor
+    return [inspect.unwrap(function) for function in functions]
 
 
 def _overload_entries(

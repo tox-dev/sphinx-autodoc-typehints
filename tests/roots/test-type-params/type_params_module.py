@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Generic, overload
 
@@ -201,3 +202,28 @@ class IntCrate(Crate[int]):
 
     :ivar size: how many it holds
     """
+
+
+class Shelf[T]:
+    """Holds a member overloaded with a type parameter of its own."""
+
+    @overload
+    def take[S: str](self, key: S) -> list[S]: ...
+    @overload
+    def take(self, key: int) -> T: ...
+    def take(self, key: str | int) -> list[str] | T:
+        """Take one."""
+        raise NotImplementedError
+
+
+if sys.version_info >= (4,):
+
+    @overload
+    def pick[K: int](key: K) -> list[K]: ...
+    @overload
+    def pick(key: str) -> str: ...
+
+
+def pick(key: int | str) -> list[int] | str:
+    """Pick one, overloaded where no interpreter runs the overloads, so typing never registers them."""
+    raise NotImplementedError
