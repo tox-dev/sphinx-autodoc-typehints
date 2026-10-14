@@ -597,6 +597,31 @@ class Outer:
     def make(self, value: Inner) -> Inner: ...
 
 
+@pytest.mark.parametrize(
+    ("method", "expected"),
+    [
+        pytest.param("list", {"return": list[str]}, id="method-named-like-a-builtin"),
+        pytest.param("move", {"to": Decimal, "return": type(None)}, id="field-default-named-like-a-global"),
+    ],
+)
+def test_get_all_type_hints_class_member_does_not_shadow_global(
+    guarded_module: _GuardedModuleBuilder, method: str, expected: dict[str, Any]
+) -> None:
+    module = guarded_module(
+        "from __future__ import annotations\n"
+        "from decimal import Decimal\n"
+        "\n"
+        "class Shadowing:\n"
+        "    Decimal = None\n"
+        "\n"
+        "    def list(self) -> list[str]: ...\n"
+        "\n"
+        "    def move(self, to: Decimal) -> None: ...\n"
+    )
+    hints = get_all_type_hints([], getattr(module.Shadowing, method), f"{module.__name__}.Shadowing.{method}", {})
+    assert hints == expected
+
+
 def test_build_localns_adds_ancestor_classes() -> None:
     import tests.roots.test_nested_attrs_localns as mod  # ruff:ignore[import-outside-top-level]
 
