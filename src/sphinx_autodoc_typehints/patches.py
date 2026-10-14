@@ -3,15 +3,17 @@
 from __future__ import annotations
 
 from functools import lru_cache, partial
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final, cast
 
 from docutils import nodes
 from docutils.parsers.rst.directives.admonitions import BaseAdmonition
 from docutils.parsers.rst.states import Body, Text
+from sphinx.domains.python import PyObject
 from sphinx.ext.napoleon.docstring import GoogleDocstring
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
+    from sphinx.environment import BuildEnvironment
     from sphinx.ext.autodoc import Options
 
 
@@ -163,6 +165,39 @@ def fix_directive_based_signature_formatting() -> None:
     ModuleAnalyzer.analyze = patched_analyze  # type: ignore[method-assign]
 
 
+_SIGNATURE_LINES: Final = "sphinx_autodoc_typehints_signature_lines"
+
+
+def add_signature_lines(env: BuildEnvironment, name: str, signatures: list[str]) -> None:
+    """Have the directive autodoc writes for ``name`` with the first of ``signatures`` show each on its own line."""
+    _signature_lines(env)[f"{name}{signatures[0]}"] = signatures
+
+
+@lru_cache
+def _patch_signature_lines() -> None:
+    """
+    Add the signature lines autodoc-process-signature cannot return to the directive autodoc writes.
+
+    The event replaces only the first line, and a line break in it breaks the directive, while the Python domain
+    parses each line of the directive into a signature of its own, linking only the first as the target.
+    """
+    original_get_signatures = PyObject.get_signatures
+
+    def get_signatures(self: PyObject) -> list[str]:
+        line = self.arguments[0]
+        key = f"{self.options.get('module')}.{line}"
+        if signatures := _signature_lines(self.env).pop(key, None):
+            name = line.removesuffix(signatures[0])
+            self.arguments[0] = "\n".join(f"{name}{signature}" for signature in signatures)
+        return original_get_signatures(self)
+
+    PyObject.get_signatures = get_signatures  # type: ignore[method-assign]
+
+
+def _signature_lines(env: BuildEnvironment) -> dict[str, list[str]]:
+    return cast("dict[str, list[str]]", env.temp_data.setdefault(_SIGNATURE_LINES, {}))
+
+
 def install_patches(app: Sphinx) -> None:
     """
     Install the patches.
@@ -171,6 +206,7 @@ def install_patches(app: Sphinx) -> None:
     """
     # For Sphinx 9+ directive-based architecture
     fix_directive_based_signature_formatting()
+    _patch_signature_lines()
     app.connect("builder-inited", lambda app: _BUILDING.add(id(app)))
     app.connect("build-finished", lambda app, _exception: _BUILDING.discard(id(app)))
     _patch_google_docstring_lookup_annotation()
@@ -180,5 +216,6 @@ def install_patches(app: Sphinx) -> None:
 
 __all__ = [
     "_OVERLOADS_CACHE",
+    "add_signature_lines",
     "install_patches",
 ]

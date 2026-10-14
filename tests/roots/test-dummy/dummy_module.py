@@ -263,3 +263,72 @@ class DeprecatedTwice:
 
         :param a: the a
         """
+
+
+@overload
+def overloaded(value: int) -> DataClass: ...
+
+
+@overload
+def overloaded(value: str, *, strict=...) -> MyNamedTuple: ...  # ruff:ignore[missing-type-function-argument]  # left untyped on purpose
+
+
+def overloaded(value, *, strict=False):
+    """Overloaded function."""
+
+
+@overload
+def overloaded_opt_out(value: int) -> int: ...
+
+
+@overload
+def overloaded_opt_out(value: str) -> str: ...
+
+
+def overloaded_opt_out(value: int | str) -> int | str:
+    """
+    :no-overloads:
+
+    Opted out.
+    """
+
+
+@overload
+def overloaded_generic[T: int](value: T) -> T: ...
+
+
+@overload
+def overloaded_generic[T: int](value: list[T]) -> T: ...
+
+
+def overloaded_generic[T: int](value: T | list[T]) -> T:
+    """Generic function."""
+
+
+class ClassWithOverloadedInitOptingOut:
+    """Class docstring."""
+
+    @overload
+    def __init__(self, value: int) -> None: ...
+
+    @overload
+    def __init__(self, value: str) -> None: ...
+
+    def __init__(self, value: int | str) -> None:
+        """
+        :no-overloads:
+
+        Constructor docstring.
+        """
+
+
+@overload
+def overloaded_options(value: int) -> int: ...
+
+
+@overload
+def overloaded_options(value: str, *, flag: bool = ...) -> str: ...
+
+
+def overloaded_options(value, **options):
+    """Overloaded function taking options."""
