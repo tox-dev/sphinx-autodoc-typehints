@@ -323,7 +323,8 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
             return f":py:class:`{'' if fully_qualified else '~'}{module}.{annotation.__name__}`"
         # typing.TypeVarTuple has neither a bound nor a variance, only the typing_extensions backport adds them
         params = {k: getattr(annotation, f"__{k}__", None) for k in ("bound", "covariant", "contravariant")}
-        params = {k: v for k, v in params.items() if v}
+        # an unbound ParamSpec reports NoneType as its bound before CPython gh-151955
+        params = {k: v for k, v in params.items() if v and v is not type(None)}
         if "bound" in params:
             params["bound"] = yield params["bound"]
         # PEP 696 defaults exist on typing from 3.13 and on typing_extensions before that

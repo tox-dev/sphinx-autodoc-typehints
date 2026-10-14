@@ -115,9 +115,6 @@ class Slotted:
 class Metaclass(type): ...
 
 
-# The interpreter reports NoneType instead of None for an unset ParamSpec bound before CPython gh-151955 (fixed at
-# patch level, e.g. present in 3.13.15 but not 3.14.7), so probe the runtime instead of the version.
-_NONE_BOUND = r", bound=\ :py:obj:`None`" if P.__bound__ is not None else ""
 _PARAMSPEC_COMPONENT_ROLE: Final[str] = "data" if sys.version_info < (3, 13) else "class"
 
 
@@ -374,14 +371,14 @@ _CASES = [
     ),
     pytest.param(
         Callable[P, int],
-        rf":py:class:`~collections.abc.Callable`\ \[:py:class:`~typing.ParamSpec`\ \(``P``{_NONE_BOUND}),"
+        r":py:class:`~collections.abc.Callable`\ \[:py:class:`~typing.ParamSpec`\ \(``P``),"
         r" :py:class:`int`]",
         id="Callable-ParamSpec-int",
     ),
     pytest.param(
         Callable[typing_extensions.Concatenate[str, P], int],
         r":py:class:`~collections.abc.Callable`\ \[:py:data:`~typing.Concatenate`\ \[:py:class:`str`, "
-        rf":py:class:`~typing.ParamSpec`\ \(``P``{_NONE_BOUND})], :py:class:`int`]",
+        r":py:class:`~typing.ParamSpec`\ \(``P``)], :py:class:`int`]",
         id="Callable-Concatenate-int",
     ),
     pytest.param(
@@ -422,24 +419,24 @@ _CASES = [
     pytest.param(Y, r":py:class:`~typing.TypeVar`\ \(``Y``, bound=\ :py:class:`str`)", id="Y"),
     pytest.param(Z, r":py:class:`~typing.TypeVar`\ \(``Z``, bound=\ A)", id="Z"),
     pytest.param(S, r":py:class:`~typing.TypeVar`\ \(``S``, bound=\ miss)", id="S"),
-    pytest.param(P, rf":py:class:`~typing.ParamSpec`\ \(``P``{_NONE_BOUND})", id="P"),
+    pytest.param(P, r":py:class:`~typing.ParamSpec`\ \(``P``)", id="P"),
     pytest.param(P_args, rf":py:{_PARAMSPEC_COMPONENT_ROLE}:`~typing.ParamSpecArgs`\ \(``P``)", id="P-args"),
     pytest.param(P_kwargs, rf":py:{_PARAMSPEC_COMPONENT_ROLE}:`~typing.ParamSpecKwargs`\ \(``P``)", id="P-kwargs"),
     pytest.param(
         P_co,
-        rf":py:class:`~typing.ParamSpec`\ \(``P_co``{_NONE_BOUND}, covariant=\ True)",
+        r":py:class:`~typing.ParamSpec`\ \(``P_co``, covariant=\ True)",
         id="P_co",
     ),
     pytest.param(
         P_contra,
-        rf":py:class:`~typing.ParamSpec`\ \(``P_contra``{_NONE_BOUND}"
+        r":py:class:`~typing.ParamSpec`\ \(``P_contra``"
         r", contravariant=\ True)",
         id="P-contra",
     ),
     pytest.param(P_bound, r":py:class:`~typing.ParamSpec`\ \(``P_bound``, bound=\ :py:class:`str`)", id="P-bound"),
     pytest.param(
         P_default,
-        rf":py:class:`~typing.ParamSpec`\ \(``P_default``{_NONE_BOUND}, default=\ \[:py:class:`int`, :py:class:`str`])",
+        r":py:class:`~typing.ParamSpec`\ \(``P_default``, default=\ \[:py:class:`int`, :py:class:`str`])",
         id="P-default",
     ),
     pytest.param(
