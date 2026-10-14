@@ -200,8 +200,10 @@ typehints_use_rtype = False
 
 ### Change how union types look
 
-A union written with the pipe syntax, `str | int`, renders that way. One written as `Union[str, int]` or `Optional[str]`
-renders as written by default; to show those with pipes too:
+A union written with the pipe syntax, `str | int`, renders that way. Before Python 3.14, a pipe next to a typing
+construct, as in `Literal["a"] | None` or `Self | None`, builds the same object `Optional[...]` does, so it renders like
+one unless `always_use_bars_union` is set. One written as `Union[str, int]` or `Optional[str]` renders as written by
+default; to show those with pipes too:
 
 ```python
 always_use_bars_union = True
@@ -557,6 +559,9 @@ Some annotations render differently from how they are written:
 With Sphinx's
 [`python_display_short_literal_types`](https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-python_display_short_literal_types)
 on, `Literal["a", "b"]` renders as `'a' | 'b'`.
+
+The table covers the types the extension writes into fields and signatures. Autodoc writes the header of an attribute or
+property itself, so `count: Annotated[int, ...]` keeps its `Annotated` there.
 
 ### Warning categories
 
