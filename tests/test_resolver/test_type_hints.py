@@ -41,29 +41,51 @@ def test_no_source_code_type_guard() -> None:
     resolve_type_guarded_imports([], Error)
 
 
-def test_process_docstring_keeps_a_prose_annotation_as_written(prose: types.FunctionType) -> None:
-    lines = [":param value: the value"]
-    process_docstring(make_docstring_app(typehints_document_rtype=False), "function", "mod.prose", prose, None, lines)
-    assert lines == [":type value: :sphinx_autodoc_typehints_type:`a positive float`", ":param value: the value"]
-
-
-def test_process_docstring_warns_on_a_prose_annotation(
-    prose: types.FunctionType, caplog: pytest.LogCaptureFixture
+@pytest.mark.parametrize(
+    "annotation",
+    [pytest.param("a positive float", id="prose"), pytest.param("csv.NoSuchName", id="missing-attribute")],
+)
+def test_process_docstring_keeps_an_unresolvable_annotation_as_written(
+    unresolvable: types.FunctionType, annotation: str
 ) -> None:
-    process_docstring(make_docstring_app(typehints_document_rtype=False), "function", "mod.prose", prose, None, [])
+    lines = [":param count: the count", ":param value: the value"]
+    app = make_docstring_app(typehints_document_rtype=False)
+    process_docstring(app, "function", "mod.unresolvable", unresolvable, None, lines)
+    assert lines == [
+        r":type count: :sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``",
+        ":param count: the count",
+        f":type value: :sphinx_autodoc_typehints_type:`{annotation}`",
+        ":param value: the value",
+    ]
+
+
+@pytest.mark.parametrize(
+    ("annotation", "message"),
+    [
+        pytest.param(
+            "a positive float", "Forward reference must be an expression -- got 'a positive float'", id="prose"
+        ),
+        pytest.param("csv.NoSuchName", "module 'csv' has no attribute 'NoSuchName'", id="missing-attribute"),
+    ],
+)
+def test_process_docstring_warns_on_an_unresolvable_annotation(
+    unresolvable: types.FunctionType, message: str, caplog: pytest.LogCaptureFixture
+) -> None:
+    app = make_docstring_app(typehints_document_rtype=False)
+    process_docstring(app, "function", "mod.unresolvable", unresolvable, None, [])
     # sphinx rewrites the message once a build has set up its logging, so compare the record's fields
     warnings = [record for record in caplog.records if record.levelno == logging.WARNING]
     assert [(vars(record)["subtype"], str(vars(record)["args"][-1])) for record in warnings] == [
-        ("forward_reference", "Forward reference must be an expression -- got 'a positive float'")
+        ("forward_reference", message)
     ]
 
 
 @pytest.fixture
-def prose() -> types.FunctionType:
-    def annotated(value: str) -> None: ...
+def unresolvable(annotation: str) -> types.FunctionType:
+    def annotated(count: int, value: str) -> None: ...
 
-    # a string that is not an expression, which the type checkers reject when written as an annotation
-    annotated.__annotations__["value"] = "a positive float"
+    # the type checkers reject these when written as an annotation
+    annotated.__annotations__["value"] = annotation
     return annotated
 
 
