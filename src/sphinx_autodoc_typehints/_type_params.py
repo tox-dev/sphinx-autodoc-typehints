@@ -14,6 +14,8 @@ from sphinx.domains.python._annotations import (  # ruff:ignore[import-private-n
 )
 from sphinx.util.typing import stringify_annotation
 
+from ._resolver import object_at
+
 if sys.version_info >= (3, 14):  # pragma: >=3.14 cover
     from annotationlib import Format, call_evaluate_function, get_annotations
 
@@ -53,7 +55,7 @@ def add_type_params(app: Sphinx, domain: str, objtype: str, contentnode: addnode
             isinstance(signode, addnodes.desc_signature)
             and not any(isinstance(node, addnodes.desc_type_parameter_list) for node in signode)
             and (name := next((node for node in signode if isinstance(node, addnodes.desc_name)), None)) is not None
-            and (params := _type_params(_documented_object(signode)))
+            and (params := _type_params(object_at(signode.get("module"), (signode.get("fullname") or "").split("."))))
         ):
             type_params = _parse_type_list(", ".join(_type_param(param, mode) for param in params), app.env)
             # Sphinx keeps a default as the text it was written as, so a ``~`` would show and no name would link
@@ -80,9 +82,7 @@ def declared_type_params(documented: Any, function: Any, documenting: Any) -> fr
     That is its own, those of ``function`` documenting it, those of the class defining ``function``, which a method
     uses from the header of its class, and those of the class ``documenting`` it, whose own replace inherited ones.
     """
-    owner: Any = sys.modules.get(getattr(function, "__module__", None) or "")
-    for part in getattr(function, "__qualname__", "").split(".")[:-1]:
-        owner = getattr(owner, part, None)
+    owner = object_at(getattr(function, "__module__", None), getattr(function, "__qualname__", "").split(".")[:-1])
     return frozenset((
         *_type_params(documented),
         *_type_params(function),
@@ -151,13 +151,6 @@ def type_arguments(cls: type, alias: Any) -> dict[Any, Any]:
     params = getattr(cls, "__parameters__", ())
     # a TypeVarTuple takes any number of arguments, leaving no one-to-one match, and a bare base binds none
     return dict(zip(params, args, strict=True)) if len(params) == len(args := get_args(alias)) else {}
-
-
-def _documented_object(signode: addnodes.desc_signature) -> Any:
-    obj = sys.modules.get(signode.get("module") or "")
-    for part in (signode.get("fullname") or "").split("."):
-        obj = getattr(obj, part, None)
-    return obj
 
 
 def _type_params(obj: Any) -> tuple[Any, ...]:

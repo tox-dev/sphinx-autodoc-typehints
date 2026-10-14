@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ast
 import inspect
+import sys
 import textwrap
 from typing import TYPE_CHECKING, Any
 
@@ -15,7 +16,7 @@ from sphinx_autodoc_typehints._annotations import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Iterable, Mapping
 
     from sphinx.environment import BuildEnvironment
 
@@ -34,6 +35,16 @@ def get_obj_location(obj: Any) -> str | None:
         return filepath
     else:
         return f"{filepath}:{lineno}"
+
+
+def object_at(module: str | None, path: Iterable[str]) -> Any:
+    """Return the object ``path`` names in the imported ``module``, ``None`` where a part of it is missing."""
+    found: Any = sys.modules.get(module or "")
+    for part in path:
+        if found is None:
+            return None
+        found = getattr(found, part, None)
+    return found
 
 
 def type_alias_namespace(
@@ -129,6 +140,7 @@ __all__ = [
     "collect_documented_type_aliases",
     "documented_type_names",
     "get_obj_location",
+    "object_at",
     "type_alias_namespace",
     "written_type_alias",
 ]
