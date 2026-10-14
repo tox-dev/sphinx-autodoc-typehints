@@ -79,6 +79,9 @@ Num = int | float
 SCORE: Num = 1
 """The score."""
 
+LOW: Num = 0
+"""The lowest score."""
+
 
 class Scored:
     """Something scored."""

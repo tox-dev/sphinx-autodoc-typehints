@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -113,3 +114,62 @@ def test_header_type_links_a_documented_alias(app: SphinxTestApp, write_rst: Cal
 
     signature = list(app.env.get_doctree("index").findall(addnodes.desc_signature))[-1]
     assert [ref["reftarget"] for ref in signature.findall(addnodes.pending_xref)] == ["header_module.Num"]
+
+
+@pytest.mark.sphinx("text", testroot="headers")
+def test_header_type_links_an_alias_documented_between_headers(
+    app: SphinxTestApp, write_rst: Callable[[str], None]
+) -> None:
+    write_rst(".. autodata:: header_module.SCORE\n\n.. py:type:: header_module.Num\n\n.. autodata:: header_module.LOW")
+    app.build()
+
+    signature = list(app.env.get_doctree("index").findall(addnodes.desc_signature))[-1]
+    assert [ref["reftarget"] for ref in signature.findall(addnodes.pending_xref)] == ["header_module.Num"]
+
+
+@pytest.mark.sphinx("text", testroot="headers")
+def test_header_type_follows_a_rebuild(
+    app: SphinxTestApp, write_rst: Callable[[str], None], make_app: Callable[..., SphinxTestApp]
+) -> None:
+    write_rst(".. autodata:: header_module.SCORE")
+    app.build()
+    rebuilt = make_app("text", srcdir=app.srcdir, confoverrides={"autodoc_type_aliases": {"Num": "header_module.Num"}})
+    rebuilt.build()
+
+    assert (Path(rebuilt.outdir) / "index.txt").read_text().splitlines()[0] == "header_module.SCORE: Num = 1"
+
+
+@pytest.fixture
+def extra_evaluations(make_app: Callable[..., SphinxTestApp]) -> Callable[[SphinxTestApp], int]:
+    """Count the evaluations of a module's annotations a build makes beyond those autodoc makes on its own."""
+
+    def _count(app: SphinxTestApp) -> int:
+        evaluations = importlib.import_module("counted_module").EVALUATIONS
+        before = len(evaluations)
+        app.build()
+        with_extension = len(evaluations) - before
+        plain = make_app("text", srcdir=app.srcdir, confoverrides={"extensions": ["sphinx.ext.autodoc"]}, freshenv=True)
+        before = len(evaluations)
+        plain.build()
+        return with_extension - (len(evaluations) - before)
+
+    return _count
+
+
+@pytest.mark.sphinx("text", testroot="headers")
+def test_header_type_resolves_a_module_once_per_document(
+    app: SphinxTestApp, write_rst: Callable[[str], None], extra_evaluations: Callable[[SphinxTestApp], int]
+) -> None:
+    write_rst("\n\n".join(f".. autodata:: counted_module.{name}" for name in ("FIRST", "SECOND", "THIRD")))
+
+    assert extra_evaluations(app) == 1
+
+
+@pytest.mark.sphinx("text", testroot="headers")
+def test_header_type_resolves_a_module_again_in_another_document(
+    app: SphinxTestApp, write_rst: Callable[[str], None], extra_evaluations: Callable[[SphinxTestApp], int]
+) -> None:
+    write_rst(".. toctree::\n\n   other\n\n.. autodata:: counted_module.FIRST\n\n.. autodata:: counted_module.SECOND")
+    (Path(app.srcdir) / "other.rst").write_text("Other\n=====\n\n.. autodata:: counted_module.THIRD\n")
+
+    assert extra_evaluations(app) == 2
