@@ -440,7 +440,8 @@ _CASES = [
     ),
     pytest.param(Ts, r":py:class:`~typing.TypeVarTuple`\ \(``Ts``)", id="Ts"),
     pytest.param(Ts_stdlib, r":py:class:`~typing.TypeVarTuple`\ \(``Ts_stdlib``)", id="Ts-stdlib"),
-    pytest.param(Tuple[()], ":py:data:`~typing.Tuple`", id="Tuple-p"),
+    pytest.param(Tuple[()], r":py:data:`~typing.Tuple`\ \[()]", id="Tuple-p"),
+    pytest.param(tuple[()], r":py:class:`tuple`\ \[()]", id="tuple-p"),
     pytest.param(Tuple[int,], r":py:data:`~typing.Tuple`\ \[:py:class:`int`]", id="Tuple-p-int"),
     pytest.param(
         Tuple[int, int],

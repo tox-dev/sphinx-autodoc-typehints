@@ -295,6 +295,9 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
                 role = "data"
                 args_format = f"\\[:py:data:`{prefix}typing.Union`\\ \\[{{}}]]"
                 args = tuple(x for x in args if x is not type(None))
+    elif full_name in {"tuple", "typing.Tuple"} and getattr(annotation, "__args__", None) == ():
+        # the empty tuple is subscripted with no arguments, which bare tuple, of any length, is not
+        formatted_args = "\\[()]"
     elif full_name in {"typing.Callable", "collections.abc.Callable"} and args and args[0] is not ...:
         fmt = []
         for arg in args:
