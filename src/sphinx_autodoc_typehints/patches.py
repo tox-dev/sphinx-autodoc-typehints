@@ -134,6 +134,7 @@ def _patch_line_numbers() -> None:
 
 
 _OVERLOADS_CACHE: dict[str, dict[Any, Any]] = {}
+_BUILDING: set[int] = set()
 
 
 @lru_cache
@@ -152,7 +153,8 @@ def fix_directive_based_signature_formatting() -> None:
         original_analyze(self)
         if self.overloads:
             _OVERLOADS_CACHE[self.modname] = dict(self.overloads)
-        self.overloads = {}
+        # every app in the process shares the analyzer, so hide the overloads only while an app using us builds
+        self.overloads = {} if _BUILDING else dict(_OVERLOADS_CACHE.get(self.modname, {}))
 
     ModuleAnalyzer.analyze = patched_analyze  # type: ignore[method-assign]
 
@@ -165,6 +167,8 @@ def install_patches(app: Sphinx) -> None:
     """
     # For Sphinx 9+ directive-based architecture
     fix_directive_based_signature_formatting()
+    app.connect("builder-inited", lambda app: _BUILDING.add(id(app)))
+    app.connect("build-finished", lambda app, _exception: _BUILDING.discard(id(app)))
     patch_attribute_handling(app)
     _patch_google_docstring_lookup_annotation()
     fix_napoleon_numpy_docstring_return_type(app)
