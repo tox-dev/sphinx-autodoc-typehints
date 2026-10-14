@@ -62,7 +62,6 @@ from ._parser import unescape
 from ._resolver import (
     backfill_attrs_annotations,
     backfill_type_hints,
-    collect_documented_type_aliases,
     get_all_type_hints,
     get_class_body_annotations,
     get_descriptor_type_hint,
@@ -71,6 +70,7 @@ from ._resolver import (
     resolve_string_annotations,
     resolve_type_guarded_imports,
     stub_path,
+    type_alias_namespace,
 )
 from ._type_params import add_type_params, bound_type_args, declared_type_params, specialize
 from ._typed_dict import inject_extra_items, typed_dict_keys
@@ -429,14 +429,9 @@ def _resolved_type_hints(
     The types stay what the annotations evaluate to, as what reads them (the ``Doc`` of an ``Annotated``, a generator's
     return, a type parameter a subclass binds) looks through an alias; only rendering names the alias.
     """
-    localns = {
-        key: MyTypeAliasForwardRef(value, configured=True) for key, value in app.config["autodoc_type_aliases"].items()
-    }
     module_prefix = _module_prefix(name)
-    written_as: dict[str, WrittenTypeAlias] = {}
-    if (env := getattr(app, "env", None)) is not None:
-        deferred, written_as = collect_documented_type_aliases(annotated, module_prefix, env)
-        localns.update(deferred)
+    env = getattr(app, "env", None)
+    localns, written_as = type_alias_namespace(app.config["autodoc_type_aliases"], annotated, module_prefix, env)
     # namedtuple builds __new__ without builtins, so forward references resolve only via the class (#657)
     namedtuple_new = (
         inspect.isclass(original_obj) and inspect.isfunction(obj) and obj.__module__.startswith("namedtuple_")
@@ -833,7 +828,7 @@ def _unpacked_keywords(signature: inspect.Signature, type_hints: dict[str, Any])
         return {}
     return {
         key: annotation
-        for key, annotation in typed_dict_keys(get_args(unpacked)[0]).items()
+        for key, annotation in typed_dict_keys(get_args(unpacked)[0], {}).items()
         if key.isidentifier() and not iskeyword(key) and key not in signature.parameters
     }
 
@@ -1347,6 +1342,7 @@ def setup(app: Sphinx) -> dict[str, bool | str]:
 
 
 __all__ = [
+    "MyTypeAliasForwardRef",
     "__version__",
     "_gives_its_type",
     "backfill_type_hints",

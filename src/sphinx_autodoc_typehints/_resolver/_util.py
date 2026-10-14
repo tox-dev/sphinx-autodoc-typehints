@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING, Any
 from sphinx_autodoc_typehints._annotations import MyTypeAliasForwardRef, WrittenTypeAlias
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from sphinx.environment import BuildEnvironment
 
 
@@ -29,6 +31,17 @@ def get_obj_location(obj: Any) -> str | None:
         return f"{filepath}:{lineno}"
 
 
+def type_alias_namespace(
+    type_aliases: Mapping[str, str], obj: Any, module_prefix: str, env: BuildEnvironment | None
+) -> tuple[dict[str, MyTypeAliasForwardRef], dict[str, WrittenTypeAlias]]:
+    """Return the names the annotations of ``obj`` resolve to an alias, and the annotations written as an alias."""
+    localns = {key: MyTypeAliasForwardRef(value, configured=True) for key, value in type_aliases.items()}
+    if env is None:
+        return localns, {}
+    deferred, eager = collect_documented_type_aliases(obj, module_prefix, env)
+    return localns | deferred, eager
+
+
 def collect_documented_type_aliases(
     obj: Any, module_prefix: str, env: BuildEnvironment
 ) -> tuple[dict[str, MyTypeAliasForwardRef], dict[str, WrittenTypeAlias]]:
@@ -46,8 +59,9 @@ def collect_documented_type_aliases(
         return deferred, written_as
 
     obj_globals = getattr(obj, "__globals__", {})
-    # an alias evaluates to the object it names (``Count = int``), so only the annotation as written tells them apart
-    written = _written_annotations(obj)
+    # an alias evaluates to the object it names (``Count = int``), so only the annotation as written tells them apart;
+    # a module or class holds no globals to find the alias in, so its source is not worth parsing
+    written = _written_annotations(obj) if obj_globals else {}
     for key, annotation in raw_annotations.items():
         if isinstance(annotation, str):
             if _is_documented_type(annotation, module_prefix, py_objects):
@@ -107,4 +121,5 @@ def _is_documented_type(name: str, module_prefix: str, py_objects: dict[str, Any
 __all__ = [
     "collect_documented_type_aliases",
     "get_obj_location",
+    "type_alias_namespace",
 ]

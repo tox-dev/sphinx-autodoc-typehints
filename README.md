@@ -752,8 +752,8 @@ of only `*args` and `**kwargs`, which is what autodoc falls back to when it can'
 
 Autodoc writes the type after the name of data, an attribute or a property itself, evaluating the annotation before any
 event runs, so a name imported under `TYPE_CHECKING` resolved there only when documenting something else had imported it
-first. The extension renders that type again once the header is built, the way it renders a field's type, with
-`typehints_fully_qualified` and the `TYPE_CHECKING` imports applied.
+first. The extension renders that type again once the header is built, the way it renders a field's type, with the type
+aliases, `typehints_fully_qualified` and the `TYPE_CHECKING` imports applied.
 
 Autodoc leaves the type parameters of a generic object out of its signature. The extension adds them after the name,
 with bounds, constraints and defaults, the way [PEP 695](https://peps.python.org/pep-0695/) writes them:

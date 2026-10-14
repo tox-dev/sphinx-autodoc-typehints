@@ -85,3 +85,31 @@ def test_header_type_binds_an_inherited_type_parameter(
     app.build()
 
     assert (Path(app.outdir) / "index.txt").read_text().splitlines()[0] == expected
+
+
+@pytest.mark.parametrize(
+    ("rst", "expected"),
+    [
+        pytest.param(".. autodata:: header_module.SCORE", "header_module.SCORE: Num = 1", id="data"),
+        pytest.param(".. autoattribute:: header_module.Scored.points", "Scored.points: Num = 0", id="attribute"),
+        pytest.param(".. autoproperty:: header_module.Scored.best", "property Scored.best: Num", id="property"),
+        pytest.param(".. autoattribute:: header_module.Totals.count", "Totals.count: Num", id="typed-dict-key"),
+    ],
+)
+@pytest.mark.sphinx("text", testroot="headers", confoverrides={"autodoc_type_aliases": {"Num": "header_module.Num"}})
+def test_header_type_keeps_a_configured_alias(
+    app: SphinxTestApp, write_rst: Callable[[str], None], rst: str, expected: str
+) -> None:
+    write_rst(rst)
+    app.build()
+
+    assert (Path(app.outdir) / "index.txt").read_text().splitlines()[0] == expected
+
+
+@pytest.mark.sphinx("text", testroot="headers")
+def test_header_type_links_a_documented_alias(app: SphinxTestApp, write_rst: Callable[[str], None]) -> None:
+    write_rst(".. py:type:: header_module.Num\n\n.. autodata:: header_module.SCORE")
+    app.build()
+
+    signature = list(app.env.get_doctree("index").findall(addnodes.desc_signature))[-1]
+    assert [ref["reftarget"] for ref in signature.findall(addnodes.pending_xref)] == ["header_module.Num"]

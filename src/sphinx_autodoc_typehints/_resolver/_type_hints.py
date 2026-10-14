@@ -116,9 +116,11 @@ def _get_type_hint(autodoc_mock_imports: list[str], name: str, obj: Any, localns
         return resolve_string_annotations(obj, _get_unevaluated_annotations(obj), localns)
 
 
-def resolve_annotations(autodoc_mock_imports: list[str], obj: Any, name: str) -> dict[str, Any]:
+def resolve_annotations(
+    autodoc_mock_imports: list[str], obj: Any, name: str, localns: Mapping[str, Any]
+) -> dict[str, Any]:
     """Resolve the annotations ``obj`` itself carries, without backfilling it from a stub or type comments."""
-    return _get_type_hint(autodoc_mock_imports, name, obj, {})
+    return _get_type_hint(autodoc_mock_imports, name, obj, localns)
 
 
 def _module_backed_globals(obj: Any) -> dict[str, Any] | None:

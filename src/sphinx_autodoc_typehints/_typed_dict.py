@@ -11,12 +11,14 @@ from ._annotations import add_type_css_class, format_annotation
 from ._type_params import specialize, type_arguments
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from sphinx.application import Sphinx
 
 _OPEN: Final = object()
 
 
-def typed_dict_keys(typed_dict: Any) -> dict[str, Any]:
+def typed_dict_keys(typed_dict: Any, localns: Mapping[str, Any]) -> dict[str, Any]:
     """
     Return the keys of a TypedDict with their types, a key that may be left out as ``NotRequired``.
 
@@ -25,7 +27,7 @@ def typed_dict_keys(typed_dict: Any) -> dict[str, Any]:
     if not hasattr(origin := get_origin(typed_dict) or typed_dict, "__optional_keys__"):
         return {}
     try:
-        hints = _bound_hints(typed_dict)
+        hints = _bound_hints(typed_dict, localns)
     except Exception:  # ruff:ignore[blind-except]  # an annotation runs user code, which may raise anything
         return {}
     return {
@@ -33,7 +35,7 @@ def typed_dict_keys(typed_dict: Any) -> dict[str, Any]:
     }
 
 
-def _bound_hints(typed_dict: Any) -> dict[str, Any]:
+def _bound_hints(typed_dict: Any, localns: Mapping[str, Any]) -> dict[str, Any]:
     """
     Return the annotations of a TypedDict, or of one it subscripts, with the type arguments bound.
 
@@ -42,9 +44,9 @@ def _bound_hints(typed_dict: Any) -> dict[str, Any]:
     """
     origin = get_origin(typed_dict) or typed_dict
     # a key written as a string names the type parameters of the class declaring it, which may be a base
-    hints = get_type_hints(origin, localns=_type_params_in_scope(origin), include_extras=True)
+    hints = get_type_hints(origin, localns={**localns, **_type_params_in_scope(origin)}, include_extras=True)
     for base in _typed_dict_bases(origin):
-        hints |= _bound_hints(base)
+        hints |= _bound_hints(base, localns)
     arguments = type_arguments(origin, typed_dict)
     return {key: specialize(annotation, arguments) for key, annotation in hints.items()}
 
