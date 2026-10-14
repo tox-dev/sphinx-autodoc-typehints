@@ -195,3 +195,11 @@ def bounded(value: Bounded) -> Bounded:  # ruff:ignore[non-pep695-generic-functi
     :param value: the value
     """
     return value
+
+
+def unresolvable(value: Undefined) -> None:  # ruff:ignore[undefined-name]  # ty: ignore[unresolved-reference]  # the case under test
+    """
+    Name something undefined.
+
+    :param value: the value
+    """
