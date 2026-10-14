@@ -18,6 +18,7 @@ documentation -- so you write types once in code and they appear in your docs wi
 - Extracts types from [attrs](https://www.attrs.org/) and
   [dataclass](https://docs.python.org/3/library/dataclasses.html) classes
 - Shows default parameter values alongside types
+- Types the keys of `**kwargs: Unpack[SomeTypedDict]` as keyword arguments
 - Controls union display style (`Union[X, Y]` vs `X | Y`)
 - Automatically fixes cross-references for stdlib types whose runtime module differs from their documented path
 - Supports custom type formatters and module name rewriting
@@ -40,6 +41,7 @@ features above. See [Avoid duplicate types with built-in Sphinx](#avoid-duplicat
   - [Control return type display](#control-return-type-display)
   - [Change how union types look](#change-how-union-types-look)
   - [Show default parameter values](#show-default-parameter-values)
+  - [Document `**kwargs` typed with a `TypedDict`](#document-kwargs-typed-with-a-typeddict)
   - [Control overload signature display](#control-overload-signature-display)
   - [Keep type hints in function signatures](#keep-type-hints-in-function-signatures)
   - [Handle circular imports](#handle-circular-imports)
@@ -202,6 +204,31 @@ typehints_defaults = "braces-after"
 With `"braces-after"`, the default closes the last plain paragraph of the description. A list, a directive such as
 `.. note::`, or a literal block at the end of the description stays as written, and a paragraph introducing a literal
 block keeps its `::` last.
+
+### Document `**kwargs` typed with a `TypedDict`
+
+[PEP 692](https://peps.python.org/pep-0692/) types `**kwargs` key by key through a
+[`TypedDict`](https://docs.python.org/3/library/typing.html#typing.TypedDict). The extension types each key documented
+as a keyword argument, the way it types a parameter:
+
+```python
+class Options(TypedDict, total=False):
+    verbose: Required[bool]
+    level: int
+
+
+def configure(**kwargs: Unpack[Options]) -> None:
+    """
+    Configure the run.
+
+    :param kwargs: the options
+    :keyword verbose: print every step
+    :keyword level: how much to print
+    """
+```
+
+renders `verbose` as `bool` and `level` as `NotRequired[int]`, since a caller may leave it out. A key described through
+`Annotated[..., Doc(...)]`, or every key with `always_document_param_types = True`, gets a keyword entry of its own.
 
 ### Control overload signature display
 
