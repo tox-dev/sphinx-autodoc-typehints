@@ -1351,6 +1351,49 @@ def napoleon_returns() -> CodeType:
 
 @expected(
     """
+    mod.napoleon_returns_unindented_sentence()
+
+       A function.
+
+       Return type:
+          "CodeType"
+
+       Returns:
+          The info about the whatever.
+    """,
+)
+def napoleon_returns_unindented_sentence() -> CodeType:
+    """
+    A function.
+
+    Returns
+    -------
+    The info about the whatever.
+    """
+
+
+@expected(
+    """
+    mod.napoleon_returns_type_only()
+
+       A function.
+
+       Return type:
+          "CodeType"
+    """,
+)
+def napoleon_returns_type_only() -> CodeType:
+    """
+    A function.
+
+    Returns
+    -------
+    CodeType
+    """
+
+
+@expected(
+    """
     mod.google_docstrings(arg1, arg2)
 
        Summary line.
