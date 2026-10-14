@@ -5,6 +5,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pytest
+from docutils import nodes
+from sphinx import addnodes
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -62,6 +64,11 @@ if TYPE_CHECKING:
             "class type_params_module.Legacy[D = int, **DP = [int, str], *DTs = *tuple[int, ...]]",
             id="generic-subclass",
         ),
+        pytest.param(
+            ".. autoclass:: type_params_module.PathDefaults",
+            "class type_params_module.PathDefaults[DPath = Path, **DPathP = [Path], *DPathTs = *tuple[Path, ...]]",
+            id="defaults-imported-class",
+        ),
         pytest.param(".. autofunction:: type_params_module.plain", "type_params_module.plain(value)", id="not-generic"),
         pytest.param(
             ".. py:module:: type_params_module\n\n.. py:function:: bounded[U](value)",
@@ -94,6 +101,19 @@ def test_type_params_fully_qualified(app: SphinxTestApp, write_rst: Callable[[st
     assert (Path(app.outdir) / "index.txt").read_text().splitlines()[0] == (
         "type_params_module.bounded[T: pathlib.Path](value)"
     )
+
+
+@pytest.mark.sphinx("text", testroot="type-params")
+def test_type_params_defaults_cross_reference(app: SphinxTestApp, write_rst: Callable[[str], None]) -> None:
+    write_rst(".. autoclass:: type_params_module.PathDefaults")
+    app.build()
+
+    assert [
+        xref["reftarget"]
+        for default in app.env.get_doctree("index").findall(nodes.inline)
+        if "default_value" in default["classes"]
+        for xref in default.findall(addnodes.pending_xref)
+    ] == ["pathlib.Path", "pathlib.Path", "tuple", "pathlib.Path"]
 
 
 @pytest.mark.parametrize(

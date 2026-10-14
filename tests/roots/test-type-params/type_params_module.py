@@ -94,6 +94,15 @@ class Legacy(Generic[D, DP, *DTs]):
         raise NotImplementedError
 
 
+DPath = TypeVar("DPath", default=Path)
+DPathP = ParamSpec("DPathP", default=[Path])
+DPathTs = TypeVarTuple("DPathTs", default=next(iter(tuple[Path, ...])))
+
+
+class PathDefaults(Generic[DPath, DPathP, *DPathTs]):
+    """Generic over type parameters defaulting to an imported class."""
+
+
 L = TypeVar("L")
 
 
