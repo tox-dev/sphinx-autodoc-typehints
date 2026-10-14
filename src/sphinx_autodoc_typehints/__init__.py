@@ -40,6 +40,7 @@ from ._annotations import (
 )
 from ._deferred import ALIAS_CHOICE_ROLE, DeferAliasChoice, alias_choice_role, merge_alias_choices
 from ._deprecated import DEPRECATED_DIRECTIVE, DeprecatedDirective, inject_deprecation
+from ._factory_defaults import show_factory_defaults
 from ._formats import detect_format
 from ._formats._numpydoc import _convert_numpydoc_to_sphinx_fields  # ruff:ignore[unused-import]
 from ._formats._sphinx import _has_yields_section, _is_generator_type, _last_paragraph_end, _strip_inline_param_type
@@ -111,6 +112,8 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-
         return None
 
     sph_signature = sphinx_signature(obj, type_aliases=app.config["autodoc_type_aliases"])
+    if inspect.isclass(original_obj):
+        sph_signature = show_factory_defaults(original_obj, sph_signature)
     # a kept type reads as its field does: the same resolution, aliases, fixups and formatter, written as Python
     shown: dict[str, str] = {}
     if app.config.typehints_use_signature or app.config.typehints_use_signature_return:
@@ -257,6 +260,8 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
         )
     except (ValueError, TypeError):
         signature = None
+    if signature is not None and inspect.isclass(original_obj):
+        signature = show_factory_defaults(original_obj, signature)
 
     type_hints, state = _resolved_type_hints(app, name, original_obj, obj, annotated)
     with _annotation_state(app.config, **state):
