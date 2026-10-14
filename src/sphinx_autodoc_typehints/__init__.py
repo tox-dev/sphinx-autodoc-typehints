@@ -73,6 +73,8 @@ if TYPE_CHECKING:
     from sphinx.environment import BuildEnvironment
     from sphinx.ext.autodoc import Options
 
+    from ._annotations import WrittenTypeAlias
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -296,7 +298,7 @@ def _resolved_type_hints(
         key: MyTypeAliasForwardRef(value, configured=True) for key, value in app.config["autodoc_type_aliases"].items()
     }
     module_prefix = _module_prefix(name)
-    eager_aliases: dict[str, MyTypeAliasForwardRef] = {}
+    eager_aliases: dict[str, WrittenTypeAlias] = {}
     if (env := getattr(app, "env", None)) is not None:
         deferred, eager_aliases = collect_documented_type_aliases(annotated, module_prefix, env)
         localns.update(deferred)

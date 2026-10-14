@@ -7,7 +7,7 @@ import inspect
 import textwrap
 from typing import TYPE_CHECKING, Any
 
-from sphinx_autodoc_typehints._annotations import MyTypeAliasForwardRef
+from sphinx_autodoc_typehints._annotations import MyTypeAliasForwardRef, WrittenTypeAlias
 
 if TYPE_CHECKING:
     from sphinx.environment import BuildEnvironment
@@ -31,10 +31,10 @@ def get_obj_location(obj: Any) -> str | None:
 
 def collect_documented_type_aliases(
     obj: Any, module_prefix: str, env: BuildEnvironment
-) -> tuple[dict[str, MyTypeAliasForwardRef], dict[str, MyTypeAliasForwardRef]]:
+) -> tuple[dict[str, MyTypeAliasForwardRef], dict[str, WrittenTypeAlias]]:
     py_objects = env.get_domain("py").objects  # ty: ignore[unresolved-attribute]
     deferred = _collect_module_type_aliases(module_prefix, py_objects)
-    eager: dict[str, MyTypeAliasForwardRef] = {}
+    eager: dict[str, WrittenTypeAlias] = {}
 
     # PEP 649 (Python 3.14+): annotation expressions only run on access and may fail at runtime
     # (TYPE_CHECKING-only names, subscripting a non-generic class)
@@ -57,12 +57,11 @@ def collect_documented_type_aliases(
         elif (
             (name := written.get(key))
             and not name.startswith("_")
-            and obj_globals.get(name) is annotation
-            and _is_documented_type(name, module_prefix, py_objects)
+            and name in obj_globals
+            and obj_globals[name] is annotation
         ):
-            ref = MyTypeAliasForwardRef(name)
-            ref.crossref = True
-            eager[key] = ref
+            # whether the alias is documented is only known once every document is read, so rendering decides
+            eager[key] = WrittenTypeAlias(name, annotation)
 
     return deferred, eager
 
