@@ -189,7 +189,9 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
     except (ValueError, TypeError):
         signature = None
 
-    localns = {key: MyTypeAliasForwardRef(value) for key, value in app.config["autodoc_type_aliases"].items()}
+    localns = {
+        key: MyTypeAliasForwardRef(value, configured=True) for key, value in app.config["autodoc_type_aliases"].items()
+    }
     module_prefix = name.rsplit(".", maxsplit=1)[0] if "." in name else ""
     eager_aliases: dict[str, MyTypeAliasForwardRef] = {}
     if (env := getattr(app, "env", None)) is not None:
