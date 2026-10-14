@@ -328,6 +328,43 @@ def test_process_docstring_types_a_descriptor_with_the_role_the_inventory_uses()
     assert lines == ["", r":type: :sphinx_autodoc_typehints_type:`\:py\:data\:\`\~types.ModuleType\``"]
 
 
+def test_process_docstring_types_a_napoleon_attribute_from_init(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "ledger_mod.py").write_text(
+        "class Ledger:\n    def __init__(self) -> None:\n        self.amount: int = 0\n        self.owner: str = ''\n"
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+    ledger = importlib.import_module("ledger_mod").Ledger
+    lines = [
+        ".. attribute:: amount",
+        "",
+        "   how much",
+        "",
+        ".. attribute:: owner",
+        "",
+        "   who",
+        "",
+        "   :type: str",
+        "",
+    ]
+    process_docstring(make_docstring_app(), "class", "ledger_mod.Ledger", ledger, None, lines)
+    assert lines == [
+        ".. attribute:: amount",
+        "",
+        "   how much",
+        "",
+        r"   :type: :sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``",
+        "",
+        ".. attribute:: owner",
+        "",
+        "   who",
+        "",
+        "   :type: str",
+        "",
+    ]
+
+
 _GUARDED_ACCOUNT: Final = (
     "from __future__ import annotations\n\n"
     "from typing import TYPE_CHECKING\n\n"

@@ -168,7 +168,9 @@ after each name, where napoleon puts a type written in the docstring. A type wri
 [numpydoc](https://numpydoc.readthedocs.io/), an `Other Parameters` section renders this way too, under its own heading.
 
 The extension supplies the types napoleon would otherwise read from the annotations for parameters, while napoleon's
-`Attributes` sections keep its own lookup. A keyword argument napoleon writes as a `:keyword:` field gets a
+`Attributes` sections keep its own lookup of the class body's annotations. An attribute annotated only where `__init__`
+assigns it gets its type from the extension, whether napoleon writes the section as `:ivar:` fields or, with
+`napoleon_use_ivar` off, as `.. attribute::` entries. A keyword argument napoleon writes as a `:keyword:` field gets a
 `:paramtype:` next to it, and a `:kwtype:` napoleon wrote from the docstring counts as an existing type.
 
 ### Use with numpydoc
