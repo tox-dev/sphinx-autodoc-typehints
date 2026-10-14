@@ -11,6 +11,8 @@ from copy import copy
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, ParamSpec, TypeVar, TypeVarTuple, cast
 
+from sphinx.ext.autodoc.mock import mock
+
 from ._type_comments import _load_args
 
 if TYPE_CHECKING:
@@ -125,13 +127,29 @@ def _strip_class_decorators(node: ast.ClassDef) -> ast.ClassDef:
 
 def _resolve_import_node(node: ast.Import, ns: dict[str, Any]) -> None:
     for alias in node.names:
-        with contextlib.suppress(ImportError):
-            module = importlib.import_module(alias.name)
-            if alias.asname:
-                ns[alias.asname] = module
-            else:
-                top = alias.name.split(".")[0]
-                ns[top] = sys.modules[top]
+        if (module := _import_for_stub(alias.name, top=not alias.asname)) is not None:
+            ns[alias.asname or alias.name.partition(".")[0]] = module
+
+
+def _import_for_stub(name: str, *, top: bool) -> types.ModuleType | None:
+    """
+    Import a module a stub imports, returning it or, with ``top``, its top-level package, as ``import a.b`` binds.
+
+    A stub may import a module only type checkers need, so a missing one is mocked as ``autodoc_mock_imports`` would,
+    while a module that exists but fails to import binds nothing.
+    """
+    mocked: list[str] = []
+    try:
+        importlib.import_module(name)
+    except ModuleNotFoundError as exc:
+        if exc.name is None or (name != exc.name and not name.startswith(f"{exc.name}.")):
+            return None
+        mocked.append(exc.name)
+    except ImportError:
+        return None
+    with mock(mocked):
+        module = importlib.import_module(name)
+        return sys.modules[name.partition(".")[0]] if top else module
 
 
 def _resolve_import_from_node(

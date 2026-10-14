@@ -18,6 +18,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from conftest import normalize_sphinx_text
+from sphinx.ext.autodoc.mock import ismockmodule
 
 from sphinx_autodoc_typehints._resolver import get_all_type_hints
 from sphinx_autodoc_typehints._resolver._stubs import (
@@ -410,7 +411,6 @@ def test_backfill_from_stub_no_stub() -> None:
         pytest.param("from typing import Optional, Any\n", {"Optional": Optional, "Any": Any}, set(), id="from_import"),
         pytest.param("from typing import Optional as Opt\n", {"Opt": Optional}, set(), id="from_import_as"),
         pytest.param("from typing import *\n", {}, set(), id="star_import_skipped"),
-        pytest.param("import nonexistent_xyz\n", {}, set(), id="missing_module_import_skipped"),
         pytest.param("from nonexistent_abc import Foo\n", {}, {"Foo"}, id="missing_module_from_import"),
         pytest.param("from typing import NonExistentThing\n", {}, {"NonExistentThing"}, id="missing_attr"),
     ],
@@ -422,6 +422,35 @@ def test_resolve_stub_imports(source: str, expected: dict[str, Any], expected_un
     if not expected:
         assert ns == {}
     assert unresolved == expected_unresolved
+
+
+@pytest.mark.parametrize(
+    ("source", "name"),
+    [
+        pytest.param("import nonexistent_xyz\n", "nonexistent_xyz", id="module"),
+        pytest.param("import nonexistent_xyz.sub\n", "nonexistent_xyz", id="dotted"),
+        pytest.param("import nonexistent_xyz as missing\n", "missing", id="aliased"),
+    ],
+)
+def test_resolve_stub_imports_mocks_a_missing_module(source: str, name: str) -> None:
+    ns, _ = _resolve_stub_imports(ast.parse(source))
+    assert ismockmodule(ns[name])
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        pytest.param("import nonexistent_dependency_xyz\n", id="missing-dependency"),
+        pytest.param("raise ImportError('broken')\n", id="import-error"),
+    ],
+)
+def test_resolve_stub_imports_skips_an_installed_module_that_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, body: str
+) -> None:
+    (tmp_path / "fails_to_import.py").write_text(body)
+    monkeypatch.syspath_prepend(str(tmp_path))
+    monkeypatch.delitem(sys.modules, "fails_to_import", raising=False)
+    assert _resolve_stub_imports(ast.parse("import fails_to_import\n")) == ({}, set())
 
 
 @pytest.mark.parametrize(

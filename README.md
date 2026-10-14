@@ -483,6 +483,8 @@ the type annotations, and they'll be picked up. Beyond that:
 - The `@overload` variants of a stub combine into a union, unless the stub also gives the implementation's signature.
 - `if sys.version_info` and `if sys.platform` branches are followed for the running interpreter.
 - A name that exists only in the stub, including a stub `TypeAlias` or `type` alias, renders as a cross-reference.
+- A module the stub imports that isn't installed, `import numpy.typing as npt` in a docs environment without numpy, is
+  mocked as `autodoc_mock_imports` would, so `npt.NDArray` still renders as a cross-reference.
 - A C attribute (a getset or member descriptor) gets its type from the stub's `@property` or class annotation.
 
 ### Use type comments
