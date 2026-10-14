@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import inspect
 import re
 import sys
@@ -90,15 +91,16 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-
     # a wrapper may carry no annotations of its own, like the 3.14 lru_cache one that only copies __annotate__
     try:
         obj = inspect.unwrap(obj)
+        annotated = _annotated_function(obj)
     except ValueError:
         return None
     try:
-        has_annotations = getattr(obj, "__annotations__", None)
-    except (NameError, TypeError, AttributeError):
+        has_annotations = getattr(annotated, "__annotations__", None)
+    except (NameError, TypeError, AttributeError):  # pragma: >=3.14 cover
         # PEP 649 (Python 3.14+): annotation expressions only run on access and may fail at runtime
         # (TYPE_CHECKING-only names, subscripting a non-generic class). __annotate__ still signals
         # annotations exist, and sphinx_signature renders them without evaluation via FORWARDREF.
-        has_annotations = getattr(obj, "__annotate__", None)
+        has_annotations = getattr(annotated, "__annotate__", None)
     if not has_annotations:
         return None
 
@@ -129,13 +131,13 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-
         if inspect.isclass(original_obj) or (what == "method" and name.endswith(".__init__")):
             start = 1
         elif what == "method":
-            if "<locals>" in obj.__qualname__ and not _is_dataclass(name, what, obj.__qualname__):
+            if "<locals>" in annotated.__qualname__ and not _is_dataclass(name, what, annotated.__qualname__):
                 _LOGGER.warning(
                     'Cannot handle as a local function: "%s" (use @functools.wraps)',
                     name,
                     type="sphinx_autodoc_typehints",
                     subtype="local_function",
-                    location=get_obj_location(obj),
+                    location=get_obj_location(annotated),
                 )
                 return None
             if (member_type := _class_member_type(name)) is None:
@@ -152,6 +154,20 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-
     )
     # the directive strips one level of backslashes only under this option, so escaping otherwise doubles them
     return formatted.replace("\\", "\\\\") if app.config.strip_signature_backslash else formatted, None
+
+
+def _annotated_function(obj: Any) -> Any:
+    """Return the function holding the annotations of a partial, a partialmethod or a callable instance."""
+    if isinstance(obj, functools.partial):
+        return _annotated_function(obj.func)
+    # the method a partialmethod builds keeps it under a private name before Python 3.13
+    if isinstance(
+        method := getattr(obj, "__partialmethod__", getattr(obj, "_partialmethod", None)), functools.partialmethod
+    ):
+        return _annotated_function(method.func)
+    if not inspect.isroutine(obj) and not inspect.isclass(obj):
+        return inspect.unwrap(type(obj).__call__)
+    return inspect.unwrap(obj)
 
 
 def _is_dataclass(name: str, what: str, qualname: str) -> bool:
@@ -190,6 +206,7 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
         cls_for_hints = original_obj if inspect.isfunction(obj) and obj.__module__.startswith("namedtuple_") else None
     try:
         obj = inspect.unwrap(obj)
+        annotated = _annotated_function(obj)
     except ValueError:
         return
 
@@ -206,13 +223,13 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
     module_prefix = name.rsplit(".", maxsplit=1)[0] if "." in name else ""
     eager_aliases: dict[str, MyTypeAliasForwardRef] = {}
     if (env := getattr(app, "env", None)) is not None:
-        deferred, eager_aliases = collect_documented_type_aliases(obj, module_prefix, env)
+        deferred, eager_aliases = collect_documented_type_aliases(annotated, module_prefix, env)
         localns.update(deferred)
-    type_hints = get_all_type_hints(app.config.autodoc_mock_imports, cls_for_hints or obj, name, localns)
+    type_hints = get_all_type_hints(app.config.autodoc_mock_imports, cls_for_hints or annotated, name, localns)
     type_hints |= eager_aliases
     with _annotation_state(
         app.config,
-        _annotation_globals=getattr(obj, "__globals__", {}),
+        _annotation_globals=getattr(annotated, "__globals__", {}),
         _typehints_env=env,
         _typehints_module_prefix=module_prefix,
         _typehints_resolve_guarded_imports=partial(resolve_type_guarded_imports, app.config.autodoc_mock_imports),

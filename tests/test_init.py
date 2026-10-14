@@ -4,6 +4,7 @@ import enum
 import functools
 import importlib
 import inspect
+import sys
 from pathlib import Path
 from textwrap import dedent
 from typing import TYPE_CHECKING, Annotated, Any, Final, NamedTuple, NotRequired, Required, TypedDict, Unpack
@@ -47,6 +48,13 @@ class _ClassWithPrivate:
 def _helper(value: int) -> str: ...
 
 
+def _joined(count: int, sep: str, *, end: str = "") -> str: ...
+
+
+class _Joiner:
+    def __call__(self, sep: str, *, end: str = "") -> str: ...
+
+
 class _BindsHelper:
     as_static = staticmethod(_helper)
     as_method = _helper
@@ -57,6 +65,10 @@ class _BindsHelper:
     @classmethod
     @functools.cache
     def cached_class(cls, value: int) -> str: ...
+
+    def join(self, count: int, sep: str, *, end: str = "") -> str: ...
+
+    as_partial = functools.partialmethod(join, 1)
 
 
 @pytest.mark.parametrize(
@@ -126,6 +138,35 @@ def test_process_signature_strips_types_from_a_cached_function(decorator: Callab
 
     result = process_signature(make_sig_app(), "function", "mod.compute", decorator(compute), Options(), "", "")
     assert result == ("(value)", None)
+
+
+@pytest.mark.parametrize(
+    ("what", "name", "obj"),
+    [
+        pytest.param("function", "mod.joined", functools.partial(_joined, 1), id="partial"),
+        pytest.param("method", f"{__name__}._BindsHelper.as_partial", _BindsHelper.as_partial, id="partialmethod"),
+        pytest.param("function", "mod.joiner", _Joiner(), id="callable-instance"),
+    ],
+)
+def test_process_signature_strips_types_from_a_callable_without_annotations(
+    what: str, name: str, obj: Callable[..., str]
+) -> None:
+    assert process_signature(make_sig_app(), what, name, obj, Options(), "", "") == ("(sep, *, end='')", None)
+
+
+@pytest.mark.parametrize(
+    "obj",
+    [pytest.param(functools.partial(_joined, 1), id="partial"), pytest.param(_Joiner(), id="callable-instance")],
+)
+def test_process_docstring_types_a_callable_without_annotations(obj: Callable[..., str]) -> None:
+    lines = [":param sep: the separator"]
+    process_docstring(make_docstring_app(), "function", "mod.joined", obj, None, lines)
+    assert lines == [
+        r":type sep: :sphinx_autodoc_typehints_type:`\:py\:class\:\`str\``",
+        ":param sep: the separator",
+        "",
+        r":rtype: :sphinx_autodoc_typehints_type:`\:py\:class\:\`str\``",
+    ]
 
 
 def test_process_signature_class_omits_constructor_return() -> None:
@@ -959,27 +1000,18 @@ def test_process_docstring_trailing_underscore_param(
     assert any(line.startswith(":type ") and expected_type_name in line and "float" in line for line in lines)
 
 
+@pytest.mark.skipif(sys.version_info < (3, 14), reason="annotations evaluate lazily from Python 3.14")
 @pytest.mark.parametrize(
-    "error",
-    [
-        pytest.param(NameError("Callable"), id="name-error"),
-        pytest.param(TypeError("type 'DiGraph' is not subscriptable"), id="type-error"),
-    ],
+    "annotation",
+    [pytest.param("Undefined", id="name-error"), pytest.param("int[str]", id="type-error")],
 )
-def test_process_signature_annotations_error(error: Exception) -> None:
-    """PEP 649 lazy annotation evaluation raising (NameError for TYPE_CHECKING-only names, TypeError
-    for subscripting a non-generic class) must not propagate from process_signature (issue #712)."""
-
-    class _Func:
-        @property
-        def __annotations__(self) -> dict[str, object]:  # ruff:ignore[bad-dunder-method-name]
-            raise error
-
-        def __call__(self) -> None: ...
-
-    app = make_sig_app()
-    result = process_signature(app, "function", "test.func", _Func(), MagicMock(), "", "")
-    assert result is None
+def test_process_signature_strips_annotations_that_fail_to_evaluate(annotation: str) -> None:  # pragma: >=3.14 cover
+    namespace: dict[str, Any] = {}
+    # dont_inherit keeps this file's `from __future__ import annotations` out, so the annotation stays lazy
+    source = f"def func(value: {annotation}) -> None: ..."
+    exec(compile(source, "<func>", "exec", dont_inherit=True), namespace)  # ruff:ignore[exec-builtin]
+    result = process_signature(make_sig_app(), "function", "mod.func", namespace["func"], Options(), "", "")
+    assert result == ("(value)", None)
 
 
 @pytest.mark.sphinx(
