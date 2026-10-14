@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated, Generic, NotRequired, Required, TypedDict, TypeVar, Unpack
+from typing import Annotated, ClassVar, Generic, NotRequired, Required, TypedDict, TypeVar, Unpack
 
 from typing_extensions import Doc, ReadOnly
 from typing_extensions import TypedDict as ExtensionsTypedDict
@@ -114,4 +114,82 @@ def draw(**kwargs: Unpack[Square]) -> None:
     Draw.
 
     :keyword size: the size
+    """
+
+
+class Raising:
+    """Metadata that cannot be compared."""
+
+    __hash__ = None
+
+    def __eq__(self, other: object) -> bool:
+        msg = "cannot compare"
+        raise TypeError(msg)
+
+
+class Ambiguous:
+    """Metadata comparing to a value without a truth value, as a numpy array does."""
+
+    __hash__ = None
+
+    def __eq__(self, other: object) -> Ambiguous:
+        return self
+
+    def __bool__(self) -> bool:
+        msg = "the truth value is ambiguous"
+        raise ValueError(msg)
+
+
+class Measured(TypedDict):
+    """Keys with metadata that cannot be compared."""
+
+    width: Annotated[int, Raising()]
+    height: Annotated[int, Ambiguous()]
+
+
+class Box(Measured):
+    """Inherits keys with metadata that cannot be compared."""
+
+    depth: float
+
+
+def pack(**kwargs: Unpack[Box]) -> None:
+    """
+    Pack.
+
+    :keyword width: the width
+    :keyword height: the height
+    """
+
+
+class Counted:
+    """Metadata counting how often the annotations holding it run."""
+
+    created: ClassVar[int] = 0
+
+    def __init__(self) -> None:
+        Counted.created += 1
+
+
+class Root(TypedDict):
+    """The base of a hierarchy of diamonds."""
+
+    name: Annotated[str, Counted()]
+
+
+Diamond = Root
+for level in range(10):
+    # each level is a diamond over the one below, so a base is reached along 2**level paths
+    Diamond = type(Root)(
+        f"Diamond{level}",
+        (type(Root)(f"Left{level}", (Diamond,), {}), type(Root)(f"Right{level}", (Diamond,), {})),
+        {"__module__": __name__},
+    )
+
+
+def nest(**kwargs: Unpack[Diamond]) -> None:
+    """
+    Nest.
+
+    :keyword name: the name
     """
