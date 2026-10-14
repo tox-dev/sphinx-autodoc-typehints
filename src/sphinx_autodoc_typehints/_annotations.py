@@ -191,7 +191,7 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
         return ":py:data:`...<Ellipsis>`"
     # a PEP 661 sentinel stands for itself, so it is named where it is defined rather than by its type
     if (kind := type(annotation)).__name__ == "sentinel" and kind.__module__ in {"builtins", "typing_extensions"}:
-        module = _fixup_module_name(config, annotation.__module__)
+        module = fixup_module_name(config, annotation.__module__)
         prefix = "" if getattr(config, "typehints_fully_qualified", False) else "~"
         return f":py:data:`{prefix}{module}.{annotation.__name__}`"
     if ismock(annotation) and not annotation.__name__.isidentifier():
