@@ -472,8 +472,7 @@ A plain assignment such as `Count = int` evaluates to the very type it names, so
 `from __future__ import annotations` the extension reads the function's source to tell `limit: Count` from `limit: int`.
 Only the parameters written with the alias name render as the alias, and functions without source, such as generated
 ones, show the underlying type. Such an alias needs its `.. py:type::` entry read before the function's documentation,
-earlier on the page or in a document Sphinx reads first; a `type` statement alias, and any alias under
-`from __future__ import annotations`, doesn't.
+earlier on the page or in a document Sphinx reads first; a `type` statement alias doesn't.
 
 An alias set in
 [`autodoc_type_aliases`](https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#confval-autodoc_type_aliases)
