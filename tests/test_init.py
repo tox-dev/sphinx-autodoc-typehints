@@ -1399,6 +1399,53 @@ def test_class_and_constructor_docstrings_list_an_escaped_param_once(
         """)
 
 
+@pytest.mark.parametrize(
+    ("cls", "body"),
+    [
+        pytest.param(
+            "KeysTwice",
+            '   Parameters:\n      **kwargs** ("Unpack"["_TwiceOptions"])\n\n'
+            '   Keyword Arguments:\n      **verbose** ("bool")\n',
+            id="unpacked-keys",
+        ),
+        pytest.param(
+            "OverloadedTwice",
+            '   Overloads:\n      * **a** ("int")\n\n      * **a** ("str")\n\n'
+            '   Parameters:\n      **a** ("int" | "str")\n',
+            id="overloads",
+        ),
+        pytest.param("DescribedTwice", '   Parameters:\n      **a** ("int") -- the a\n', id="doc-described"),
+    ],
+)
+@pytest.mark.sphinx(
+    "text",
+    testroot="dummy",
+    confoverrides={"autoclass_content": "both", "always_document_param_types": True},
+)
+def test_class_and_constructor_docstrings_add_to_the_constructor_once(
+    app: SphinxTestApp, write_rst: Callable[[str], None], cls: str, body: str
+) -> None:
+    write_rst(f".. autoclass:: dummy_module.{cls}")
+    app.build()
+
+    text = (Path(app.srcdir) / "_build/text/index.txt").read_text()
+    assert text.partition("\n\n")[2] == f"   Class docstring.\n\n   Constructor docstring.\n\n{body}"
+
+
+@pytest.mark.sphinx("text", testroot="dummy", confoverrides={"autoclass_content": "both"})
+def test_class_and_constructor_docstrings_head_the_class_with_its_deprecation(
+    app: SphinxTestApp, write_rst: Callable[[str], None]
+) -> None:
+    write_rst(".. autoclass:: dummy_module.DeprecatedTwice")
+    app.build()
+
+    text = (Path(app.srcdir) / "_build/text/index.txt").read_text()
+    assert text.partition("\n\n")[2] == (
+        "   Class docstring.\n\n   Deprecated: use something else\n\n   Constructor docstring.\n\n"
+        '   Parameters:\n      **a** ("int") -- the a\n'
+    )
+
+
 def test_setup_returns_version() -> None:
     """setup() returns metadata dict with version from __version__."""
     app = create_autospec(Sphinx)

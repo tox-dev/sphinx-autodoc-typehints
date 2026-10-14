@@ -279,8 +279,11 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
 
     type_hints, state = _resolved_type_hints(app, name, original_obj, obj, annotated)
     with annotation_state(app.config, **state):
-        has_overloads = _inject_overload_signatures(app, what, name, obj, lines)
-        inject_deprecation(declared, lines, _summary_end(lines))
+        part, documented_elsewhere = _docstring_part(app, name, original_obj, signature, lines)
+        # the constructor's overloads describe its part, while the notice heads the entry
+        has_overloads = part != "class" and _inject_overload_signatures(app, what, name, obj, lines)
+        if part != "constructor":
+            inject_deprecation(declared, lines, _summary_end(lines))
         _inject_types_to_docstring(
             type_hints,
             signature,
@@ -290,7 +293,7 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
             name,
             lines,
             has_overloads,
-            documented_elsewhere=_params_documented_elsewhere(app, name, original_obj, signature, lines),
+            documented_elsewhere=documented_elsewhere,
         )
         _inject_ivar_types(ivar_annotations, app, lines)
         _inject_attribute_types(ivar_annotations, app, lines)
@@ -533,13 +536,15 @@ def format_default(app: Sphinx, default: Any, is_annotated: bool) -> str | None:
     return f"default: ``{formatted}``"
 
 
-def _params_documented_elsewhere(
+def _docstring_part(
     app: Sphinx, name: str, obj: Any, signature: inspect.Signature | None, lines: list[str]
-) -> frozenset[str]:
+) -> tuple[Literal["whole", "class", "constructor"], frozenset[str]]:
     """
-    With ``autoclass_content = "both"`` Sphinx processes a class and its constructor docstring one after the other.
+    Tell which part of an object's documentation ``lines`` is, and which parameters another part documents.
 
-    Only the constructor's lists the parameters that neither of them documents.
+    With ``autoclass_content = "both"`` Sphinx processes a class and its constructor docstring one after the other, as
+    two parts of one entry. What the extension adds goes in one of them: only the constructor's lists the parameters
+    that neither documents.
     """
     if (
         not inspect.isclass(obj)
@@ -547,14 +552,14 @@ def _params_documented_elsewhere(
         or (env := getattr(app, "env", None)) is None
         or not _has_constructor_docstring(app, obj)
     ):
-        return frozenset()
+        return "whole", frozenset()
     class_docstrings = env.temp_data.setdefault("sphinx_autodoc_typehints_class_docstrings", {})
     if (class_lines := class_docstrings.pop(name, None)) is None:
         class_docstrings[name] = lines
-        return frozenset(signature.parameters)
+        return "class", frozenset(signature.parameters)
     fmt = detect_format(class_lines)
     # the docstring may spell a trailing underscore escaped, as _find_param accepts
-    return frozenset(
+    return "constructor", frozenset(
         param
         for param in signature.parameters
         if any(fmt.find_param(class_lines, spelling) is not None for spelling in {param, _escaped(param)})
@@ -601,6 +606,9 @@ def _inject_types_to_docstring(  # ruff:ignore[too-many-arguments, too-many-posi
         if keys := _unpacked_keywords(signature, type_hints):
             # after the parameters, as a docstring describes **kwargs before its keys
             keywords = inspect.Signature([inspect.Parameter(key, inspect.Parameter.KEYWORD_ONLY) for key in keys])
+            kwargs = next(name for name, param in signature.parameters.items() if param.kind is param.VAR_KEYWORD)
+            # the keys go with the part documenting **kwargs, or the one listing what neither part documents
+            keys_elsewhere = kwargs in documented_elsewhere and fmt.find_param(lines, kwargs) is None
             for key in keys:
                 _inject_arg_signature(
                     keys,
@@ -609,7 +617,7 @@ def _inject_types_to_docstring(  # ruff:ignore[too-many-arguments, too-many-posi
                     lines,
                     key,
                     fmt,
-                    documented_elsewhere=key in documented_elsewhere,
+                    documented_elsewhere=keys_elsewhere or key in documented_elsewhere,
                     field="keyword",
                 )
     if "return" in type_hints and not has_overloads:
@@ -664,9 +672,10 @@ def _inject_arg_signature(  # ruff:ignore[too-many-arguments, too-many-positiona
     if insert_index is None and _type_combined_field_entry(app, lines, arg_name, annotation, default):
         return
 
-    if insert_index is None and (
-        doc_description
-        or (annotation is not None and app.config.always_document_param_types and not documented_elsewhere)
+    if (
+        insert_index is None
+        and not documented_elsewhere
+        and (doc_description or (annotation is not None and app.config.always_document_param_types))
     ):
         stars = {"VAR_POSITIONAL": "\\*", "VAR_KEYWORD": "\\*\\*"}.get(kind.name, "")
         entry = f"**{stars}{arg_name}**{f' -- {doc_description}' if doc_description else ''}"

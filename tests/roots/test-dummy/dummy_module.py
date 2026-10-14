@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import singledispatch
-from typing import TYPE_CHECKING, NamedTuple, Self, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Annotated, NamedTuple, Self, TypedDict, TypeVar, Union, Unpack, overload
+
+from typing_extensions import Doc, deprecated
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -218,3 +220,46 @@ def unresolvable(value: Undefined) -> None:  # ruff:ignore[undefined-name]  # ty
 
     :param value: the value
     """
+
+
+class _TwiceOptions(TypedDict):
+    verbose: bool
+
+
+class KeysTwice:
+    """Class docstring."""
+
+    def __init__(self, **kwargs: Unpack[_TwiceOptions]) -> None:
+        """Constructor docstring."""
+
+
+class OverloadedTwice:
+    """Class docstring."""
+
+    @overload
+    def __init__(self, a: int) -> None: ...
+
+    @overload
+    def __init__(self, a: str) -> None: ...
+
+    def __init__(self, a: int | str) -> None:
+        """Constructor docstring."""
+
+
+class DescribedTwice:
+    """Class docstring."""
+
+    def __init__(self, a: Annotated[int, Doc("the a")]) -> None:
+        """Constructor docstring."""
+
+
+@deprecated("use something else")
+class DeprecatedTwice:
+    """Class docstring."""
+
+    def __init__(self, a: int) -> None:
+        """
+        Constructor docstring.
+
+        :param a: the a
+        """

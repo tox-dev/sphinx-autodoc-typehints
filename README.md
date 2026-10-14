@@ -582,7 +582,9 @@ def count() -> Generator[int, None, bool]:
 With
 [`autoclass_content = "both"`](https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#confval-autoclass_content),
 Sphinx shows the class and the constructor docstrings together. A parameter either of them documents gets its type
-there, and `always_document_param_types` adds the remaining ones only once, under the constructor docstring.
+there, and `always_document_param_types` adds the remaining ones only once, under the constructor docstring. So do a
+`Doc()` description, the keys of `**kwargs: Unpack[...]` and the constructor's overloads, while a `@deprecated` notice
+heads the class docstring.
 
 ### Style the injected types
 
