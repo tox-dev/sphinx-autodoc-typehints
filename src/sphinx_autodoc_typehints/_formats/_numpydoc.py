@@ -88,12 +88,11 @@ def _convert_numpydoc_to_sphinx_fields(lines: list[str]) -> None:  # ruff:ignore
                 result.extend(_field(":returns:", entries[0].description))
         elif len(entries) == 1:
             # the yielded type is documented here only, the return type is left out when a Yields section exists
-            if entries[0].description:
-                result.extend(_field(f":Yields: {_label(entries[0])} --", entries[0].description))
+            result.extend(_field(f":Yields: {_label(entries[0])}", entries[0].description))
         else:
             result.append(":returns:" if section == "Returns" else ":Yields:")
             for entry in entries:
-                result.extend(_field(f"   * {_label(entry)} --", entry.description, indent="     "))
+                result.extend(_field(f"   * {_label(entry)}", entry.description, indent="     "))
 
     lines[:] = result
 
@@ -122,7 +121,9 @@ def _parse_numpydoc_entries(lines: list[str], start: int) -> list[_NumpydocEntry
         while i < len(lines) and lines[i].startswith("        "):
             desc_lines.append(lines[i][8:].rstrip())
             i += 1
-        entries.append(_NumpydocEntry(name=name, type=typ, description=desc_lines, end=i))
+        # numpydoc stands in an empty comment for a missing description
+        description = [] if [line for line in desc_lines if line] == [".."] else desc_lines
+        entries.append(_NumpydocEntry(name=name, type=typ, description=description, end=i))
 
     return entries
 
@@ -134,8 +135,12 @@ def _field(head: str, description: list[str], indent: str = "   ") -> list[str]:
 
 def _label(entry: _NumpydocEntry) -> str:
     if not entry.name:
-        return entry.type
-    return f"**{entry.name}** ({entry.type})" if entry.type else f"**{entry.name}**"
+        label = entry.type
+    elif entry.type:
+        label = f"**{entry.name}** ({entry.type})"
+    else:
+        label = f"**{entry.name}**"
+    return f"{label} --" if entry.description else label
 
 
 class NumpydocFormat(DocstringFormat):
