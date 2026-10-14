@@ -29,6 +29,7 @@ from sphinx.errors import ConfigError, PycodeError
 from sphinx.ext.autodoc._dynamic._signatures import (  # ruff:ignore[import-private-name]  # the metaclasses autodoc skips
     _METACLASS_CALL_BLACKLIST,
 )
+from sphinx.ext.autodoc.mock import ismock
 from sphinx.locale import _  # ruff:ignore[import-private-name]  # the translation napoleon labels its fields with
 from sphinx.pycode import ModuleAnalyzer
 from sphinx.util import logging
@@ -329,13 +330,26 @@ def _annotated_function(obj: Any) -> Any:
     ):
         return _annotated_function(method.func)
     if not inspect.isroutine(obj) and not inspect.isclass(obj):
-        return inspect.unwrap(type(obj).__call__)
-    return inspect.unwrap(obj)
+        return _unwrap(type(obj).__call__)
+    return _unwrap(obj)
 
 
 def _called_function(obj: Any) -> Any:
     """Unwrap ``obj`` to the function callers call, stopping at a wrapper stating ``__signature__`` as autodoc does."""
-    return inspect.unwrap(obj, stop=lambda func: _declared_signature(func) is not None)
+    return _unwrap(obj, stop=lambda func: _declared_signature(func) is not None)
+
+
+def _unwrap(obj: Any, stop: Callable[[Any], bool] = lambda _: False) -> Any:
+    """
+    Unwrap ``obj`` as ``inspect.unwrap`` does, raising its ``ValueError`` on reaching a mock, which holds no types.
+
+    A mock answers ``__wrapped__`` with a new mock, so ``inspect.unwrap`` gives up only at the recursion limit, after
+    seconds spent building mocks.
+    """
+    if ismock(unwrapped := inspect.unwrap(obj, stop=lambda func: ismock(func) or stop(func))):
+        msg = f"{obj!r} unwraps to a mock"
+        raise ValueError(msg)
+    return unwrapped
 
 
 def _declared_signature(obj: Any) -> inspect.Signature | None:
