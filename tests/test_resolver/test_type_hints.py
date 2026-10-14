@@ -203,6 +203,22 @@ def test_guarded_import_binds_names_below_an_unimportable_one(
     assert get_all_type_hints([], module.func, f"{module.__name__}.func", {})["value"] is Decimal
 
 
+def test_guarded_import_resolves_for_a_reexported_function(guarded_module: _GuardedModuleBuilder) -> None:
+    module = guarded_module(
+        "from reexported_impl import convert\n\nconvert.__module__ = __name__\n",
+        files={
+            "reexported_impl.py": "from __future__ import annotations\n"
+            "from typing import TYPE_CHECKING\n"
+            "\n"
+            "if TYPE_CHECKING:\n"
+            "    from decimal import Decimal\n"
+            "\n"
+            "def convert(value: Decimal) -> None: ...\n"
+        },
+    )
+    assert get_all_type_hints([], module.convert, f"{module.__name__}.convert", {})["value"] is Decimal
+
+
 @pytest.mark.parametrize(
     ("declaration", "annotation", "kind"),
     [

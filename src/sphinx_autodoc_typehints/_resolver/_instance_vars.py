@@ -41,8 +41,8 @@ def get_instance_var_annotations(cls: type) -> dict[str, Any]:
     if not raw:
         return {}
 
-    module = inspect.getmodule(cls)
-    globalns: dict[str, Any] = vars(module) if module is not None else {}
+    # an inherited or re-exported ``__init__`` sees the names of the module defining it, not those of the class's
+    globalns = inspect.unwrap(init).__globals__
     resolved: dict[str, Any] = {}
     for attr_name, ann_str in raw.items():
         try:

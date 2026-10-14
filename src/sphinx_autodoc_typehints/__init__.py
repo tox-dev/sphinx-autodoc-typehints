@@ -158,8 +158,10 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
         _maybe_inject_descriptor_type(app, what, obj, lines)
         return
     if inspect.isclass(obj):
-        # class and instance variable annotations evaluate in the module, so its guarded imports must be bound first
+        # class and instance variable annotations evaluate in the modules defining the class and its __init__, so
+        # their guarded imports must be bound first
         resolve_type_guarded_imports(app.config.autodoc_mock_imports, obj)
+        resolve_type_guarded_imports(app.config.autodoc_mock_imports, inspect.unwrap(obj.__init__))
         backfill_attrs_annotations(obj)
         ivar_annotations = get_instance_var_annotations(obj)
     else:

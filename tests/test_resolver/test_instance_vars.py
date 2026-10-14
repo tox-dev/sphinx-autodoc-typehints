@@ -73,6 +73,12 @@ def test_nested_function_annotations_ignored() -> None:
         pytest.param(_ComplexTypes, "items", list[str], id="list"),
         pytest.param(_ComplexTypes, "mapping", dict[str, int], id="dict"),
         pytest.param(_ComplexTypes, "maybe", Optional[int], id="optional"),
+        pytest.param(
+            type("Child", (_ComplexTypes,), {"__module__": "elsewhere"}),
+            "maybe",
+            Optional[int],
+            id="inherited-from-another-module",
+        ),
     ],
 )
 def test_complex_types(cls: type, attr: str, expected: object) -> None:

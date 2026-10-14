@@ -4,7 +4,7 @@ import importlib
 import inspect
 from pathlib import Path
 from textwrap import dedent
-from typing import TYPE_CHECKING, Any, NamedTuple
+from typing import TYPE_CHECKING, Any, Final, NamedTuple
 from unittest.mock import MagicMock, create_autospec, patch
 
 import pytest
@@ -157,19 +157,37 @@ def test_process_docstring_descriptor_with_existing_type_field() -> None:
     assert lines == [":type: str"]
 
 
+_GUARDED_ACCOUNT: Final = (
+    "from __future__ import annotations\n\n"
+    "from typing import TYPE_CHECKING\n\n"
+    "if TYPE_CHECKING:\n    from decimal import Decimal\n\n\n"
+    "class Account:\n    def __init__(self) -> None:\n        self.balance: Decimal = Decimal()\n"
+)
+
+
+@pytest.mark.parametrize(
+    ("modules", "documented"),
+    [
+        pytest.param({"guarded_ivar": _GUARDED_ACCOUNT}, "guarded_ivar", id="defined"),
+        pytest.param(
+            {
+                "guarded_ivar_impl": _GUARDED_ACCOUNT,
+                "guarded_ivar_facade": "from guarded_ivar_impl import Account\n\nAccount.__module__ = __name__\n",
+            },
+            "guarded_ivar_facade",
+            id="reexported",
+        ),
+    ],
+)
 def test_process_docstring_types_instance_var_from_guarded_import(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, modules: dict[str, str], documented: str
 ) -> None:
-    (tmp_path / "guarded_ivar.py").write_text(
-        "from __future__ import annotations\n\n"
-        "from typing import TYPE_CHECKING\n\n"
-        "if TYPE_CHECKING:\n    from decimal import Decimal\n\n\n"
-        "class Account:\n    def __init__(self) -> None:\n        self.balance: Decimal = Decimal()\n"
-    )
+    for module_name, source in modules.items():
+        (tmp_path / f"{module_name}.py").write_text(source)
     monkeypatch.syspath_prepend(tmp_path)
-    account = importlib.import_module("guarded_ivar").Account
+    account = importlib.import_module(documented).Account
     lines = [":ivar balance: the balance"]
-    process_docstring(make_docstring_app(), "class", "guarded_ivar.Account", account, None, lines)
+    process_docstring(make_docstring_app(), "class", f"{documented}.Account", account, None, lines)
     assert lines == [
         r":vartype balance: :sphinx_autodoc_typehints_type:`\:py\:class\:\`\~decimal.Decimal\``",
         ":ivar balance: the balance",
