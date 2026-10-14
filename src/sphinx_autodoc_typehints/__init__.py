@@ -22,6 +22,7 @@ from typing import (
 
 from docutils import nodes
 from sphinx.errors import ConfigError
+from sphinx.locale import _  # ruff:ignore[import-private-name]  # the translation napoleon labels its fields with
 from sphinx.util import logging
 from sphinx.util.inspect import getdoc, object_description, signature_from_str, stringify_signature
 from sphinx.util.inspect import signature as sphinx_signature
@@ -60,7 +61,7 @@ from .patches import _OVERLOADS_CACHE, install_patches
 from .version import __version__
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
+    from collections.abc import Generator, Iterator
 
     from docutils.nodes import Node
     from docutils.parsers.rst import states
@@ -711,7 +712,11 @@ def _type_combined_field_entry(app: Sphinx, lines: list[str], arg_name: str, ann
     """
     names = "|".join(re.escape(f"{prefix}{arg_name}") for prefix in ("", "\\*", "\\*\\*"))
     entry = re.compile(rf"^(?::[^:]+: +|\s+)(?:\* )?\*\*(?:{names})\*\*(?P<typed> \()?")
-    if (found := next(((at, match) for at, line in enumerate(lines) if (match := entry.match(line))), None)) is None:
+    found = next(
+        ((at, match) for at in _combined_field_entries(lines) if (match := entry.match(lines[at]))),
+        None,
+    )
+    if found is None:
         return False
     at, match = found
     if match["typed"]:
@@ -745,6 +750,28 @@ def _type_combined_field_entry(app: Sphinx, lines: list[str], arg_name: str, ann
             end += 1
         lines[end] += formatted_default
     return True
+
+
+def _combined_field_entries(lines: list[str]) -> Iterator[int]:
+    """
+    Yield where each entry of a field napoleon or numpydoc combines starts: on the field's line or as a bullet under it.
+
+    Only these list parameters as ``**name** -- text``; the same markup in a code example, an overload or a returned
+    value's name is not a parameter's entry. The bullets all sit at the indent of the first, deeper lines continue one.
+    """
+    headings = tuple(f":{_(label)}:" for label in ("Parameters", "Keyword Arguments", "Other Parameters"))
+    in_field, bullet_indent = False, None
+    for at, line in enumerate(lines):
+        if line.startswith(headings):
+            in_field, bullet_indent = True, None
+            yield at
+        elif in_field and line[:1].isspace():
+            indent = len(line) - len(line.lstrip())
+            if line.lstrip().startswith("* ") and (bullet_indent is None or indent == bullet_indent):
+                bullet_indent = indent
+                yield at
+        elif line:
+            in_field = False
 
 
 def _closing_parenthesis(line: str, start: int) -> int | None:
