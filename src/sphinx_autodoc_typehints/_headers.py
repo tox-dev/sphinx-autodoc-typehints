@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, Final, cast
 from sphinx import addnodes
 from sphinx.domains.python._annotations import _parse_annotation  # ruff:ignore[import-private-name]  # no public parser
 from sphinx.util import logging
+from sphinx.util.inspect import safe_getattr
 
 from ._annotations import annotation_state, format_annotation, signature_text
 from ._resolver import documented_type_names, resolve_annotations, resolve_type_guarded_imports, type_alias_namespace
@@ -92,11 +93,23 @@ def _hint(app: Sphinx, signode: addnodes.desc_signature, objtype: str, name: str
 
 def _declared_hint(app: Sphinx, owner: Any, attribute: str, objtype: str, name: str) -> Any:
     if objtype == "property":
-        # a class property is a classmethod wrapping the property
-        member = getattr(member := inspect.getattr_static(owner, attribute), "__func__", member)
-        getter = member.func if isinstance(member, cached_property) else member.fget
+        if (getter := _property_getter(owner, attribute)) is None:
+            return _MISSING
         return _resolved_hints(app, getter, name).get("return", _MISSING)
     return _owner_hints(app, owner, name).get(attribute, _MISSING)
+
+
+def _property_getter(owner: Any, attribute: str) -> Any:
+    """Find the getter of the property autodoc documents, reading the member the way autodoc reads it."""
+    # a class property is a classmethod wrapping the property, which Python before 3.13 runs on class access
+    if isinstance(static := inspect.getattr_static(owner, attribute, None), classmethod):
+        member = static.__func__
+    else:
+        # a descriptor may hand out the property only on class access
+        member = safe_getattr(owner, attribute, None)
+    if isinstance(member, cached_property):
+        return member.func
+    return member.fget if isinstance(member, property) else None
 
 
 def _owner_hints(app: Sphinx, owner: Any, name: str) -> dict[str, Any]:

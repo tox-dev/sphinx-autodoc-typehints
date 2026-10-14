@@ -26,6 +26,15 @@ if TYPE_CHECKING:
             ".. autoproperty:: header_module.Account.kind", "class property Account.kind: str", id="class-property"
         ),
         pytest.param(
+            ".. autoproperty:: header_module.Proxied.size", "property Proxied.size: int", id="proxied-property"
+        ),
+        pytest.param(
+            ".. autoproperty:: header_module.Vault.__code", "property Vault.__code: int", id="mangled-property"
+        ),
+        pytest.param(
+            ".. autoproperty:: header_module.Vault.__Lock.pins", "property __Lock.pins: int", id="mangled-owner"
+        ),
+        pytest.param(
             ".. autoattribute:: header_module.Account.owner",
             "Account.owner: str",
             id="instance-attribute",
