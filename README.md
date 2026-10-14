@@ -719,6 +719,14 @@ with bounds, constraints and defaults, the way [PEP 695](https://peps.python.org
 is used, as `items (T)` or `args (P.args)`, while a type variable no signature declares keeps its full
 `TypeVar(T, bound=int)` form.
 
+A member inherited from a generic base and documented under a subclass that binds the base's type parameters, as
+`:inherited-members:` lists it or `.. automethod:: mod.Child.get` names it, shows the arguments the subclass gives them.
+With `class Child(Base[int])`, `Base.get(self) -> T` documents as returning `int` under `Child`, while `Base.get` keeps
+`T`. The binding follows the bases through every level, so `class B(A[list[U]])` and `class C(B[int])` turn `A`'s `T`
+into `list[int]` under `C`, and it covers the parameters and return type of methods and of the constructor a class
+documents. A type parameter the subclass leaves unbound, `class Child(Base)`, stays as it is, and one it passes on,
+`class Child[U](Base[U])`, renders by name as a parameter the subclass declares.
+
 Only parameters that already have a `:param:` line in the docstring get type information added, with two exceptions: a
 parameter whose annotation carries a `Doc(...)` description gets a `:param:` line of its own, and the entries of
 napoleon's combined parameter field get their types in place. Set `always_document_param_types = True` to add types for
