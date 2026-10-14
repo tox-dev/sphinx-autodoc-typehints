@@ -13,6 +13,7 @@ from functools import partial
 from keyword import iskeyword
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Any,
     Final,
     Literal,
@@ -1061,20 +1062,22 @@ def _inject_rtype(  # ruff:ignore[too-many-arguments, too-many-positional-argume
         return
     if not app.config.typehints_document_rtype:
         return
-    if not app.config.typehints_document_rtype_none and type_hints["return"] is types.NoneType:
-        return
-    if _has_yields_section(lines) and _is_generator_type(type_hints["return"]):
+    if _has_yields_section(lines) and _is_generator_type(produced := _unannotated(type_hints["return"])):
         # asked first, as it turns numpydoc's sections into the fields the Yields entry is read from
         described = fmt.has_return_description(lines)
-        _type_yields(type_hints["return"], app, lines)
+        _type_yields(produced, app, lines)
         # the Yields section covers what it produces, leaving the value its return statement gives, the R of
         # Generator[Y, S, R], for a Returns section that describes it
-        if (returned := _generator_return(type_hints["return"])) is None or not described:
+        if (returned := _generator_return(produced)) is None or not described:
             return
         type_hints = {**type_hints, "return": returned}
 
     if (return_doc := _extract_doc_description(type_hints["return"])) and not fmt.has_return_description(lines):
         lines.append(f":return: {return_doc}")
+
+    # a Doc on a None return still describes it, so only the type is left off
+    if not app.config.typehints_document_rtype_none and _unannotated(type_hints["return"]) is types.NoneType:
+        return
 
     r = fmt.get_rtype_insert_info(app, lines)
     if r is None:
@@ -1086,6 +1089,11 @@ def _inject_rtype(  # ruff:ignore[too-many-arguments, too-many-positional-argume
     )
 
     fmt.inject_rtype(lines, formatted_annotation, r, use_rtype=app.config.typehints_use_rtype)
+
+
+def _unannotated(annotation: Any) -> Any:
+    # Annotated only attaches metadata to the type it wraps, which is what the function returns
+    return annotation.__origin__ if get_origin(annotation) is Annotated else annotation
 
 
 def _type_yields(annotation: Any, app: Sphinx, lines: list[str]) -> None:

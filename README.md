@@ -581,7 +581,8 @@ comment. A comment that does not parse raises a `sphinx_autodoc_typehints.commen
 A function annotated to return a `Generator`, `Iterator`, `AsyncGenerator` or `AsyncIterator` whose docstring has a
 `Yields` section (`:Yields:`, `:yields:` or `:yield:`, as napoleon and numpydoc write it) gets no return type, since the
 `Yields` section already describes what it produces. Its entry gets the yielded type instead,
-`Yields: int -- the numbers` for `Iterator[int]`, unless it states one.
+`Yields: int -- the numbers` for `Iterator[int]`, unless it states one. Wrapping the annotation in `Annotated` changes
+none of this.
 
 A generator that also hands back a value with `return`, `Generator[int, None, bool]`, and documents it in a `Returns`
 section gets that value's type, `bool`, as its return type; with napoleon, as here:
@@ -798,7 +799,7 @@ The return type options combine as follows:
 - **Disabled** (`typehints_document_rtype = False`) -- no return type is added from the annotation, regardless of other
   settings; an `:rtype:` written in the docstring stays as written.
 - **Skip None** (`typehints_document_rtype_none = False`) -- hides `None` return types specifically, other return types
-  still appear.
+  still appear. `Annotated[None, Doc(...)]` loses its type too, but keeps its description.
 
 Classes and constructors get no return type, and a property shows its type in its header instead. An `:rtype:` written
 in the docstring, over one line or several, gives way to the annotation. The separate block goes after the parameter
