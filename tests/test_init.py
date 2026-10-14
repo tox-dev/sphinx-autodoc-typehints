@@ -517,18 +517,25 @@ class _Shadowed:
     def __new__(cls, value: float) -> _Shadowed: ...  # ruff:ignore[non-self-return-type]
 
 
+_FLOAT_VALUE: Final = [r":type value: :sphinx_autodoc_typehints_type:`\:py\:class\:\`float\``", ":param value: doc"]
+
+
 @pytest.mark.parametrize(
-    "cls",
+    ("cls", "expected"),
     [
-        pytest.param(_BothClass, id="new-beside-init"),
-        pytest.param(_Shadowed, id="new-over-shadowing-class-attribute"),
-        pytest.param(_Deprecated, id="init-beside-new-wrapping-object-new"),  # ty: ignore[deprecated]  # the case under test
+        pytest.param(_BothClass, _FLOAT_VALUE, id="new-beside-init"),
+        pytest.param(_Shadowed, _FLOAT_VALUE, id="new-over-shadowing-class-attribute"),
+        pytest.param(
+            _Deprecated,  # ty: ignore[deprecated]  # the case under test
+            ["", ".. sphinx_autodoc_typehints_deprecated::", "", "   use something else", "", *_FLOAT_VALUE],
+            id="init-beside-new-wrapping-object-new",
+        ),
     ],
 )
-def test_process_docstring_types_params_from_the_constructor(cls: type) -> None:
+def test_process_docstring_types_params_from_the_constructor(cls: type, expected: list[str]) -> None:
     lines = [":param value: doc"]
     process_docstring(make_docstring_app(typehints_document_rtype=False), "class", "test.cls", cls, None, lines)
-    assert lines == [r":type value: :sphinx_autodoc_typehints_type:`\:py\:class\:\`float\``", ":param value: doc"]
+    assert lines == expected
 
 
 def test_inject_types_no_signature() -> None:

@@ -20,6 +20,7 @@ documentation -- so you write types once in code and they appear in your docs wi
 - Shows default parameter values alongside types
 - Types the keys of `**kwargs: Unpack[SomeTypedDict]` as keyword arguments
 - Shows the type parameters of generic classes, functions and type aliases in their signatures
+- Shows the message of [`@deprecated`](https://peps.python.org/pep-0702/) objects as a deprecation notice
 - Controls union display style (`Union[X, Y]` vs `X | Y`)
 - Automatically fixes cross-references for stdlib types whose runtime module differs from their documented path
 - Supports custom type formatters and module name rewriting
@@ -48,6 +49,7 @@ features above. See [Avoid duplicate types with built-in Sphinx](#avoid-duplicat
   - [Show default parameter values](#show-default-parameter-values)
   - [Document `**kwargs` typed with a `TypedDict`](#document-kwargs-typed-with-a-typeddict)
   - [Control overload signature display](#control-overload-signature-display)
+  - [Show deprecations from `@deprecated`](#show-deprecations-from-deprecated)
   - [Keep type hints in function signatures](#keep-type-hints-in-function-signatures)
   - [Handle circular imports](#handle-circular-imports)
   - [Resolve types from `TYPE_CHECKING` blocks](#resolve-types-from-type_checking-blocks)
@@ -298,6 +300,24 @@ The overloads go right after the summary paragraph, so
 [autosummary](https://www.sphinx-doc.org/en/master/usage/extensions/autosummary.html) still picks the summary up. A
 function documented through its overloads gets no separate return type, since each overload states its own. An exception
 class lists its constructor overloads like any other class, and a static method keeps its first parameter.
+
+### Show deprecations from `@deprecated`
+
+A function, method or class decorated with
+[`@warnings.deprecated`](https://docs.python.org/3/library/warnings.html#warnings.deprecated) (or the
+`typing_extensions` backport) gets a deprecation notice below its summary, styled like Sphinx's
+[`deprecated`](https://www.sphinx-doc.org/en/master/usage/restructuredtext/directives.html#directive-deprecated)
+directive:
+
+```python
+@deprecated("Use fresh() instead.")
+def stale(value: int) -> int:
+    """Do the stale thing."""
+```
+
+renders `Deprecated: Use fresh() instead.` The message shows as written, without markup, as it is the text the object
+warns with at runtime. A docstring with a `.. deprecated::` directive of its own, which can name the version, gets no
+second notice, and a subclass of a deprecated class is not marked.
 
 ### Keep type hints in function signatures
 
