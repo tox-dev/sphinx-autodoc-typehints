@@ -133,7 +133,10 @@ lint.per-file-ignores."tests/roots/test-attrs/attrs_lazy_mod.py" = [
   "runtime-import-in-type-checking-block", # the guarded import is the case under test
 ]
 lint.per-file-ignores."tests/roots/test-integration/mod_eager.py" = [
-  "missing-required-import", # this file intentionally omits `from __future__ import annotations` to test non-deferred annotations
+  "missing-required-import",  # this file intentionally omits `from __future__ import annotations` to test non-deferred annotations
+  "no-self-use",              # a subclass binds the type parameter of an inherited instance method
+  "non-pep695-generic-class", # the type parameter must be a module global, as only the legacy spelling makes it
+  "return-in-generator",      # the generator's return value is the type under test
 ]
 lint.per-file-ignores."tests/roots/test-integration/mod_forward_ref.py" = [
   "missing-required-import", # intentionally omits `from __future__ import annotations` to test forward references

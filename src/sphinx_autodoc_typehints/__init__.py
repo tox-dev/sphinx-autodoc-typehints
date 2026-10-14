@@ -139,9 +139,11 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-
     if app.config.typehints_use_signature or app.config.typehints_use_signature_return:
         # the docstring of the same object resolves these hints too, and warns about any that fail there
         with logging.suppress_logging():
-            type_hints, state = _resolved_type_hints(app, name, original_obj, obj, annotated)
+            type_hints, written_as, state = _resolved_type_hints(app, name, original_obj, obj, annotated)
         with annotation_state(app.config, **state, _typehints_signature=True):
-            shown = {key: _signature_type(app, hint) for key, hint in type_hints.items()}
+            shown = {
+                key: _signature_type(app, _as_written(hint, written_as.get(key))) for key, hint in type_hints.items()
+            }
             overloads = [_shown_overload(app, what, name, obj, overload) for overload in overloads]
 
     if app.config.typehints_use_signature_return:
@@ -358,7 +360,7 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
     if signature is not None and inspect.isclass(original_obj):
         signature = show_factory_defaults(original_obj, signature)
 
-    type_hints, state = _resolved_type_hints(app, name, original_obj, obj, annotated)
+    type_hints, written_as, state = _resolved_type_hints(app, name, original_obj, obj, annotated)
     with annotation_state(app.config, **state):
         part, documented_elsewhere = _docstring_part(app, name, original_obj, signature, lines)
         # the constructor's overloads describe its part, while the notice heads the entry
@@ -374,6 +376,7 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
             name,
             lines,
             has_overloads,
+            written_as=written_as,
             documented_elsewhere=documented_elsewhere,
         )
         _inject_ivar_types(ivar_annotations, app, lines)
@@ -385,22 +388,27 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
 
 def _resolved_type_hints(
     app: Sphinx, name: str, original_obj: Any, obj: Any, annotated: Any
-) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Return the types the docs show for the parameters and return of ``obj``, and the state rendering them reads."""
+) -> tuple[dict[str, Any], dict[str, WrittenTypeAlias], dict[str, Any]]:
+    """
+    Return the types of the parameters and return of ``obj``, the aliases they are written as, and the rendering state.
+
+    The types stay what the annotations evaluate to, as what reads them (the ``Doc`` of an ``Annotated``, a generator's
+    return, a type parameter a subclass binds) looks through an alias; only rendering names the alias.
+    """
     localns = {
         key: MyTypeAliasForwardRef(value, configured=True) for key, value in app.config["autodoc_type_aliases"].items()
     }
     module_prefix = _module_prefix(name)
-    eager_aliases: dict[str, WrittenTypeAlias] = {}
+    written_as: dict[str, WrittenTypeAlias] = {}
     if (env := getattr(app, "env", None)) is not None:
-        deferred, eager_aliases = collect_documented_type_aliases(annotated, module_prefix, env)
+        deferred, written_as = collect_documented_type_aliases(annotated, module_prefix, env)
         localns.update(deferred)
     # namedtuple builds __new__ without builtins, so forward references resolve only via the class (#657)
     namedtuple_new = (
         inspect.isclass(original_obj) and inspect.isfunction(obj) and obj.__module__.startswith("namedtuple_")
     )
     owner = original_obj if namedtuple_new else annotated
-    type_hints = get_all_type_hints(app.config.autodoc_mock_imports, owner, name, localns) | eager_aliases
+    type_hints = get_all_type_hints(app.config.autodoc_mock_imports, owner, name, localns)
     if (stated_signature := _declared_signature(original_obj)) is not None:
         # the parameters it lists, such as a pydantic model's fields, may be ones no annotation of the constructor names
         stated = {key: param.annotation for key, param in stated_signature.parameters.items()}
@@ -424,7 +432,12 @@ def _resolved_type_hints(
         "_typehints_declared_type_params": declared_type_params(original_obj, obj, documenting),
         "_typehints_resolve_guarded_imports": partial(resolve_type_guarded_imports, app.config.autodoc_mock_imports),
     }
-    return type_hints, state
+    return type_hints, written_as, state
+
+
+def _as_written(hint: Any, written: WrittenTypeAlias | None) -> Any:
+    """Return the alias ``hint`` is written as, unless it no longer is the alias' value, as when a subclass binds it."""
+    return written if written is not None and written.value is hint else hint
 
 
 def _module_prefix(name: str) -> str:
@@ -570,12 +583,17 @@ def _inject_setter_type(app: Sphinx, name: str, obj: Any, getter_hints: dict[str
     if not isinstance(obj, property) or obj.fset is None or any(line.startswith(":Setter accepts:") for line in lines):
         return
     setter = inspect.unwrap(obj.fset)
-    hints, _ = _resolved_type_hints(app, name, setter, setter, setter)
-    accepted = hints.get(list(inspect.signature(setter).parameters)[-1], inspect.Parameter.empty)
+    hints, written_as, _ = _resolved_type_hints(app, name, setter, setter, setter)
+    param = list(inspect.signature(setter).parameters)[-1]
+    accepted = hints.get(param, inspect.Parameter.empty)
     if accepted is inspect.Parameter.empty or accepted == getter_hints.get("return", inspect.Parameter.empty):
         return
     formatted = add_type_css_class(
-        format_annotation(accepted, app.config, short_literals=app.config.python_display_short_literal_types)
+        format_annotation(
+            _as_written(accepted, written_as.get(param)),
+            app.config,
+            short_literals=app.config.python_display_short_literal_types,
+        )
     )
     lines.extend(["", f":Setter accepts: {formatted}"])
 
@@ -713,6 +731,7 @@ def _inject_types_to_docstring(  # ruff:ignore[too-many-arguments, too-many-posi
     lines: list[str],
     has_overloads: bool = False,  # ruff:ignore[boolean-type-hint-positional-argument, boolean-default-value-positional-argument]
     *,
+    written_as: dict[str, WrittenTypeAlias],
     documented_elsewhere: frozenset[str] = frozenset(),
 ) -> None:
     fmt = detect_format(lines)
@@ -725,6 +744,7 @@ def _inject_types_to_docstring(  # ruff:ignore[too-many-arguments, too-many-posi
                 lines,
                 arg_name,
                 fmt,
+                written=written_as.get(arg_name),
                 documented_elsewhere=arg_name in documented_elsewhere,
                 field="param",
             )
@@ -746,7 +766,7 @@ def _inject_types_to_docstring(  # ruff:ignore[too-many-arguments, too-many-posi
                     field="keyword",
                 )
     if "return" in type_hints and not has_overloads:
-        _inject_rtype(type_hints, original_obj, app, what, name, lines, fmt)
+        _inject_rtype(type_hints, original_obj, app, what, name, lines, fmt, written=written_as.get("return"))
 
 
 def _unpacked_keywords(signature: inspect.Signature, type_hints: dict[str, Any]) -> dict[str, Any]:
@@ -773,6 +793,7 @@ def _inject_arg_signature(  # ruff:ignore[too-many-arguments, too-many-positiona
     arg_name: str,
     fmt: Any,
     *,
+    written: WrittenTypeAlias | None = None,
     documented_elsewhere: bool,
     field: Literal["param", "keyword"],
 ) -> None:
@@ -794,7 +815,9 @@ def _inject_arg_signature(  # ruff:ignore[too-many-arguments, too-many-positiona
     if insert_index is not None and hasattr(fmt, "get_arg_name_from_line"):
         arg_name = fmt.get_arg_name_from_line(lines[insert_index]) or arg_name
 
-    if insert_index is None and _type_combined_field_entry(app, lines, arg_name, annotation, default):
+    if insert_index is None and _type_combined_field_entry(
+        app, lines, arg_name, _as_written(annotation, written), default
+    ):
         return
 
     if (
@@ -805,7 +828,7 @@ def _inject_arg_signature(  # ruff:ignore[too-many-arguments, too-many-positiona
         stars = {"VAR_POSITIONAL": "\\*", "VAR_KEYWORD": "\\*\\*"}.get(kind.name, "")
         entry = f"**{stars}{arg_name}**{f' -- {doc_description}' if doc_description else ''}"
         if _add_combined_field_entry(lines, field, entry, later_names):
-            _type_combined_field_entry(app, lines, arg_name, annotation, default)
+            _type_combined_field_entry(app, lines, arg_name, _as_written(annotation, written), default)
             return
         insert_index = fmt.add_undocumented_param(
             lines, arg_name, doc_description or "", before=_next_documented_param(lines, later_names, fmt), field=field
@@ -826,7 +849,11 @@ def _inject_arg_signature(  # ruff:ignore[too-many-arguments, too-many-positiona
             type_field,
             arg_name,
             add_type_css_class(
-                format_annotation(annotation, app.config, short_literals=app.config.python_display_short_literal_types)
+                format_annotation(
+                    _as_written(annotation, written),
+                    app.config,
+                    short_literals=app.config.python_display_short_literal_types,
+                )
             ),
         )
 
@@ -1019,6 +1046,8 @@ def _inject_rtype(  # ruff:ignore[too-many-arguments, too-many-positional-argume
     name: str,
     lines: list[str],
     fmt: Any,
+    *,
+    written: WrittenTypeAlias | None = None,
 ) -> None:
     if inspect.isclass(original_obj) or inspect.isdatadescriptor(original_obj):
         return
@@ -1047,7 +1076,7 @@ def _inject_rtype(  # ruff:ignore[too-many-arguments, too-many-positional-argume
 
     short_literals = app.config.python_display_short_literal_types
     formatted_annotation = add_type_css_class(
-        format_annotation(type_hints["return"], app.config, short_literals=short_literals)
+        format_annotation(_as_written(type_hints["return"], written), app.config, short_literals=short_literals)
     )
 
     fmt.inject_rtype(lines, formatted_annotation, r, use_rtype=app.config.typehints_use_rtype)
