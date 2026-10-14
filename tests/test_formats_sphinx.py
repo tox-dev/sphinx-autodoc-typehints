@@ -199,3 +199,25 @@ def test_process_docstring_keeps_the_placement_parse_quiet(capsys: pytest.Captur
     rtype = r":rtype: :sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``"
     expected = ["Behaves like this:", "- a list item", "    an unexpected indent", "", rtype]
     assert (lines, capsys.readouterr().err) == (expected, "")
+
+
+_MAPPING_TYPE: Final = (
+    r":sphinx_autodoc_typehints_type:`\:py\:class\:\`dict\`\\ \\\[\:py\:class\:\`str\`\, \:py\:class\:\`int\`\]`"
+)
+
+
+@pytest.mark.parametrize(
+    ("use_rtype", "expected"),
+    [
+        pytest.param(True, [":returns: the mapping", "", f":rtype: {_MAPPING_TYPE}"], id="rtype"),
+        pytest.param(False, [f":return: {_MAPPING_TYPE} -- the mapping"], id="inline"),
+    ],
+)
+def test_process_docstring_replaces_a_multi_line_rtype(use_rtype: bool, expected: list[str]) -> None:
+    def mapping() -> dict[str, int]: ...
+
+    lines = [":returns: the mapping", ":rtype: dict of str to int, keyed", "    by name"]
+    sat.process_docstring(
+        make_docstring_app(typehints_use_rtype=use_rtype), "function", "mod.mapping", mapping, None, lines
+    )
+    assert lines == expected

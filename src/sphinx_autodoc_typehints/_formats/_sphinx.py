@@ -185,8 +185,7 @@ class SphinxFieldListFormat(DocstringFormat):
         return any(line.lstrip().startswith((":return:", ":returns:")) for line in lines)
 
     def get_rtype_insert_info(self, app: Sphinx, lines: list[str]) -> InsertIndexInfo | None:  # ruff:ignore[no-self-use]
-        if (rtype_at := next((i for i, line in enumerate(lines) if line.startswith(":rtype:")), None)) is not None:
-            del lines[rtype_at]
+        rtype_at = _remove_rtype(lines)
         return_at = next((i for i, line in enumerate(lines) if line.startswith((":return:", ":returns:"))), None)
         # inline mode merges the type into the :return: entry, so it replaces a preexisting :rtype: only without one
         if rtype_at is not None and (app.config.typehints_use_rtype or return_at is None):
@@ -329,7 +328,20 @@ def _after_last_param_field(lines: list[str]) -> int:
     )
     if (last := max(found, default=None)) is None:
         return len(lines)
-    end = last + 1
+    return _field_end(lines, last)
+
+
+def _remove_rtype(lines: list[str]) -> int | None:
+    """Remove the docstring's :rtype: field, which the annotation replaces, and return where it was."""
+    if (rtype_at := next((i for i, line in enumerate(lines) if line.startswith(":rtype:")), None)) is None:
+        return None
+    del lines[rtype_at : _field_end(lines, rtype_at)]
+    return rtype_at
+
+
+def _field_end(lines: list[str], at: int) -> int:
+    """Return the index past the field at ``at`` and its indented continuation lines."""
+    end = at + 1
     while end < len(lines) and lines[end][:1].isspace() and lines[end].strip():
         end += 1
     return end
