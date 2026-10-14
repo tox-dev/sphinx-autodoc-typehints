@@ -21,6 +21,7 @@ documentation -- so you write types once in code and they appear in your docs wi
 - Types the keys of `**kwargs: Unpack[SomeTypedDict]` as keyword arguments
 - Shows the type parameters of generic classes, functions and type aliases in their signatures
 - Shows the message of [`@deprecated`](https://peps.python.org/pep-0702/) objects as a deprecation notice
+- Links the base class member an [`@override`](https://peps.python.org/pep-0698/) method replaces
 - Controls union display style (`Union[X, Y]` vs `X | Y`)
 - Automatically fixes cross-references for stdlib types whose runtime module differs from their documented path
 - Supports custom type formatters and module name rewriting
@@ -51,6 +52,7 @@ features above. See [Avoid duplicate types with built-in Sphinx](#avoid-duplicat
   - [Document `TypedDict` classes](#document-typeddict-classes)
   - [Control overload signature display](#control-overload-signature-display)
   - [Show deprecations from `@deprecated`](#show-deprecations-from-deprecated)
+  - [Link what an `@override` method overrides](#link-what-an-override-method-overrides)
   - [Keep type hints in function signatures](#keep-type-hints-in-function-signatures)
   - [Handle circular imports](#handle-circular-imports)
   - [Resolve types from `TYPE_CHECKING` blocks](#resolve-types-from-type_checking-blocks)
@@ -333,6 +335,20 @@ def stale(value: int) -> int:
 renders `Deprecated: Use fresh() instead.` The message shows as written, without markup, as it is the text the object
 warns with at runtime. A docstring with a `.. deprecated::` directive of its own, which can name the version, gets no
 second notice, and a subclass of a deprecated class is not marked.
+
+### Link what an `@override` method overrides
+
+A method or property marked with [`@typing.override`](https://docs.python.org/3/library/typing.html#typing.override)
+gets an `Overrides` field that links the member it replaces, found in the nearest base class that defines it:
+
+```python
+class Child(Base):
+    @override
+    def run(self, count: int) -> str:
+        """Run again."""
+```
+
+shows `Overrides: Base.run`. A method marked `@override` that no base class defines gets no field.
 
 ### Keep type hints in function signatures
 

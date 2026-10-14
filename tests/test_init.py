@@ -7,7 +7,7 @@ import inspect
 import sys
 from pathlib import Path
 from textwrap import dedent
-from typing import TYPE_CHECKING, Annotated, Any, Final, NamedTuple, NotRequired, Required, TypedDict, Unpack
+from typing import TYPE_CHECKING, Annotated, Any, Final, NamedTuple, NotRequired, Required, TypedDict, Unpack, override
 from unittest.mock import MagicMock, create_autospec, patch
 
 import pytest
@@ -1319,3 +1319,82 @@ def test_process_docstring_types_the_keys_of_unpacked_kwargs(
     app = make_docstring_app(typehints_document_rtype=False, always_document_param_types=always)
     process_docstring(app, "function", f"mod.{func.__name__}", func, None, lines)
     assert lines == expected
+
+
+class _OverrideBase:
+    def run(self) -> str: ...
+
+    @property
+    def size(self) -> int: ...
+
+
+class _OverrideChild(_OverrideBase):
+    @override
+    def run(self) -> str: ...
+
+    @property
+    @override
+    def size(self) -> int: ...
+
+    @override
+    def extra(self) -> str: ...  # ty: ignore[invalid-explicit-override]  # the case under test
+
+    def plain(self) -> str: ...
+
+
+class _OverrideGrandchild(_OverrideChild):
+    @override
+    @functools.cache  # ruff:ignore[cached-instance-method]  # any decorator that wraps
+    def run(self) -> str: ...
+
+
+@pytest.mark.parametrize(
+    ("what", "member", "fully_qualified", "expected"),
+    [
+        pytest.param(
+            "method",
+            "_OverrideChild.run",
+            False,
+            [":Overrides: :py:meth:`_OverrideBase.run <test_init._OverrideBase.run>`"],
+            id="method",
+        ),
+        pytest.param(
+            "property",
+            "_OverrideChild.size",
+            False,
+            [":Overrides: :py:attr:`_OverrideBase.size <test_init._OverrideBase.size>`"],
+            id="property",
+        ),
+        pytest.param(
+            "method",
+            "_OverrideGrandchild.run",
+            False,
+            [":Overrides: :py:meth:`_OverrideChild.run <test_init._OverrideChild.run>`"],
+            id="wrapped-method-nearest-base",
+        ),
+        pytest.param(
+            "method",
+            "_OverrideChild.run",
+            True,
+            [":Overrides: :py:meth:`test_init._OverrideBase.run`"],
+            id="fully-qualified",
+        ),
+        pytest.param("method", "_OverrideChild.extra", False, [], id="nothing-to-override"),
+        pytest.param("method", "_OverrideChild.plain", False, [], id="not-marked"),
+    ],
+)
+def test_process_docstring_links_what_an_override_overrides(
+    what: str, member: str, fully_qualified: bool, expected: list[str]
+) -> None:
+    owner, attribute = member.split(".")
+    obj = vars(globals()[owner])[attribute]
+    lines = ["Summary."]
+    app = make_docstring_app(typehints_document_rtype=False, typehints_fully_qualified=fully_qualified)
+    process_docstring(app, what, f"test_init.{member}", obj, None, lines)
+    assert lines == ["Summary.", *([""] if expected else []), *expected]
+
+
+def test_process_docstring_override_outside_an_importable_class() -> None:
+    lines = ["Summary."]
+    process_docstring(make_docstring_app(), "method", "missing_module.Child.run", _OverrideChild.run, None, lines)
+    assert lines == ["Summary.", "", r":rtype: :sphinx_autodoc_typehints_type:`\:py\:class\:\`str\``"]
