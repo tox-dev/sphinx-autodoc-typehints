@@ -179,9 +179,12 @@ def _names_other_parameters(signature: str, parameters: list[inspect.Parameter])
     except SyntaxError:
         # autodoc writes some defaults it introspects, such as <object object>, in a form Python cannot read back
         return False
-    return [(param.name, param.kind) for param in written.parameters.values()] != [
-        (param.name, param.kind) for param in parameters
-    ]
+    kinds = [(param.name, param.kind) for param in written.parameters.values()]
+    # autodoc falls back to a catch-all when it can't see a class's parameters, as for a @deprecated class or one whose
+    # base's __new__ takes *args and **kwargs, which no one writes to hide parameters
+    if all(kind in {inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD} for _, kind in kinds):
+        return False
+    return kinds != [(param.name, param.kind) for param in parameters]
 
 
 def _annotated_function(obj: Any) -> Any:

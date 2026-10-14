@@ -675,7 +675,8 @@ becomes an `:rtype:` entry.
 A signature you write yourself is left as written when it names other parameters than the object takes: one in the
 directive, `.. autofunction:: mod.f(x, y=3)`, or on the docstring's first line with
 [`autodoc_docstring_signature`](https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#confval-autodoc_docstring_signature).
-One with the same parameters, differing only in defaults or types, is replaced by the object's own.
+One with the same parameters, differing only in defaults or types, is replaced by the object's own, and so is one made
+of only `*args` and `**kwargs`, which is what autodoc falls back to when it can't see a class's parameters.
 
 Autodoc leaves the type parameters of a generic object out of its signature. The extension adds them after the name,
 with bounds, constraints and defaults, the way [PEP 695](https://peps.python.org/pep-0695/) writes them:
