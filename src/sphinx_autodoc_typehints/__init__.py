@@ -236,6 +236,7 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
         )
         _inject_ivar_types(ivar_annotations, app, lines)
         inject_extra_items(app, original_obj, lines)
+        _inject_override(app, what, name, declared, lines)
 
 
 def _constructor_name(cls: type) -> Literal["__new__", "__init__"]:
@@ -340,6 +341,16 @@ def _class_member_type(name: str) -> type | None:
 
     A class can bind a function defined elsewhere (``add = staticmethod(helper)``).
     """
+    if (owner := _documented_owner(name)) is None:
+        return None
+    attribute = name.rsplit(".", maxsplit=1)[-1]
+    if attribute.startswith("__") and not attribute.endswith("__"):
+        attribute = f"_{owner.__name__.lstrip('_')}{attribute}"
+    return None if (member := inspect.getattr_static(owner, attribute, None)) is None else type(member)
+
+
+def _documented_owner(name: str) -> Any:
+    """Return the object holding the documented member ``name``, found through its imported module."""
     parts = name.split(".")
     if (split := next((i for i in range(len(parts) - 1, 0, -1) if ".".join(parts[:i]) in sys.modules), None)) is None:
         return None
@@ -347,10 +358,22 @@ def _class_member_type(name: str) -> type | None:
     for part in parts[split:-1]:
         if (owner := getattr(owner, part, None)) is None:
             return None
-    attribute = parts[-1]
-    if attribute.startswith("__") and not attribute.endswith("__"):
-        attribute = f"_{owner.__name__.lstrip('_')}{attribute}"
-    return None if (member := inspect.getattr_static(owner, attribute, None)) is None else type(member)
+    return owner
+
+
+def _inject_override(app: Sphinx, what: str, name: str, obj: Any, lines: list[str]) -> None:
+    """Link the member a ``@typing.override`` method or property overrides."""
+    if what not in {"method", "property"} or getattr(obj, "__override__", False) is not True:
+        return
+    if not isinstance(owner := _documented_owner(name), type):
+        return
+    attribute = name.rsplit(".", maxsplit=1)[-1]
+    if (base := next((klass for klass in owner.__mro__[1:] if attribute in vars(klass)), None)) is None:
+        return
+    target = f"{base.__module__}.{base.__qualname__}.{attribute}"
+    # the class names which override this is, a bare member name would not
+    text = target if app.config.typehints_fully_qualified else f"{base.__qualname__}.{attribute} <{target}>"
+    lines.extend(["", f":Overrides: :py:{'attr' if what == 'property' else 'meth'}:`{text}`"])
 
 
 def _format_overload_lines(overloads: list[inspect.Signature], obj: Any, app: Sphinx, skip: int) -> list[str]:
