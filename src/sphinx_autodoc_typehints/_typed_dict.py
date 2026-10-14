@@ -43,12 +43,31 @@ def _bound_hints(typed_dict: Any, localns: Mapping[str, Any]) -> dict[str, Any]:
     MRO, so each base the class statement names supplies its keys bound by the arguments it is given there.
     """
     origin = get_origin(typed_dict) or typed_dict
-    # a key written as a string names the type parameters of the class declaring it, which may be a base
-    hints = get_type_hints(origin, localns={**localns, **_type_params_in_scope(origin)}, include_extras=True)
-    for base in _typed_dict_bases(origin):
+    hints: dict[str, Any] = {}
+    # the first base in the MRO decides a key two bases declare, so later bases merge in first
+    for base in reversed(_typed_dict_bases(origin)):
         hints |= _bound_hints(base, localns)
+    # a key the class redeclares, as a ReadOnly key narrows its type (PEP 705), reads as the class declares it
+    hints |= _split_hints(origin, localns)[1]
     arguments = type_arguments(origin, typed_dict)
     return {key: specialize(annotation, arguments) for key, annotation in hints.items()}
+
+
+def _split_hints(typed_dict: type, localns: Mapping[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+    """
+    Split the annotations of a TypedDict into the keys of its bases and the keys it declares itself, all unbound.
+
+    Its annotations hold each key of its bases as the last base declaring it does. The keys of a base come from that
+    base's own declarations, as autodoc reassigning a base's annotations on Python 3.14 leaves a subclass reading none
+    from it.
+    """
+    inherited: dict[str, Any] = {}
+    for base in _typed_dict_bases(typed_dict):
+        base_inherited, base_own = _split_hints(get_origin(base) or base, localns)
+        inherited |= base_inherited | base_own
+    # a key written as a string names the type parameters of the class declaring it, which may be a base
+    hints = get_type_hints(typed_dict, localns={**localns, **_type_params_in_scope(typed_dict)}, include_extras=True)
+    return inherited, {key: annotation for key, annotation in hints.items() if inherited.get(key, _OPEN) != annotation}
 
 
 def _type_params_in_scope(typed_dict: type) -> dict[str, Any]:

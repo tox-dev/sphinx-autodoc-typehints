@@ -95,3 +95,26 @@ def test_typed_dict_key_inherited_from_a_generic_base(
         "   extra: NotRequired[list[int]]",
         "   limit: int",
     ]
+
+
+@pytest.mark.parametrize("cls", [pytest.param("Square", id="redeclared"), pytest.param("Tile", id="first-base")])
+@pytest.mark.sphinx("text", testroot="typed-dict")
+def test_typed_dict_key_redeclared_over_its_base(
+    app: SphinxTestApp, write_rst: Callable[[str], None], monkeypatch: pytest.MonkeyPatch, cls: str
+) -> None:
+    # autodoc lists the keys a TypedDict inherits only on the build importing its module
+    monkeypatch.delitem(sys.modules, "typed_dict_module", raising=False)
+    write_rst(f".. autoclass:: typed_dict_module.{cls}\n   :members:\n   :undoc-members:")
+    app.build()
+
+    lines = (Path(app.outdir) / "index.txt").read_text().splitlines()
+    assert [line for line in lines if line.startswith("   ") and ": " in line] == ["   label: str", "   size: int"]
+
+
+@pytest.mark.sphinx("text", testroot="typed-dict")
+def test_typed_dict_unpacked_key_redeclared_over_its_base(app: SphinxTestApp, write_rst: Callable[[str], None]) -> None:
+    write_rst(".. autofunction:: typed_dict_module.draw")
+    app.build()
+
+    lines = [line.strip() for line in (Path(app.outdir) / "index.txt").read_text().splitlines()]
+    assert '**size** ("int") -- the size' in lines
