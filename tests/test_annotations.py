@@ -861,6 +861,31 @@ def test_format_annotation_recursive_type_alias() -> None:
     assert result == ":py:class:`int` | :py:class:`list`\\ \\[:py:type:`~RecType`]"
 
 
+@pytest.mark.parametrize(
+    ("alias", "expected"),
+    [
+        pytest.param(
+            "Pair",
+            r":py:class:`tuple`\ \[:py:class:`tuple`\ \[:py:class:`int`, :py:class:`int`], "
+            r":py:class:`tuple`\ \[:py:class:`int`, :py:class:`int`]]",
+            id="expands-when-it-cannot-recurse",
+        ),
+        pytest.param(
+            "Outer",
+            r":py:class:`list`\ \[:py:class:`tuple`\ \[:py:type:`~Outer`, :py:type:`~Inner`]]",
+            id="guarded-when-its-value-does-not-evaluate",
+        ),
+    ],
+)
+def test_format_annotation_generic_alias_nested_in_itself(alias: str, expected: str) -> None:
+    namespace: dict[str, Any] = {}
+    exec(  # ruff:ignore[exec-builtin]
+        "type Pair[T] = tuple[T, T]\ntype Outer[T] = list[tuple[T, Inner]]\ntype Inner = Missing", namespace
+    )
+    generic = namespace[alias]
+    assert format_annotation(generic[generic[int]], create_autospec(Config)) == expected
+
+
 def test_format_annotation_mutually_recursive_type_alias() -> None:
     """An indirect cycle between PEP 695 aliases resolves to a self cross-reference too (#720)."""
     namespace: dict[str, Any] = {}
