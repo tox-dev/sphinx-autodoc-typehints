@@ -64,3 +64,20 @@ def test_doctest_failure_reports_the_example_line(app: SphinxTestApp, write_rst:
     app.build()
 
     assert 'File "index.rst", line 6, in default' in (Path(app.outdir) / "output.txt").read_text()
+
+
+@pytest.mark.sphinx("text", testroot="dummy")
+def test_overloads_stay_visible_to_an_app_without_the_extension(
+    app: SphinxTestApp, write_rst: Callable[[str], None], make_app: Callable[..., SphinxTestApp]
+) -> None:
+    write_rst(".. automethod:: dummy_module.ClassWithOverloadedMethods.convert")
+    app.build()
+    plain = make_app(
+        "text", srcdir=Path(app.srcdir), confoverrides={"extensions": ["sphinx.ext.autodoc"]}, freshenv=True
+    )
+    plain.build()
+
+    assert (Path(plain.outdir) / "index.txt").read_text().splitlines()[:2] == [
+        "ClassWithOverloadedMethods.convert(value: int) -> int",
+        "ClassWithOverloadedMethods.convert(value: str) -> str",
+    ]
