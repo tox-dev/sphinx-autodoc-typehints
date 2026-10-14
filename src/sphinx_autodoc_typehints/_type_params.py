@@ -143,7 +143,8 @@ def _parametrized(cls: type, target: type) -> Any:
 
 
 def _derives(base: Any, target: type) -> bool:
-    return isinstance(origin := get_origin(base) or base, type) and issubclass(origin, target)
+    # issubclass would raise for a Protocol that is not runtime checkable and count a class registered with an ABC
+    return isinstance(origin := get_origin(base) or base, type) and target in origin.__mro__
 
 
 def type_arguments(cls: type, alias: Any) -> dict[Any, Any]:

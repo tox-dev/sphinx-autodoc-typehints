@@ -71,6 +71,11 @@ if TYPE_CHECKING:
         ),
         pytest.param(".. autofunction:: type_params_module.plain", "type_params_module.plain(value)", id="not-generic"),
         pytest.param(
+            ".. autoclass:: type_params_module.File",
+            "class type_params_module.File(*args, **kwargs)",
+            id="protocol-not-runtime-checkable-base",
+        ),
+        pytest.param(
             ".. py:module:: type_params_module\n\n.. py:function:: bounded[U](value)",
             "type_params_module.bounded[U](value)",
             id="written-out",
@@ -158,6 +163,8 @@ def test_type_params_declared_param_spec_components_show_by_name(
         pytest.param(".. automethod:: type_params_module.IntListing.get", '"list"["int"]', id="through-two-bases"),
         pytest.param(".. automethod:: type_params_module.Listing.get", '"list"["U"]', id="to-own-param"),
         pytest.param(".. automethod:: type_params_module.Restack.peek", '"V"', id="to-own-param-of-the-name"),
+        pytest.param(".. automethod:: type_params_module.IntFeed.pull", '"int"', id="protocol-not-runtime-checkable"),
+        pytest.param(".. automethod:: type_params_module.IntSink.put", '"int"', id="past-a-registered-base"),
     ],
 )
 @pytest.mark.sphinx("text", testroot="type-params")
