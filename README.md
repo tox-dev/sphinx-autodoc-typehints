@@ -395,10 +395,11 @@ To suppress only specific warning types, see [Warning categories](#warning-categ
 
 Some annotations render differently from how they are written:
 
-| Written                    | Rendered                                                      |
-| -------------------------- | ------------------------------------------------------------- |
-| `*args: *Ts`, `tuple[*Ts]` | `Unpack[TypeVarTuple(Ts)]`, `tuple[Unpack[TypeVarTuple(Ts)]]` |
-| `*args: *tuple[int, ...]`  | `Unpack[tuple[int, ...]]`                                     |
+| Written                                                  | Rendered                                                      |
+| -------------------------------------------------------- | ------------------------------------------------------------- |
+| `*args: *Ts`, `tuple[*Ts]`                               | `Unpack[TypeVarTuple(Ts)]`, `tuple[Unpack[TypeVarTuple(Ts)]]` |
+| `*args: *tuple[int, ...]`                                | `Unpack[tuple[int, ...]]`                                     |
+| `def f[T: int](value: T)`, `T = TypeVar("T", bound=int)` | `TypeVar(T, bound=int)`                                       |
 
 ### Warning categories
 

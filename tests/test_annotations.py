@@ -11,6 +11,7 @@ import warnings
 from collections.abc import Callable, Mapping
 from io import StringIO
 from pathlib import Path
+from textwrap import dedent
 from types import EllipsisType, FrameType, FunctionType, ModuleType, NotImplementedType, TracebackType
 from typing import (  # ruff:ignore[deprecated-import]
     IO,
@@ -115,7 +116,7 @@ class Metaclass(type): ...
 
 # The interpreter reports NoneType instead of None for an unset ParamSpec bound before CPython gh-151955 (fixed at
 # patch level, e.g. present in 3.13.15 but not 3.14.7), so probe the runtime instead of the version.
-_NONE_BOUND = ", bound= :py:obj:`None`" if P.__bound__ is not None else ""
+_NONE_BOUND = r", bound=\ :py:obj:`None`" if P.__bound__ is not None else ""
 _PARAMSPEC_COMPONENT_ROLE: Final[str] = "data" if sys.version_info < (3, 13) else "class"
 
 
@@ -218,13 +219,13 @@ _CASES = [
     pytest.param(
         Mapping[str, V_contra],
         r":py:class:`~collections.abc.Mapping`\ \[:py:class:`str`, :py:class:`~typing.TypeVar`\ \("
-        "``V_contra``, contravariant=True)]",
+        r"``V_contra``, contravariant=\ True)]",
         id="Mapping-T-int-contra",
     ),
     pytest.param(
         Mapping[T, U_co],
         r":py:class:`~collections.abc.Mapping`\ \[:py:class:`~typing.TypeVar`\ \(``T``), "
-        r":py:class:`~typing.TypeVar`\ \(``U_co``, covariant=True)]",
+        r":py:class:`~typing.TypeVar`\ \(``U_co``, covariant=\ True)]",
         id="Mapping-T-int-co",
     ),
     pytest.param(
@@ -241,13 +242,13 @@ _CASES = [
     pytest.param(
         Dict[str, V_contra],
         r":py:class:`~typing.Dict`\ \[:py:class:`str`, :py:class:`~typing.TypeVar`\ \(``V_contra``, "
-        r"contravariant=True)]",
+        r"contravariant=\ True)]",
         id="Dict-T-int-contra",
     ),
     pytest.param(
         Dict[T, U_co],
         r":py:class:`~typing.Dict`\ \[:py:class:`~typing.TypeVar`\ \(``T``),"
-        r" :py:class:`~typing.TypeVar`\ \(``U_co``, covariant=True)]",
+        r" :py:class:`~typing.TypeVar`\ \(``U_co``, covariant=\ True)]",
         id="Dict-T-int-co",
     ),
     pytest.param(
@@ -408,35 +409,35 @@ _CASES = [
     pytest.param(
         typing.ParamSpecKwargs, f":py:{_PARAMSPEC_COMPONENT_ROLE}:`~typing.ParamSpecKwargs`", id="ParamSpecKwargs-class"
     ),
-    pytest.param(U_co, r":py:class:`~typing.TypeVar`\ \(``U_co``, covariant=True)", id="U-co"),
-    pytest.param(V_contra, r":py:class:`~typing.TypeVar`\ \(``V_contra``, contravariant=True)", id="V-contra"),
+    pytest.param(U_co, r":py:class:`~typing.TypeVar`\ \(``U_co``, covariant=\ True)", id="U-co"),
+    pytest.param(V_contra, r":py:class:`~typing.TypeVar`\ \(``V_contra``, contravariant=\ True)", id="V-contra"),
     pytest.param(X, r":py:class:`~typing.TypeVar`\ \(``X``, :py:class:`str`, :py:class:`int`)", id="X"),
-    pytest.param(Y, r":py:class:`~typing.TypeVar`\ \(``Y``, bound= :py:class:`str`)", id="Y"),
-    pytest.param(Z, r":py:class:`~typing.TypeVar`\ \(``Z``, bound= A)", id="Z"),
-    pytest.param(S, r":py:class:`~typing.TypeVar`\ \(``S``, bound= miss)", id="S"),
+    pytest.param(Y, r":py:class:`~typing.TypeVar`\ \(``Y``, bound=\ :py:class:`str`)", id="Y"),
+    pytest.param(Z, r":py:class:`~typing.TypeVar`\ \(``Z``, bound=\ A)", id="Z"),
+    pytest.param(S, r":py:class:`~typing.TypeVar`\ \(``S``, bound=\ miss)", id="S"),
     pytest.param(P, rf":py:class:`~typing.ParamSpec`\ \(``P``{_NONE_BOUND})", id="P"),
     pytest.param(P_args, rf":py:{_PARAMSPEC_COMPONENT_ROLE}:`~typing.ParamSpecArgs`\ \(``P``)", id="P-args"),
     pytest.param(P_kwargs, rf":py:{_PARAMSPEC_COMPONENT_ROLE}:`~typing.ParamSpecKwargs`\ \(``P``)", id="P-kwargs"),
     pytest.param(
         P_co,
-        rf":py:class:`~typing.ParamSpec`\ \(``P_co``{_NONE_BOUND}, covariant=True)",
+        rf":py:class:`~typing.ParamSpec`\ \(``P_co``{_NONE_BOUND}, covariant=\ True)",
         id="P_co",
     ),
     pytest.param(
         P_contra,
         rf":py:class:`~typing.ParamSpec`\ \(``P_contra``{_NONE_BOUND}"
-        ", contravariant=True)",
+        r", contravariant=\ True)",
         id="P-contra",
     ),
-    pytest.param(P_bound, r":py:class:`~typing.ParamSpec`\ \(``P_bound``, bound= :py:class:`str`)", id="P-bound"),
+    pytest.param(P_bound, r":py:class:`~typing.ParamSpec`\ \(``P_bound``, bound=\ :py:class:`str`)", id="P-bound"),
     pytest.param(
         P_default,
-        rf":py:class:`~typing.ParamSpec`\ \(``P_default``{_NONE_BOUND}, default= \[:py:class:`int`, :py:class:`str`])",
+        rf":py:class:`~typing.ParamSpec`\ \(``P_default``{_NONE_BOUND}, default=\ \[:py:class:`int`, :py:class:`str`])",
         id="P-default",
     ),
     pytest.param(
         T_default,
-        r":py:class:`~typing.TypeVar`\ \(``T_default``, bound= :py:class:`int`, default= :py:class:`bool`)",
+        r":py:class:`~typing.TypeVar`\ \(``T_default``, bound=\ :py:class:`int`, default=\ :py:class:`bool`)",
         id="T-default",
     ),
     pytest.param(Ts, r":py:class:`~typing.TypeVarTuple`\ \(``Ts``)", id="Ts"),
@@ -1010,3 +1011,21 @@ def test_format_annotation_mutually_recursive_type_alias() -> None:
     exec("type A = int | list[B]\ntype B = str | list[A]", namespace)  # ruff:ignore[exec-builtin]
     result = format_annotation(namespace["A"], create_autospec(Config))
     assert result == ":py:class:`int` | :py:class:`list`\\ \\[:py:class:`str` | :py:class:`list`\\ \\[:py:type:`~A`]]"
+
+
+@pytest.mark.sphinx("text", testroot="dummy")
+def test_type_variable_parameter_follows_its_equals_sign(app: SphinxTestApp, write_rst: Callable[[str], None]) -> None:
+    write_rst(".. autofunction:: dummy_module.bounded")
+    app.build()
+
+    assert (Path(app.outdir) / "index.txt").read_text() == dedent("""\
+        dummy_module.bounded(value)
+
+           Take a bounded type parameter.
+
+           Parameters:
+              **value** ("TypeVar"("T", bound="int")) -- the value
+
+           Return type:
+              "TypeVar"("T", bound="int")
+        """)

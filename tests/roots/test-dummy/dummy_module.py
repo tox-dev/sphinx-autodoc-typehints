@@ -182,3 +182,12 @@ def takes_configured_alias(x: ConfiguredAlias) -> None:
 
     :param x: the x
     """
+
+
+def bounded[T: int](value: T) -> T:
+    """
+    Take a bounded type parameter.
+
+    :param value: the value
+    """
+    return value
