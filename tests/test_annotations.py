@@ -454,6 +454,12 @@ _CASES = [
         r":py:data:`~typing.Tuple`\ \[:py:class:`int`, :py:data:`...<Ellipsis>`]",
         id="Tuple-p-Ellipsis",
     ),
+    pytest.param(
+        tuple[int, *tuple[str, ...]],
+        r":py:class:`tuple`\ \[:py:class:`int`, :py:data:`~typing.Unpack`\ \[:py:class:`tuple`\ \[:py:class:`str`,"
+        r" :py:data:`...<Ellipsis>`]]]",
+        id="tuple-unpacked-tuple",
+    ),
     pytest.param(Annotated[int, "metadata"], r":py:class:`int`", id="Annotated-metadata"),
     pytest.param(Required[int], r":py:data:`~typing.Required`\ \[:py:class:`int`]", id="Required"),
     pytest.param(NotRequired[int], r":py:data:`~typing.NotRequired`\ \[:py:class:`int`]", id="NotRequired"),
