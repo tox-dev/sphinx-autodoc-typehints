@@ -493,6 +493,7 @@ the type annotations, and they'll be picked up. Beyond that:
 - A module the stub imports that isn't installed, `import numpy.typing as npt` in a docs environment without numpy, is
   mocked as `autodoc_mock_imports` would, so `npt.NDArray` still renders as a cross-reference.
 - A C attribute (a getset or member descriptor) gets its type from the stub's `@property` or class annotation.
+- Editing a stub rereads the pages documenting what it describes on the next incremental build.
 
 ### Use type comments
 

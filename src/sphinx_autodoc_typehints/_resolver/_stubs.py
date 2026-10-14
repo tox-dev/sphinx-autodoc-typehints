@@ -19,11 +19,11 @@ if TYPE_CHECKING:
     import types
     from collections.abc import Callable, Iterator
 
-_STUB_AST_CACHE: dict[Path, ast.Module | None] = {}
+_STUB_AST_CACHE: dict[tuple[Path, int], ast.Module | None] = {}
 
 
 def _backfill_from_stub(obj: Any) -> dict[str, str]:
-    if (stub_path := _find_stub_path(obj)) and (tree := _parse_stub_ast(stub_path)):
+    if (path := stub_path(obj)) and (tree := _parse_stub_ast(path)):
         return _extract_annotations_from_stub(tree, obj)
     return {}
 
@@ -42,11 +42,11 @@ def _get_stub_context(obj: Any) -> tuple[dict[str, Any], set[str], str]:
     """
     if (info := _find_stub_owner(obj)) is None:
         return {}, set(), ""
-    stub_path, owner_module = info
-    if (tree := _parse_stub_ast(stub_path)) is None:
+    path, owner_module = info
+    if (tree := _parse_stub_ast(path)) is None:
         return {}, set(), ""
     ns: dict[str, Any] = dict(vars(owner_module))
-    resolved, unresolved = _resolve_stub_imports(tree, _stub_owner_package(owner_module, stub_path))
+    resolved, unresolved = _resolve_stub_imports(tree, _stub_owner_package(owner_module, path))
     ns.update(resolved)
     ns.update(_stub_type_params(tree, obj))
     return ns, _extract_type_alias_names(tree) | (unresolved - ns.keys()), owner_module.__name__
@@ -71,13 +71,13 @@ def _stub_type_params(tree: ast.Module, obj: Any) -> dict[str, TypeVar | ParamSp
     return result
 
 
-def _stub_owner_package(owner_module: types.ModuleType, stub_path: Path) -> str:
+def _stub_owner_package(owner_module: types.ModuleType, path: Path) -> str:
     # Native submodules expose ``__package__ = None``; derive the package from the stub's name
     # so relative imports inside ``<child>.pyi`` resolve relative to its parent package.
     if owner_package := getattr(owner_module, "__package__", None):
         return owner_package
     owner_name = owner_module.__name__
-    if stub_path.name == "__init__.pyi":
+    if path.name == "__init__.pyi":
         return owner_name
     return owner_name.rpartition(".")[0]
 
@@ -204,10 +204,9 @@ def _get_module(obj: Any) -> types.ModuleType | None:
     return None
 
 
-def _find_stub_path(obj: Any) -> Path | None:
-    if info := _find_stub_owner(obj):
-        return info[0]
-    return None
+def stub_path(obj: Any) -> Path | None:
+    """Return the stub file describing ``obj``, whose edits change what its documentation shows."""
+    return info[0] if (info := _find_stub_owner(obj)) else None
 
 
 def _find_stub_owner(obj: Any) -> tuple[Path, types.ModuleType] | None:
@@ -263,13 +262,18 @@ def _find_native_submodule_stub(module: types.ModuleType) -> Path | None:
     return None
 
 
-def _parse_stub_ast(stub_path: Path) -> ast.Module | None:
-    if stub_path not in _STUB_AST_CACHE:
+def _parse_stub_ast(path: Path) -> ast.Module | None:
+    # keyed on the modification time too, so a stub edited while the process runs is read again
+    try:
+        key = (path, path.stat().st_mtime_ns)
+    except OSError:
+        return None
+    if key not in _STUB_AST_CACHE:
         try:
-            _STUB_AST_CACHE[stub_path] = ast.parse(stub_path.read_text(encoding="utf-8"))
-        except (OSError, SyntaxError):
-            _STUB_AST_CACHE[stub_path] = None
-    return _STUB_AST_CACHE[stub_path]
+            _STUB_AST_CACHE[key] = ast.parse(path.read_text(encoding="utf-8"))
+        except SyntaxError:
+            _STUB_AST_CACHE[key] = None
+    return _STUB_AST_CACHE[key]
 
 
 _TYPE_ALIAS_ANNOTATIONS = {"TypeAlias", "typing.TypeAlias", "typing_extensions.TypeAlias"}
@@ -379,7 +383,7 @@ def _backfill_descriptor_annotation(obj: Any) -> str | None:
     name = getattr(obj, "__name__", None)
     if objclass is None or not name:
         return None
-    if (stub_path := _find_stub_path(obj)) is None or (tree := _parse_stub_ast(stub_path)) is None:
+    if (path := stub_path(obj)) is None or (tree := _parse_stub_ast(path)) is None:
         return None
     node = _find_ast_node(tree.body, objclass.__qualname__.split("."))
     if not isinstance(node, ast.ClassDef):
@@ -409,4 +413,4 @@ def _extract_class_annotations(node: ast.ClassDef) -> dict[str, str]:
     return result
 
 
-__all__: list[str] = []
+__all__ = ["stub_path"]

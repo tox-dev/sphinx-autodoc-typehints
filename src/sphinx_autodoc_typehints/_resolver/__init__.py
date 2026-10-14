@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from ._attrs import backfill_attrs_annotations
 from ._instance_vars import get_instance_var_annotations
+from ._stubs import stub_path
 from ._type_comments import backfill_type_hints
 from ._type_hints import (
     get_all_type_hints,
@@ -23,4 +24,5 @@ __all__ = [
     "get_obj_location",
     "resolve_string_annotations",
     "resolve_type_guarded_imports",
+    "stub_path",
 ]
