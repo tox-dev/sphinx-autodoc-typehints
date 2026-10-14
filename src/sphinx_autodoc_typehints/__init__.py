@@ -42,7 +42,7 @@ from ._deferred import ALIAS_CHOICE_ROLE, DeferAliasChoice, alias_choice_role, m
 from ._deprecated import DEPRECATED_DIRECTIVE, DeprecatedDirective, inject_deprecation
 from ._formats import detect_format
 from ._formats._numpydoc import _convert_numpydoc_to_sphinx_fields  # ruff:ignore[unused-import]
-from ._formats._sphinx import _has_yields_section, _is_generator_type, _strip_inline_param_type
+from ._formats._sphinx import _has_yields_section, _is_generator_type, _last_paragraph_end, _strip_inline_param_type
 from ._intersphinx import build_type_mapping
 from ._parser import unescape
 from ._resolver import (
@@ -752,15 +752,16 @@ def _type_combined_field_entry(app: Sphinx, lines: list[str], arg_name: str, ann
     elif app.config.typehints_defaults == "braces":
         lines[at] = f"{lines[at][:type_end]}{formatted_default}{lines[at][type_end:]}"
     else:
-        end = at
-        while (
-            end + 1 < len(lines)
-            and lines[end + 1][:1].isspace()
-            and lines[end + 1].strip()
-            and not lines[end + 1].lstrip().startswith("* **")
-        ):
-            end += 1
-        lines[end] += formatted_default
+        # the entry runs until the next entry or the end of the field, and its last plain paragraph takes the default
+        entry_end = next(
+            (
+                after
+                for after in range(at + 1, len(lines))
+                if lines[after].strip() and (not lines[after][:1].isspace() or lines[after].lstrip().startswith("* **"))
+            ),
+            len(lines),
+        )
+        lines[_last_paragraph_end(lines[:entry_end], at)] += formatted_default
     return True
 
 
