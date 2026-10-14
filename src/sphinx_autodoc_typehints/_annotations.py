@@ -130,7 +130,7 @@ def format_annotation(annotation: Any, config: Config, *, short_literals: bool =
             if not stack:
                 return rendered
             continue
-        if (alias := _underlying_type_alias(child)) is not None and id(alias) in active:
+        if (alias := _underlying_type_alias(child)) is not None and id(alias) in active and _reaches_itself(alias):
             rendered = _type_alias_crossref(alias, config) or _alias_name_reference(alias, config)
             continue
         stack.append((_format_node(child, config, short_literals=short_literals), child))
@@ -454,6 +454,26 @@ def _underlying_type_alias(annotation: Any) -> TypeAliasType | None:
     if isinstance(origin := get_origin(annotation), TypeAliasType):
         return origin
     return None
+
+
+def _reaches_itself(alias: TypeAliasType) -> bool:
+    """
+    Whether the alias' value leads back to the alias, directly or through other aliases.
+
+    Only such an alias can recurse; one that merely nests in its own arguments, as ``Pair[Pair[int]]``, expands fully.
+    An alias whose value does not evaluate yet is treated as recursive, the safe answer.
+    """
+    seen: set[int] = set()
+    pending = [alias]
+    while pending:
+        if (inner := _underlying_type_alias(node := pending.pop())) is not None:
+            if (inner is alias and seen) or not _alias_value_evaluates(inner):
+                return True
+            if id(inner) not in seen:
+                seen.add(id(inner))
+                pending.append(inner.__value__)
+        pending.extend(get_args(node))
+    return False
 
 
 def _is_type_alias(annotation: Any) -> bool:
