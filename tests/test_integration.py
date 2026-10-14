@@ -1597,7 +1597,7 @@ def docstring_with_definition_list_after_params_no_blank_line(param: int) -> Non
 
 @expected(
     """
-    mod.has_typevar(param)
+    mod.has_typevar[T](param)
 
        Do something.
 
@@ -1813,7 +1813,7 @@ Unformatted = TypeVar("Unformatted")
 
 @expected(
     """
-    mod.typehints_formatter_applied_to_signature(param: Formatted) -> Formatted
+    mod.typehints_formatter_applied_to_signature[Unformatted](param: Formatted) -> Formatted
 
        Do nothing
 
