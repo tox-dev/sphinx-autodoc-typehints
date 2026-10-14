@@ -274,6 +274,7 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
             documented_elsewhere=_params_documented_elsewhere(app, name, original_obj, signature, lines),
         )
         _inject_ivar_types(ivar_annotations, app, lines)
+        _inject_attribute_types(ivar_annotations, app, lines)
         inject_extra_items(app, original_obj, lines)
         _inject_override(app, what, name, declared, lines)
 
@@ -939,6 +940,30 @@ def _inject_ivar_types(ivar_annotations: dict[str, Any], app: Sphinx, lines: lis
         )
         lines.insert(line_index, f":vartype {attr_name}: {formatted}")
         line_index += 2
+
+
+def _inject_attribute_types(ivar_annotations: dict[str, Any], app: Sphinx, lines: list[str]) -> None:
+    """
+    Type the ``.. attribute::`` entries napoleon writes for an ``Attributes`` section with ``napoleon_use_ivar`` off.
+
+    Napoleon types them from the class body's annotations; one annotated where ``__init__`` assigns it gets its type
+    here, as a ``:type:`` field closing the entry the way napoleon writes one.
+    """
+    at = 0
+    while at < len(lines):
+        if not (directive := re.match(r"\.\. attribute:: (\w+)$", lines[at])) or directive[1] not in ivar_annotations:
+            at += 1
+            continue
+        end = at + 1
+        while end < len(lines) and (not lines[end] or lines[end][:1].isspace()):
+            end += 1
+        while not lines[end - 1].strip():
+            end -= 1
+        if not any(line.strip().startswith(":type:") for line in lines[at:end]):
+            short_literals = app.config.python_display_short_literal_types
+            hint = format_annotation(ivar_annotations[directive[1]], app.config, short_literals=short_literals)
+            lines[end:end] = ["", f"   :type: {add_type_css_class(hint)}"]
+        at = end
 
 
 def _extract_doc_description(annotation: Any) -> str | None:
