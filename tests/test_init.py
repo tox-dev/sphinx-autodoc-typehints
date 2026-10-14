@@ -996,6 +996,23 @@ def test_process_docstring_leaves_an_unannotated_combined_entry_alone() -> None:
     assert lines == [":Parameters: **a** -- the a"]
 
 
+@pytest.mark.parametrize(
+    "outside",
+    [
+        pytest.param([":Overloads:", "   * **a** (int) → int", ""], id="overload"),
+        pytest.param(["Example::", "", "    **a** is bold here", ""], id="code-example"),
+        pytest.param([":returns:", "   * **a** (int)", ""], id="named-return"),
+    ],
+)
+def test_process_docstring_types_only_entries_of_a_combined_field(outside: list[str]) -> None:
+    def documented(a: int = 1, b: str = "x") -> None: ...
+
+    lines = [*outside, ":Parameters: **b** -- the b"]
+    app = make_docstring_app(typehints_document_rtype=False, typehints_defaults="comma")
+    process_docstring(app, "function", "mod.documented", documented, None, lines)
+    assert lines == [*outside, f":Parameters: **b** ({_STR_TYPE}, default: ``'x'``) -- the b"]
+
+
 class _Mode(enum.Enum):
     FAST = 1
 
