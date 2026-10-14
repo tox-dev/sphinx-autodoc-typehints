@@ -228,17 +228,18 @@ To include default values in your docs, set `typehints_defaults` to one of three
 # "param (int, default: 1) -- description"
 typehints_defaults = "comma"
 
-# "param (int) -- description (default: 1)"
+# "param (int (default: 1)) -- description"
 typehints_defaults = "braces"
 
 # "param (int) -- description (default: 1)"  (at end of text)
 typehints_defaults = "braces-after"
 ```
 
-`None` and `False` leave defaults out, and any other value stops the build with a configuration error. With
-`"braces-after"`, the default closes the last plain paragraph of the description. A list, a directive such as
-`.. note::`, or a literal block at the end of the description stays as written, and a paragraph introducing a literal
-block keeps its `::` last.
+`None` and `False` leave defaults out, and any other value stops the build with a configuration error. A parameter typed
+only in its docstring, by a `:type:` field, as `:param int x:` or in napoleon's combined `Parameters` field, gets the
+default next to that type the same way. With `"braces-after"`, the default closes the last plain paragraph of the
+description. A list, a directive such as `.. note::`, or a literal block at the end of the description stays as written,
+and a paragraph introducing a literal block keeps its `::` last.
 
 ### Document `**kwargs` typed with a `TypedDict`
 

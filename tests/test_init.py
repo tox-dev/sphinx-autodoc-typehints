@@ -584,6 +584,18 @@ def test_process_docstring_replaces_preexisting_multiline_type() -> None:
             [":param y: the y", ":type y: dict[str,", "    int], default: ``1``"],
             id="multi-line-type",
         ),
+        pytest.param(
+            [":param int y: the y"], "comma", [":type y: int, default: ``1``", ":param y: the y"], id="inline-comma"
+        ),
+        pytest.param(
+            [":param int y: the y"], "braces", [":type y: int (default: ``1``)", ":param y: the y"], id="inline-braces"
+        ),
+        pytest.param(
+            [":param int y: the y"],
+            "braces-after",
+            [":type y: int", ":param y: the y (default: ``1``)"],
+            id="inline-braces-after",
+        ),
     ],
 )
 def test_process_docstring_keeps_the_default_of_a_docstring_typed_param(
@@ -730,6 +742,30 @@ _FLOAT_TYPE: Final = r":sphinx_autodoc_typehints_type:`\:py\:class\:\`float\``"
             ],
             id="braces-after-default",
         ),
+        pytest.param(
+            [":Parameters: **b** (*str*) -- the b"],
+            {"typehints_defaults": "comma"},
+            [":Parameters: **b** (*str*, default: ``'x'``) -- the b"],
+            id="typed-in-the-docstring-comma-default",
+        ),
+        pytest.param(
+            [":Parameters: **b** (*str*) -- the b"],
+            {"typehints_defaults": "braces"},
+            [":Parameters: **b** (*str*) (default: ``'x'``) -- the b"],
+            id="typed-in-the-docstring-braces-default",
+        ),
+        pytest.param(
+            [":Parameters: **b** (*str*) -- the b"],
+            {"typehints_defaults": "braces-after"},
+            [":Parameters: **b** (*str*) -- the b (default: ``'x'``)"],
+            id="typed-in-the-docstring-braces-after-default",
+        ),
+        pytest.param(
+            [":Parameters: **b** (*str* -- the b"],
+            {"typehints_defaults": "comma"},
+            [":Parameters: **b** (*str* -- the b"],
+            id="typed-in-the-docstring-unclosed",
+        ),
     ],
 )
 def test_process_docstring_types_a_combined_parameter_field(
@@ -740,6 +776,15 @@ def test_process_docstring_types_a_combined_parameter_field(
     app = make_docstring_app(typehints_document_rtype=False, **overrides)
     process_docstring(app, "function", "mod.documented", documented, None, lines)
     assert lines == expected
+
+
+def test_process_docstring_leaves_an_unannotated_combined_entry_alone() -> None:
+    def documented(a="x") -> None: ...  # ruff:ignore[missing-type-function-argument]  # the case under test
+
+    lines = [":Parameters: **a** -- the a"]
+    app = make_docstring_app(typehints_document_rtype=False, typehints_defaults="comma")
+    process_docstring(app, "function", "mod.documented", documented, None, lines)
+    assert lines == [":Parameters: **a** -- the a"]
 
 
 class _Mode(enum.Enum):

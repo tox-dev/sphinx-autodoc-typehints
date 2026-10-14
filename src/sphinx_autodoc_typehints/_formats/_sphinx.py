@@ -78,7 +78,8 @@ def _line_is_param_line_for_arg(line: str, arg_name: str) -> bool:
     return any(doc_name.endswith(f" {prefix}{arg_name}") for prefix in ("", "\\*", "\\**", "\\*\\*"))
 
 
-def _strip_inline_param_type(line: str, arg_name: str) -> str | None:
+def _strip_inline_param_type(line: str, arg_name: str) -> tuple[str, str] | None:
+    """Split the type written in a ``:param type name:`` field off, returning the field without it and that type."""
     parts = line.split(":", maxsplit=2)
     if len(parts) != 3:  # ruff:ignore[magic-value-comparison]
         return None
@@ -86,8 +87,8 @@ def _strip_inline_param_type(line: str, arg_name: str) -> str | None:
     for prefix in ("", "\\*", "\\**", "\\*\\*"):
         suffix = f" {prefix}{arg_name}"
         if directive_and_name.endswith(suffix):
-            keyword = directive_and_name.split(maxsplit=1)[0]
-            return f":{keyword} {prefix}{arg_name}:{parts[2]}"
+            keyword, _, inline_type = directive_and_name.removesuffix(suffix).partition(" ")
+            return f":{keyword} {prefix}{arg_name}:{parts[2]}", inline_type.strip()
     return None
 
 
