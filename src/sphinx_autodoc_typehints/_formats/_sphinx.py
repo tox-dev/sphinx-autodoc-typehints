@@ -9,6 +9,8 @@ This is the default fallback format when no other format is detected.
 from __future__ import annotations
 
 import collections.abc
+import re
+from itertools import pairwise
 from typing import TYPE_CHECKING, Any
 
 from docutils.frontend import get_default_settings
@@ -244,14 +246,12 @@ class SphinxFieldListFormat(DocstringFormat):
         after: bool,
     ) -> str:
         if after:
-            nlines = len(lines)
-            next_index = insert_index + 1
-            append_index = insert_index
-            while next_index < nlines and (not lines[next_index] or lines[next_index].startswith(" ")):
-                if lines[next_index]:
-                    append_index = next_index
-                next_index += 1
-            lines[append_index] += formatted_default
+            end = _last_paragraph_end(lines, insert_index)
+            # a paragraph introducing a literal block keeps its :: last
+            if (line := lines[end]).endswith("::"):
+                lines[end] = f"{line[:-2].rstrip()}{formatted_default}::"
+            else:
+                lines[end] += formatted_default
         else:
             type_annotation += formatted_default
         return type_annotation
@@ -263,3 +263,36 @@ class SphinxFieldListFormat(DocstringFormat):
             return None
         _, arg_name = result
         return arg_name
+
+
+def _last_paragraph_end(lines: list[str], at: int) -> int:
+    """
+    Find the line ending the last plain paragraph of the description the field at ``at`` starts.
+
+    A list, a directive such as a note, a literal block, or deeper indented text after it is not a place for the
+    default, which would render inside that block.
+    """
+    blocks: list[list[int]] = [[at]]
+    index = at + 1
+    while index < len(lines) and (not lines[index].strip() or lines[index][0].isspace()):
+        if not lines[index].strip():
+            blocks.append([])
+        else:
+            blocks[-1].append(index)
+        index += 1
+    blocks = [block for block in blocks if block]
+    indent = min((_indent(lines[line_at]) for block in blocks for line_at in block if line_at != at), default=0)
+    end = blocks[0][-1]
+    for previous, block in pairwise(blocks):
+        first = lines[block[0]]
+        if not (
+            lines[previous[-1]].endswith("::")
+            or _indent(first) > indent
+            or re.match(r"\s*(?:[-*+]|\d+[.)]|#\.|\.\.)\s", first)
+        ):
+            end = block[-1]
+    return end
+
+
+def _indent(line: str) -> int:
+    return len(line) - len(line.lstrip())

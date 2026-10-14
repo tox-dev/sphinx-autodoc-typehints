@@ -612,6 +612,51 @@ def test_process_docstring_braces_after_default_stays_on_its_param() -> None:
 
 
 _INT_TYPE: Final = r":sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``"
+
+
+@pytest.mark.parametrize(
+    ("lines", "expected"),
+    [
+        pytest.param(
+            [":param a: the a, for example::", "", "    a = 5"],
+            [":param a: the a, for example (default: ``1``)::", "", "    a = 5"],
+            id="literal-block",
+        ),
+        pytest.param(
+            [":param a: one of:", "", "    - x", "    - y"],
+            [":param a: one of: (default: ``1``)", "", "    - x", "    - y"],
+            id="bullet-list",
+        ),
+        pytest.param(
+            [":param a: one of:", "", "    1. x", "    2. y"],
+            [":param a: one of: (default: ``1``)", "", "    1. x", "    2. y"],
+            id="enumerated-list",
+        ),
+        pytest.param(
+            [":param a: the a", "", "    .. note:: careful"],
+            [":param a: the a (default: ``1``)", "", "    .. note:: careful"],
+            id="directive",
+        ),
+        pytest.param(
+            [":param a: the a", "    more", "", "        quoted"],
+            [":param a: the a", "    more (default: ``1``)", "", "        quoted"],
+            id="deeper-indented-block",
+        ),
+        pytest.param(
+            [":param a: the a", "", "    second paragraph"],
+            [":param a: the a", "", "    second paragraph (default: ``1``)"],
+            id="last-plain-paragraph",
+        ),
+    ],
+)
+def test_process_docstring_braces_after_default_ends_the_last_paragraph(lines: list[str], expected: list[str]) -> None:
+    def func(a: int = 1) -> None: ...
+
+    app = make_docstring_app(typehints_defaults="braces-after", typehints_document_rtype=False)
+    process_docstring(app, "function", "mod.func", func, None, lines)
+    assert lines == [f":type a: {_INT_TYPE}", *expected]
+
+
 _STR_TYPE: Final = r":sphinx_autodoc_typehints_type:`\:py\:class\:\`str\``"
 _FLOAT_TYPE: Final = r":sphinx_autodoc_typehints_type:`\:py\:class\:\`float\``"
 
