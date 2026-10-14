@@ -79,7 +79,7 @@ from .patches import _OVERLOADS_CACHE, add_signature_lines, install_patches
 from .version import __version__
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator, Mapping
+    from collections.abc import Callable, Iterator
 
     from docutils.nodes import Node
     from docutils.parsers.rst import states
@@ -574,24 +574,7 @@ def _resolve_overloads(obj: Any) -> list[inspect.Signature] | None:
     if module_name not in _OVERLOADS_CACHE:
         with suppress(PycodeError):
             ModuleAnalyzer.for_module(module_name).analyze()
-    if not (overloads := _OVERLOADS_CACHE.get(module_name, {}).get(qualname)):
-        return None
-    implementation = sphinx_signature(obj).parameters
-    return [
-        overload.replace(
-            parameters=[_implementation_default(param, implementation) for param in overload.parameters.values()]
-        )
-        for overload in overloads
-    ]
-
-
-def _implementation_default(
-    param: inspect.Parameter, implementation: Mapping[str, inspect.Parameter]
-) -> inspect.Parameter:
-    """Show the default an overload writes as ``...``, which tells a reader nothing, as the implementation has it."""
-    if param.default != "..." or (actual := implementation.get(param.name)) is None or actual.default is actual.empty:
-        return param
-    return param.replace(default=actual.default)
+    return _OVERLOADS_CACHE.get(module_name, {}).get(qualname) or None
 
 
 def _class_member_type(name: str) -> type | None:

@@ -324,15 +324,3 @@ class ClassWithOverloadedInitOptingOut:
 
         Constructor docstring.
         """
-
-
-@overload
-def overloaded_options(value: int) -> int: ...
-
-
-@overload
-def overloaded_options(value: str, *, flag: bool = ...) -> str: ...
-
-
-def overloaded_options(value, **options):
-    """Overloaded function taking options."""

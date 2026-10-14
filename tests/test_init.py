@@ -607,7 +607,7 @@ def test_overloads_rendered_in_docstring(
             "autofunction:: dummy_module.overloaded",
             """\
 dummy_module.overloaded(value: int) -> DataClass
-dummy_module.overloaded(value: str, *, strict=False) -> MyNamedTuple
+dummy_module.overloaded(value: str, *, strict=...) -> MyNamedTuple
 
    Overloaded function.
 """,
@@ -676,16 +676,6 @@ dummy_module.overloaded_opt_out(value: int | str)
             id="no-overloads",
         ),
         pytest.param(
-            "autofunction:: dummy_module.overloaded_options",
-            """\
-dummy_module.overloaded_options(value: int) -> int
-dummy_module.overloaded_options(value: str, *, flag: bool = ...) -> str
-
-   Overloaded function taking options.
-""",
-            id="default-the-implementation-lacks",
-        ),
-        pytest.param(
             "autofunction:: dummy_module.overloaded(value)",
             """\
 dummy_module.overloaded(value)
@@ -695,7 +685,7 @@ dummy_module.overloaded(value)
    Overloads:
       * **value** ("int") → "DataClass"
 
-      * **value** ("str"), *, **strict** = "False" → "MyNamedTuple"
+      * **value** ("str"), *, **strict** = "..." → "MyNamedTuple"
 """,
             id="written-signature",
         ),
@@ -728,10 +718,10 @@ def test_overloads_written_signature_keeps_to_its_own_entry(
            Overloads:
               * **value** ("int") → "DataClass"
 
-              * **value** ("str"), *, **strict** = "False" → "MyNamedTuple"
+              * **value** ("str"), *, **strict** = "..." → "MyNamedTuple"
 
         dummy_module.overloaded(value: int) -> DataClass
-        dummy_module.overloaded(value: str, *, strict=False) -> MyNamedTuple
+        dummy_module.overloaded(value: str, *, strict=...) -> MyNamedTuple
 
            Overloaded function.
         """)
