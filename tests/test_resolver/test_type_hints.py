@@ -13,11 +13,23 @@ from collections.abc import Iterator, Mapping, Sequence
 from csv import Error
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Final, ParamSpec, Protocol, TypeAliasType, TypeVar, TypeVarTuple, Union, get_args, get_origin
+from typing import (
+    Any,
+    Final,
+    ParamSpec,
+    Protocol,
+    TypeAliasType,
+    TypeVar,
+    TypeVarTuple,
+    Union,
+    get_args,
+    get_origin,
+)
 from unittest.mock import MagicMock, patch
 
 import pytest
 from conftest import make_docstring_app
+from sphinx.ext.autodoc.mock import mock
 
 from sphinx_autodoc_typehints import process_docstring
 from sphinx_autodoc_typehints._annotations import MyTypeAliasForwardRef
@@ -78,6 +90,43 @@ def test_process_docstring_warns_on_an_unresolvable_annotation(
     assert [(vars(record)["subtype"], str(vars(record)["args"][-1])) for record in warnings] == [
         ("forward_reference", message)
     ]
+
+
+with mock(["_sat_mocked"]):
+    # a module autodoc_mock_imports stands in for
+    Gen = importlib.import_module("_sat_mocked").Gen
+
+
+def _mocked_union(value: Gen[int] | None) -> None: ...
+
+
+def _mocked_union_with_arithmetic(value: Gen[3 * 3] | None) -> None: ...
+
+
+_MOCKED_LINK: Final = r"\:py\:class\:\`\~\_sat\_mocked.Gen\`"
+
+
+@pytest.mark.parametrize(
+    "func",
+    [pytest.param(_mocked_union, id="plain"), pytest.param(_mocked_union_with_arithmetic, id="beside-arithmetic")],
+)
+def test_process_docstring_links_a_mocked_type_in_a_pipe_union(func: types.FunctionType) -> None:
+    lines = [":param value: the value"]
+    app = make_docstring_app(typehints_document_rtype=False)
+    process_docstring(app, "function", "mod.mocked", func, None, lines)
+    assert _MOCKED_LINK in lines[0]
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason="annotations evaluate lazily from Python 3.14")
+def test_process_docstring_links_a_lazy_mocked_type_in_a_pipe_union() -> None:  # pragma: >=3.14 cover
+    namespace: dict[str, Any] = {"__name__": __name__, "Gen": Gen}
+    # dont_inherit keeps this file's `from __future__ import annotations` out, so the annotation stays lazy
+    source = "def mocked(value: Gen[int] | None) -> None: ..."
+    exec(compile(source, "<mocked>", "exec", dont_inherit=True), namespace)  # ruff:ignore[exec-builtin]
+    lines = [":param value: the value"]
+    app = make_docstring_app(typehints_document_rtype=False)
+    process_docstring(app, "function", "mod.mocked", namespace["mocked"], None, lines)
+    assert _MOCKED_LINK in lines[0]
 
 
 class _Shape:

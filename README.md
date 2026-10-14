@@ -383,11 +383,11 @@ module-level guard counts, whether it names `TYPE_CHECKING` directly or through 
 `t.TYPE_CHECKING`, including the `else` branch of `if not TYPE_CHECKING:` and tests that combine it with `and` or `or`.
 When the block imports a dependency your docs environment lacks, the extension mocks it the way
 [`autodoc_mock_imports`](https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#confval-autodoc_mock_imports)
-would, so its types still render as cross-references; install it when you want those references to resolve. That
-includes a relative import of a sibling module that is absent. An import statement raises a warning when it fails for
-another reason, such as a dependency you have installed but that fails to import. A guarded statement that only a type
-checker accepts, and that imports nothing, is skipped silently, and the names it would define still work in annotations.
-Fix the environment, or suppress the warning:
+would, so its types still render as cross-references, in a pipe union such as `Thing | None` too; install it when you
+want those references to resolve. That includes a relative import of a sibling module that is absent. An import
+statement raises a warning when it fails for another reason, such as a dependency you have installed but that fails to
+import. A guarded statement that only a type checker accepts, and that imports nothing, is skipped silently, and the
+names it would define still work in annotations. Fix the environment, or suppress the warning:
 
 ```python
 suppress_warnings = ["sphinx_autodoc_typehints.guarded_import"]
