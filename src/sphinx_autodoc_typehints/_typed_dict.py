@@ -27,7 +27,7 @@ def typed_dict_keys(typed_dict: Any, localns: Mapping[str, Any]) -> dict[str, An
     if not hasattr(origin := get_origin(typed_dict) or typed_dict, "__optional_keys__"):
         return {}
     try:
-        hints = _bound_hints(typed_dict, localns)
+        hints = _Hierarchy(localns).bound_hints(typed_dict)
     except Exception:  # ruff:ignore[blind-except]  # an annotation runs user code, which may raise anything
         return {}
     return {
@@ -35,46 +35,87 @@ def typed_dict_keys(typed_dict: Any, localns: Mapping[str, Any]) -> dict[str, An
     }
 
 
-def _bound_hints(typed_dict: Any, localns: Mapping[str, Any]) -> dict[str, Any]:
+class _Hierarchy:
     """
-    Return the annotations of a TypedDict, or of one it subscripts, with the type arguments bound.
+    Read the keys of the TypedDicts in a hierarchy, each class and each base a class statement names only once.
 
-    A TypedDict lists the keys of its bases as its own, with their type parameters unbound, and keeps no base in its
-    MRO, so each base the class statement names supplies its keys bound by the arguments it is given there.
+    A diamond reaches a base along several paths, and walking every path is exponential in the depth of the hierarchy.
     """
-    origin = get_origin(typed_dict) or typed_dict
-    hints: dict[str, Any] = {}
-    # the first base in the MRO decides a key two bases declare, so later bases merge in first
-    for base in reversed(_typed_dict_bases(origin)):
-        hints |= _bound_hints(base, localns)
-    # a key the class redeclares, as a ReadOnly key narrows its type (PEP 705), reads as the class declares it
-    hints |= _split_hints(origin, localns)[1]
-    arguments = type_arguments(origin, typed_dict)
-    return {key: specialize(annotation, arguments) for key, annotation in hints.items()}
+
+    def __init__(self, localns: Mapping[str, Any]) -> None:
+        self._localns = localns
+        # keyed by identity, as a subscripted base hashes its arguments, which Annotated metadata may not support
+        self._bound: dict[int, dict[str, Any]] = {}
+        self._keys: dict[type, tuple[dict[str, Any], dict[str, Any]]] = {}
+        self._scopes: dict[type, dict[str, Any]] = {}
+
+    def bound_hints(self, typed_dict: Any) -> dict[str, Any]:
+        """
+        Return the annotations of a TypedDict, or of one it subscripts, with the type arguments bound.
+
+        A TypedDict lists the keys of its bases as its own, with their type parameters unbound, and keeps no base in
+        its MRO, so each base the class statement names supplies its keys bound by the arguments it is given there.
+        """
+        if (found := self._bound.get(id(typed_dict))) is not None:
+            return found
+        origin = get_origin(typed_dict) or typed_dict
+        hints: dict[str, Any] = {}
+        # the first base in the MRO decides a key two bases declare, so later bases merge in first
+        for base in reversed(_typed_dict_bases(origin)):
+            hints |= self.bound_hints(base)
+        # a key the class redeclares, as a ReadOnly key narrows its type (PEP 705), reads as the class declares it
+        hints |= self._split(origin)[1]
+        arguments = type_arguments(origin, typed_dict)
+        found = self._bound[id(typed_dict)] = {key: specialize(hint, arguments) for key, hint in hints.items()}
+        return found
+
+    def _split(self, typed_dict: type) -> tuple[dict[str, Any], dict[str, Any]]:
+        """
+        Return every key of a TypedDict and the keys it declares itself, all unbound.
+
+        Its annotations hold each key of its bases as the last base declaring it does. The keys of a base come from that
+        base's own declarations, as autodoc reassigning a base's annotations on Python 3.14 leaves a subclass reading
+        none from it.
+        """
+        if (found := self._keys.get(typed_dict)) is not None:
+            return found
+        inherited: dict[str, Any] = {}
+        for base in _typed_dict_bases(typed_dict):
+            inherited |= self._split(get_origin(base) or base)[0]
+        # a key written as a string names the type parameters of the class declaring it, which may be a base
+        localns = {**self._localns, **self._scope(typed_dict)}
+        hints = get_type_hints(typed_dict, localns=localns, include_extras=True)
+        own = {key: hint for key, hint in hints.items() if key not in inherited or not _same(inherited[key], hint)}
+        found = self._keys[typed_dict] = inherited | own, own
+        return found
+
+    def _scope(self, typed_dict: type) -> dict[str, Any]:
+        if (found := self._scopes.get(typed_dict)) is not None:
+            return found
+        scope: dict[str, Any] = {}
+        for base in _typed_dict_bases(typed_dict):
+            scope |= self._scope(get_origin(base) or base)
+        params = {param.__name__: param for param in getattr(typed_dict, "__parameters__", ())}
+        found = self._scopes[typed_dict] = scope | params
+        return found
 
 
-def _split_hints(typed_dict: type, localns: Mapping[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+def _same(left: Any, right: Any) -> bool:
     """
-    Split the annotations of a TypedDict into the keys of its bases and the keys it declares itself, all unbound.
+    Tell whether two annotations are the same, comparing them part by part.
 
-    Its annotations hold each key of its bases as the last base declaring it does. The keys of a base come from that
-    base's own declarations, as autodoc reassigning a base's annotations on Python 3.14 leaves a subclass reading none
-    from it.
+    A string annotation evaluates anew for each class holding it, so the parts may be equal objects rather than one,
+    and comparing a whole ``Annotated`` asks its metadata, such as an array, for a truth value it may not have.
     """
-    inherited: dict[str, Any] = {}
-    for base in _typed_dict_bases(typed_dict):
-        base_inherited, base_own = _split_hints(get_origin(base) or base, localns)
-        inherited |= base_inherited | base_own
-    # a key written as a string names the type parameters of the class declaring it, which may be a base
-    hints = get_type_hints(typed_dict, localns={**localns, **_type_params_in_scope(typed_dict)}, include_extras=True)
-    return inherited, {key: annotation for key, annotation in hints.items() if inherited.get(key, _OPEN) != annotation}
-
-
-def _type_params_in_scope(typed_dict: type) -> dict[str, Any]:
-    scope: dict[str, Any] = {}
-    for base in _typed_dict_bases(typed_dict):
-        scope |= _type_params_in_scope(get_origin(base) or base)
-    return scope | {param.__name__: param for param in getattr(typed_dict, "__parameters__", ())}
+    if left is right:
+        return True
+    if (origin := get_origin(left)) is not None:
+        args, other = get_args(left), get_args(right)
+        return origin is get_origin(right) and len(args) == len(other) and all(map(_same, args, other))
+    try:
+        return type(left) is type(right) and (left == right) is True
+    except Exception:  # ruff:ignore[blind-except]  # metadata compares through user code, which may raise anything
+        return False
 
 
 def _typed_dict_bases(typed_dict: type) -> list[Any]:

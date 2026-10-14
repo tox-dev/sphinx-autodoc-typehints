@@ -118,3 +118,32 @@ def test_typed_dict_unpacked_key_redeclared_over_its_base(app: SphinxTestApp, wr
 
     lines = [line.strip() for line in (Path(app.outdir) / "index.txt").read_text().splitlines()]
     assert '**size** ("int") -- the size' in lines
+
+
+@pytest.mark.sphinx("text", testroot="typed-dict")
+def test_typed_dict_unpacked_key_with_metadata_that_cannot_be_compared(
+    app: SphinxTestApp, write_rst: Callable[[str], None], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # a fresh import evaluates the metadata anew for each class holding it
+    monkeypatch.delitem(sys.modules, "typed_dict_module", raising=False)
+    write_rst(".. autofunction:: typed_dict_module.pack")
+    app.build()
+
+    lines = [line.strip() for line in (Path(app.outdir) / "index.txt").read_text().splitlines()]
+    assert [line for line in lines if line.startswith("* **")] == [
+        '* **width** ("int") -- the width',
+        '* **height** ("int") -- the height',
+    ]
+
+
+@pytest.mark.sphinx("text", testroot="typed-dict")
+def test_typed_dict_unpacked_from_diamonds_reads_each_class_once(
+    app: SphinxTestApp, write_rst: Callable[[str], None], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # importing runs no annotation, so what the build reads starts the count
+    monkeypatch.delitem(sys.modules, "typed_dict_module", raising=False)
+    write_rst(".. autofunction:: typed_dict_module.nest")
+    app.build()
+
+    # Root and the diamonds over it, each with its left and right
+    assert sys.modules["typed_dict_module"].Counted.created == 1 + 3 * 10
