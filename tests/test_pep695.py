@@ -790,6 +790,43 @@ def test_eager_alias_documented_after_its_use_shows_its_value_in_the_signature(a
     assert "mod_eager.count_eager(amount: int, limit: int)" in result
 
 
+def _special_formatter(annotation: Any, _config: Config) -> str | None:
+    return "**SPECIAL**" if getattr(annotation, "__name__", None) == "Special" else None
+
+
+@pytest.mark.parametrize(
+    ("index", "expected"),
+    [
+        pytest.param(
+            ".. autofunction:: mod_eager.describe\n", '**value** ("int") -- an int value', id="doc-description"
+        ),
+        pytest.param(
+            ".. autoclass:: mod_eager.Special\n\n.. autofunction:: mod_eager.take_special\n",
+            "**value** (**SPECIAL**) -- The value",
+            id="formatter",
+        ),
+        pytest.param(
+            ".. autoclass:: mod_eager.Sub\n   :members:\n   :inherited-members:\n",
+            '**value** ("int") -- The value',
+            id="bound-type-parameter",
+        ),
+        pytest.param(".. autofunction:: mod_eager.count_up\n", 'Return type:\n"str"', id="generator-return"),
+        pytest.param(
+            ".. autodata:: mod_eager.Ticket\n\n.. autofunction:: mod_eager.take_ticket\n",
+            '**number** ("Ticket" ("int"))',
+            id="documented-newtype",
+        ),
+    ],
+)
+@pytest.mark.sphinx("text", testroot="integration", confoverrides={"typehints_formatter": _special_formatter})
+def test_alias_written_as_a_global_name_keeps_its_type(app: SphinxTestApp, index: str, expected: str) -> None:
+    (Path(app.srcdir) / "index.rst").write_text(index)
+    app.build()
+
+    lines = (Path(app.srcdir) / "_build/text/index.txt").read_text().splitlines()
+    assert expected in "\n".join(line.strip() for line in lines)
+
+
 @pytest.mark.sphinx("text", testroot="integration")
 def test_alias_documented_in_a_later_document(
     app: SphinxTestApp,

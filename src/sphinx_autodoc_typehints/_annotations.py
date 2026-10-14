@@ -188,7 +188,10 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
     """
     typehints_formatter: Callable[..., str] | None = getattr(config, "typehints_formatter", None)
     if typehints_formatter is not None:
-        formatted = typehints_formatter(annotation, config)
+        # the written name is ours to show, the formatter sees the type it stands for
+        formatted = typehints_formatter(
+            annotation.value if isinstance(annotation, WrittenTypeAlias) else annotation, config
+        )
         if formatted is not None:
             return formatted
 
@@ -237,7 +240,8 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
             parts = module_prefix.split(".")
             scopes = [f"{'.'.join(parts[:end])}.{annotation.name}" for end in range(len(parts), 0, -1)]
             for candidate in reversed([*scopes, annotation.name]):
-                rendered = defer_alias_choice(config, f":py:type:`{prefix}{candidate}`", rendered) or rendered
+                linked = f":py:type:`{prefix}{candidate}`"
+                rendered = defer_alias_choice(config, linked, rendered, objtype="type") or rendered
             return rendered
         if (env := getattr(config, "_typehints_env", None)) is not None:
             py_domain = env.get_domain("py")

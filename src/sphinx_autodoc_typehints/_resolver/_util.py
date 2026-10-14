@@ -34,16 +34,16 @@ def collect_documented_type_aliases(
 ) -> tuple[dict[str, MyTypeAliasForwardRef], dict[str, WrittenTypeAlias]]:
     py_objects = env.get_domain("py").objects  # ty: ignore[unresolved-attribute]
     deferred = _collect_module_type_aliases(module_prefix, py_objects)
-    eager: dict[str, WrittenTypeAlias] = {}
+    written_as: dict[str, WrittenTypeAlias] = {}
 
     # PEP 649 (Python 3.14+): annotation expressions only run on access and may fail at runtime
     # (TYPE_CHECKING-only names, subscripting a non-generic class)
     try:
         raw_annotations = getattr(obj, "__annotations__", {})
     except Exception:  # ruff:ignore[blind-except]  # an annotation runs user code, which may raise anything
-        return deferred, eager
+        return deferred, written_as
     if not raw_annotations:
-        return deferred, eager
+        return deferred, written_as
 
     obj_globals = getattr(obj, "__globals__", {})
     # an alias evaluates to the object it names (``Count = int``), so only the annotation as written tells them apart
@@ -61,9 +61,9 @@ def collect_documented_type_aliases(
             and obj_globals[name] is annotation
         ):
             # whether the alias is documented is only known once every document is read, so rendering decides
-            eager[key] = WrittenTypeAlias(name, annotation)
+            written_as[key] = WrittenTypeAlias(name, annotation)
 
-    return deferred, eager
+    return deferred, written_as
 
 
 def _collect_module_type_aliases(module_prefix: str, py_objects: dict[str, Any]) -> dict[str, MyTypeAliasForwardRef]:

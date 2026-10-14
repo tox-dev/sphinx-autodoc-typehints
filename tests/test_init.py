@@ -969,7 +969,7 @@ def test_inject_types_no_signature() -> None:
     app = make_docstring_app(typehints_document_rtype=False)
 
     lines: list[str] = []
-    sat._inject_types_to_docstring({"return": str}, None, sample, app, "function", "sample", lines)  # ruff:ignore[private-member-access]
+    sat._inject_types_to_docstring({"return": str}, None, sample, app, "function", "sample", lines, written_as={})  # ruff:ignore[private-member-access]
     assert not any(s.startswith(":type") for s in lines)
 
 

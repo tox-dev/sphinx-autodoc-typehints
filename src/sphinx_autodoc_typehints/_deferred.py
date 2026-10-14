@@ -46,9 +46,11 @@ def alias_choice_role(
     return [node], []
 
 
-def defer_alias_choice(config: Config, linked: str, expanded: str) -> str | None:
+def defer_alias_choice(config: Config, linked: str, expanded: str, *, objtype: str | None = None) -> str | None:
     """
     Emit a marker the resolve phase replaces with ``linked`` or ``expanded``, or ``None`` if it cannot.
+
+    With ``objtype``, ``linked`` wins only where its target is documented as that kind of object.
 
     Whether an alias is documented has no answer while documents are still being read: the py domain
     only learns a target once its own document is read, so deciding here would tie the rendering of a
@@ -65,9 +67,10 @@ def defer_alias_choice(config: Config, linked: str, expanded: str) -> str | None
     if not isinstance(choices, dict):
         choices = {}
         setattr(env, ALIAS_CHOICE_ENV_ATTR, choices)
+    choice = (linked, expanded) if objtype is None else (linked, expanded, objtype)
     # Content-addressed, so a doctree read in an earlier build still finds its choice
-    key = blake2s(f"{linked}\n{expanded}".encode(), digest_size=8).hexdigest()
-    choices[key] = (linked, expanded)
+    key = blake2s("\n".join(choice).encode(), digest_size=8).hexdigest()
+    choices[key] = choice
     return f":{ALIAS_CHOICE_ROLE}:`{key}`"
 
 
@@ -102,8 +105,8 @@ class DeferAliasChoice(SphinxPostTransform):
             if (choice := choices.get(node[ALIAS_CHOICE_KEY])) is None:
                 node.replace_self([])  # nothing recorded this choice, e.g. a doctree from an older version
                 continue
-            linked, expanded = choice
-            replacement = self._reference(linked)
+            linked, expanded, *objtype = choice
+            replacement = self._reference(linked, objtype)
             if replacement is None:
                 replacement = self._parse(expanded).children[0].children
                 # An expanded value can name further aliases, whose choices are still to be made
@@ -124,14 +127,18 @@ class DeferAliasChoice(SphinxPostTransform):
             xref.setdefault("refdoc", self.env.docname)
         return doc
 
-    def _reference(self, linked: str) -> list[Node] | None:
+    def _reference(self, linked: str, objtypes: list[str]) -> list[Node] | None:
         """
-        Render the reference ``linked`` describes, or ``None`` if nothing documents its target.
+        Render the reference ``linked`` describes, or ``None`` if nothing documents its target (as one of ``objtypes``).
 
         The target is the first reference: the type arguments after it resolve, or not, like any other reference.
         """
         doc = self._parse(linked)
         target = next(doc.findall(addnodes.pending_xref))
+        # a role resolves to whatever object has the name, as :py:type: does to a class
+        documented = self.env.get_domain("py").objects.get(target["reftarget"])  # ty: ignore[unresolved-attribute]
+        if objtypes and getattr(documented, "objtype", None) not in objtypes:
+            return None
         if (resolved := self._resolve(target)) is None:
             return None
         target.replace_self(resolved)
