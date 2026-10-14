@@ -73,6 +73,11 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-
     original_obj = obj
     if inspect.isclass(obj):
         obj = getattr(obj, _constructor_name(obj))
+    # a wrapper may carry no annotations of its own, like the 3.14 lru_cache one that only copies __annotate__
+    try:
+        obj = inspect.unwrap(obj)
+    except ValueError:
+        return None
     try:
         has_annotations = getattr(obj, "__annotations__", None)
     except (NameError, TypeError, AttributeError):
@@ -83,10 +88,6 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-
     if not has_annotations:
         return None
 
-    try:
-        obj = inspect.unwrap(obj)
-    except ValueError:
-        return None
     sph_signature = sphinx_signature(obj, type_aliases=app.config["autodoc_type_aliases"])
     typehints_formatter: Callable[..., str | None] | None = getattr(app.config, "typehints_formatter", None)
 
