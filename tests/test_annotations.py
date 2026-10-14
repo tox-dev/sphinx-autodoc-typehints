@@ -64,6 +64,7 @@ Y = TypeVar("Y", bound=str)
 Z = TypeVar("Z", bound="A")
 S = TypeVar("S", bound="miss")  # type: ignore[name-defined] # miss not defined on purpose # ruff:ignore[undefined-name]
 W = NewType("W", str)
+_MISSING = typing_extensions.Sentinel("_MISSING")
 
 
 class SomeEnum(enum.Enum):
@@ -402,6 +403,7 @@ _CASES = [
     pytest.param(E, f":py:class:`~{__name__}.E`", id="E"),
     pytest.param(E[int], rf":py:class:`~{__name__}.E`\ \[:py:class:`int`]", id="E-int"),
     pytest.param(W, f":py:class:`~{__name__}.W` (:py:class:`str`)", id="W"),
+    pytest.param(_MISSING, f":py:data:`~{__name__}._MISSING`", id="sentinel"),
     pytest.param(
         dataclasses.InitVar[list[int]],
         r":py:class:`~dataclasses.InitVar`\ \[:py:class:`list`\ \[:py:class:`int`]]",
