@@ -586,7 +586,7 @@ def _can_expand_alias(alias: TypeAliasType, config: Config) -> bool:
 def _alias_value_evaluates(alias: TypeAliasType) -> bool:
     try:
         _ = alias.__value__
-    except NameError:
+    except Exception:  # ruff:ignore[blind-except]  # an annotation runs user code, which may raise anything
         return False
     return True
 

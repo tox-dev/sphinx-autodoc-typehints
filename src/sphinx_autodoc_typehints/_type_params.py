@@ -92,10 +92,10 @@ def _type_param(param: Any, mode: _Mode) -> str:
 
 
 def _lazy(param: Any, kind: str) -> Any:
-    """Read a bound, constraints or default, which PEP 695 evaluates only on access and may name a missing type."""
+    """Read a bound, constraints or default, which PEP 695 evaluates only on access, so it may fail."""
     try:
         return getattr(param, f"__{kind}__", None)
-    except NameError:
+    except Exception:  # ruff:ignore[blind-except]  # an annotation runs user code, which may raise anything
         if sys.version_info >= (3, 14):  # pragma: >=3.14 cover
             return call_evaluate_function(getattr(param, f"evaluate_{kind}"), Format.FORWARDREF)
         return _UNKNOWN  # pragma: <3.14 cover
