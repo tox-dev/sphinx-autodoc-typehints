@@ -856,7 +856,10 @@ def sphinx_autodoc_typehints_type_role(
 def setup(app: Sphinx) -> dict[str, bool | str]:
     app.setup_extension("sphinx.ext.autodoc")
     app.add_config_value("always_document_param_types", False, "env")  # ruff:ignore[boolean-positional-value-in-call]
-    app.add_config_value("typehints_fully_qualified", False, "env")  # ruff:ignore[boolean-positional-value-in-call]
+    # follows autodoc's own setting unless set
+    app.add_config_value(
+        "typehints_fully_qualified", lambda config: config.autodoc_typehints_format == "fully-qualified", "env", bool
+    )
     app.add_config_value("typehints_document_rtype", True, "env")  # ruff:ignore[boolean-positional-value-in-call]
     app.add_config_value("typehints_document_rtype_none", True, "env")  # ruff:ignore[boolean-positional-value-in-call]
     app.add_config_value("typehints_use_rtype", True, "env")  # ruff:ignore[boolean-positional-value-in-call]
