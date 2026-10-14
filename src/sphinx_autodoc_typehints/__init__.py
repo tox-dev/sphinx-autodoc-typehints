@@ -88,7 +88,7 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-
         return None
 
     original_obj = obj
-    if inspect.isclass(obj):
+    if inspect.isclass(obj) and _declared_signature(obj) is None:
         obj = getattr(obj, _constructor_name(obj))
     # a wrapper may carry no annotations of its own, like the 3.14 lru_cache one that only copies __annotate__
     try:
@@ -103,7 +103,7 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-
         # (TYPE_CHECKING-only names, subscripting a non-generic class). __annotate__ still signals
         # annotations exist, and sphinx_signature renders them without evaluation via FORWARDREF.
         has_annotations = getattr(annotated, "__annotate__", None)
-    if not has_annotations:
+    if not has_annotations and _declared_signature(obj) is None:
         return None
 
     sph_signature = sphinx_signature(obj, type_aliases=app.config["autodoc_type_aliases"])
@@ -130,7 +130,10 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-
 
     start = 0
     if parameters:
-        if inspect.isclass(original_obj) or (what == "method" and name.endswith(".__init__")):
+        # a class declaring its signature is called with it, while its constructor's starts with the instance
+        if (inspect.isclass(original_obj) and obj is not original_obj) or (
+            what == "method" and name.endswith(".__init__")
+        ):
             start = 1
         elif what == "method":
             if "<locals>" in annotated.__qualname__ and not _is_dataclass(name, what, annotated.__qualname__):
@@ -172,6 +175,11 @@ def _annotated_function(obj: Any) -> Any:
     return inspect.unwrap(obj)
 
 
+def _declared_signature(obj: Any) -> inspect.Signature | None:
+    """Return the signature an object states in ``__signature__``, as a pydantic model does, which callers go by."""
+    return signature if isinstance(signature := getattr(obj, "__signature__", None), inspect.Signature) else None
+
+
 def _is_dataclass(name: str, what: str, qualname: str) -> bool:
     return (what == "method" and name.endswith(".__init__")) or (what == "class" and qualname.endswith(".__init__"))
 
@@ -205,7 +213,7 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
     cls_for_hints = None
     if inspect.isclass(obj):
         obj = getattr(obj, constructor := _constructor_name(obj))
-        use_class_for_signature = constructor == "__new__"
+        use_class_for_signature = constructor == "__new__" or _declared_signature(original_obj) is not None
         # namedtuple builds __new__ without builtins, so forward references resolve only via the class (#657)
         cls_for_hints = original_obj if inspect.isfunction(obj) and obj.__module__.startswith("namedtuple_") else None
     try:
@@ -231,6 +239,14 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
         localns.update(deferred)
     type_hints = get_all_type_hints(app.config.autodoc_mock_imports, cls_for_hints or annotated, name, localns)
     type_hints |= eager_aliases
+    if (stated_signature := _declared_signature(original_obj)) is not None:
+        # the parameters it lists, such as a pydantic model's fields, may be ones no annotation of the constructor names
+        stated = {key: param.annotation for key, param in stated_signature.parameters.items()}
+        type_hints |= {
+            key: annotation
+            for key, annotation in (stated | {"return": stated_signature.return_annotation}).items()
+            if annotation is not stated_signature.empty
+        }
     with _annotation_state(
         app.config,
         _annotation_globals=getattr(annotated, "__globals__", {}),

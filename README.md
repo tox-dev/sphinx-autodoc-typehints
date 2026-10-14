@@ -663,7 +663,8 @@ Parameters are recognized under `:param`, `:parameter`, `:arg`, `:argument`, `:k
 into a literal block, a code block or a directive such as a note is left as written. A type written in the field,
 `:param int x:`, and a `:type x:` field give way to the annotation, and a parameter without one keeps its docstring
 type. A `@typing.no_type_check` function still gets its types, decorated functions are documented through `__wrapped__`,
-a `functools.partial` or `partialmethod` through the function it calls with the bound arguments left out, a callable
+a class or function stating its signature in `__signature__`, as a pydantic model does, through that signature, a
+`functools.partial` or `partialmethod` through the function it calls with the bound arguments left out, a callable
 instance through its `__call__`, and on Python 3.14 an annotation that fails to evaluate shows as written.
 
 ### How return type options interact
