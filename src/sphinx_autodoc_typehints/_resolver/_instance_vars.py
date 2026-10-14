@@ -3,7 +3,7 @@ from __future__ import annotations
 import ast
 import inspect
 import textwrap
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar, Final, get_args, get_origin, get_type_hints
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -56,6 +56,21 @@ def get_instance_var_annotations(cls: type) -> dict[str, Any]:
     return resolved
 
 
+def get_class_body_annotations(cls: type) -> dict[str, Any]:
+    """
+    Return the attributes the bodies of a class and its bases annotate, the PEP 526 way to declare one.
+
+    A ``ClassVar`` or ``Final`` qualifier says how the attribute behaves, not what it holds, so it is left off.
+    """
+    try:
+        hints = get_type_hints(cls, include_extras=True)
+    except Exception:  # ruff:ignore[blind-except]  # an annotation runs user code, which may raise anything
+        return {}
+    held = {name: get_args(hint)[0] if get_origin(hint) in {ClassVar, Final} else hint for name, hint in hints.items()}
+    # a bare ClassVar or Final names no type
+    return {name: hint for name, hint in held.items() if hint not in {ClassVar, Final}}
+
+
 def _own_nodes(node: ast.AST) -> Iterator[ast.AST]:
     for child in ast.iter_child_nodes(node):
         yield child
@@ -63,4 +78,4 @@ def _own_nodes(node: ast.AST) -> Iterator[ast.AST]:
             yield from _own_nodes(child)
 
 
-__all__ = ["get_instance_var_annotations"]
+__all__ = ["get_class_body_annotations", "get_instance_var_annotations"]

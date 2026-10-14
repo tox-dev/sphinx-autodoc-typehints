@@ -12,6 +12,7 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
+    ClassVar,
     Final,
     Literal,
     NamedTuple,
@@ -364,6 +365,21 @@ def test_process_docstring_types_a_napoleon_attribute_from_init(
         "",
         "   :type: str",
         "",
+    ]
+
+
+class _Job:
+    retries: int
+    total: ClassVar[int] = 0
+
+
+@pytest.mark.parametrize("field", ["ivar", "cvar", "var"])
+def test_process_docstring_types_a_variable_from_the_class_body(field: str) -> None:
+    lines = [f":{field} retries: how often"]
+    process_docstring(make_docstring_app(), "class", "mod._Job", _Job, None, lines)
+    assert lines == [
+        r":vartype retries: :sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``",
+        f":{field} retries: how often",
     ]
 
 
