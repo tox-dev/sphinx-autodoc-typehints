@@ -197,6 +197,10 @@ typehints_defaults = "braces"
 typehints_defaults = "braces-after"
 ```
 
+With `"braces-after"`, the default closes the last plain paragraph of the description. A list, a directive such as
+`.. note::`, or a literal block at the end of the description stays as written, and a paragraph introducing a literal
+block keeps its `::` last.
+
 ### Control overload signature display
 
 When a function has [`@overload`](https://docs.python.org/3/library/typing.html#typing.overload) signatures, they are
