@@ -501,8 +501,10 @@ functions and methods of `pkg`, while an alias documented in a submodule such as
 A plain assignment such as `Count = int` evaluates to the very type it names, so without
 `from __future__ import annotations` the extension reads the function's source to tell `limit: Count` from `limit: int`.
 Only the parameters written with the alias name render as the alias, and functions without source, such as generated
-ones, show the underlying type. Such an alias needs its `.. py:type::` entry read before the function's documentation,
-earlier on the page or in a document Sphinx reads first; a `type` statement alias doesn't.
+ones, show the underlying type. The extension picks between the alias and its underlying type once every document is
+read, so the `.. py:type::` entry may come after the function, on its page or in another document, and `-j` does not
+change the result. A signature kept by `typehints_use_signature` is written while documents are still being read, so it
+names the alias only when its entry was read first.
 
 An alias set in
 [`autodoc_type_aliases`](https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#confval-autodoc_type_aliases)

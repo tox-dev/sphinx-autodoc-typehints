@@ -746,6 +746,50 @@ def test_eager_alias_in_a_method(app: SphinxTestApp) -> None:
     )
 
 
+@pytest.mark.parametrize(
+    ("index", "documents"),
+    [
+        pytest.param(
+            ".. autofunction:: mod_eager.count_eager\n\n.. py:type:: mod_eager.Count\n", {}, id="later-on-the-page"
+        ),
+        pytest.param(
+            ".. autofunction:: mod_eager.count_eager\n\n.. toctree::\n\n   zz\n",
+            {"zz": ".. py:type:: mod_eager.Count\n"},
+            id="later-document",
+        ),
+        pytest.param(
+            ".. toctree::\n\n" + "".join(f"   doc{number}\n" for number in range(6)),
+            {
+                **{f"doc{number}": f"Doc {number}\n=====\n" for number in range(5)},
+                "doc0": ".. autofunction:: mod_eager.count_eager\n",
+                "doc5": ".. py:type:: mod_eager.Count\n",
+            },
+            id="parallel-read",
+        ),
+    ],
+)
+@pytest.mark.sphinx("text", testroot="integration", parallel=2)
+def test_eager_alias_documented_after_its_use(app: SphinxTestApp, index: str, documents: dict[str, str]) -> None:
+    (Path(app.srcdir) / "index.rst").write_text(index)
+    for name, text in documents.items():
+        (Path(app.srcdir) / f"{name}.rst").write_text(text)
+    app.build()
+
+    text = "".join(path.read_text() for path in sorted((Path(app.srcdir) / "_build/text").glob("*.txt")))
+    assert '**amount** ("Count") -- The amount' in normalize_sphinx_text(text)
+
+
+@pytest.mark.sphinx("text", testroot="integration", confoverrides={"typehints_use_signature": True})
+def test_eager_alias_documented_after_its_use_shows_its_value_in_the_signature(app: SphinxTestApp) -> None:
+    (Path(app.srcdir) / "index.rst").write_text(
+        ".. autofunction:: mod_eager.count_eager\n\n.. py:type:: mod_eager.Count\n"
+    )
+    app.build()
+
+    result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
+    assert "mod_eager.count_eager(amount: int, limit: int)" in result
+
+
 @pytest.mark.sphinx("text", testroot="integration")
 def test_alias_documented_in_a_later_document(
     app: SphinxTestApp,

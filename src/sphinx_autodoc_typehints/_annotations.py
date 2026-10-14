@@ -113,6 +113,14 @@ class MyTypeAliasForwardRef(TypeAliasForwardRef):
         return types.GenericAlias(self, item)  # ty: ignore[invalid-argument-type]  # any origin works at runtime
 
 
+class WrittenTypeAlias(MyTypeAliasForwardRef):
+    """A module-level alias such as ``Count = int`` named where an annotation is written; it evaluates to ``value``."""
+
+    def __init__(self, name: str, value: Any) -> None:
+        super().__init__(name)
+        self.value = value
+
+
 def _written_with_bars(union: Any) -> Any:
     """Mark a union built with ``|`` to render with bars, as the ``types.UnionType`` of real types does."""
     if sys.version_info >= (3, 14):  # pragma: >=3.14 cover
@@ -220,12 +228,24 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
     if isinstance(annotation, TypeAliasForwardRef):
         fully_qualified: bool = getattr(config, "typehints_fully_qualified", False)
         prefix = "" if fully_qualified else "~"
+        module_prefix = getattr(config, "_typehints_module_prefix", "")
+        signature = getattr(config, "_typehints_signature", False)
+        if isinstance(annotation, WrittenTypeAlias) and not signature:
+            rendered = yield annotation.value
+            # the scopes the annotation looks the name up in, innermost first, then the name documented unqualified
+            parts = module_prefix.split(".")
+            scopes = [f"{'.'.join(parts[:end])}.{annotation.name}" for end in range(len(parts), 0, -1)]
+            for candidate in reversed([*scopes, annotation.name]):
+                rendered = defer_alias_choice(config, f":py:type:`{prefix}{candidate}`", rendered) or rendered
+            return rendered
         if (env := getattr(config, "_typehints_env", None)) is not None:
             py_domain = env.get_domain("py")
-            module_prefix = getattr(config, "_typehints_module_prefix", "")
             for candidate in (f"{module_prefix}.{annotation.name}", annotation.name):
                 if candidate in py_domain.objects and py_domain.objects[candidate].objtype == "type":
                     return f":py:type:`{prefix}{candidate}`"
+        if isinstance(annotation, WrittenTypeAlias):
+            # signature text is final once written, so only an alias documented by now can show
+            return (yield annotation.value)
         if isinstance(annotation, MyTypeAliasForwardRef) and annotation.crossref:
             return f":py:type:`{prefix}{annotation.name}`"
         if isinstance(annotation, MyTypeAliasForwardRef) and annotation.configured:
