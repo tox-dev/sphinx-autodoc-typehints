@@ -145,7 +145,7 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-
             shown = {
                 key: _signature_type(app, _as_written(hint, written_as.get(key))) for key, hint in type_hints.items()
             }
-            overloads = [_shown_overload(app, what, name, obj, overload) for overload in overloads]
+            overloads = _shown_overloads(app, what, name, original_obj, obj, overloads)
 
     if app.config.typehints_use_signature_return:
         sph_signature = sph_signature.replace(return_annotation=shown.get("return", sph_signature.return_annotation))
@@ -251,19 +251,24 @@ def _signature_type(app: Sphinx, hint: Any) -> Any:
     )
 
 
-def _shown_overload(app: Sphinx, what: str, name: str, obj: Any, overload: inspect.Signature) -> inspect.Signature:
-    params = list(overload.parameters.values())[_overload_skip(what, name) :]
-    # parsed from the source, so the annotations are strings until evaluated in the function's module
-    hints = resolve_string_annotations(
-        obj, {param.name: param.annotation for param in params} | {"return": overload.return_annotation}, {}
-    )
-    return overload.replace(
-        parameters=[param.replace(annotation=_signature_type(app, hints[param.name])) for param in params],
-        # a class signature describes the call building the instance, so its constructor's -> None does not belong
-        return_annotation=(
-            inspect.Signature.empty if what in {"class", "exception"} else _signature_type(app, hints["return"])
-        ),
-    )
+def _shown_overloads(  # ruff:ignore[too-many-arguments, too-many-positional-arguments]
+    app: Sphinx, what: str, name: str, documented: Any, obj: Any, overloads: list[inspect.Signature]
+) -> list[inspect.Signature]:
+    skip, arguments = _overload_skip(what, name), bound_type_args(*_documenting(name, documented))
+    shown = []
+    for overload in overloads:
+        params = list(overload.parameters.values())[skip:]
+        hints = _overload_hints(obj, params, overload.return_annotation, arguments)
+        shown.append(
+            overload.replace(
+                parameters=[param.replace(annotation=_signature_type(app, hints[param.name])) for param in params],
+                # a class signature is the call building the instance, so the constructor's -> None does not belong
+                return_annotation=(
+                    inspect.Signature.empty if what in {"class", "exception"} else _signature_type(app, hints["return"])
+                ),
+            )
+        )
+    return shown
 
 
 def _overload_skip(what: str, name: str) -> int:
@@ -345,7 +350,7 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
         resolve_type_guarded_imports(app.config.autodoc_mock_imports, inspect.unwrap(obj.__init__))
         backfill_attrs_annotations(obj)
         # an assignment in __init__ is the more specific declaration of the two
-        ivar_annotations = get_class_body_annotations(obj) | get_instance_var_annotations(obj)
+        ivar_annotations = _class_body_annotations(obj) | get_instance_var_annotations(obj)
     else:
         ivar_annotations = {}
     use_class_for_signature = False
@@ -371,7 +376,7 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
     with annotation_state(app.config, **state):
         part, documented_elsewhere = _docstring_part(app, name, original_obj, signature, lines)
         # the constructor's overloads describe its part, while the notice heads the entry
-        has_overloads = part != "class" and _inject_overload_signatures(app, what, name, obj, lines)
+        has_overloads = part != "class" and _inject_overload_signatures(app, what, name, original_obj, obj, lines)
         if part != "constructor":
             inject_deprecation(declared, lines, _summary_end(lines))
         _inject_types_to_docstring(
@@ -391,6 +396,14 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
         inject_extra_items(app, original_obj, lines)
         _inject_setter_type(app, name, original_obj, type_hints, lines)
         _inject_override(app, what, name, declared, lines)
+
+
+def _class_body_annotations(cls: type) -> dict[str, Any]:
+    """Return the class-body annotations of ``cls``, one inherited from a generic base read as ``cls`` binds it."""
+    return {
+        attribute: specialize(hint, arguments) if (arguments := bound_type_args(cls, attribute)) else hint
+        for attribute, hint in get_class_body_annotations(cls).items()
+    }
 
 
 def _resolved_type_hints(
@@ -424,12 +437,7 @@ def _resolved_type_hints(
             for key, annotation in (stated | {"return": stated_signature.return_annotation}).items()
             if annotation is not stated_signature.empty
         }
-    # a class documents its constructor, a member is documented under the class listing it, which may be a subclass
-    # binding the type parameters of the base it inherits the member from
-    if inspect.isclass(original_obj):
-        documenting, attribute = original_obj, _constructor_name(original_obj)
-    else:
-        documenting, attribute = _documented_owner(name), name.rsplit(".", maxsplit=1)[-1]
+    documenting, attribute = _documenting(name, original_obj)
     if arguments := bound_type_args(documenting, attribute):
         type_hints = {key: specialize(hint, arguments) for key, hint in type_hints.items()}
     state = {
@@ -445,6 +453,18 @@ def _resolved_type_hints(
 def _as_written(hint: Any, written: WrittenTypeAlias | None) -> Any:
     """Return the alias ``hint`` is written as, unless it no longer is the alias' value, as when a subclass binds it."""
     return written if written is not None and written.value is hint else hint
+
+
+def _documenting(name: str, documented: Any) -> tuple[Any, str]:
+    """
+    Return the class documenting an object and the attribute naming the object in it.
+
+    A class documents its constructor, a member is documented under the class listing it, which may be a subclass
+    binding the type parameters of the base it inherits the member from.
+    """
+    if inspect.isclass(documented):
+        return documented, _constructor_name(documented)
+    return _documented_owner(name), name.rsplit(".", maxsplit=1)[-1]
 
 
 def _module_prefix(name: str) -> str:
@@ -481,10 +501,11 @@ def _maybe_inject_descriptor_type(app: Sphinx, what: str, name: str, obj: Any, l
     lines.extend(["", f":type: {add_type_css_class(formatted)}"])
 
 
-def _inject_overload_signatures(
+def _inject_overload_signatures(  # ruff:ignore[too-many-arguments, too-many-positional-arguments]
     app: Sphinx,
     what: str,
     name: str,
+    original_obj: Any,
     obj: Any,
     lines: list[str],
 ) -> bool:
@@ -504,7 +525,8 @@ def _inject_overload_signatures(
         # a class documents its constructor's overloads, which return the instance like the class signature shows
         overloads = [overload.replace(return_annotation=inspect.Signature.empty) for overload in overloads]
     idx = _summary_end(lines)
-    lines[idx:idx] = ["", *_format_overload_lines(overloads, obj, app, _overload_skip(what, name))]
+    arguments = bound_type_args(*_documenting(name, original_obj))
+    lines[idx:idx] = ["", *_format_overload_lines(overloads, obj, app, _overload_skip(what, name), arguments)]
     return True
 
 
@@ -623,20 +645,14 @@ def _inject_override(app: Sphinx, what: str, name: str, obj: Any, lines: list[st
     lines.extend(["", f":Overrides: :py:{'attr' if what == 'property' else 'meth'}:`{label} <{target}>`"])
 
 
-def _format_overload_lines(overloads: list[inspect.Signature], obj: Any, app: Sphinx, skip: int) -> list[str]:
+def _format_overload_lines(
+    overloads: list[inspect.Signature], obj: Any, app: Sphinx, skip: int, arguments: dict[Any, Any]
+) -> list[str]:
     render = partial(format_annotation, config=app.config, short_literals=app.config.python_display_short_literal_types)
     result = [":Overloads:"]
     for overload_sig in overloads:
         parameters = list(overload_sig.parameters.values())[skip:]
-        # parsed from the source, so the annotations are strings until evaluated in the function's module
-        hints = resolve_string_annotations(
-            obj,
-            {
-                **{param.name: param.annotation for param in parameters},
-                "return": overload_sig.return_annotation,
-            },
-            {},
-        )
+        hints = _overload_hints(obj, parameters, overload_sig.return_annotation, arguments)
         return_hint = hints.pop("return")
         entries = _overload_entries(parameters, hints, render)
         return_annotation = (
@@ -645,6 +661,19 @@ def _format_overload_lines(overloads: list[inspect.Signature], obj: Any, app: Sp
         result.append(f"   * {', '.join(entries) or '()'}{return_annotation}")
     result.append("")
     return result
+
+
+def _overload_hints(
+    obj: Any, parameters: list[inspect.Parameter], return_annotation: Any, arguments: dict[Any, Any]
+) -> dict[str, Any]:
+    # parsed from the source, so the annotations are strings until evaluated in the function's module, where the PEP 695
+    # type parameters of the function and its class are no globals
+    hints = resolve_string_annotations(
+        obj,
+        {param.name: param.annotation for param in parameters} | {"return": return_annotation},
+        {param.__name__: param for param in declared_type_params(None, obj, None)},
+    )
+    return {key: specialize(hint, arguments) for key, hint in hints.items()}
 
 
 def _overload_entries(

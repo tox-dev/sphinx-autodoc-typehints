@@ -104,7 +104,7 @@ def bound_type_args(documenting: Any, attribute: str) -> dict[Any, Any]:
         is documenting
     ):
         return {}
-    return _arguments(definer, _parametrized(documenting, definer))
+    return type_arguments(definer, _parametrized(documenting, definer))
 
 
 def _defines(klass: type, attribute: str) -> bool:
@@ -139,14 +139,15 @@ def _parametrized(cls: type, target: type) -> Any:
     base = next((base for base in types.get_original_bases(cls) if _derives(base, target)), target)
     if (origin := get_origin(base) or base) is target:
         return base
-    return specialize(_parametrized(origin, target), _arguments(origin, base))
+    return specialize(_parametrized(origin, target), type_arguments(origin, base))
 
 
 def _derives(base: Any, target: type) -> bool:
     return isinstance(origin := get_origin(base) or base, type) and issubclass(origin, target)
 
 
-def _arguments(cls: type, alias: Any) -> dict[Any, Any]:
+def type_arguments(cls: type, alias: Any) -> dict[Any, Any]:
+    """Map the type parameters of ``cls`` to the arguments ``alias`` subscripting it gives them, none for ``cls``."""
     params = getattr(cls, "__parameters__", ())
     # a TypeVarTuple takes any number of arguments, leaving no one-to-one match, and a bare base binds none
     return dict(zip(params, args, strict=True)) if len(params) == len(args := get_args(alias)) else {}
@@ -205,4 +206,4 @@ def _stringify(value: Any, mode: _Mode) -> str:
     return stringify_annotation(value, mode)
 
 
-__all__ = ["add_type_params", "bound_type_args", "declared_type_params", "specialize"]
+__all__ = ["add_type_params", "bound_type_args", "declared_type_params", "specialize", "type_arguments"]
