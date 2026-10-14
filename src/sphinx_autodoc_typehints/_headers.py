@@ -12,7 +12,7 @@ from sphinx.domains.python._annotations import _parse_annotation  # ruff:ignore[
 from sphinx.util import logging
 
 from ._annotations import annotation_state, format_annotation, signature_text
-from ._resolver import resolve_annotations, resolve_type_guarded_imports, type_alias_namespace
+from ._resolver import documented_type_names, resolve_annotations, resolve_type_guarded_imports, type_alias_namespace
 from ._type_params import bound_type_args, specialize
 from ._typed_dict import typed_dict_keys
 
@@ -22,6 +22,9 @@ if TYPE_CHECKING:
 
 _DOCUMENTED: Final = "sphinx_autodoc_typehints_documented"
 _MISSING: Final = object()
+#: The hints resolved per owner while one document is read, keyed by that document; resolving an owner evaluates every
+#: annotation it holds, which a module of many documented globals would otherwise repeat for each of their headers.
+_RESOLVED: Final[dict[object, dict[tuple[str, frozenset[str]], dict[str, Any]]]] = {}
 
 
 def note_documented(env: BuildEnvironment, name: str) -> None:
@@ -93,7 +96,19 @@ def _declared_hint(app: Sphinx, owner: Any, attribute: str, objtype: str, name: 
         member = getattr(member := inspect.getattr_static(owner, attribute), "__func__", member)
         getter = member.func if isinstance(member, cached_property) else member.fget
         return _resolved_hints(app, getter, name).get("return", _MISSING)
-    return _resolved_hints(app, owner, name).get(attribute, _MISSING)
+    return _owner_hints(app, owner, name).get(attribute, _MISSING)
+
+
+def _owner_hints(app: Sphinx, owner: Any, name: str) -> dict[str, Any]:
+    # the document being read is a new object each time, so neither an earlier document nor an earlier build matches
+    if (resolved := _RESOLVED.get(document := app.env.current_document)) is None:
+        _RESOLVED.clear()
+        resolved = _RESOLVED[document] = {}
+    # an alias documented further down the page changes what the owner's annotations resolve to
+    key = name.rpartition(".")[0], documented_type_names(app.env)
+    if (hints := resolved.get(key)) is None:
+        hints = resolved[key] = _resolved_hints(app, owner, name)
+    return hints
 
 
 def _resolved_hints(app: Sphinx, annotated: Any, name: str) -> dict[str, Any]:
