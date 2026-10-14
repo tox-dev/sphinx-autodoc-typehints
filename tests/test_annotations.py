@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import enum
+import importlib
 import pydoc
 import re
 import sys
@@ -800,6 +801,35 @@ def test_format_annotation_type_alias_found_in_py_domain() -> None:
     config._typehints_env = env  # ruff:ignore[private-member-access]
     annotation = TypeAliasForwardRef("SomeAlias")
     assert format_annotation(annotation, config) == ":py:type:`~mymod.SomeAlias`"
+
+
+@pytest.mark.parametrize(
+    ("documented", "expected"),
+    [
+        pytest.param("Config", "other.Config", id="same-name-in-the-parent-package"),
+        pytest.param("sub.Config", "sub.Config", id="reexported-where-documented"),
+    ],
+)
+def test_format_annotation_type_alias_links_the_alias_it_names(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest, documented: str, expected: str
+) -> None:
+    package = re.sub(r"\W", "_", request.node.name)
+    (tmp_path / package).mkdir()
+    (tmp_path / package / "__init__.py").write_text("type Config = int\n")
+    (tmp_path / package / "other.py").write_text("type Config = dict[str, str]\n")
+    (tmp_path / package / "sub.py").write_text(f"from {package}.other import Config\n")
+    monkeypatch.syspath_prepend(tmp_path)
+    py_objects = dict.fromkeys([f"{package}.{documented}", f"{package}.other.Config"], MagicMock(objtype="type"))
+    env = MagicMock(get_domain=MagicMock(return_value=MagicMock(objects=py_objects)))
+    config = create_autospec(
+        Config,
+        typehints_formatter=None,
+        typehints_fully_qualified=False,
+        _typehints_module_prefix=f"{package}.sub",
+        _typehints_env=env,
+    )
+    alias = importlib.import_module(f"{package}.sub").Config
+    assert format_annotation(alias, config) == f":py:type:`~{package}.{expected}`"
 
 
 _TE_INT_LIST = typing_extensions.TypeAliasType(  # ruff:ignore[non-pep695-type-alias]  # the backport is under test
