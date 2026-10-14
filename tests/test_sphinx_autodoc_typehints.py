@@ -630,7 +630,6 @@ def test_wrong_module_path(app: SphinxTestApp, status: StringIO, warning: String
             return mod
         return "export_module" + mod.removeprefix("wrong_module_path")
 
-    app.config.suppress_warnings = ["config.cache"]
     app.config.typehints_fixup_module_name = fixup_module_name
     app.build()
 
