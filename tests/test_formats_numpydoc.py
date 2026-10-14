@@ -17,7 +17,7 @@ from sphinx_autodoc_typehints._formats._numpydoc import NumpydocFormat, _convert
 from sphinx_autodoc_typehints._formats._sphinx import SphinxFieldListFormat
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Callable, Iterator
     from io import StringIO
 
     from sphinx.testing.util import SphinxTestApp
@@ -54,8 +54,7 @@ def test_convert_returns_single() -> None:
         "",
     ]
     _convert_numpydoc_to_sphinx_fields(lines)
-    assert ":returns: The combined result." in lines
-    assert ":Returns:" not in lines
+    assert lines == [":returns: **result** (str) -- The combined result.", ""]
 
 
 def test_convert_returns_no_name() -> None:
@@ -67,7 +66,7 @@ def test_convert_returns_no_name() -> None:
         "",
     ]
     _convert_numpydoc_to_sphinx_fields(lines)
-    assert ":returns: A greeting." in lines
+    assert lines == [":rtype: str", ":returns: A greeting.", ""]
 
 
 def test_convert_returns_multiple() -> None:
@@ -191,7 +190,7 @@ def test_returns_single_no_description() -> None:
         "",
     ]
     _convert_numpydoc_to_sphinx_fields(lines)
-    assert not any(line.startswith(":returns:") for line in lines)
+    assert lines == [":returns: **result** (str)", ""]
 
 
 def test_multiple_sections() -> None:
@@ -217,7 +216,7 @@ def test_multiple_sections() -> None:
     _convert_numpydoc_to_sphinx_fields(lines)
     assert ":param x: The x value." in lines
     assert ":type x: int" in lines
-    assert ":returns: The result." in lines
+    assert ":returns: **result** (str) -- The result." in lines
     assert ":raises ValueError: If bad." in lines
 
 
@@ -565,3 +564,24 @@ def test_process_docstring_numpydoc_returns_without_descriptions() -> None:
     lines = [":Returns:", "", "    **x** : int", "        ..", "    **y** : str", "        ..", ""]
     process_docstring(make_docstring_app(), "function", "mod.pair", pair, None, lines)
     assert lines[-4:] == [":returns:", "   * **x** (int)", "   * **y** (str)", ""]
+
+
+def _annotated_ratio(a: int) -> float: ...
+
+
+# only the docstring types it
+def _unannotated_ratio(a):  # ruff:ignore[missing-type-function-argument, missing-return-type-private-function]
+    ...
+
+
+@pytest.mark.parametrize(
+    ("func", "rtype"),
+    [
+        pytest.param(_annotated_ratio, r":sphinx_autodoc_typehints_type:`\:py\:class\:\`float\``", id="annotated"),
+        pytest.param(_unannotated_ratio, "float", id="unannotated"),
+    ],
+)
+def test_process_docstring_numpydoc_unnamed_return_keeps_its_type(func: Callable[..., Any], rtype: str) -> None:
+    lines = [":Returns:", "", "    float", "        The ratio.", ""]
+    process_docstring(make_docstring_app(), "function", "mod.ratio", func, None, lines)
+    assert lines == [f":rtype: {rtype}", ":returns: The ratio.", ""]

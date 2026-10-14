@@ -84,8 +84,7 @@ def _convert_numpydoc_to_sphinx_fields(lines: list[str]) -> None:  # ruff:ignore
             for entry in entries:
                 result.extend(_field(f":raises {entry.name or entry.type}:", entry.description))
         elif len(entries) == 1 and section == "Returns":
-            if entries[0].description:
-                result.extend(_field(":returns:", entries[0].description))
+            result.extend(_single_return(entries[0]))
         elif len(entries) == 1:
             # the yielded type is documented here only, the return type is left out when a Yields section exists
             result.extend(_field(f":Yields: {_label(entries[0])}", entries[0].description))
@@ -95,6 +94,21 @@ def _convert_numpydoc_to_sphinx_fields(lines: list[str]) -> None:  # ruff:ignore
                 result.extend(_field(f"   * {_label(entry)}", entry.description, indent="     "))
 
     lines[:] = result
+
+
+def _single_return(entry: _NumpydocEntry) -> list[str]:
+    """
+    Convert a Returns section holding one entry.
+
+    A named one reads like an entry of a longer list. An unnamed one holds the type alone, which becomes the
+    :rtype: an annotation replaces, so the type shows without one.
+    """
+    if entry.name:
+        return _field(f":returns: {_label(entry)}", entry.description)
+    converted = [f":rtype: {entry.type}"] if entry.type else []
+    if entry.description:
+        converted.extend(_field(":returns:", entry.description))
+    return converted
 
 
 def _parse_numpydoc_entries(lines: list[str], start: int) -> list[_NumpydocEntry]:
