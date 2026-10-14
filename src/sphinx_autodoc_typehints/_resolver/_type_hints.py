@@ -194,11 +194,9 @@ def _should_skip_guarded_import_resolution(obj: Any) -> bool:
 
 
 def _execute_guarded_code(autodoc_mock_imports: list[str], obj: Any, module_code: str) -> None:
-    guards = (
-        node for node in ast.parse(module_code).body if isinstance(node, ast.If) and _names_type_checking(node.test)
-    )
+    branches = (_type_checking_branch(node) for node in ast.parse(module_code).body if isinstance(node, ast.If))
     # One statement at a time, so an unimportable optional dependency cannot strand the names after it — #741
-    for statement in (statement for guard in guards for statement in guard.body):
+    for statement in (statement for branch in branches for statement in branch):
         try:
             _run_guarded_import(autodoc_mock_imports, obj, statement)
         except Exception as exc:  # ruff:ignore[blind-except]
@@ -207,6 +205,27 @@ def _execute_guarded_code(autodoc_mock_imports: list[str], obj: Any, module_code
             else:
                 _LOGGER.debug("Skipped guarded statement the interpreter rejects: %r", exc)
                 _bind_unresolvable_names(obj, statement)
+
+
+def _type_checking_branch(node: ast.If) -> list[ast.stmt]:
+    """Pick the statements only a type checker runs: ``else`` of ``if not TYPE_CHECKING``, none for other tests."""
+    if (holds := _holds_when_type_checking(node.test)) is None:
+        return []
+    return node.body if holds else node.orelse
+
+
+def _holds_when_type_checking(test: ast.expr) -> bool | None:
+    """Whether a type checker takes the test as true, or ``None`` when ``TYPE_CHECKING`` plays no part in it."""
+    if _names_type_checking(test):
+        return True
+    if isinstance(test, ast.UnaryOp) and isinstance(test.op, ast.Not):
+        return None if (operand := _holds_when_type_checking(test.operand)) is None else not operand
+    # the other operands of a boolean test are runtime conditions, so they cannot decide the outcome either way
+    if isinstance(test, ast.BoolOp) and (
+        known := [held for value in test.values if (held := _holds_when_type_checking(value)) is not None]
+    ):
+        return all(known) if isinstance(test.op, ast.And) else any(known)
+    return None
 
 
 def _names_type_checking(test: ast.expr) -> bool:

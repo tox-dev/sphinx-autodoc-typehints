@@ -290,6 +290,32 @@ _GUARDED_FUNC: Final = "def func(value: Decimal) -> None: ...\n"
             f"{_GUARDED_FUNC}",
             id="multi-line-string",
         ),
+        pytest.param(
+            "from typing import TYPE_CHECKING\n\n"
+            "if not TYPE_CHECKING:\n    pass\nelse:\n    from decimal import Decimal\n\n"
+            f"{_GUARDED_FUNC}",
+            id="negated-else",
+        ),
+        pytest.param(
+            "import typing\nfrom typing import TYPE_CHECKING\n\n"
+            "if TYPE_CHECKING and typing.TYPE_CHECKING:\n    from decimal import Decimal\n\n"
+            f"{_GUARDED_FUNC}",
+            id="compound-and",
+        ),
+        pytest.param(
+            "import sys\nfrom typing import TYPE_CHECKING\n\n"
+            "if TYPE_CHECKING or sys.version_info < (3, 0):\n    from decimal import Decimal\n\n"
+            f"{_GUARDED_FUNC}",
+            id="compound-or",
+        ),
+        pytest.param(
+            "import sys\nfrom typing import TYPE_CHECKING\n\n"
+            "if TYPE_CHECKING:\n    from decimal import Decimal\n"
+            "if not sys.argv:\n    Decimal = int\n"
+            "if sys.argv and sys.path:\n    Decimal = int\n\n"
+            f"{_GUARDED_FUNC}",
+            id="unrelated-tests-left-alone",
+        ),
     ],
 )
 def test_guarded_import_binds_names_from_any_guard_form(source: str, guarded_module: _GuardedModuleBuilder) -> None:
