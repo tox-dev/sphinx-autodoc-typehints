@@ -9,6 +9,7 @@ from ._type_comments import backfill_type_hints
 from ._type_hints import (
     get_all_type_hints,
     get_descriptor_type_hint,
+    resolve_annotations,
     resolve_string_annotations,
     resolve_type_guarded_imports,
 )
@@ -22,6 +23,7 @@ __all__ = [
     "get_descriptor_type_hint",
     "get_instance_var_annotations",
     "get_obj_location",
+    "resolve_annotations",
     "resolve_string_annotations",
     "resolve_type_guarded_imports",
     "stub_path",

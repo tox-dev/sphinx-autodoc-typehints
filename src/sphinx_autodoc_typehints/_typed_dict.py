@@ -4,10 +4,7 @@ from __future__ import annotations
 
 import sys
 import typing
-from typing import TYPE_CHECKING, Annotated, Any, Final, Never, NotRequired, cast, get_args, get_origin, get_type_hints
-
-from sphinx import addnodes
-from sphinx.domains.python._annotations import _parse_annotation  # ruff:ignore[import-private-name]  # no public parser
+from typing import TYPE_CHECKING, Annotated, Any, Final, Never, NotRequired, get_args, get_origin, get_type_hints
 
 from ._annotations import add_type_css_class, format_annotation
 
@@ -92,44 +89,4 @@ def _extra_items(typed_dict: Any) -> Any:
     )
 
 
-def mark_optional_keys(app: Sphinx, domain: str, objtype: str, contentnode: addnodes.desc_content) -> None:
-    """
-    Show a TypedDict key that may be left out as ``NotRequired``, also where ``total=False`` alone makes it so.
-
-    autodoc shows a key's annotation as written, which under ``total=False`` reads as if the key were required.
-    """
-    if domain != "py" or objtype != "attribute":
-        return
-    for signode in cast("addnodes.desc", contentnode.parent).children:
-        if isinstance(signode, addnodes.desc_signature) and (typed := _unmarked_optional_type(signode)) is not None:
-            # the children after the ": " separator are the type
-            del typed[2:]
-            typed.extend(_parse_annotation(f"~typing.NotRequired[{typed.rawsource}]", app.env))
-
-
-def _unmarked_optional_type(signode: addnodes.desc_signature) -> addnodes.desc_annotation | None:
-    """Return the type shown for a TypedDict key that may be left out, unless it says so already."""
-    key = signode.get("fullname", "").rpartition(".")[2]
-    if (annotation := typed_dict_keys(_owner(signode)).get(key)) is None or not _is_not_required(annotation):
-        return None
-    typed = next((node for node in signode if isinstance(node, addnodes.desc_annotation)), None)
-    # none when autodoc_typehints = "none" hides it
-    if typed is None or "NotRequired" in typed.rawsource:
-        return None
-    return typed
-
-
-def _owner(signode: addnodes.desc_signature) -> Any:
-    owner: Any = sys.modules.get(signode.get("module") or "")
-    for part in signode.get("fullname", "").split(".")[:-1]:
-        owner = getattr(owner, part, None)
-    return owner
-
-
-def _is_not_required(annotation: Any) -> bool:
-    if get_origin(annotation) is Annotated:
-        annotation = get_args(annotation)[0]
-    return get_origin(annotation) is NotRequired
-
-
-__all__ = ["inject_extra_items", "mark_optional_keys", "typed_dict_keys"]
+__all__ = ["inject_extra_items", "typed_dict_keys"]

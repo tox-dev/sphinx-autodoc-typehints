@@ -116,6 +116,11 @@ def _get_type_hint(autodoc_mock_imports: list[str], name: str, obj: Any, localns
         return resolve_string_annotations(obj, _get_unevaluated_annotations(obj), localns)
 
 
+def resolve_annotations(autodoc_mock_imports: list[str], obj: Any, name: str) -> dict[str, Any]:
+    """Resolve the annotations ``obj`` itself carries, without backfilling it from a stub or type comments."""
+    return _get_type_hint(autodoc_mock_imports, name, obj, {})
+
+
 def _module_backed_globals(obj: Any) -> dict[str, Any] | None:
     """
     Fill the gaps in a function's globals with its module's names.
@@ -370,6 +375,7 @@ def _type_params(obj: Any) -> tuple[TypeVar | ParamSpec | TypeVarTuple, ...]:
 
 __all__ = [
     "get_all_type_hints",
+    "resolve_annotations",
     "resolve_string_annotations",
     "resolve_type_guarded_imports",
 ]

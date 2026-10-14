@@ -8,7 +8,6 @@ import inspect
 import re
 import sys
 import types
-from contextlib import contextmanager
 from functools import partial
 from keyword import iskeyword
 from typing import (
@@ -31,6 +30,7 @@ from sphinx.util.inspect import signature as sphinx_signature
 from ._annotations import (
     MyTypeAliasForwardRef,
     add_type_css_class,
+    annotation_state,
     fixup_module_name,
     format_annotation,
     get_annotation_args,
@@ -44,6 +44,7 @@ from ._factory_defaults import show_factory_defaults
 from ._formats import detect_format
 from ._formats._numpydoc import _convert_numpydoc_to_sphinx_fields  # ruff:ignore[unused-import]
 from ._formats._sphinx import _has_yields_section, _is_generator_type, _last_paragraph_end, _strip_inline_param_type
+from ._headers import note_documented, render_header_types
 from ._intersphinx import build_type_mapping
 from ._parser import unescape
 from ._resolver import (
@@ -59,17 +60,16 @@ from ._resolver import (
     stub_path,
 )
 from ._type_params import add_type_params, bound_type_args, declared_type_params, specialize
-from ._typed_dict import inject_extra_items, mark_optional_keys, typed_dict_keys
+from ._typed_dict import inject_extra_items, typed_dict_keys
 from .patches import _OVERLOADS_CACHE, install_patches
 from .version import __version__
 
 if TYPE_CHECKING:
-    from collections.abc import Generator, Iterator
+    from collections.abc import Iterator
 
     from docutils.nodes import Node
     from docutils.parsers.rst import states
     from sphinx.application import Sphinx
-    from sphinx.config import Config
     from sphinx.environment import BuildEnvironment
     from sphinx.ext.autodoc import Options
 
@@ -86,6 +86,9 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-
     return_annotation: str,  # ruff:ignore[unused-function-argument]
 ) -> tuple[str, None] | None:
     """Process the signature."""
+    # autodoc emits this for every object it documents, one it cannot import included, unlike the docstring event
+    if (env := getattr(app, "env", None)) is not None:
+        note_documented(env, name)
     # Sphinx lists each singledispatch implementation under a nameless entry with no docstring to move types into,
     # and the dispatch type is what tells the implementations apart; data and attributes holding a callable show
     # no signature, so Sphinx passes none to replace
@@ -120,7 +123,7 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-
         # the docstring of the same object resolves these hints too, and warns about any that fail there
         with logging.suppress_logging():
             type_hints, state = _resolved_type_hints(app, name, original_obj, obj, annotated)
-        with _annotation_state(app.config, **state, _typehints_signature=True):
+        with annotation_state(app.config, **state, _typehints_signature=True):
             short_literals = app.config.python_display_short_literal_types
             shown = {
                 key: signature_text(format_annotation(hint, app.config, short_literals=short_literals))
@@ -264,7 +267,7 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
         signature = show_factory_defaults(original_obj, signature)
 
     type_hints, state = _resolved_type_hints(app, name, original_obj, obj, annotated)
-    with _annotation_state(app.config, **state):
+    with annotation_state(app.config, **state):
         has_overloads = _inject_overload_signatures(app, what, name, obj, lines)
         inject_deprecation(declared, lines, _summary_end(lines))
         _inject_types_to_docstring(
@@ -344,27 +347,6 @@ def _constructor_name(cls: type) -> Literal["__new__", "__init__"]:
     return "__new__" if own_new and depth["__new__"] <= depth["__init__"] else "__init__"
 
 
-@contextmanager
-def _annotation_state(config: Config, **values: Any) -> Generator[None, None, None]:
-    """
-    Publish the state format_annotation reads off the config, restoring what was there.
-
-    Documenting an object can re-enter this handler for another one, and deleting the attributes
-    on the way out of the inner call then broke the outer call's teardown (#750).
-    """
-    previous = {name: getattr(config, name) for name in values if hasattr(config, name)}
-    for name, value in values.items():
-        setattr(config, name, value)
-    try:
-        yield
-    finally:
-        for name in values:
-            if name in previous:
-                setattr(config, name, previous[name])
-            else:
-                delattr(config, name)
-
-
 def _maybe_inject_descriptor_type(app: Sphinx, what: str, name: str, obj: Any, lines: list[str]) -> None:
     """C data descriptors document as plain attributes; lift their type from the stub."""
     if what != "attribute" or not (inspect.isgetsetdescriptor(obj) or inspect.ismemberdescriptor(obj)):
@@ -374,7 +356,7 @@ def _maybe_inject_descriptor_type(app: Sphinx, what: str, name: str, obj: Any, l
     if (hint := get_descriptor_type_hint(obj)) is None:
         return
     # rendered with the state a parameter's type gets, so aliases and the inventory's roles apply here too
-    with _annotation_state(
+    with annotation_state(
         app.config,
         _typehints_env=getattr(app, "env", None),
         _typehints_module_prefix=_module_prefix(name),
@@ -1059,7 +1041,7 @@ def setup(app: Sphinx) -> dict[str, bool | str]:
     app.connect("autodoc-process-signature", process_signature)
     app.connect("autodoc-process-docstring", process_docstring)
     app.connect("object-description-transform", add_type_params)
-    app.connect("object-description-transform", mark_optional_keys)
+    app.connect("object-description-transform", render_header_types)
     install_patches(app)
     return {
         "version": __version__,
