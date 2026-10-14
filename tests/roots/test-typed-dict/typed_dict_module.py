@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Annotated, Generic, NotRequired, Required, TypedDict, TypeVar, Unpack
 
-from typing_extensions import Doc
+from typing_extensions import Doc, ReadOnly
 from typing_extensions import TypedDict as ExtensionsTypedDict
 
 
@@ -39,6 +39,28 @@ class Extra(ExtensionsTypedDict, extra_items=int):
 
 class ExtraUnstated(ExtensionsTypedDict, extra_items=int):
     """Typed extra items."""
+
+
+class Shape(ExtensionsTypedDict):
+    """A shape."""
+
+    size: ReadOnly[int | str]
+    label: ReadOnly[NotRequired[str]]
+
+
+class Square(Shape):
+    """Narrows the keys of its base."""
+
+    size: ReadOnly[int]
+    label: ReadOnly[Required[str]]
+
+
+class Outline(Shape):
+    """Inherits the keys of its base as they are."""
+
+
+class Tile(Square, Outline):
+    """Reads each key from the first base in the MRO declaring it."""
 
 
 class Plain:
@@ -84,4 +106,12 @@ def configure_legacy(**kwargs: Unpack[LegacyOptions[str]]) -> None:
     Configure the pre-PEP 695 way.
 
     :keyword limit: the limit
+    """
+
+
+def draw(**kwargs: Unpack[Square]) -> None:
+    """
+    Draw.
+
+    :keyword size: the size
     """
