@@ -31,6 +31,7 @@ from sphinx.util.inspect import signature as sphinx_signature
 from ._annotations import (
     MyTypeAliasForwardRef,
     add_type_css_class,
+    fixup_module_name,
     format_annotation,
     get_annotation_args,
     get_annotation_class_name,
@@ -456,12 +457,15 @@ def _inject_override(app: Sphinx, what: str, name: str, obj: Any, lines: list[st
     if not isinstance(owner := _documented_owner(name), type):
         return
     attribute = name.rsplit(".", maxsplit=1)[-1]
-    if (base := next((klass for klass in owner.__mro__[1:] if attribute in vars(klass)), None)) is None:
+    # an inherited member overrides what its defining class's bases define, not what that class itself does
+    defining = next(index for index, klass in enumerate(owner.__mro__) if attribute in vars(klass))
+    if (base := next((klass for klass in owner.__mro__[defining + 1 :] if attribute in vars(klass)), None)) is None:
         return
-    target = f"{base.__module__}.{base.__qualname__}.{attribute}"
-    # the class names which override this is, a bare member name would not
-    text = target if app.config.typehints_fully_qualified else f"{base.__qualname__}.{attribute} <{target}>"
-    lines.extend(["", f":Overrides: :py:{'attr' if what == 'property' else 'meth'}:`{text}`"])
+    target = f"{fixup_module_name(app.config, base.__module__)}.{base.__qualname__}.{attribute}"
+    # the class names which override this is, a bare member name would not; an explicit title keeps the parentheses
+    # Sphinx adds to a bare method reference out of it
+    label = target if app.config.typehints_fully_qualified else f"{base.__qualname__}.{attribute}"
+    lines.extend(["", f":Overrides: :py:{'attr' if what == 'property' else 'meth'}:`{label} <{target}>`"])
 
 
 def _format_overload_lines(overloads: list[inspect.Signature], obj: Any, app: Sphinx, skip: int) -> list[str]:

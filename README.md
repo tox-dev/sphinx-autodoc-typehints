@@ -354,7 +354,9 @@ class Child(Base):
         """Run again."""
 ```
 
-shows `Overrides: Base.run`. A method marked `@override` that no base class defines gets no field.
+shows `Overrides: Base.run`. A method marked `@override` that no base class defines gets no field. Listed under a
+subclass with `:inherited-members:`, the method still links what it overrides in its own class's bases, and the link
+goes through `typehints_fixup_module_name` like any other.
 
 ### Keep type hints in function signatures
 

@@ -272,7 +272,7 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
     # where the docs place a class Python defines elsewhere, such as pathlib.Path living in pathlib._local from 3.13
     if documented := _INVALID_BUILTIN_CLASSES.get((module, class_name)):
         module, _, class_name = documented.rpartition(".")
-    module = _fixup_module_name(config, module)
+    module = fixup_module_name(config, module)
     # typing_extensions backports names to older Pythons, and a backported name is documented under typing
     if module == "typing_extensions" and hasattr(typing, class_name):
         module = "typing"
@@ -301,7 +301,7 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
         full_name = ""
 
     if full_name == "typing.NewType":
-        newtype_module = _fixup_module_name(config, getattr(annotation, "__module__", ""))
+        newtype_module = fixup_module_name(config, getattr(annotation, "__module__", ""))
         newtype_name = annotation.__name__
         newtype_qualified = f"{newtype_module}.{newtype_name}" if newtype_module else newtype_name
         newtype_prefix = "" if fully_qualified or not newtype_module else "~"
@@ -319,7 +319,7 @@ def _format_node(  # ruff:ignore[complex-structure, too-many-return-statements, 
             return f"``{annotation.__name__}``"
         # a signature names a module-level one by where it is defined, as Python writes it
         if getattr(config, "_typehints_signature", False):
-            module = _fixup_module_name(config, annotation.__module__)
+            module = fixup_module_name(config, annotation.__module__)
             return f":py:class:`{'' if fully_qualified else '~'}{module}.{annotation.__name__}`"
         # typing.TypeVarTuple has neither a bound nor a variance, only the typing_extensions backport adds them
         params = {k: getattr(annotation, f"__{k}__", None) for k in ("bound", "covariant", "contravariant")}
@@ -486,7 +486,7 @@ def get_annotation_args(annotation: Any, module: str, class_name: str) -> tuple[
     return () if len(result) == 1 and result[0] == () else result  # type: ignore[misc]
 
 
-def _fixup_module_name(config: Config, module: str) -> str:
+def fixup_module_name(config: Config, module: str) -> str:
     if getattr(config, "typehints_fixup_module_name", None):
         module = config.typehints_fixup_module_name(module)
     if module == "_io":
@@ -508,7 +508,7 @@ def _inventory_role(config: Config, full_name: str) -> str | None:
 def _format_literal_arg(arg: Any, config: Config) -> str:
     if isinstance(arg, enum.Enum):
         enum_cls = type(arg)
-        module = _fixup_module_name(config, enum_cls.__module__)
+        module = fixup_module_name(config, enum_cls.__module__)
         fully_qualified = getattr(config, "typehints_fully_qualified", False)
         member = f"{enum_cls.__qualname__}.{arg.name}"
         if not module:
@@ -655,7 +655,7 @@ def _type_alias_crossref(annotation: TypeAliasType, config: Config) -> str | Non
             return f":py:type:`{prefix}{candidate}`"
     current_top = prefix_parts[0] if prefix_parts else ""
     if canonical and canonical.split(".")[0] != current_top:
-        full_name = _fixup_module_name(config, canonical.rpartition(".")[0]) + "." + annotation.__name__
+        full_name = fixup_module_name(config, canonical.rpartition(".")[0]) + "." + annotation.__name__
         return f":py:obj:`{prefix}{full_name}`"
     return None
 

@@ -1549,48 +1549,66 @@ class _OverrideGrandchild(_OverrideChild):
     def run(self) -> str: ...
 
 
+class _OverrideInheritor(_OverrideChild):
+    """Inherits the override of _OverrideChild."""
+
+
 @pytest.mark.parametrize(
-    ("what", "member", "fully_qualified", "expected"),
+    ("what", "member", "overrides", "expected"),
     [
         pytest.param(
             "method",
             "_OverrideChild.run",
-            False,
+            {},
             [":Overrides: :py:meth:`_OverrideBase.run <test_init._OverrideBase.run>`"],
             id="method",
         ),
         pytest.param(
             "property",
             "_OverrideChild.size",
-            False,
+            {},
             [":Overrides: :py:attr:`_OverrideBase.size <test_init._OverrideBase.size>`"],
             id="property",
         ),
         pytest.param(
             "method",
             "_OverrideGrandchild.run",
-            False,
+            {},
             [":Overrides: :py:meth:`_OverrideChild.run <test_init._OverrideChild.run>`"],
             id="wrapped-method-nearest-base",
         ),
         pytest.param(
             "method",
+            "_OverrideInheritor.run",
+            {},
+            [":Overrides: :py:meth:`_OverrideBase.run <test_init._OverrideBase.run>`"],
+            id="inherited-member",
+        ),
+        pytest.param(
+            "method",
             "_OverrideChild.run",
-            True,
-            [":Overrides: :py:meth:`test_init._OverrideBase.run`"],
+            {"typehints_fully_qualified": True},
+            [":Overrides: :py:meth:`test_init._OverrideBase.run <test_init._OverrideBase.run>`"],
             id="fully-qualified",
         ),
-        pytest.param("method", "_OverrideChild.extra", False, [], id="nothing-to-override"),
-        pytest.param("method", "_OverrideChild.plain", False, [], id="not-marked"),
+        pytest.param(
+            "method",
+            "_OverrideChild.run",
+            {"typehints_fixup_module_name": lambda module: "renamed" if module == "test_init" else module},
+            [":Overrides: :py:meth:`_OverrideBase.run <renamed._OverrideBase.run>`"],
+            id="fixed-up-module",
+        ),
+        pytest.param("method", "_OverrideChild.extra", {}, [], id="nothing-to-override"),
+        pytest.param("method", "_OverrideChild.plain", {}, [], id="not-marked"),
     ],
 )
 def test_process_docstring_links_what_an_override_overrides(
-    what: str, member: str, fully_qualified: bool, expected: list[str]
+    what: str, member: str, overrides: dict[str, object], expected: list[str]
 ) -> None:
     owner, attribute = member.split(".")
-    obj = vars(globals()[owner])[attribute]
+    obj = inspect.getattr_static(globals()[owner], attribute)
     lines = ["Summary."]
-    app = make_docstring_app(typehints_document_rtype=False, typehints_fully_qualified=fully_qualified)
+    app = make_docstring_app(typehints_document_rtype=False, **overrides)
     process_docstring(app, what, f"test_init.{member}", obj, None, lines)
     assert lines == ["Summary.", *([""] if expected else []), *expected]
 
