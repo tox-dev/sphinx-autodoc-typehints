@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import singledispatch
 from typing import TYPE_CHECKING, NamedTuple, Self, overload
 
 if TYPE_CHECKING:
@@ -143,3 +144,18 @@ class DocumentedTwiceThroughNew:
 
         :param second: the second
         """
+
+
+@singledispatch
+def dispatch(arg: object, flag: bool = False) -> str:
+    """
+    Dispatch on the argument type.
+
+    :param arg: the argument
+    """
+    return f"{arg}{flag}"
+
+
+@dispatch.register
+def _(arg: int, flag: bool = False) -> str:
+    return f"{arg}{flag}"
