@@ -13,6 +13,7 @@ from sphinx.util import logging
 
 from ._annotations import annotation_state, format_annotation, signature_text
 from ._resolver import resolve_annotations, resolve_type_guarded_imports
+from ._type_params import bound_type_args, specialize
 from ._typed_dict import typed_dict_keys
 
 if TYPE_CHECKING:
@@ -81,15 +82,21 @@ def _hint(app: Sphinx, signode: addnodes.desc_signature, objtype: str, name: str
         owner = getattr(owner, part, None)
     # the header's own resolution reports nothing, the docstring of the same object warns about what fails there
     with logging.suppress_logging():
-        if objtype == "property":
-            # a class property is a classmethod wrapping the property
-            member = getattr(member := inspect.getattr_static(owner, attribute), "__func__", member)
-            getter = member.func if isinstance(member, cached_property) else member.fget
-            return resolve_annotations(app.config.autodoc_mock_imports, getter, name).get("return", _MISSING)
-        # a TypedDict key also shows whether a caller may leave it out
-        if keys := typed_dict_keys(owner):
-            return keys.get(attribute, _MISSING)
-        return resolve_annotations(app.config.autodoc_mock_imports, owner, name).get(attribute, _MISSING)
+        hint = _declared_hint(app, owner, attribute, objtype, name)
+    # a member inherited from a generic base reads the arguments the documenting class gives its type parameters
+    return specialize(hint, arguments) if (arguments := bound_type_args(owner, attribute)) else hint
+
+
+def _declared_hint(app: Sphinx, owner: Any, attribute: str, objtype: str, name: str) -> Any:
+    if objtype == "property":
+        # a class property is a classmethod wrapping the property
+        member = getattr(member := inspect.getattr_static(owner, attribute), "__func__", member)
+        getter = member.func if isinstance(member, cached_property) else member.fget
+        return resolve_annotations(app.config.autodoc_mock_imports, getter, name).get("return", _MISSING)
+    # a TypedDict key also shows whether a caller may leave it out
+    if keys := typed_dict_keys(owner):
+        return keys.get(attribute, _MISSING)
+    return resolve_annotations(app.config.autodoc_mock_imports, owner, name).get(attribute, _MISSING)
 
 
 __all__ = ["note_documented", "render_header_types"]

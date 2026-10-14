@@ -62,3 +62,26 @@ def test_header_type_fully_qualified(app: SphinxTestApp, write_rst: Callable[[st
 
     header = (Path(app.outdir) / "index.txt").read_text().splitlines()[0]
     assert header == "header_module.RATE: decimal.Decimal | None = None"
+
+
+@pytest.mark.parametrize(
+    ("rst", "expected"),
+    [
+        pytest.param(".. autoattribute:: header_module.IntBox.value", "IntBox.value: int", id="annotation-only"),
+        pytest.param(
+            ".. autoattribute:: header_module.IntBox.label", "IntBox.label: tuple[int, ...] = ()", id="with-a-value"
+        ),
+        pytest.param(".. autoproperty:: header_module.IntBox.first", "property IntBox.first: int", id="property"),
+        pytest.param(
+            ".. autoattribute:: header_module.StrLegacy.items", "StrLegacy.items: list[str]", id="legacy-generic"
+        ),
+    ],
+)
+@pytest.mark.sphinx("text", testroot="headers")
+def test_header_type_binds_an_inherited_type_parameter(
+    app: SphinxTestApp, write_rst: Callable[[str], None], rst: str, expected: str
+) -> None:
+    write_rst(rst)
+    app.build()
+
+    assert (Path(app.outdir) / "index.txt").read_text().splitlines()[0] == expected
