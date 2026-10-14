@@ -25,3 +25,16 @@ def count_eager(amount: Count, limit: int) -> None:
         amount: The amount
         limit: The limit
     """
+
+
+class Users:
+    """A user registry."""
+
+    def get(self, user_id: UserId) -> str:
+        """
+        Get a user by ID.
+
+        Args:
+            user_id: The user identifier
+        """
+        return f"{type(self).__name__} {user_id}"
