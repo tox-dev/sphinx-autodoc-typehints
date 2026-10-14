@@ -113,9 +113,10 @@ def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-
     original_obj = obj
     if inspect.isclass(obj) and _declared_signature(obj) is None:
         obj = getattr(obj, _constructor_name(obj))
-    # a wrapper may carry no annotations of its own, like the 3.14 lru_cache one that only copies __annotate__
+    # a wrapper may carry no annotations of its own, like the 3.14 lru_cache one that only copies __annotate__; one
+    # stating __signature__ is called with that, as inspect.signature and so autodoc go by
     try:
-        obj = inspect.unwrap(obj)
+        obj = inspect.unwrap(obj, stop=lambda func: _declared_signature(func) is not None)
         annotated = _annotated_function(obj)
     except ValueError:
         return None
