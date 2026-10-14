@@ -15,13 +15,9 @@ if TYPE_CHECKING:
     ("rst", "expected"),
     [
         pytest.param(".. autoattribute:: typed_dict_module.Movie.year", "NotRequired[int]", id="total-false"),
-        pytest.param(".. autoattribute:: typed_dict_module.Movie.title", "Required[str]", id="required"),
+        pytest.param(".. autoattribute:: typed_dict_module.Movie.title", "str", id="required"),
         pytest.param(".. autoattribute:: typed_dict_module.Movie.rating", "NotRequired[float]", id="not-required"),
-        pytest.param(
-            ".. autoattribute:: typed_dict_module.Movie.note",
-            "NotRequired[Annotated[str, Doc('a note')]]",
-            id="annotated",
-        ),
+        pytest.param(".. autoattribute:: typed_dict_module.Movie.note", "NotRequired[str]", id="annotated"),
         pytest.param(".. autoattribute:: typed_dict_module.Plain.year", "int", id="not-a-typed-dict"),
     ],
 )

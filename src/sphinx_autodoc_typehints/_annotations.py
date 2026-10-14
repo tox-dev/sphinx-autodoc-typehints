@@ -17,6 +17,7 @@ import re
 import sys
 import types
 import typing
+from contextlib import contextmanager
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -717,3 +718,24 @@ def signature_text(type_rst: str) -> str:
 
     markup = r":(?:[\w-]+:)+`(?P<role>(?:[^`\\]|\\.)*)`|``(?P<literal>.+?)``|\\(?P<escaped>.)"
     return re.sub(markup, plain, type_rst, flags=re.DOTALL)
+
+
+@contextmanager
+def annotation_state(config: Config, **values: Any) -> Generator[None, None, None]:
+    """
+    Publish the state format_annotation reads off the config, restoring what was there.
+
+    Documenting an object can re-enter this handler for another one, and deleting the attributes
+    on the way out of the inner call then broke the outer call's teardown (#750).
+    """
+    previous = {name: getattr(config, name) for name in values if hasattr(config, name)}
+    for name, value in values.items():
+        setattr(config, name, value)
+    try:
+        yield
+    finally:
+        for name in values:
+            if name in previous:
+                setattr(config, name, previous[name])
+            else:
+                delattr(config, name)

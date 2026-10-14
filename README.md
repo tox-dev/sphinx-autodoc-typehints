@@ -291,7 +291,8 @@ renders `verbose` as `bool` and `level` as `NotRequired[int]`, since a caller ma
 ### Document `TypedDict` classes
 
 A `TypedDict` documented with `:members:` and `:undoc-members:` lists its keys as attributes. A key that may be left out
-shows as `NotRequired[...]`, also when the class's `total=False` makes it so rather than its annotation. The items a
+shows as `NotRequired[...]`, also when the class's `total=False` makes it so rather than its annotation, and one a
+caller must pass shows its type alone, also when written as `Required[...]`. The items a
 [PEP 728](https://peps.python.org/pep-0728/) `TypedDict` accepts beyond its keys show as an `Extra items` field:
 
 ```python
@@ -682,8 +683,9 @@ With Sphinx's
 [`python_display_short_literal_types`](https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-python_display_short_literal_types)
 on, `Literal["a", "b"]` renders as `'a' | 'b'`.
 
-The table covers the types the extension writes into fields and signatures. Autodoc writes the header of an attribute or
-property itself, so `count: Annotated[int, ...]` keeps its `Annotated` there.
+The table covers the types the extension writes into fields and signatures, and into the header of data, an attribute or
+a property autodoc documents, so `count: Annotated[int, ...]` shows as `count: int` there too. A header written by hand,
+such as `.. py:data:: mod.x` with a `:type:` option, keeps the type as written.
 
 ### Warning categories
 
@@ -716,6 +718,11 @@ directive, `.. autofunction:: mod.f(x, y=3)`, or on the docstring's first line w
 [`autodoc_docstring_signature`](https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#confval-autodoc_docstring_signature).
 One with the same parameters, differing only in defaults or types, is replaced by the object's own, and so is one made
 of only `*args` and `**kwargs`, which is what autodoc falls back to when it can't see a class's parameters.
+
+Autodoc writes the type after the name of data, an attribute or a property itself, evaluating the annotation before any
+event runs, so a name imported under `TYPE_CHECKING` resolved there only when documenting something else had imported it
+first. The extension renders that type again once the header is built, the way it renders a field's type, with
+`typehints_fully_qualified` and the `TYPE_CHECKING` imports applied.
 
 Autodoc leaves the type parameters of a generic object out of its signature. The extension adds them after the name,
 with bounds, constraints and defaults, the way [PEP 695](https://peps.python.org/pep-0695/) writes them:
