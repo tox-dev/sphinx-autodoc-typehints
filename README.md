@@ -24,6 +24,9 @@ documentation -- so you write types once in code and they appear in your docs wi
 - Extracts descriptions from [`Annotated[T, Doc(...)]`](https://typing-extensions.readthedocs.io/en/latest/#Doc)
   metadata
 - Works with [Google and NumPy](https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html) docstring styles
+  and with [numpydoc](https://numpydoc.readthedocs.io/)
+- Reads [PEP 484 type comments](https://peps.python.org/pep-0484/#type-comments) when a function has no annotations
+- Types instance attributes annotated in `__init__` for their `:ivar:` fields
 
 Sphinx has a built-in
 [`autodoc_typehints`](https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#confval-autodoc_typehints)
@@ -37,6 +40,7 @@ features above. See [Avoid duplicate types with built-in Sphinx](#avoid-duplicat
 - [How-to guides](#how-to-guides)
   - [Avoid duplicate types with built-in Sphinx](#avoid-duplicate-types-with-built-in-sphinx)
   - [Use with Google or NumPy docstring style](#use-with-google-or-numpy-docstring-style)
+  - [Use with numpydoc](#use-with-numpydoc)
   - [Control return type display](#control-return-type-display)
   - [Change how union types look](#change-how-union-types-look)
   - [Show default parameter values](#show-default-parameter-values)
@@ -45,9 +49,14 @@ features above. See [Avoid duplicate types with built-in Sphinx](#avoid-duplicat
   - [Handle circular imports](#handle-circular-imports)
   - [Resolve types from `TYPE_CHECKING` blocks](#resolve-types-from-type_checking-blocks)
   - [Show types for `attrs` or `dataclass` fields](#show-types-for-attrs-or-dataclass-fields)
+  - [Type instance attributes documented with `:ivar:`](#type-instance-attributes-documented-with-ivar)
   - [Write a custom type formatter](#write-a-custom-type-formatter)
-  - [Document a `NewType` or `type` alias without expanding it](#document-a-newtype-or-type-alias-without-expanding-it)
+  - [Document a `type` alias without expanding it](#document-a-type-alias-without-expanding-it)
   - [Add types for C extensions or packages without annotations](#add-types-for-c-extensions-or-packages-without-annotations)
+  - [Use type comments](#use-type-comments)
+  - [Document generators](#document-generators)
+  - [List parameters once with `autoclass_content = "both"`](#list-parameters-once-with-autoclass_content--both)
+  - [Style the injected types](#style-the-injected-types)
   - [Fix cross-reference links for stdlib types](#fix-cross-reference-links-for-stdlib-types)
   - [Fix cross-reference links for renamed modules](#fix-cross-reference-links-for-renamed-modules)
   - [Suppress warnings](#suppress-warnings)
@@ -72,6 +81,8 @@ Then add the extension to your [`conf.py`](https://www.sphinx-doc.org/en/master/
 ```python
 extensions = ["sphinx.ext.autodoc", "sphinx_autodoc_typehints"]
 ```
+
+It needs Python 3.12 or later and Sphinx 9.1 or later, and it is safe for parallel builds (`sphinx-build -j`).
 
 ## Quick start
 
@@ -148,6 +159,27 @@ or `napoleon_use_keyword` set to `False`, napoleon lists all parameters in one f
 after each name, where napoleon puts a type written in the docstring. A type written in the docstring is kept. With
 [numpydoc](https://numpydoc.readthedocs.io/), an `Other Parameters` section renders this way too, under its own heading.
 
+The extension supplies the types napoleon would otherwise read from the annotations for parameters, while napoleon's
+`Attributes` sections keep its own lookup. A keyword argument napoleon writes as a `:keyword:` field gets a
+`:paramtype:` next to it, and a `:kwtype:` napoleon wrote from the docstring counts as an existing type.
+
+### Use with numpydoc
+
+The [numpydoc](https://numpydoc.readthedocs.io/) extension works too; load it before this extension:
+
+```python
+extensions = [
+    "sphinx.ext.autodoc",
+    "numpydoc",
+    "sphinx_autodoc_typehints",
+]
+```
+
+The `Parameters`, `Other Parameters`, `Returns`, `Yields` and `Raises` sections numpydoc produces are turned into field
+lists first, so the types from the annotations go in as they do for Sphinx-style docstrings. An entry naming several
+parameters, `a, b : int`, is split into one per name, and a type written in the docstring is kept for a parameter
+without an annotation.
+
 ### Control return type display
 
 By default, return types appear as a separate block in your docs. You can change this:
@@ -166,8 +198,8 @@ typehints_use_rtype = False
 
 ### Change how union types look
 
-By default, union types display as `Union[str, int]` and `Optional[str]`. To use the shorter pipe syntax (`str | int`,
-`str | None`):
+A union written with the pipe syntax, `str | int`, renders that way. One written as `Union[str, int]` or `Optional[str]`
+renders as written by default; to show those with pipes too:
 
 ```python
 always_use_bars_union = True
@@ -182,7 +214,8 @@ By default, `Optional[Union[A, B]]` is simplified to `Union[A, B, None]`. To kee
 simplify_optional_unions = False
 ```
 
-Note: with this set to `False`, any union containing `None` will display as `Optional`.
+With this set to `False`, a `Union[...]` or `Optional[...]` containing `None` displays as `Optional`. A union written
+with pipes, such as `int | str | None`, keeps them.
 
 ### Show default parameter values
 
@@ -199,7 +232,8 @@ typehints_defaults = "braces"
 typehints_defaults = "braces-after"
 ```
 
-With `"braces-after"`, the default closes the last plain paragraph of the description. A list, a directive such as
+`None` and `False` leave defaults out, and any other value stops the build with a configuration error. With
+`"braces-after"`, the default closes the last plain paragraph of the description. A list, a directive such as
 `.. note::`, or a literal block at the end of the description stays as written, and a paragraph introducing a literal
 block keeps its `::` last.
 
@@ -227,7 +261,12 @@ def f(x):
     """
 ```
 
-The `:no-overloads:` directive is stripped from the rendered output.
+The `:no-overloads:` directive is stripped from the rendered output, also when `typehints_document_overloads` is off.
+
+The overloads go right after the summary paragraph, so
+[autosummary](https://www.sphinx-doc.org/en/master/usage/extensions/autosummary.html) still picks the summary up. A
+function documented through its overloads gets no separate return type, since each overload states its own. An exception
+class lists its constructor overloads like any other class, and a static method keeps its first parameter.
 
 ### Keep type hints in function signatures
 
@@ -262,9 +301,11 @@ module-level guard counts, whether it names `TYPE_CHECKING` directly or through 
 `t.TYPE_CHECKING`, including the `else` branch of `if not TYPE_CHECKING:` and tests that combine it with `and` or `or`.
 When the block imports a dependency your docs environment lacks, the extension mocks it the way
 [`autodoc_mock_imports`](https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#confval-autodoc_mock_imports)
-would, so its types still render as cross-references; install it when you want those references to resolve. A statement
-raises a warning when it fails for another reason, such as a dependency you have installed but that fails to import. Fix
-the environment, or suppress it:
+would, so its types still render as cross-references; install it when you want those references to resolve. That
+includes a relative import of a sibling module that is absent. An import statement raises a warning when it fails for
+another reason, such as a dependency you have installed but that fails to import. A guarded statement that only a type
+checker accepts, and that imports nothing, is skipped silently, and the names it would define still work in annotations.
+Fix the environment, or suppress the warning:
 
 ```python
 suppress_warnings = ["sphinx_autodoc_typehints.guarded_import"]
@@ -275,6 +316,25 @@ suppress_warnings = ["sphinx_autodoc_typehints.guarded_import"]
 The extension backfills annotations from [attrs](https://www.attrs.org/) field metadata automatically. For
 [dataclasses](https://docs.python.org/3/library/dataclasses.html), annotations are read from the class body. Make sure
 the class is documented with `.. autoclass::` and `:members:` or `:undoc-members:`.
+
+### Type instance attributes documented with `:ivar:`
+
+An attribute annotated where `__init__` assigns it gets a `:vartype:` for its `:ivar:` field:
+
+```python
+class Job:
+    """
+    A job.
+
+    :ivar retries: how often it ran again
+    """
+
+    def __init__(self) -> None:
+        self.retries: int = 0
+```
+
+renders `retries` as `int`. Assignments inside `if`, `try` and `with` blocks count, ones in nested functions do not, and
+an `:ivar int retries:` or an existing `:vartype retries:` stays as written.
 
 ### Write a custom type formatter
 
@@ -292,29 +352,89 @@ def my_formatter(annotation, config):
 typehints_formatter = my_formatter
 ```
 
+With `typehints_use_signature` or `typehints_use_signature_return`, the formatter also decides the types kept in the
+signature. A value that is not callable stops the build with a configuration error.
+
 To always show the full module path for types (e.g., `collections.OrderedDict` instead of `OrderedDict`):
 
 ```python
 typehints_fully_qualified = True
 ```
 
-### Document a `NewType` or `type` alias without expanding it
+### Document a `type` alias without expanding it
 
 The extension preserves alias names only when they have a `.. py:type::` directive in your docs. Without that entry, the
-alias is expanded to its underlying type. Add a documentation entry for the alias, and it will render as a clickable
-link instead. The entry has to name the alias where the annotation looks it up: `.. py:type:: pkg.Vector` serves the
-functions and methods of `pkg`, while an alias documented in a submodule such as `pkg.compat` does not.
+alias is expanded to its underlying type. A [`NewType`](https://docs.python.org/3/library/typing.html#typing.NewType) is
+never expanded: it renders as its name followed by its supertype, `UserId (int)`. Add a documentation entry for the
+alias, and it will render as a clickable link instead. The entry has to name the alias where the annotation looks it up:
+`.. py:type:: pkg.Vector` serves the functions and methods of `pkg`, while an alias documented in a submodule such as
+`pkg.compat` does not.
 
 A plain assignment such as `Count = int` evaluates to the very type it names, so without
 `from __future__ import annotations` the extension reads the function's source to tell `limit: Count` from `limit: int`.
 Only the parameters written with the alias name render as the alias, and functions without source, such as generated
 ones, show the underlying type.
 
+An alias set in
+[`autodoc_type_aliases`](https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#confval-autodoc_type_aliases)
+renders by its name. It links to the target it names when the docs document that target, as a type, class or data entry;
+otherwise the name shows as plain text, so the value may also be a display string. The extension decides once every
+document is read, so the result does not depend on the order documents are read in or on `-j`.
+
+A recursive alias such as `type Json = dict[str, Json] | list[Json] | str` renders its self-reference as a link to the
+alias name. A generic alias used with arguments, `Pairs[int]`, expands with the arguments put in, or shows by name when
+the arguments do not fit its parameters.
+
 ### Add types for C extensions or packages without annotations
 
 The extension reads [`.pyi` stub files](https://typing.python.org/en/latest/spec/distributing.html#stub-files)
 automatically. Place a `.pyi` file next to the `.so`/`.pyd` file (or as `__init__.pyi` in the package directory) with
-the type annotations, and they'll be picked up.
+the type annotations, and they'll be picked up. Beyond that:
+
+- A function a package re-exports from a native submodule, such as `pkg._native.parse` exposed as `pkg.parse`, takes its
+  types from the package's `__init__.pyi`, and a native submodule without a `__file__`, as PyO3 builds them, finds its
+  stub too.
+- The `@overload` variants of a stub combine into a union, unless the stub also gives the implementation's signature.
+- `if sys.version_info` and `if sys.platform` branches are followed for the running interpreter.
+- A name that exists only in the stub, including a stub `TypeAlias` or `type` alias, renders as a cross-reference.
+- A C attribute (a getset or member descriptor) gets its type from the stub's `@property` or class annotation.
+
+### Use type comments
+
+A function without annotations can carry its types in a
+[PEP 484 type comment](https://peps.python.org/pep-0484/#type-comments), which the extension reads:
+
+```python
+def scale(value, factor):
+    # type: (float, int) -> float
+    """
+    Scale a value.
+
+    :param value: the value
+    :param factor: the factor
+    """
+```
+
+The per-argument form, a `# type:` comment after each parameter, works too, and `self` or `cls` may be left out of the
+comment. A comment that does not parse raises a `sphinx_autodoc_typehints.comment` warning.
+
+### Document generators
+
+A function annotated to return a `Generator`, `Iterator`, `AsyncGenerator` or `AsyncIterator` whose docstring has a
+`Yields` section (`:Yields:`, `:yields:` or `:yield:`, as napoleon and numpydoc write it) gets no return type, since the
+`Yields` section already describes what it produces.
+
+### List parameters once with `autoclass_content = "both"`
+
+With
+[`autoclass_content = "both"`](https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#confval-autoclass_content),
+Sphinx shows the class and the constructor docstrings together. A parameter either of them documents gets its type
+there, and `always_document_param_types` adds the remaining ones only once, under the constructor docstring.
+
+### Style the injected types
+
+Every type the extension adds is wrapped in an inline element with the CSS class `sphinx_autodoc_typehints-type`, which
+a theme or a custom stylesheet can target.
 
 ### Fix cross-reference links for stdlib types
 
@@ -375,31 +495,41 @@ To suppress only specific warning types, see [Warning categories](#warning-categ
 
 ### Configuration options
 
-| Option                           | Default | Description                                                                                        |
-| -------------------------------- | ------- | -------------------------------------------------------------------------------------------------- |
-| `typehints_document_rtype`       | `True`  | Show the return type in docs.                                                                      |
-| `typehints_document_rtype_none`  | `True`  | Show return type when it's `None`.                                                                 |
-| `typehints_document_overloads`   | `True`  | Show `@overload` signatures in docs. Use `:no-overloads:` in a docstring for per-function control. |
-| `typehints_use_rtype`            | `True`  | Show return type as a separate block. When `False`, it's inlined with the return description.      |
-| `always_use_bars_union`          | `False` | Use `X \| Y` instead of `Union[X, Y]`. Always on for Python 3.14+.                                 |
-| `simplify_optional_unions`       | `True`  | Flatten `Optional[Union[A, B]]` to `Union[A, B, None]`.                                            |
-| `typehints_defaults`             | `None`  | Show default values: `"comma"`, `"braces"`, or `"braces-after"`.                                   |
-| `typehints_use_signature`        | `False` | Keep parameter types in the function signature.                                                    |
-| `typehints_use_signature_return` | `False` | Keep the return type in the function signature.                                                    |
-| `typehints_fully_qualified`      | `False` | Show full module path for types (e.g., `module.Class` not `Class`).                                |
-| `always_document_param_types`    | `False` | Add types even for parameters that don't have a `:param:` entry in the docstring.                  |
-| `typehints_formatter`            | `None`  | A function `(annotation, Config) -> str \| None` for custom type rendering.                        |
-| `typehints_fixup_module_name`    | `None`  | A function `(str) -> str` to rewrite module paths before generating cross-reference links.         |
+| Option                           | Default | Description                                                                                               |
+| -------------------------------- | ------- | --------------------------------------------------------------------------------------------------------- |
+| `typehints_document_rtype`       | `True`  | Show the return type in docs.                                                                             |
+| `typehints_document_rtype_none`  | `True`  | Show return type when it's `None`.                                                                        |
+| `typehints_document_overloads`   | `True`  | Show `@overload` signatures in docs. Use `:no-overloads:` in a docstring for per-function control.        |
+| `typehints_use_rtype`            | `True`  | Show return type as a separate block. When `False`, it's inlined with the return description.             |
+| `always_use_bars_union`          | `False` | Show `Union[X, Y]` and `Optional[X]` with bars too; `X \| Y` always has them. Always on for Python 3.14+. |
+| `simplify_optional_unions`       | `True`  | Flatten `Optional[Union[A, B]]` to `Union[A, B, None]`.                                                   |
+| `typehints_defaults`             | `None`  | Show default values: `"comma"`, `"braces"`, or `"braces-after"`.                                          |
+| `typehints_use_signature`        | `False` | Keep parameter types in the function signature.                                                           |
+| `typehints_use_signature_return` | `False` | Keep the return type in the function signature.                                                           |
+| `typehints_fully_qualified`      | `False` | Show full module path for types (e.g., `module.Class` not `Class`), in signatures too.                    |
+| `always_document_param_types`    | `False` | Add types even for parameters that don't have a `:param:` entry in the docstring.                         |
+| `typehints_formatter`            | `None`  | A function `(annotation, Config) -> str \| None` for custom type rendering.                               |
+| `typehints_fixup_module_name`    | `None`  | A function `(str) -> str` to rewrite module paths before generating cross-reference links.                |
 
 ### Typing constructs
 
 Some annotations render differently from how they are written:
 
-| Written                                                  | Rendered                                                      |
-| -------------------------------------------------------- | ------------------------------------------------------------- |
-| `*args: *Ts`, `tuple[*Ts]`                               | `Unpack[TypeVarTuple(Ts)]`, `tuple[Unpack[TypeVarTuple(Ts)]]` |
-| `*args: *tuple[int, ...]`                                | `Unpack[tuple[int, ...]]`                                     |
-| `def f[T: int](value: T)`, `T = TypeVar("T", bound=int)` | `TypeVar(T, bound=int)`                                       |
+| Written                                                  | Rendered                                                          |
+| -------------------------------------------------------- | ----------------------------------------------------------------- |
+| `*args: *Ts`, `tuple[*Ts]`                               | `Unpack[TypeVarTuple(Ts)]`, `tuple[Unpack[TypeVarTuple(Ts)]]`     |
+| `*args: *tuple[int, ...]`                                | `Unpack[tuple[int, ...]]`                                         |
+| `def f[T: int](value: T)`, `T = TypeVar("T", bound=int)` | `TypeVar(T, bound=int)`                                           |
+| `P.args`, `P.kwargs` for `P = ParamSpec("P")`            | `ParamSpecArgs(P)`, `ParamSpecKwargs(P)`                          |
+| `UserId = NewType("UserId", int)`                        | `UserId (int)`                                                    |
+| `Annotated[int, ...]`                                    | `int`, with a `Doc(...)` in the metadata becoming the description |
+| `Literal[Color.RED]`                                     | `Literal[Color.RED]`, linking the enum member                     |
+| `tuple[()]`                                              | `tuple[()]`, the empty tuple                                      |
+| `typing_extensions.Self`                                 | `Self`, linking to `typing.Self` where `typing` has it            |
+
+With Sphinx's
+[`python_display_short_literal_types`](https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-python_display_short_literal_types)
+on, `Literal["a", "b"]` renders as `'a' | 'b'`.
 
 ### Warning categories
 
@@ -407,14 +537,14 @@ All warnings can be suppressed via Sphinx's
 [`suppress_warnings`](https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-suppress_warnings) in
 `conf.py`:
 
-| Category                                      | When it's raised                                                                       |
-| --------------------------------------------- | -------------------------------------------------------------------------------------- |
-| `sphinx_autodoc_typehints`                    | Catch-all for every warning from this extension.                                       |
-| `sphinx_autodoc_typehints.comment`            | A type comment (`# type: ...`) couldn't be parsed.                                     |
-| `sphinx_autodoc_typehints.forward_reference`  | A string annotation names something undefined or isn't valid Python; shown as written. |
-| `sphinx_autodoc_typehints.guarded_import`     | A `TYPE_CHECKING` statement failed for a reason other than an absent dependency.       |
-| `sphinx_autodoc_typehints.local_function`     | A type annotation references a function defined inside another function.               |
-| `sphinx_autodoc_typehints.multiple_ast_nodes` | A type comment matched multiple definitions and the right one is ambiguous.            |
+| Category                                      | When it's raised                                                                                          |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `sphinx_autodoc_typehints`                    | Catch-all for every warning from this extension.                                                          |
+| `sphinx_autodoc_typehints.comment`            | A type comment (`# type: ...`) couldn't be parsed, or lists fewer types than the function has parameters. |
+| `sphinx_autodoc_typehints.forward_reference`  | An annotation names something undefined or isn't valid Python, on 3.14 unevaluated too; shown as written. |
+| `sphinx_autodoc_typehints.guarded_import`     | An import in a `TYPE_CHECKING` block failed for a reason other than an absent dependency.                 |
+| `sphinx_autodoc_typehints.local_function`     | A method of a class defined inside a function can't be processed; wrap wrappers with `functools.wraps`.   |
+| `sphinx_autodoc_typehints.multiple_ast_nodes` | The source of an unannotated function didn't parse to one definition, so its type comment can't be read.  |
 
 ## Explanation
 
@@ -426,8 +556,16 @@ First, it strips type annotations from function signatures (so they don't appear
 and adds type information into the docstring -- parameter types go next to each `:param:` entry, and the return type
 becomes an `:rtype:` entry.
 
-Only parameters that already have a `:param:` line in the docstring get type information added. Set
-`always_document_param_types = True` to add types for all parameters, even undocumented ones.
+Only parameters that already have a `:param:` line in the docstring get type information added, with two exceptions: a
+parameter whose annotation carries a `Doc(...)` description gets a `:param:` line of its own, and the entries of
+napoleon's combined parameter field get their types in place. Set `always_document_param_types = True` to add types for
+all parameters, even undocumented ones; the added lines follow the signature's order, next to the documented parameters.
+
+Parameters are recognized under `:param`, `:parameter`, `:arg`, `:argument`, `:keyword`, `:kwarg` and `:kwparam`, with
+`*args` and `**kwargs` escaped or not. A type written in the field, `:param int x:`, and a `:type x:` field give way to
+the annotation, and a parameter without one keeps its docstring type. A `@typing.no_type_check` function still gets its
+types, decorated functions are documented through `__wrapped__`, and on Python 3.14 an annotation that fails to evaluate
+shows as written.
 
 ### How return type options interact
 
@@ -442,3 +580,8 @@ The return type options combine as follows:
 - **Disabled** (`typehints_document_rtype = False`) -- no return type shown, regardless of other settings.
 - **Skip None** (`typehints_document_rtype_none = False`) -- hides `None` return types specifically, other return types
   still appear.
+
+Classes and constructors get no return type, and a property shows its type in its header instead. An `:rtype:` written
+in the docstring, over one line or several, gives way to the annotation. The separate block goes after the parameter
+fields, before the first directive or other block that follows them, or at the end. A return annotation carrying a
+`Doc(...)` description adds a `:return:` entry when the docstring has none.
