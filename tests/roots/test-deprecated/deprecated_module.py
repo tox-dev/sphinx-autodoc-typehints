@@ -36,3 +36,13 @@ def noted(value: int) -> int:
        Use fresh().
     """
     return value
+
+
+@deprecated("Use fresh() instead.")
+def shown(value: int) -> int:
+    """
+    Use it like this::
+
+        shown(1)
+    """
+    return value

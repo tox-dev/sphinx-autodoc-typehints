@@ -65,6 +65,22 @@ if TYPE_CHECKING:
             """,
             id="documented-deprecation",
         ),
+        pytest.param(
+            ".. autofunction:: deprecated_module.shown",
+            """\
+            deprecated_module.shown(value)
+
+               Use it like this:
+
+                  shown(1)
+
+               Deprecated: Use fresh() instead.
+
+               Return type:
+                  "int"
+            """,
+            id="summary-introducing-a-literal-block",
+        ),
     ],
 )
 @pytest.mark.sphinx("text", testroot="deprecated")
