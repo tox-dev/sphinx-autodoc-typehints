@@ -378,7 +378,11 @@ def _summary_end(lines: list[str]) -> int:
     """Index past the summary paragraph so overloads land below it and autosummary still reads it (#730)."""
     if (start := next((i for i, line in enumerate(lines) if line.strip()), None)) is None:
         return len(lines)
-    return next((i for i in range(start, len(lines)) if not lines[i].strip()), len(lines))
+    end = next((i for i in range(start, len(lines)) if not lines[i].strip()), len(lines))
+    if not lines[end - 1].rstrip().endswith("::"):
+        return end
+    # a summary introducing a literal block owns the indented lines after it, so nothing can go between them
+    return next((i for i in range(end, len(lines)) if lines[i].strip() and not lines[i][:1].isspace()), len(lines))
 
 
 def _strip_no_overloads_directive(lines: list[str]) -> bool:
