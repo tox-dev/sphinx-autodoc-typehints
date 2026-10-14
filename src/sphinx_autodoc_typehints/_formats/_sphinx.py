@@ -11,7 +11,7 @@ from __future__ import annotations
 import collections.abc
 import re
 from itertools import pairwise
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from docutils import nodes
 from docutils.frontend import get_default_settings
@@ -169,11 +169,17 @@ class SphinxFieldListFormat(DocstringFormat):
         lines.insert(at, f":type {arg_name}: {formatted_type}")
 
     def add_undocumented_param(  # ruff:ignore[no-self-use]
-        self, lines: list[str], arg_name: str, description: str = "", *, before: int | None = None
+        self,
+        lines: list[str],
+        arg_name: str,
+        description: str = "",
+        *,
+        before: int | None = None,
+        field: Literal["param", "keyword"] = "param",
     ) -> int:
         # beside the documented parameters, not after whatever the docstring ends with, such as its examples
         at = _after_last_param_field(lines) if before is None else before
-        lines.insert(at, f":param {arg_name}: {description}".rstrip())
+        lines.insert(at, f":{field} {arg_name}: {description}".rstrip())
         return at
 
     def find_preexisting_type(self, lines: list[str], arg_name: str) -> tuple[str, bool]:  # ruff:ignore[no-self-use]

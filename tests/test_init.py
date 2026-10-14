@@ -6,7 +6,7 @@ import importlib
 import inspect
 from pathlib import Path
 from textwrap import dedent
-from typing import TYPE_CHECKING, Annotated, Any, Final, NamedTuple
+from typing import TYPE_CHECKING, Annotated, Any, Final, NamedTuple, NotRequired, Required, TypedDict, Unpack
 from unittest.mock import MagicMock, create_autospec, patch
 
 import pytest
@@ -31,6 +31,7 @@ from sphinx_autodoc_typehints._resolver._util import get_obj_location
 from sphinx_autodoc_typehints.patches import _OVERLOADS_CACHE
 
 if TYPE_CHECKING:
+    import types
     from collections.abc import Callable
 
     from sphinx.testing.util import SphinxTestApp
@@ -1071,3 +1072,114 @@ def test_process_docstring_reentrant_call_keeps_outer_state() -> None:
         ":return: it",
     ]
     assert prefix_after_nesting == ["outer_mod", "outer_mod"]
+
+
+class _Options(TypedDict, total=False):
+    verbose: Required[bool]
+    level: int
+    name: Annotated[NotRequired[str], Doc("the name")]
+    alias: NotRequired[Annotated[str, Doc("the alias")]]
+
+
+class _Unresolvable(TypedDict):
+    callback: Undefined  # ruff:ignore[undefined-name]  # ty: ignore[unresolved-reference]  # the case under test
+
+
+_Odd = TypedDict("_Odd", {"odd-key": int, "class": int, "count": int})
+
+
+def _configure(**kwargs: Unpack[_Options]) -> None: ...
+
+
+def _unresolvable(**kwargs: Unpack[_Unresolvable]) -> None: ...
+
+
+def _odd(count: int, **kwargs: Unpack[_Odd]) -> None: ...
+
+
+def _plain(**kwargs: int) -> None: ...
+
+
+_BOOL: Final = r":sphinx_autodoc_typehints_type:`\:py\:class\:\`bool\``"
+_INT: Final = r":sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``"
+_UNPACKED: Final = (
+    r":sphinx_autodoc_typehints_type:`\:py\:data\:\`\~typing.Unpack\`\\ \\\[\:py\:class\:\`\~test\_init.\{}\`\]`"
+)
+_NOT_REQUIRED: Final = (
+    r":sphinx_autodoc_typehints_type:`\:py\:data\:\`\~typing.NotRequired\`\\ \\\[\:py\:class\:\`{}\`\]`"
+)
+
+
+@pytest.mark.parametrize(
+    ("func", "always", "lines", "expected"),
+    [
+        pytest.param(
+            _configure,
+            False,
+            [":param kwargs: the options", ":keyword verbose: be loud", ":keyword level: how loud"],
+            [
+                f":type kwargs: {_UNPACKED.format('_Options')}",
+                ":param kwargs: the options",
+                f":paramtype verbose: {_BOOL}",
+                ":keyword verbose: be loud",
+                f":paramtype level: {_NOT_REQUIRED.format('int')}",
+                ":keyword level: how loud",
+                f":paramtype name: {_NOT_REQUIRED.format('str')}",
+                ":keyword name: the name",
+                f":paramtype alias: {_NOT_REQUIRED.format('str')}",
+                ":keyword alias: the alias",
+            ],
+            id="documented-keys",
+        ),
+        pytest.param(
+            _configure,
+            True,
+            [":param kwargs: the options"],
+            [
+                f":type kwargs: {_UNPACKED.format('_Options')}",
+                ":param kwargs: the options",
+                f":paramtype verbose: {_BOOL}",
+                ":keyword verbose:",
+                f":paramtype level: {_NOT_REQUIRED.format('int')}",
+                ":keyword level:",
+                f":paramtype name: {_NOT_REQUIRED.format('str')}",
+                ":keyword name: the name",
+                f":paramtype alias: {_NOT_REQUIRED.format('str')}",
+                ":keyword alias: the alias",
+            ],
+            id="undocumented-keys",
+        ),
+        pytest.param(
+            _odd,
+            False,
+            [":param count: the count", ":param kwargs: the rest"],
+            [
+                f":type count: {_INT}",
+                ":param count: the count",
+                f":type kwargs: {_UNPACKED.format('_Odd')}",
+                ":param kwargs: the rest",
+            ],
+            id="keys-that-cannot-be-parameters",
+        ),
+        pytest.param(
+            _unresolvable,
+            True,
+            [":param kwargs: the options"],
+            [f":type kwargs: {_UNPACKED.format('_Unresolvable')}", ":param kwargs: the options"],
+            id="unresolvable-key-types",
+        ),
+        pytest.param(
+            _plain,
+            True,
+            [":param kwargs: the options"],
+            [f":type kwargs: {_INT}", ":param kwargs: the options"],
+            id="not-unpacked",
+        ),
+    ],
+)
+def test_process_docstring_types_the_keys_of_unpacked_kwargs(
+    func: types.FunctionType, always: bool, lines: list[str], expected: list[str]
+) -> None:
+    app = make_docstring_app(typehints_document_rtype=False, always_document_param_types=always)
+    process_docstring(app, "function", f"mod.{func.__name__}", func, None, lines)
+    assert lines == expected

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
@@ -34,9 +34,15 @@ class DocstringFormat(ABC):
 
     @abstractmethod
     def add_undocumented_param(
-        self, lines: list[str], arg_name: str, description: str = "", *, before: int | None = None
+        self,
+        lines: list[str],
+        arg_name: str,
+        description: str = "",
+        *,
+        before: int | None = None,
+        field: Literal["param", "keyword"] = "param",
     ) -> int:
-        """Add a :param: line for an undocumented parameter, return its index."""
+        """Add a field, ``:param:`` unless told otherwise, for an undocumented parameter, return its index."""
 
     @abstractmethod
     def find_preexisting_type(self, lines: list[str], arg_name: str) -> tuple[str, bool]:

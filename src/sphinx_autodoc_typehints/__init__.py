@@ -8,7 +8,16 @@ import sys
 import types
 from contextlib import contextmanager
 from functools import partial
-from typing import TYPE_CHECKING, Any, Literal, TypeVar
+from keyword import iskeyword
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    TypeVar,
+    Unpack,
+    get_args,
+    get_origin,
+)
 
 from docutils import nodes
 from sphinx.errors import ConfigError
@@ -42,6 +51,7 @@ from ._resolver import (
     resolve_string_annotations,
     resolve_type_guarded_imports,
 )
+from ._typed_dict import typed_dict_keys
 from .patches import _OVERLOADS_CACHE, install_patches
 from .version import __version__
 
@@ -428,9 +438,30 @@ def _inject_types_to_docstring(  # ruff:ignore[too-many-arguments, too-many-posi
     fmt = detect_format(lines)
     if signature is not None:
         for arg_name in signature.parameters:
-            _inject_arg_signature(type_hints, signature, app, lines, arg_name, fmt, documented_elsewhere)
+            _inject_arg_signature(type_hints, signature, app, lines, arg_name, fmt, documented_elsewhere, "param")
+        if keys := _unpacked_keywords(signature, type_hints):
+            # after the parameters, as a docstring describes **kwargs before its keys
+            keywords = inspect.Signature([inspect.Parameter(key, inspect.Parameter.KEYWORD_ONLY) for key in keys])
+            for key in keys:
+                _inject_arg_signature(keys, keywords, app, lines, key, fmt, documented_elsewhere, "keyword")
     if "return" in type_hints and not has_overloads:
         _inject_rtype(type_hints, original_obj, app, what, name, lines, fmt)
+
+
+def _unpacked_keywords(signature: inspect.Signature, type_hints: dict[str, Any]) -> dict[str, Any]:
+    """Return the keys of ``**kwargs: Unpack[TD]`` with their types, the keyword-only parameters PEP 692 makes them."""
+    params = list(signature.parameters.values())
+    if (
+        not params
+        or params[-1].kind is not inspect.Parameter.VAR_KEYWORD
+        or get_origin(unpacked := type_hints.get(params[-1].name)) is not Unpack
+    ):
+        return {}
+    return {
+        key: annotation
+        for key, annotation in typed_dict_keys(get_args(unpacked)[0]).items()
+        if key.isidentifier() and not iskeyword(key) and key not in signature.parameters
+    }
 
 
 def _inject_arg_signature(  # ruff:ignore[too-many-arguments, too-many-positional-arguments]
@@ -441,6 +472,7 @@ def _inject_arg_signature(  # ruff:ignore[too-many-arguments, too-many-positiona
     arg_name: str,
     fmt: Any,
     documented_elsewhere: frozenset[str],
+    field: Literal["param", "keyword"],
 ) -> None:
     annotation = type_hints.get(arg_name)
     default = signature.parameters[arg_name].default
@@ -466,7 +498,7 @@ def _inject_arg_signature(  # ruff:ignore[too-many-arguments, too-many-positiona
 
     if insert_index is None and doc_description:
         insert_index = fmt.add_undocumented_param(
-            lines, arg_name, doc_description, before=_next_documented_param(lines, later_names, fmt)
+            lines, arg_name, doc_description, before=_next_documented_param(lines, later_names, fmt), field=field
         )
     elif (
         annotation is not None
@@ -475,7 +507,7 @@ def _inject_arg_signature(  # ruff:ignore[too-many-arguments, too-many-positiona
         and arg_name not in documented_elsewhere
     ):
         insert_index = fmt.add_undocumented_param(
-            lines, arg_name, before=_next_documented_param(lines, later_names, fmt)
+            lines, arg_name, before=_next_documented_param(lines, later_names, fmt), field=field
         )
 
     if insert_index is None:

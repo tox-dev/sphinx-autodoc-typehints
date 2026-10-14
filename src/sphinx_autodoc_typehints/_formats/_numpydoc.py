@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, replace
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from ._base import DocstringFormat, InsertIndexInfo
 from ._sphinx import SphinxFieldListFormat
@@ -198,10 +198,16 @@ class NumpydocFormat(DocstringFormat):
         self._sphinx.inject_param_type(lines, arg_name, formatted_type, at)
 
     def add_undocumented_param(
-        self, lines: list[str], arg_name: str, description: str = "", *, before: int | None = None
+        self,
+        lines: list[str],
+        arg_name: str,
+        description: str = "",
+        *,
+        before: int | None = None,
+        field: Literal["param", "keyword"] = "param",
     ) -> int:
         self._ensure_converted(lines)
-        return self._sphinx.add_undocumented_param(lines, arg_name, description, before=before)
+        return self._sphinx.add_undocumented_param(lines, arg_name, description, before=before, field=field)
 
     def find_preexisting_type(self, lines: list[str], arg_name: str) -> tuple[str, bool]:
         return self._sphinx.find_preexisting_type(lines, arg_name)
