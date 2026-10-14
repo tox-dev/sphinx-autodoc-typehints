@@ -9,9 +9,12 @@ import subprocess  # ruff:ignore[suspicious-subprocess-import]
 import sys
 import sysconfig
 import types
+from collections import OrderedDict
 from collections.abc import Iterator, Mapping, Sequence
 from csv import Error
-from decimal import Decimal
+from decimal import Context, Decimal
+from fractions import Fraction
+from operator import attrgetter
 from pathlib import Path
 from typing import (
     Any,
@@ -24,6 +27,7 @@ from typing import (
     Union,
     get_args,
     get_origin,
+    get_overloads,
 )
 from unittest.mock import MagicMock, patch
 
@@ -34,7 +38,6 @@ from sphinx.ext.autodoc.mock import mock
 from sphinx_autodoc_typehints import process_docstring
 from sphinx_autodoc_typehints._annotations import MyTypeAliasForwardRef
 from sphinx_autodoc_typehints._resolver._type_hints import (
-    _TYPE_GUARD_IMPORTS_RESOLVED,
     _build_localns,
     _execute_guarded_code,
     _get_type_hint,
@@ -45,6 +48,7 @@ from sphinx_autodoc_typehints._resolver._type_hints import (
     resolve_string_annotations,
     resolve_type_guarded_imports,
 )
+from sphinx_autodoc_typehints._resolver._util import SHADOWED_BY_GUARD
 
 STUB_ROOT = Path(__file__).parent.parent / "roots" / "test-pyi-stubs"
 
@@ -194,7 +198,7 @@ def test_should_skip_builtin_module() -> None:
 def test_get_type_hint_recursion_error() -> None:
     def func(x: int) -> str: ...
 
-    with patch("sphinx_autodoc_typehints._resolver._type_hints.get_type_hints", side_effect=RecursionError):
+    with patch("sphinx_autodoc_typehints._resolver._type_hints.type_hints", side_effect=RecursionError):
         assert _get_type_hint([], "test", func, {}) == {}
 
 
@@ -229,13 +233,13 @@ def test_get_type_hint_forward_ref_fallback_failure_returns_empty(
 def test_execute_guarded_code_catches_exception() -> None:
     module = type("FakeModule", (), {"__globals__": {}, "__dict__": {}})()
     with patch("sphinx_autodoc_typehints._resolver._type_hints._run_guarded_import", side_effect=RuntimeError("boom")):
-        _execute_guarded_code([], module, "\nif TYPE_CHECKING:\n    import os\nx = 1\n")
+        _execute_guarded_code([], module, "\nif TYPE_CHECKING:\n    import os\nx = 1\n", {})
 
 
 def test_run_guarded_import_no_exc_name() -> None:
     ns: dict[str, Any] = {}
     obj: Any = type("FakeObj", (), {"__globals__": ns})()
-    _run_guarded_import([], obj, ast.parse("raise ImportError()").body[0])
+    _run_guarded_import([], obj, ast.parse("raise ImportError()").body[0], ns)
 
 
 def test_forward_ref_warning_includes_module() -> None:
@@ -245,7 +249,7 @@ def test_forward_ref_warning_includes_module() -> None:
     func.__annotations__ = {"x": "NonExistent"}
     mock_logger = MagicMock()
     with (
-        patch("sphinx_autodoc_typehints._resolver._type_hints.get_type_hints", side_effect=NameError("NonExistent")),
+        patch("sphinx_autodoc_typehints._resolver._type_hints.type_hints", side_effect=NameError("NonExistent")),
         patch("sphinx_autodoc_typehints._resolver._type_hints._LOGGER", mock_logger),
     ):
         _get_type_hint([], "func", func, {})
@@ -262,7 +266,7 @@ def test_guarded_import_warning_includes_module() -> None:
         patch("sphinx_autodoc_typehints._resolver._type_hints._run_guarded_import", side_effect=RuntimeError("boom")),
         patch("sphinx_autodoc_typehints._resolver._type_hints._LOGGER", mock_logger),
     ):
-        _execute_guarded_code([], module, "\nif TYPE_CHECKING:\n    import os\nx = 1\n")
+        _execute_guarded_code([], module, "\nif TYPE_CHECKING:\n    import os\nx = 1\n", {})
     mock_logger.warning.assert_called_once()
     args = mock_logger.warning.call_args
     assert "fake_mod" in str(args)
@@ -586,6 +590,222 @@ def test_guarded_version_gated_alias_binds_its_name(
     assert get_all_type_hints([], module.func, f"{module.__name__}.func", {})["value"].name == "Coords"
 
 
+_OVERLOADED_PICK: Final = (
+    "from typing import TYPE_CHECKING, overload\n"
+    "\n"
+    "if TYPE_CHECKING:\n"
+    "    from decimal import Decimal\n"
+    "\n"
+    "    @overload\n"
+    "    def pick(value: int) -> int: ...\n"
+    "    @overload\n"
+    "    def pick(value: str) -> str: ...\n"
+    "\n"
+    "def pick(value):\n"
+    "    return value\n"
+)
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        pytest.param(_OVERLOADED_PICK, id="overload-stubs"),
+        pytest.param(
+            "from typing import TYPE_CHECKING\n"
+            "\n"
+            "if TYPE_CHECKING:\n"
+            "    from decimal import Decimal\n"
+            "\n"
+            "    class Store: ...\n"
+            "\n"
+            "class Store: ...\n",
+            id="class",
+        ),
+        pytest.param(
+            "from typing import TYPE_CHECKING\n"
+            "\n"
+            "if TYPE_CHECKING:\n"
+            "    from decimal import Context, Decimal\n"
+            "\n"
+            "Decimal = float\n",
+            id="import",
+        ),
+        pytest.param(
+            "from typing import TYPE_CHECKING\n"
+            "\n"
+            "if TYPE_CHECKING:\n"
+            "    from decimal import Decimal\n"
+            "else:\n"
+            "    Decimal = float\n",
+            id="else-branch",
+        ),
+        pytest.param(
+            "from typing import TYPE_CHECKING\n"
+            "\n"
+            "if not TYPE_CHECKING:\n"
+            "    Decimal = float\n"
+            "else:\n"
+            "    from decimal import Decimal\n",
+            id="negated-else-branch",
+        ),
+    ],
+)
+def test_guarded_code_keeps_the_names_the_module_binds_at_runtime(
+    source: str, guarded_module: _GuardedModuleBuilder
+) -> None:
+    module = guarded_module(f"from __future__ import annotations\n{source}\ndef func(value: Decimal) -> None: ...\n")
+    runtime = dict(vars(module))
+    resolve_type_guarded_imports([], module.func)
+    assert {name: vars(module)[name] for name in runtime} == runtime
+
+
+def test_process_docstring_documents_the_guarded_type_over_its_runtime_fallback(
+    guarded_module: _GuardedModuleBuilder,
+) -> None:
+    module = guarded_module(
+        "from __future__ import annotations\n"
+        "from typing import TYPE_CHECKING\n"
+        "\n"
+        "if TYPE_CHECKING:\n"
+        "    from decimal import Decimal\n"
+        "else:\n"
+        "    Decimal = float\n"
+        "\n"
+        "def func(value: Decimal) -> None: ...\n"
+    )
+    lines = [":param value: the value"]
+    app = make_docstring_app(typehints_document_rtype=False)
+    process_docstring(app, "function", f"{module.__name__}.func", module.func, None, lines)
+    assert lines == [
+        r":type value: :sphinx_autodoc_typehints_type:`\:py\:class\:\`\~decimal.Decimal\``",
+        ":param value: the value",
+    ]
+
+
+def test_guarded_class_shadowing_a_runtime_class_types_annotations_only(
+    guarded_module: _GuardedModuleBuilder,
+) -> None:
+    module = guarded_module(
+        "from __future__ import annotations\n"
+        "from collections import OrderedDict\n"
+        "from typing import TYPE_CHECKING\n"
+        "\n"
+        "if TYPE_CHECKING:\n"
+        "    class Store(OrderedDict): ...\n"
+        "\n"
+        "class Store: ...\n"
+        "\n"
+        "def func(value: Store) -> None: ...\n"
+    )
+    hint = get_all_type_hints([], module.func, f"{module.__name__}.func", {})["value"]
+    assert (issubclass(hint, OrderedDict), issubclass(module.Store, OrderedDict)) == (True, False)
+
+
+_LAZY_FALLBACK: Final = (
+    "from typing import TYPE_CHECKING\n"
+    "\n"
+    "if TYPE_CHECKING:\n"
+    "    from decimal import Decimal\n"
+    "else:\n"
+    "    Decimal = float\n"
+    "\n"
+)
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason="annotations evaluate lazily from Python 3.14")
+@pytest.mark.parametrize(
+    ("declaration", "owner"),
+    [
+        pytest.param("def func(value: Decimal) -> None: ...\n", "func", id="function"),
+        pytest.param(
+            "class Holder:\n    def method(self, value: Decimal) -> None: ...\n", "Holder.method", id="method"
+        ),
+        pytest.param("class Holder:\n    value: Decimal\n", "Holder", id="class"),
+    ],
+)
+def test_lazy_annotation_reads_the_guarded_type_over_its_runtime_fallback(  # pragma: >=3.14 cover
+    guarded_module: _GuardedModuleBuilder, declaration: str, owner: str
+) -> None:
+    module = guarded_module(f"{_LAZY_FALLBACK}{declaration}")
+    annotated = attrgetter(owner)(module)
+    assert get_all_type_hints([], annotated, f"{module.__name__}.{owner}", {})["value"] is Decimal
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason="annotations evaluate lazily from Python 3.14")
+def test_lazy_annotation_of_a_base_reads_the_guard_of_its_own_module(  # pragma: >=3.14 cover
+    guarded_module: _GuardedModuleBuilder,
+) -> None:
+    module = guarded_module(
+        "from typing import TYPE_CHECKING\n"
+        "from lazy_guarded_base import Base\n"
+        "\n"
+        "if TYPE_CHECKING:\n"
+        "    from fractions import Fraction\n"
+        "else:\n"
+        "    Fraction = int\n"
+        "\n"
+        "class Child(Base):\n"
+        "    ratio: Fraction\n",
+        files={"lazy_guarded_base.py": f"{_LAZY_FALLBACK}class Base:\n    amount: Decimal\n"},
+    )
+    resolve_type_guarded_imports([], importlib.import_module("lazy_guarded_base"))
+    hints = get_all_type_hints([], module.Child, f"{module.__name__}.Child", {})
+    assert hints == {"amount": Decimal, "ratio": Fraction}
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason="annotations evaluate lazily from Python 3.14")
+def test_lazy_annotation_keeps_the_values_of_a_base_without_source(  # pragma: >=3.14 cover
+    guarded_module: _GuardedModuleBuilder,
+) -> None:
+    module = guarded_module(
+        f'{_LAZY_FALLBACK}Plain = type("Plain", (), {{"__annotations__": {{"count": int}}}})\n'
+        "class Child(Plain):\n"
+        "    amount: Decimal\n"
+    )
+    assert get_all_type_hints([], module.Child, f"{module.__name__}.Child", {}) == {"count": int, "amount": Decimal}
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason="annotations evaluate lazily from Python 3.14")
+def test_lazy_annotation_naming_no_shadowed_name_keeps_its_closure(  # pragma: >=3.14 cover
+    guarded_module: _GuardedModuleBuilder,
+) -> None:
+    module = guarded_module(
+        f"{_LAZY_FALLBACK}def make():\n    Local = int\n    def func(value: Local) -> None: ...\n    return func\n"
+    )
+    mock_logger = MagicMock()
+    with patch("sphinx_autodoc_typehints._resolver._type_hints._LOGGER", mock_logger):
+        hints = get_all_type_hints([], module.make(), f"{module.__name__}.func", {})
+    assert (hints["value"], mock_logger.warning.call_args_list) == (int, [])
+
+
+def test_guarded_import_adds_the_names_the_module_lacks_beside_a_runtime_one(
+    guarded_module: _GuardedModuleBuilder,
+) -> None:
+    module = guarded_module(
+        "from typing import TYPE_CHECKING\n"
+        "\n"
+        "if TYPE_CHECKING:\n"
+        "    from decimal import Context, Decimal\n"
+        "\n"
+        "Decimal = float\n"
+        "\n"
+        "def func(value: Decimal) -> None: ...\n"
+    )
+    resolve_type_guarded_imports([], module.func)
+    assert (module.Context, module.Decimal) == (Context, float)
+
+
+def test_guarded_overload_stubs_of_a_runtime_function_register_no_overloads(
+    guarded_module: _GuardedModuleBuilder,
+) -> None:
+    module = guarded_module(
+        f"from __future__ import annotations\n{_OVERLOADED_PICK}\ndef func(value: Decimal) -> None: ...\n"
+    )
+    pick = module.pick
+    resolve_type_guarded_imports([], module.func)
+    assert get_overloads(pick) == []
+
+
 def test_get_all_type_hints_resolves_a_class_nested_beside_the_method() -> None:
     hints = get_all_type_hints([], Outer.make, f"{__name__}.Outer.make", {})
     assert hints == {"value": Outer.Inner, "return": Outer.Inner}
@@ -806,19 +1026,19 @@ def test_stub_annotations_not_polluted_on_repeated_calls(tmp_path: Path) -> None
     )
     sys.path.insert(0, str(tmp_path))
     mod = importlib.import_module("stubpkg.mod")
-    _TYPE_GUARD_IMPORTS_RESOLVED.discard("stubpkg.mod")
+    SHADOWED_BY_GUARD.pop("stubpkg.mod", None)
     my_type = importlib.import_module("stubpkg._types").MyType
     try:
         result1 = get_all_type_hints([], mod.Klass.method, "stubpkg.mod.Klass.method", {})
         assert result1["x"] is my_type
-        _TYPE_GUARD_IMPORTS_RESOLVED.discard("stubpkg.mod")
+        SHADOWED_BY_GUARD.pop("stubpkg.mod", None)
         result2 = _get_type_hint([], "another.Klass.method", mod.Klass.method, {})
         assert result2.get("x") is my_type
     finally:
         sys.path.pop(0)
         for name in [n for n in sys.modules if n.startswith("stubpkg")]:
             del sys.modules[name]
-        _TYPE_GUARD_IMPORTS_RESOLVED.discard("stubpkg.mod")
+        SHADOWED_BY_GUARD.pop("stubpkg.mod", None)
 
 
 def test_get_all_type_hints_crossrefs_names_from_stub_only_modules(tmp_path: Path) -> None:

@@ -1,13 +1,19 @@
 from __future__ import annotations
 
 import contextlib
-from typing import Annotated, ClassVar, Final, Optional
+import importlib
+import sys
+from typing import TYPE_CHECKING, Annotated, ClassVar, Final, Optional
 
 import pytest
 from conftest import make_docstring_app
 
 from sphinx_autodoc_typehints import process_docstring
+from sphinx_autodoc_typehints._resolver import resolve_type_guarded_imports
 from sphinx_autodoc_typehints._resolver._instance_vars import get_class_body_annotations, get_instance_var_annotations
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class _Simple:
@@ -169,3 +175,84 @@ def test_class_body_annotation_with_unhashable_metadata() -> None:
     lines = [":ivar name: the name"]
     process_docstring(make_docstring_app(), "class", "mod._Model", _Model, None, lines)
     assert lines == [r":vartype name: :sphinx_autodoc_typehints_type:`\:py\:class\:\`str\``", ":ivar name: the name"]
+
+
+def test_class_body_annotation_documents_the_guarded_type_over_its_runtime_fallback(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "guarded_fallback_body.py").write_text(
+        "from __future__ import annotations\n"
+        "from typing import TYPE_CHECKING\n"
+        "\n"
+        "if TYPE_CHECKING:\n"
+        "    from decimal import Decimal\n"
+        "else:\n"
+        "    Decimal = float\n"
+        "\n"
+        "class Holder:\n"
+        "    Unit = int\n"
+        "    amount: Decimal\n"
+        "    unit: Unit\n"
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+    holder = importlib.import_module("guarded_fallback_body").Holder
+    lines = [":ivar amount: the amount", ":ivar unit: the unit"]
+    process_docstring(make_docstring_app(), "class", "guarded_fallback_body.Holder", holder, None, lines)
+    assert lines == [
+        r":vartype amount: :sphinx_autodoc_typehints_type:`\:py\:class\:\`\~decimal.Decimal\``",
+        ":ivar amount: the amount",
+        r":vartype unit: :sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``",
+        ":ivar unit: the unit",
+    ]
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason="annotations evaluate lazily from Python 3.14")
+def test_lazy_class_body_annotation_documents_the_guarded_type(  # pragma: >=3.14 cover
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "lazy_guarded_body.py").write_text(
+        "from typing import TYPE_CHECKING\n"
+        "\n"
+        "if TYPE_CHECKING:\n"
+        "    from decimal import Decimal\n"
+        "else:\n"
+        "    Decimal = float\n"
+        "\n"
+        "class Holder:\n"
+        "    amount: Decimal\n"
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+    holder = importlib.import_module("lazy_guarded_body").Holder
+    lines = [":ivar amount: the amount"]
+    process_docstring(make_docstring_app(), "class", "lazy_guarded_body.Holder", holder, None, lines)
+    assert lines == [
+        r":vartype amount: :sphinx_autodoc_typehints_type:`\:py\:class\:\`\~decimal.Decimal\``",
+        ":ivar amount: the amount",
+    ]
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason="annotations evaluate lazily from Python 3.14")
+def test_lazy_class_body_annotation_of_a_base_reads_the_guard_of_its_module(  # pragma: >=3.14 cover
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "lazy_guarded_parent.py").write_text(
+        "from typing import TYPE_CHECKING\n"
+        "\n"
+        "if TYPE_CHECKING:\n"
+        "    from decimal import Decimal\n"
+        "else:\n"
+        "    Decimal = float\n"
+        "\n"
+        "class Base:\n"
+        "    amount: Decimal\n"
+    )
+    (tmp_path / "lazy_plain_child.py").write_text("from lazy_guarded_parent import Base\n\nclass Child(Base): ...\n")
+    monkeypatch.syspath_prepend(str(tmp_path))
+    resolve_type_guarded_imports([], importlib.import_module("lazy_guarded_parent"))
+    child = importlib.import_module("lazy_plain_child").Child
+    lines = [":ivar amount: the amount"]
+    process_docstring(make_docstring_app(), "class", "lazy_plain_child.Child", child, None, lines)
+    assert lines == [
+        r":vartype amount: :sphinx_autodoc_typehints_type:`\:py\:class\:\`\~decimal.Decimal\``",
+        ":ivar amount: the amount",
+    ]

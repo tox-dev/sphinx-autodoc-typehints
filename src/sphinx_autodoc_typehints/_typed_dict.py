@@ -5,9 +5,10 @@ from __future__ import annotations
 import sys
 import types
 import typing
-from typing import TYPE_CHECKING, Annotated, Any, Final, Never, NotRequired, get_args, get_origin, get_type_hints
+from typing import TYPE_CHECKING, Annotated, Any, Final, Never, NotRequired, get_args, get_origin
 
 from ._annotations import add_type_css_class, format_annotation
+from ._resolver import guarded_names, type_hints
 from ._type_params import specialize, type_arguments
 
 if TYPE_CHECKING:
@@ -83,8 +84,8 @@ class _Hierarchy:
         for base in _typed_dict_bases(typed_dict):
             inherited |= self._split(get_origin(base) or base)[0]
         # a key written as a string names the type parameters of the class declaring it, which may be a base
-        localns = {**self._localns, **self._scope(typed_dict)}
-        hints = get_type_hints(typed_dict, localns=localns, include_extras=True)
+        localns = {**guarded_names(typed_dict), **self._localns, **self._scope(typed_dict)}
+        hints = type_hints(typed_dict, None, localns)
         own = {key: hint for key, hint in hints.items() if key not in inherited or not _same(inherited[key], hint)}
         found = self._keys[typed_dict] = inherited | own, own
         return found

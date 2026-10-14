@@ -70,6 +70,7 @@ from ._headers import render_header_types
 from ._intersphinx import build_type_mapping
 from ._parser import unescape
 from ._resolver import (
+    annotation_globals,
     backfill_attrs_annotations,
     backfill_type_hints,
     get_all_type_hints,
@@ -714,7 +715,7 @@ def _typed_overloads(  # ruff:ignore[too-many-arguments, too-many-positional-arg
     """
     aliases = type_alias_namespace(app.config["autodoc_type_aliases"], obj, _module_prefix(name), app.env)[0]
     scope = aliases | {param.__name__: param for param in declared_type_params(None, obj, None)}
-    namespace = getattr(obj, "__globals__", {})
+    namespace = annotation_globals(obj)
     declared = getattr(app.config, "_typehints_declared_type_params", frozenset())
     for overload, function in zip(overloads, _overload_functions(obj, len(overloads)), strict=True):
         own = declared_type_params(function, None, None)

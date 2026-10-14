@@ -3,7 +3,9 @@ from __future__ import annotations
 import ast
 import inspect
 import textwrap
-from typing import TYPE_CHECKING, Any, ClassVar, Final, get_args, get_origin, get_type_hints
+from typing import TYPE_CHECKING, Any, ClassVar, Final, get_args, get_origin
+
+from ._util import annotation_globals, guarded_names, type_hints
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -46,7 +48,7 @@ def get_instance_var_annotations(cls: type) -> dict[str, Any]:
         return {}
 
     # an inherited or re-exported ``__init__`` sees the names of the module defining it, not those of the class's
-    globalns = inspect.unwrap(init).__globals__
+    globalns = annotation_globals(inspect.unwrap(init))
     resolved: dict[str, Any] = {}
     for attr_name, ann_str in raw.items():
         try:
@@ -63,7 +65,9 @@ def get_class_body_annotations(cls: type) -> dict[str, Any]:
     A ``ClassVar`` or ``Final`` qualifier says how the attribute behaves, not what it holds, so it is left off.
     """
     try:
-        hints = get_type_hints(cls, include_extras=True)
+        # given locals, get_type_hints stops reading the class body's own names first, so they go in with them
+        localns = {**shadowed, **vars(cls)} if (shadowed := guarded_names(cls)) else None
+        hints = type_hints(cls, None, localns)
     except Exception:  # ruff:ignore[blind-except]  # an annotation runs user code, which may raise anything
         return {}
     held = {name: get_args(hint)[0] if _is_qualifier(get_origin(hint)) else hint for name, hint in hints.items()}
