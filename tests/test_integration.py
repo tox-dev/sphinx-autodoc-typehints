@@ -1013,6 +1013,26 @@ def func_literal_backslashes(sep: Literal["\n", "\\"]) -> None:
 
 
 @expected(
+    r"""mod.func_literal_backticks(fence)
+
+   A docstring.
+
+   Parameters:
+      **fence** ("Literal"["'``'", "'```'"]) -- The fence.
+
+   Return type:
+      "None"
+""",
+)
+def func_literal_backticks(fence: Literal["``", "```"]) -> None:
+    """
+    A docstring.
+
+    :param fence: The fence.
+    """
+
+
+@expected(
     """\
 class mod.TestClassAttributeDocs
 
