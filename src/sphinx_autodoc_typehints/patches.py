@@ -10,8 +10,6 @@ from docutils.parsers.rst.directives.admonitions import BaseAdmonition
 from docutils.parsers.rst.states import Body, Text
 from sphinx.ext.napoleon.docstring import GoogleDocstring
 
-from .attributes_patch import patch_attribute_handling
-
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
     from sphinx.ext.autodoc import Options
@@ -170,7 +168,6 @@ def install_patches(app: Sphinx) -> None:
     fix_directive_based_signature_formatting()
     app.connect("builder-inited", lambda app: _BUILDING.add(id(app)))
     app.connect("build-finished", lambda app, _exception: _BUILDING.discard(id(app)))
-    patch_attribute_handling(app)
     _patch_google_docstring_lookup_annotation()
     fix_napoleon_numpy_docstring_return_type(app)
     _patch_line_numbers()
