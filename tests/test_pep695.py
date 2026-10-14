@@ -809,6 +809,52 @@ def test_eager_alias_of_the_module_in_a_class_member_signature(
     assert expected in normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
 
 
+@pytest.mark.parametrize(
+    ("index", "aliases", "expected"),
+    [
+        pytest.param(
+            ".. py:type:: mod_eager.Count\n\n.. autofunction:: mod_eager.scale\n",
+            {},
+            '* **amount** ("Count") \u2192 "Count"',
+            id="documented-before",
+        ),
+        pytest.param(
+            ".. autofunction:: mod_eager.scale\n\n.. py:type:: mod_eager.Count\n",
+            {},
+            '* **amount** ("Count") \u2192 "Count"',
+            id="documented-after",
+        ),
+        pytest.param(
+            ".. autofunction:: mod_eager.scale\n",
+            {"Count": "mod_eager.Count"},
+            "* **amount** (mod_eager.Count) \u2192 mod_eager.Count",
+            id="configured",
+        ),
+    ],
+)
+@pytest.mark.sphinx("text", testroot="integration")
+def test_alias_in_an_overload(app: SphinxTestApp, index: str, aliases: dict[str, str], expected: str) -> None:
+    app.config.autodoc_type_aliases = aliases
+    (Path(app.srcdir) / "index.rst").write_text(index)
+    app.build()
+
+    lines = (Path(app.srcdir) / "_build/text/index.txt").read_text().splitlines()
+    assert lines[lines.index("   Overloads:") + 1].strip() == expected
+
+
+@pytest.mark.sphinx(
+    "text",
+    testroot="integration",
+    confoverrides={"typehints_use_signature": True, "typehints_use_signature_return": True},
+)
+def test_alias_in_an_overload_signature(app: SphinxTestApp) -> None:
+    (Path(app.srcdir) / "index.rst").write_text(".. py:type:: mod_eager.Count\n\n.. autofunction:: mod_eager.scale\n")
+    app.build()
+
+    result = (Path(app.srcdir) / "_build/text/index.txt").read_text()
+    assert "mod_eager.scale(amount: Count) -> Count" in result
+
+
 def _special_formatter(annotation: Any, _config: Config) -> str | None:
     return "**SPECIAL**" if getattr(annotation, "__name__", None) == "Special" else None
 

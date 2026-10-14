@@ -13,7 +13,7 @@ from ._type_hints import (
     resolve_string_annotations,
     resolve_type_guarded_imports,
 )
-from ._util import documented_type_names, get_obj_location, type_alias_namespace
+from ._util import documented_type_names, get_obj_location, type_alias_namespace, written_type_alias
 
 __all__ = [
     "backfill_attrs_annotations",
@@ -29,4 +29,5 @@ __all__ = [
     "resolve_type_guarded_imports",
     "stub_path",
     "type_alias_namespace",
+    "written_type_alias",
 ]

@@ -71,6 +71,7 @@ from ._resolver import (
     resolve_type_guarded_imports,
     stub_path,
     type_alias_namespace,
+    written_type_alias,
 )
 from ._type_params import add_type_params, bound_type_args, declared_type_params, specialize
 from ._typed_dict import inject_extra_items, typed_dict_keys
@@ -262,11 +263,10 @@ def _signature_type(app: Sphinx, hint: Any) -> Any:
 def _shown_overloads(  # ruff:ignore[too-many-arguments, too-many-positional-arguments]
     app: Sphinx, what: str, name: str, documented: Any, obj: Any, overloads: list[inspect.Signature]
 ) -> list[inspect.Signature]:
-    skip, arguments = _overload_skip(what, name), bound_type_args(*_documenting(name, documented))
+    arguments = bound_type_args(*_documenting(name, documented))
     shown = []
-    for overload in overloads:
-        params = list(overload.parameters.values())[skip:]
-        hints = _overload_hints(obj, params, overload.return_annotation, arguments)
+    typed = _typed_overloads(app, name, obj, overloads, _overload_skip(what, name), arguments)
+    for overload, (params, hints) in zip(overloads, typed, strict=True):
         shown.append(
             overload.replace(
                 parameters=[param.replace(annotation=_signature_type(app, hints[param.name])) for param in params],
@@ -535,7 +535,7 @@ def _inject_overload_signatures(  # ruff:ignore[too-many-arguments, too-many-pos
         overloads = [overload.replace(return_annotation=inspect.Signature.empty) for overload in overloads]
     idx = _summary_end(lines)
     arguments = bound_type_args(*_documenting(name, original_obj))
-    lines[idx:idx] = ["", *_format_overload_lines(overloads, obj, app, _overload_skip(what, name), arguments)]
+    lines[idx:idx] = ["", *_format_overload_lines(app, name, obj, overloads, _overload_skip(what, name), arguments)]
     return True
 
 
@@ -654,14 +654,12 @@ def _inject_override(app: Sphinx, what: str, name: str, obj: Any, lines: list[st
     lines.extend(["", f":Overrides: :py:{'attr' if what == 'property' else 'meth'}:`{label} <{target}>`"])
 
 
-def _format_overload_lines(
-    overloads: list[inspect.Signature], obj: Any, app: Sphinx, skip: int, arguments: dict[Any, Any]
+def _format_overload_lines(  # ruff:ignore[too-many-arguments, too-many-positional-arguments]
+    app: Sphinx, name: str, obj: Any, overloads: list[inspect.Signature], skip: int, arguments: dict[Any, Any]
 ) -> list[str]:
     render = partial(format_annotation, config=app.config, short_literals=app.config.python_display_short_literal_types)
     result = [":Overloads:"]
-    for overload_sig in overloads:
-        parameters = list(overload_sig.parameters.values())[skip:]
-        hints = _overload_hints(obj, parameters, overload_sig.return_annotation, arguments)
+    for parameters, hints in _typed_overloads(app, name, obj, overloads, skip, arguments):
         return_hint = hints.pop("return")
         entries = _overload_entries(parameters, hints, render)
         return_annotation = (
@@ -672,17 +670,31 @@ def _format_overload_lines(
     return result
 
 
-def _overload_hints(
-    obj: Any, parameters: list[inspect.Parameter], return_annotation: Any, arguments: dict[Any, Any]
-) -> dict[str, Any]:
-    # parsed from the source, so the annotations are strings until evaluated in the function's module, where the PEP 695
-    # type parameters of the function and its class are no globals
-    hints = resolve_string_annotations(
-        obj,
-        {param.name: param.annotation for param in parameters} | {"return": return_annotation},
-        {param.__name__: param for param in declared_type_params(None, obj, None)},
-    )
-    return {key: specialize(hint, arguments) for key, hint in hints.items()}
+def _typed_overloads(  # ruff:ignore[too-many-arguments, too-many-positional-arguments]
+    app: Sphinx, name: str, obj: Any, overloads: list[inspect.Signature], skip: int, arguments: dict[Any, Any]
+) -> Iterator[tuple[list[inspect.Parameter], dict[str, Any]]]:
+    """
+    Yield the parameters of each overload past ``skip`` and their types.
+
+    Parsed from the source, the annotations are strings until evaluated in the function's module, where the aliases the
+    parameters resolve to and the PEP 695 type parameters of the function and its class are no globals.
+    """
+    aliases = type_alias_namespace(app.config["autodoc_type_aliases"], obj, _module_prefix(name), app.env)[0]
+    scope = aliases | {param.__name__: param for param in declared_type_params(None, obj, None)}
+    namespace = getattr(obj, "__globals__", {})
+    for overload in overloads:
+        parameters = list(overload.parameters.values())[skip:]
+        written = {param.name: param.annotation for param in parameters} | {"return": overload.return_annotation}
+        hints = resolve_string_annotations(obj, written, scope)
+        written_aliases = {
+            key: written_type_alias(source, hints[key], namespace)
+            for key, source in written.items()
+            if isinstance(source, str)
+        }
+        yield (
+            parameters,
+            {key: _as_written(specialize(hint, arguments), written_aliases.get(key)) for key, hint in hints.items()},
+        )
 
 
 def _overload_entries(
