@@ -142,9 +142,13 @@ def resolve_string_annotations(
     obj: Any, annotations: dict[str, Any], localns: dict[str, Any], owner_module: str = ""
 ) -> dict[str, Any]:
     # Use the stub owner module's namespace when available — the obj's __module__ may point at a C extension child
-    # (e.g. cbor2._cbor2) while the stub lives in the parent (cbor2/__init__.pyi).
-    module_name = owner_module or getattr(obj, "__module__", None)
-    globalns = vars(sys.modules[module_name]) if module_name and module_name in sys.modules else {}
+    # (e.g. cbor2._cbor2) while the stub lives in the parent (cbor2/__init__.pyi). Otherwise the module defining obj,
+    # which a re-export does not change, as the evaluation that failed before this one used.
+    globalns = (
+        vars(sys.modules[owner_module])
+        if owner_module in sys.modules
+        else _module_backed_globals(obj) or (vars(module) if (module := _defining_module(obj)) else {})
+    )
     resolved: dict[str, Any] = {}
     for key, value in annotations.items():
         resolved[key] = value
