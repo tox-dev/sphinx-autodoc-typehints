@@ -129,6 +129,25 @@ def test_process_docstring_links_a_lazy_mocked_type_in_a_pipe_union() -> None:  
     assert _MOCKED_LINK in lines[0]
 
 
+def test_process_docstring_resolves_a_reexported_function_in_its_defining_module(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    package = tmp_path / "reexporting"
+    package.mkdir()
+    (package / "_impl.py").write_text(
+        "from __future__ import annotations\nimport decimal\n\n"
+        "def f(a: decimal.Decimal, b: NotDefinedAnywhere) -> None: ...\n"
+    )
+    (package / "__init__.py").write_text("from reexporting._impl import f\nf.__module__ = 'reexporting'\n")
+    monkeypatch.syspath_prepend(str(tmp_path))
+    func = importlib.import_module("reexporting").f
+    lines = [":param a: the a"]
+    process_docstring(
+        make_docstring_app(typehints_document_rtype=False), "function", "reexporting.f", func, None, lines
+    )
+    assert lines == [r":type a: :sphinx_autodoc_typehints_type:`\:py\:class\:\`\~decimal.Decimal\``", ":param a: the a"]
+
+
 class _Shape:
     def __class_getitem__(cls, item: type) -> type[_Shape]:
         msg = f"a shape cannot take {item}"
