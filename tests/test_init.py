@@ -2268,3 +2268,18 @@ def test_process_docstring_shows_the_type_a_property_setter_accepts(
         make_docstring_app(), "property", f"test_init._Setters.{member}", vars(_Setters)[member], None, lines
     )
     assert lines == expected
+
+
+@pytest.mark.parametrize(
+    "setter",
+    [
+        pytest.param("Set the value.", id="docstring"),
+        pytest.param(lambda: None, id="no-parameters"),
+        pytest.param(MagicMock(__signature__="unreadable"), id="unreadable-signature"),
+    ],
+)
+def test_process_docstring_skips_a_property_setter_it_cannot_read(setter: Any) -> None:
+    lines = ["Summary."]
+    prop = property(vars(_Setters)["same"].fget, setter)
+    process_docstring(make_docstring_app(), "property", "test_init._Setters.same", prop, None, lines)
+    assert lines == ["Summary."]

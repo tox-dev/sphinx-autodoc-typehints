@@ -711,9 +711,17 @@ def _inject_setter_type(app: Sphinx, name: str, obj: Any, getter_hints: dict[str
     """Show the type a property's setter accepts where it differs from the getter's, the one its header shows."""
     if not isinstance(obj, property) or obj.fset is None or any(line.startswith(":Setter accepts:") for line in lines):
         return
-    setter = inspect.unwrap(obj.fset)
+    # property() takes any object as its setter, and pygments passes a docstring there
+    if not callable(setter := inspect.unwrap(obj.fset)):
+        return
+    try:
+        parameters = list(inspect.signature(setter).parameters)
+    except (ValueError, TypeError):
+        return
+    if not parameters:
+        return
     hints, written_as, _ = _resolved_type_hints(app, name, setter, setter, setter)
-    param = list(inspect.signature(setter).parameters)[-1]
+    param = parameters[-1]
     accepted = hints.get(param, inspect.Parameter.empty)
     if accepted is inspect.Parameter.empty or accepted == getter_hints.get("return", inspect.Parameter.empty):
         return
