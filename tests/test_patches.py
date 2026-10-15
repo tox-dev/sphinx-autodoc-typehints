@@ -79,6 +79,71 @@ def test_napoleon_attribute_from_init_rendered_as_field(
     assert (Path(app.srcdir) / "_build/text/index.txt").read_text().split("Class docstring.\n\n")[1] == expected
 
 
+@pytest.mark.parametrize(
+    ("use_ivar", "expected"),
+    [
+        pytest.param(
+            False,
+            """\
+attributes_module.location
+
+   the location
+
+   Type:
+      "list"["Path"]
+
+attributes_module.level
+
+   the level
+
+   Type:
+      "int"
+
+attributes_module.written
+
+   written by hand
+
+   Type:
+      str
+""",
+            id="attribute",
+        ),
+        pytest.param(
+            True,
+            """\
+vartype location:
+   "list"["Path"]
+
+ivar location:
+   the location
+
+vartype level:
+   "int"
+
+ivar level:
+   the level
+
+ivar written:
+   written by hand
+
+vartype written:
+   str
+""",
+            id="ivar",
+        ),
+    ],
+)
+@pytest.mark.sphinx("text", testroot="dummy")
+def test_napoleon_module_attributes_rendered_as_fields(
+    app: SphinxTestApp, write_rst: Callable[[str], None], use_ivar: bool, expected: str
+) -> None:
+    app.config.napoleon_use_ivar = use_ivar
+    write_rst(".. automodule:: attributes_module")
+    app.build()
+
+    assert (Path(app.srcdir) / "_build/text/index.txt").read_text().split("Module docstring.\n\n")[1] == expected
+
+
 @pytest.mark.sphinx(
     "doctest",
     testroot="dummy",
