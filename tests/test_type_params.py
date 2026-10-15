@@ -285,3 +285,24 @@ def test_type_params_of_an_overload(
 
     lines = (Path(app.outdir) / "index.txt").read_text().splitlines()
     assert lines[lines.index("   Overloads:") + 1].strip() == expected
+
+
+@pytest.mark.sphinx("text", testroot="type-params")
+def test_type_params_of_a_class_whose_annotations_are_a_property(
+    app: SphinxTestApp, write_rst: Callable[[str], None]
+) -> None:
+    write_rst(".. autoclass:: type_params_module.Forwarding\n   :members: unwrap")
+    app.build()
+
+    assert (Path(app.outdir) / "index.txt").read_text().splitlines() == [
+        "class type_params_module.Forwarding",
+        "",
+        "   Forwards its annotations to the object it wraps.",
+        "",
+        "   unwrap()",
+        "",
+        "      Return the wrapped object.",
+        "",
+        "      Return type:",
+        '         "int"',
+    ]

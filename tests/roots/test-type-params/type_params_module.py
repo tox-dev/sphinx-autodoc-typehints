@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Generic, Protocol, overload
+from typing import TYPE_CHECKING, Any, Generic, Protocol, overload
 
 from typing_extensions import ParamSpec, TypeVar, TypeVarTuple
 
@@ -273,3 +273,15 @@ if sys.version_info >= (4,):
 def pick(key: int | str) -> list[int] | str:
     """Pick one, overloaded where no interpreter runs the overloads, so typing never registers them."""
     raise NotImplementedError
+
+
+class Forwarding:
+    """Forwards its annotations to the object it wraps."""
+
+    @property
+    def __annotations__(self) -> dict[str, Any]:  # ruff:ignore[bad-dunder-method-name]  # the case under test
+        return {}
+
+    def unwrap(self) -> int:
+        """Return the wrapped object."""
+        raise NotImplementedError

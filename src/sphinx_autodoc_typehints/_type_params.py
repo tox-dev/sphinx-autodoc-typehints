@@ -114,10 +114,15 @@ def _defines(klass: type, attribute: str) -> bool:
 
 
 def _own_annotations(klass: type) -> dict[str, Any]:
-    # an annotation may name what only a type checker imports, so read it without evaluating
+    # an annotation may name what only a type checker imports, so read it without evaluating; a class may define
+    # __annotations__ as anything, such as a property forwarding those of the object it wraps
     if sys.version_info >= (3, 14):  # pragma: >=3.14 cover
-        return get_annotations(klass, format=Format.FORWARDREF)
-    return vars(klass).get("__annotations__", {})  # pragma: <3.14 cover
+        try:
+            return get_annotations(klass, format=Format.FORWARDREF)
+        except ValueError:
+            return {}
+    annotations = vars(klass).get("__annotations__")  # pragma: <3.14 cover
+    return annotations if isinstance(annotations, dict) else {}  # pragma: <3.14 cover
 
 
 def specialize(annotation: Any, arguments: dict[Any, Any]) -> Any:
