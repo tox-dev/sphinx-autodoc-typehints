@@ -292,6 +292,22 @@ def _reads_shadowed_name(obj: Any) -> bool:  # pragma: >=3.14 cover
     )
 
 
+def guarded_forward_refs(obj: Any, annotations: dict[str, Any]) -> dict[str, Any]:  # pragma: >=3.14 cover
+    """
+    Return ``annotations`` with each one reading a name the guard of its module shadows as a forward reference.
+
+    The ``FORWARDREF`` format evaluates them in the globals they were compiled in, which hold the runtime binding, so
+    their source is evaluated again where the guarded names are, one at a time, leaving those that fail unevaluated.
+    """
+    if getattr(obj, "__annotate__", None) is None or not (shadowed := guarded_names(obj)):
+        return annotations
+    return annotations | {
+        key: ForwardRef(source)
+        for key, source in get_annotations(obj, format=Format.STRING).items()
+        if not shadowed.keys().isdisjoint(_names_read(source))
+    }
+
+
 def _names_read(source: str) -> Iterator[str]:  # pragma: >=3.14 cover
     # as annotationlib compiles ``*Ts``, the starred annotation of ``*args``
     code = f"({source},)[0]" if source.lstrip().startswith("*") else source
@@ -506,6 +522,7 @@ __all__ = [
     "defining_module",
     "evaluate_annotation",
     "get_obj_location",
+    "guarded_forward_refs",
     "guarded_names",
     "is_documented",
     "note_documented",

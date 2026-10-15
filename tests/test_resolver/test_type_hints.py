@@ -722,6 +722,12 @@ _LAZY_FALLBACK: Final = (
             "class Holder:\n    def method(self, value: Decimal) -> None: ...\n", "Holder.method", id="method"
         ),
         pytest.param("class Holder:\n    value: Decimal\n", "Holder", id="class"),
+        pytest.param(
+            "def func(value: Decimal, other: Undefined) -> None: ...\n", "func", id="function-beside-an-undefined-name"
+        ),
+        pytest.param(
+            "class Holder:\n    value: Decimal\n    other: Undefined\n", "Holder", id="class-beside-an-undefined-name"
+        ),
     ],
 )
 def test_lazy_annotation_reads_the_guarded_type_over_its_runtime_fallback(  # pragma: >=3.14 cover
