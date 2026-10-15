@@ -768,9 +768,12 @@ event runs, so a name imported under `TYPE_CHECKING` resolved there only when do
 first. The extension renders that type again once the header is built, the way it renders a field's type, with the type
 aliases, `typehints_fully_qualified` and the `TYPE_CHECKING` imports applied. The header therefore reads like the field,
 not like plain autodoc: `RATE: decimal.Decimal` shows as `RATE: Decimal` unless `typehints_fully_qualified` is on, and a
-class from a module in `autodoc_mock_imports` shows by its name, as it does in a field. A class whose subscription hands
-back the class itself, as SQLAlchemy's `TypeEngine` does, evaluates `TypeEngine[_T]` to a bare `TypeEngine`; the header
-then shows the annotation as the source writes it, arguments included.
+class from a module in `autodoc_mock_imports` shows by its name, as it does in a field.
+
+A class whose subscription hands back the class itself, as SQLAlchemy's `TypeEngine` does, evaluates `TypeEngine[_T]` to
+a bare `TypeEngine`. The extension evaluates such an annotation again from its source, keeping the arguments, so the
+header, the signature, the parameter, return and `:ivar:` fields and the overloads all show `TypeEngine[_T]`, with
+`TypeEngine` still linked.
 
 Autodoc leaves the type parameters of a generic object out of its signature. The extension adds them after the name,
 with bounds, constraints and defaults, the way [PEP 695](https://peps.python.org/pep-0695/) writes them:

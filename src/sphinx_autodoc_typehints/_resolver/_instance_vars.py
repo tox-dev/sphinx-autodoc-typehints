@@ -5,7 +5,7 @@ import inspect
 import textwrap
 from typing import TYPE_CHECKING, Any, ClassVar, Final, get_args, get_origin
 
-from ._util import annotation_globals, type_hints
+from ._util import annotation_globals, evaluate_annotation, type_hints
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -52,7 +52,7 @@ def get_instance_var_annotations(cls: type) -> dict[str, Any]:
     resolved: dict[str, Any] = {}
     for attr_name, ann_str in raw.items():
         try:
-            resolved[attr_name] = eval(ann_str, globalns)  # ruff:ignore[suspicious-eval-usage]
+            resolved[attr_name] = evaluate_annotation(ann_str, globalns, {})
         except Exception:  # ruff:ignore[blind-except]
             resolved[attr_name] = ann_str
     return resolved

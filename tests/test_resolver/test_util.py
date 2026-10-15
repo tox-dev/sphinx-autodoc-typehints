@@ -4,17 +4,21 @@ import dataclasses
 import importlib
 import re
 from operator import attrgetter
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock, create_autospec, patch
 
 import pytest
+from sphinx import addnodes
 from sphinx.environment import BuildEnvironment
 
 from sphinx_autodoc_typehints._annotations import MyTypeAliasForwardRef
 from sphinx_autodoc_typehints._resolver._util import collect_documented_type_aliases, get_obj_location
 
 if TYPE_CHECKING:
-    from pathlib import Path
+    from collections.abc import Callable
+
+    from sphinx.testing.util import SphinxTestApp
 
 
 def _typed_func(x: int, y: str) -> bool: ...
@@ -156,3 +160,90 @@ def test_collect_documented_type_aliases_annotations_error(error: Exception) -> 
     deferred, eager = collect_documented_type_aliases(_AnnotationsRaiser(), "mymod", env)
     assert "MyType" in deferred
     assert eager == {}
+
+
+@pytest.mark.parametrize(
+    ("rst", "expected"),
+    [
+        pytest.param(
+            ".. autofunction:: dropped_module.compare",
+            '* **kind** ("Engine"["Any"] | "None") -- the kind',
+            id="parameter",
+        ),
+        pytest.param(
+            ".. autofunction:: dropped_module.compare",
+            '* **spare** ("Engine"["str"] | "Engine"["bytes"]) -- the spare',
+            id="union-the-dropped-arguments-told-apart",
+        ),
+        pytest.param(".. autofunction:: dropped_module.compare", '"Engine"["int"]', id="return"),
+        pytest.param(".. autofunction:: dropped_module.quoted", '**kind** ("Engine"["int"]) -- the kind', id="quoted"),
+        pytest.param(".. autofunction:: dropped_module.pick", '* **kind** ("Engine"["str"]) → "str"', id="overload"),
+        pytest.param(
+            ".. autoclass:: dropped_module.Column", '* **kind** ("Engine"["Any"]) -- the kind', id="class-body-ivar"
+        ),
+        pytest.param(
+            ".. autoclass:: dropped_module.Column",
+            '* **other** ("Engine"["str"] | "None") -- the other',
+            id="instance-ivar",
+        ),
+    ],
+)
+@pytest.mark.sphinx("text", testroot="dropped-arguments")
+@pytest.mark.usefixtures("wide_text_output")
+def test_field_type_keeps_the_arguments_a_subscription_drops(
+    app: SphinxTestApp, write_rst: Callable[[str], None], rst: str, expected: str
+) -> None:
+    write_rst(rst)
+    app.build()
+
+    assert expected in [line.strip() for line in (Path(app.outdir) / "index.txt").read_text().splitlines()]
+
+
+@pytest.mark.sphinx(
+    "text",
+    testroot="dropped-arguments",
+    confoverrides={"typehints_use_signature": True, "typehints_use_signature_return": True},
+)
+@pytest.mark.usefixtures("wide_text_output")
+def test_kept_signature_keeps_the_arguments_a_subscription_drops(
+    app: SphinxTestApp, write_rst: Callable[[str], None]
+) -> None:
+    write_rst(".. autofunction:: dropped_module.compare")
+    app.build()
+
+    assert (Path(app.outdir) / "index.txt").read_text().splitlines()[0] == (
+        "dropped_module.compare(kind: Engine[Any] | None, spare: Engine[str] | Engine[bytes]) -> Engine[int]"
+    )
+
+
+@pytest.mark.sphinx(
+    "text",
+    testroot="dropped-arguments",
+    confoverrides={"typehints_use_signature": True, "typehints_use_signature_return": True},
+)
+def test_kept_signature_links_the_class_whose_subscription_drops_the_arguments(
+    app: SphinxTestApp, write_rst: Callable[[str], None]
+) -> None:
+    write_rst(".. autofunction:: dropped_module.quoted")
+    app.build()
+
+    signature = next(app.env.get_doctree("index").findall(addnodes.desc_signature))
+    assert [ref["reftarget"] for ref in signature.findall(addnodes.pending_xref)] == ["engines.Engine", "int", "None"]
+
+
+@pytest.mark.parametrize(
+    ("function", "expected"),
+    [
+        pytest.param("sliced", '**kind** ("Engine") -- the kind', id="slice-a-call-cannot-take"),
+        pytest.param("reassigned", '**kind** ("Engine") -- the kind', id="source-that-no-longer-evaluates"),
+        pytest.param("aliased", '**kind** ("list"["Engine"]) -- the kind', id="alias-holding-a-forward-reference"),
+    ],
+)
+@pytest.mark.sphinx("text", testroot="dropped-arguments")
+def test_field_type_keeps_the_evaluated_type_when_the_source_keeps_no_arguments(
+    app: SphinxTestApp, write_rst: Callable[[str], None], function: str, expected: str
+) -> None:
+    write_rst(f".. autofunction:: dropped_module.{function}")
+    app.build()
+
+    assert expected in [line.strip() for line in (Path(app.outdir) / "index.txt").read_text().splitlines()]

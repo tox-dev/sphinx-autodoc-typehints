@@ -22,7 +22,6 @@ from ._util import (
     object_at,
     type_alias_namespace,
     type_hints,
-    written_annotations,
     written_type_alias,
 )
 
@@ -45,6 +44,5 @@ __all__ = [
     "stub_path",
     "type_alias_namespace",
     "type_hints",
-    "written_annotations",
     "written_type_alias",
 ]

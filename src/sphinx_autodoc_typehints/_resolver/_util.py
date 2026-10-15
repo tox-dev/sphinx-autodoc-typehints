@@ -8,7 +8,10 @@ import sys
 import textwrap
 import types
 from functools import partial
-from typing import TYPE_CHECKING, Any, Final, cast, get_type_hints
+from typing import TYPE_CHECKING, Any, Final, Union, cast, get_args, get_origin, get_type_hints
+
+from sphinx.errors import PycodeError
+from sphinx.pycode import ModuleAnalyzer
 
 from sphinx_autodoc_typehints._annotations import (
     MyTypeAliasForwardRef,
@@ -28,6 +31,8 @@ if TYPE_CHECKING:
     from sphinx.environment import BuildEnvironment
 
 _DOCUMENTED: Final = "sphinx_autodoc_typehints_documented"
+_UNION: Final = "__sphinx_autodoc_typehints_union__"
+_SUBSCRIPT: Final = "__sphinx_autodoc_typehints_subscript__"
 #: Per module, what its ``TYPE_CHECKING`` block binds a name to that the module binds to something else at runtime.
 SHADOWED_BY_GUARD: Final[dict[str, dict[str, Any]]] = {}
 
@@ -64,12 +69,138 @@ def get_obj_location(obj: Any) -> str | None:
 
 
 def type_hints(obj: Any, globalns: dict[str, Any] | None, localns: Mapping[str, Any] | None) -> dict[str, Any]:
-    """Return :func:`typing.get_type_hints` with the extras, reading a name a guard shadows as the guard binds it."""
+    """
+    Return :func:`typing.get_type_hints` with the extras, reading a name a guard shadows as the guard binds it.
+
+    A class whose ``__class_getitem__`` hands back the class itself, as SQLAlchemy's ``TypeEngine`` does, evaluates
+    ``TypeEngine[Any]`` to a bare ``TypeEngine``, so an annotation left holding one is evaluated again from its source.
+    """
     if sys.version_info >= (3, 14) and _reads_shadowed_name(obj):  # pragma: >=3.14 cover
-        return _hints_from_source(obj, globalns, localns)
-    if isinstance(obj, type) and any(guarded_names(base) for base in obj.__mro__):
-        return _hints_of_bases(obj, globalns, localns, _declared_hints)
-    return get_type_hints(obj, globalns, localns, include_extras=True)
+        hints = _hints_from_source(obj, globalns, localns)
+    elif isinstance(obj, type) and any(guarded_names(base) for base in obj.__mro__):
+        hints = _hints_of_bases(obj, globalns, localns, _declared_hints)
+    else:
+        hints = get_type_hints(obj, globalns, localns, include_extras=True)
+    if not (dropped := {key for key, hint in hints.items() if any(map(_dropped_arguments, _parts(hint)))}):
+        return hints
+    return hints | {
+        key: _evaluated_again(hints[key], source, scope_globals, scope_locals)
+        for key, source, scope_globals, scope_locals in _written_sources(obj, dropped, globalns, localns)
+    }
+
+
+def _parts(hint: Any) -> Iterator[Any]:
+    yield hint
+    # the parameters of a Callable come as a list
+    for argument in hint if isinstance(hint, list) else get_args(hint):
+        yield from _parts(argument)
+
+
+def _dropped_arguments(part: Any) -> bool:
+    return isinstance(part, type) and get_origin(part) is None and _drops_arguments(part)
+
+
+def _kept_arguments(part: Any) -> bool:
+    # such a class subscripts to itself, so only evaluate_annotation builds a generic alias of it
+    return isinstance(part, types.GenericAlias) and _drops_arguments(part.__origin__)
+
+
+def _drops_arguments(cls: type) -> bool:
+    # the standard library subscripts its classes in C, only a __class_getitem__ written in Python can drop arguments
+    method = inspect.getattr_static(cls, "__class_getitem__", None)
+    return inspect.isfunction(getattr(method, "__func__", method))
+
+
+def _written_sources(
+    obj: Any, keys: set[str], globalns: dict[str, Any] | None, localns: Mapping[str, Any] | None
+) -> Iterator[tuple[str, str, dict[str, Any], Mapping[str, Any]]]:
+    """
+    Yield each of ``keys`` with its annotation as the source writes it and the namespaces it evaluates in.
+
+    A class yields its bases first, so the class that declares an attribute last comes last, as get_type_hints orders
+    them.
+    """
+    if inspect.isroutine(obj) or isinstance(obj, types.ModuleType):
+        written = written_annotations(obj) if inspect.isroutine(obj) else _source_annotations(obj.__name__, "")
+        scope_globals = annotation_globals(obj) if globalns is None else globalns
+        scope_locals = scope_globals if localns is None else localns
+        yield from ((key, written[key], scope_globals, scope_locals) for key in keys & written.keys())
+        return
+    # the attribute of an instance is annotated in its class
+    for base in reversed((obj if isinstance(obj, type) else type(obj)).__mro__):
+        base_globals = annotation_globals(base) if globalns is None else globalns
+        base_locals = dict(vars(base)) if localns is None else localns
+        if localns is None and globalns is None:
+            base_globals, base_locals = base_locals, base_globals
+        written = _source_annotations(base.__module__, base.__qualname__)
+        yield from ((key, written[key], dict(base_globals), base_locals) for key in keys & written.keys())
+
+
+def _source_annotations(module: str, qualname: str) -> dict[str, str]:
+    """
+    Return the annotations the body of ``qualname`` writes, the module's own for an empty name.
+
+    autodoc replaces the annotations a module and its classes hold with what it evaluated, so only the source has them.
+    """
+    try:
+        analyzer = ModuleAnalyzer.for_module(module)
+        analyzer.analyze()
+    except PycodeError:
+        return {}
+    return {attribute: source for (scope, attribute), source in analyzer.annotations.items() if scope == qualname}
+
+
+def _evaluated_again(hint: Any, source: str, globalns: dict[str, Any], localns: Mapping[str, Any]) -> Any:
+    try:
+        value = evaluate_annotation(source, globalns, localns)
+        # a quoted annotation evaluates to the string inside it
+        if isinstance(value, str):
+            value = evaluate_annotation(value, globalns, localns)
+    except Exception:  # ruff:ignore[blind-except]  # an annotation runs user code, which may raise anything
+        return hint
+    # an alias named in the source holds the forward references get_type_hints resolved, so it only wins when it kept
+    # the arguments it was evaluated for
+    return value if any(map(_kept_arguments, _parts(value))) else hint
+
+
+def evaluate_annotation(source: str, globalns: dict[str, Any], localns: Mapping[str, Any]) -> Any:
+    """Evaluate an annotation written as ``source``, keeping the arguments a class subscripted in it drops."""
+    tree = _KeepArguments().visit(ast.parse(source, mode="eval"))
+    namespace = {**localns, _SUBSCRIPT: _subscript}
+    try:
+        return eval(compile(ast.fix_missing_locations(tree), "<annotation>", "eval"), globalns, namespace)  # ruff:ignore[suspicious-eval-usage]
+    except TypeError:
+        # X | Y means Union[X, Y], which also accepts operands that don't support |, such as the objects
+        # autodoc_mock_imports puts in place of a missing module's
+        code = compile(ast.fix_missing_locations(_PipeAsUnion().visit(tree)), "<annotation>", "eval")
+        return eval(code, globalns, {**namespace, _UNION: Union})  # ruff:ignore[suspicious-eval-usage]
+
+
+def _subscript(value: Any, item: Any) -> Any:
+    # a generic alias renders as the subscription written, and links the class
+    return (
+        types.GenericAlias(value, item)
+        if (subscripted := value[item]) is value and isinstance(value, type)
+        else subscripted
+    )
+
+
+class _KeepArguments(ast.NodeTransformer):
+    def visit_Subscript(self, node: ast.Subscript) -> ast.expr:
+        self.generic_visit(node)
+        # a call takes no slice as an argument
+        if any(isinstance(item, ast.Slice) for item in (node.slice, *getattr(node.slice, "elts", ()))):
+            return node
+        return ast.Call(func=ast.Name(id=_SUBSCRIPT, ctx=ast.Load()), args=[node.value, node.slice], keywords=[])
+
+
+class _PipeAsUnion(ast.NodeTransformer):
+    def visit_BinOp(self, node: ast.BinOp) -> ast.expr:
+        self.generic_visit(node)
+        if not isinstance(node.op, ast.BitOr):
+            return node
+        members = ast.Tuple(elts=[node.left, node.right], ctx=ast.Load())
+        return ast.Subscript(value=ast.Name(id=_UNION, ctx=ast.Load()), slice=members, ctx=ast.Load())
 
 
 def _hints_of_bases(
@@ -328,6 +459,7 @@ __all__ = [
     "annotation_globals",
     "collect_documented_type_aliases",
     "defining_module",
+    "evaluate_annotation",
     "get_obj_location",
     "guarded_names",
     "is_documented",

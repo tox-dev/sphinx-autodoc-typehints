@@ -1,0 +1,79 @@
+"""Annotations subscripting a class that drops the arguments, imported only for type checking."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, overload
+
+if TYPE_CHECKING:
+    from engines import Engine
+
+
+def compare(kind: Engine[Any] | None, spare: Engine[str] | Engine[bytes]) -> Engine[int]:
+    """
+    Compare.
+
+    :param kind: the kind
+    :param spare: the spare
+    """
+    raise NotImplementedError
+
+
+def quoted(kind: "Engine[int]") -> None:  # ruff:ignore[quoted-annotation]  # a quoted annotation under test
+    """
+    Quoted.
+
+    :param kind: the kind
+    """
+
+
+@overload
+def pick(kind: Engine[int]) -> int: ...
+@overload
+def pick(kind: Engine[str]) -> str: ...
+def pick(kind: Any) -> Any:
+    """Pick."""
+    return kind
+
+
+class Column:
+    """
+    A column.
+
+    :ivar kind: the kind
+    :ivar other: the other
+    """
+
+    kind: Engine[Any]
+
+    def __init__(self) -> None:
+        self.other: Engine[str] | None = None
+
+
+def sliced(kind: Engine[int, 1:2]) -> None:
+    """
+    Sliced.
+
+    :param kind: the kind
+    """
+
+
+def reassigned(kind: Missing[int]) -> None:  # ruff:ignore[undefined-name]  # the source no longer evaluates
+    """
+    Reassigned.
+
+    :param kind: the kind
+    """
+
+
+reassigned.__annotations__ = {"kind": "Engine[int]"}
+
+
+Engines = list["Engine"]
+
+
+def aliased(kind: Engines) -> None:
+    """
+    Aliased.
+
+    :param kind: the kind
+    """
