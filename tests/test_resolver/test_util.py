@@ -186,6 +186,10 @@ def test_collect_documented_type_aliases_annotations_error(error: Exception) -> 
             '* **other** ("Engine"["str"] | "None") -- the other',
             id="instance-ivar",
         ),
+        pytest.param(
+            ".. autoclass:: dropped_module.Record", '**kind** ("Engine"["int"]) -- the kind', id="dataclass-field"
+        ),
+        pytest.param(".. autoclass:: dropped_module.Entry", '**kind** ("Engine"["int"]) -- the kind', id="attrs-field"),
     ],
 )
 @pytest.mark.sphinx("text", testroot="dropped-arguments")
@@ -213,6 +217,19 @@ def test_kept_signature_keeps_the_arguments_a_subscription_drops(
 
     assert (Path(app.outdir) / "index.txt").read_text().splitlines()[0] == (
         "dropped_module.compare(kind: Engine[Any] | None, spare: Engine[str] | Engine[bytes]) -> Engine[int]"
+    )
+
+
+@pytest.mark.parametrize("name", [pytest.param("Record", id="dataclass"), pytest.param("Entry", id="attrs")])
+@pytest.mark.sphinx("text", testroot="dropped-arguments", confoverrides={"typehints_use_signature": True})
+def test_kept_signature_of_a_generated_init_keeps_the_arguments_a_subscription_drops(
+    app: SphinxTestApp, write_rst: Callable[[str], None], name: str
+) -> None:
+    write_rst(f".. autoclass:: dropped_module.{name}")
+    app.build()
+
+    assert (Path(app.outdir) / "index.txt").read_text().splitlines()[0] == (
+        f"class dropped_module.{name}(kind: Engine[int])"
     )
 
 

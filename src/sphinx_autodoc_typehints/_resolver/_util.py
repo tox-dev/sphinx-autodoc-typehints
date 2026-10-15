@@ -125,6 +125,13 @@ def _written_sources(
         scope_globals = annotation_globals(obj) if globalns is None else globalns
         scope_locals = scope_globals if localns is None else localns
         yield from ((key, written[key], scope_globals, scope_locals) for key in keys & written.keys())
+        # the __init__ a dataclass or attrs generates takes its annotations from the fields the class body writes
+        if (
+            inspect.isroutine(obj)
+            and (unwritten := keys - written.keys())
+            and isinstance(owner := _owning_class(obj), type)
+        ):
+            yield from _written_sources(owner, unwritten, None, localns)
         return
     # the attribute of an instance is annotated in its class
     for base in reversed((obj if isinstance(obj, type) else type(obj)).__mro__):
@@ -134,6 +141,10 @@ def _written_sources(
             base_globals, base_locals = base_locals, base_globals
         written = _source_annotations(base.__module__, base.__qualname__)
         yield from ((key, written[key], dict(base_globals), base_locals) for key in keys & written.keys())
+
+
+def _owning_class(routine: Any) -> Any:
+    return object_at(getattr(defining_module(routine), "__name__", None), routine.__qualname__.split(".")[:-1])
 
 
 def _source_annotations(module: str, qualname: str) -> dict[str, str]:

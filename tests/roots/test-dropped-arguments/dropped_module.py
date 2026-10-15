@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import dataclasses
 from typing import TYPE_CHECKING, Any, overload
+
+import attrs
 
 if TYPE_CHECKING:
     from engines import Engine
@@ -77,3 +80,25 @@ def aliased(kind: Engines) -> None:
 
     :param kind: the kind
     """
+
+
+@dataclasses.dataclass
+class Record:
+    """
+    A record.
+
+    :param kind: the kind
+    """
+
+    kind: Engine[int]
+
+
+@attrs.define
+class Entry:
+    """
+    An entry.
+
+    :param kind: the kind
+    """
+
+    kind: Engine[int]
