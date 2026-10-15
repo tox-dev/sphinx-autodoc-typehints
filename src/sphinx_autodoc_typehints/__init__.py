@@ -107,6 +107,8 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 _OVERLOADED_KINDS: Final = frozenset({"function", "method", "class", "exception"})
+#: Per docstring being processed, the attributes it documented before napoleon rewrote it.
+_WRITTEN_BEFORE_NAPOLEON: Final[dict[int, frozenset[str]]] = {}
 
 
 def process_signature(  # ruff:ignore[complex-structure, too-many-branches, too-many-return-statements, too-many-arguments, too-many-positional-arguments]
@@ -365,6 +367,24 @@ def _is_dataclass(name: str, what: str, qualname: str) -> bool:
     return (what == "method" and name.endswith(".__init__")) or (what == "class" and qualname.endswith(".__init__"))
 
 
+def _note_attributes_before_napoleon(  # ruff:ignore[too-many-arguments, too-many-positional-arguments]
+    app: Sphinx,
+    what: str,  # ruff:ignore[unused-function-argument]
+    name: str,  # ruff:ignore[unused-function-argument]
+    obj: Any,  # ruff:ignore[unused-function-argument]
+    options: Options | None,  # ruff:ignore[unused-function-argument]
+    lines: list[str],
+) -> None:
+    """
+    Note the attributes a docstring documents before napoleon writes its ``Attributes`` section as the same reST.
+
+    ``napoleon_attr_annotations = False`` asks for napoleon's entries to stay untyped, while reST written by hand still
+    takes its types from the annotations.
+    """
+    if not getattr(app.config, "napoleon_attr_annotations", True):
+        _WRITTEN_BEFORE_NAPOLEON[id(lines)] = frozenset(_documented_attributes(lines))
+
+
 def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-arguments]
     app: Sphinx,
     what: str,
@@ -374,6 +394,7 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
     lines: list[str],
 ) -> None:
     """Process the docstring for an entry."""
+    written = _WRITTEN_BEFORE_NAPOLEON.pop(id(lines), None)
     original_obj = obj
     obj = obj.fget if isinstance(obj, property) else obj
     # a stub supplies the types of what it describes, so editing it has to reread the pages documenting them
@@ -382,7 +403,7 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
     # before unwrapping, as a decorator marks the function it is given
     declared = obj
     if inspect.ismodule(obj):
-        _type_module_attributes(app, name, obj, lines)
+        _type_module_attributes(app, name, obj, lines, written)
         return
     # a data or attribute entry documents the value it holds, which a call to it does not describe
     if what in {"data", "attribute"} or not callable(obj):
@@ -394,10 +415,9 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
         resolve_type_guarded_imports(app.config.autodoc_mock_imports, obj)
         resolve_type_guarded_imports(app.config.autodoc_mock_imports, inspect.unwrap(obj.__init__))
         backfill_attrs_annotations(obj)
-        # an assignment in __init__ is the more specific declaration of the two
-        ivar_annotations = _class_body_annotations(obj) | get_instance_var_annotations(obj)
+        ivar_annotations, attribute_annotations = _attribute_annotations(obj, written)
     else:
-        ivar_annotations = {}
+        ivar_annotations = attribute_annotations = {}
     use_class_for_signature = False
     if inspect.isclass(obj):
         obj = getattr(obj, constructor := _constructor_name(obj))
@@ -443,10 +463,24 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
             documented_elsewhere=documented_elsewhere,
         )
         _inject_ivar_types(ivar_annotations, app, lines)
-        _inject_attribute_types(ivar_annotations, app, lines)
+        _inject_attribute_types(attribute_annotations, app, lines)
         inject_extra_items(app, original_obj, lines)
         _inject_setter_type(app, name, original_obj, type_hints, lines)
         _inject_override(app, what, name, declared, lines)
+
+
+def _attribute_annotations(cls: type, written: frozenset[str] | None) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Return the annotations that type the ``:ivar:`` fields of ``cls`` and those that type its attribute entries."""
+    body = _class_body_annotations(cls)
+    assigned = get_instance_var_annotations(cls)
+    # an assignment in __init__ is the more specific declaration of the two; with napoleon_attr_annotations off,
+    # napoleon's :ivar: fields still take its type, as they always have, while its attribute entries never did
+    return _without_napoleon_entries(body, written) | assigned, _without_napoleon_entries(body | assigned, written)
+
+
+def _without_napoleon_entries(annotations: dict[str, Any], written: frozenset[str] | None) -> dict[str, Any]:
+    """Drop the annotations of the attributes only napoleon documents, when told not to type them."""
+    return annotations if written is None else {name: hint for name, hint in annotations.items() if name in written}
 
 
 def _class_body_annotations(cls: type) -> dict[str, Any]:
@@ -545,13 +579,15 @@ def _constructor_name(cls: type) -> Literal["__new__", "__init__"]:
     return "__new__" if own_new and depth["__new__"] <= depth["__init__"] else "__init__"
 
 
-def _type_module_attributes(app: Sphinx, name: str, module: types.ModuleType, lines: list[str]) -> None:
+def _type_module_attributes(
+    app: Sphinx, name: str, module: types.ModuleType, lines: list[str], written: frozenset[str] | None
+) -> None:
     """Type the attributes a module docstring lists, as napoleon writes an ``Attributes`` section, from annotations."""
     # evaluating the annotations runs the module's guard, which a docstring listing no attribute does not need
-    if not any(_IVAR_FIELD_RE.match(line) or line.startswith(".. attribute:: ") for line in lines):
+    if not any(_documented_attributes(lines)):
         return
     resolve_type_guarded_imports(app.config.autodoc_mock_imports, module)
-    annotations = get_body_annotations(module)
+    annotations = _without_napoleon_entries(get_body_annotations(module), written)
     with annotation_state(
         app.config,
         _typehints_env=getattr(app, "env", None),
@@ -1270,6 +1306,14 @@ _IVAR_FIELD_RE = re.compile(
 )
 
 
+def _documented_attributes(lines: list[str]) -> Iterator[str]:
+    for line in lines:
+        if field := _IVAR_FIELD_RE.match(line):
+            yield field["name"]
+        elif directive := re.match(r"\.\. attribute:: (\w+)$", line):
+            yield directive[1]
+
+
 def _inject_ivar_types(ivar_annotations: dict[str, Any], app: Sphinx, lines: list[str]) -> None:
     line_index = 0
     while line_index < len(lines):
@@ -1417,6 +1461,8 @@ def setup(app: Sphinx) -> dict[str, bool | str]:
     app.connect("env-merge-info", merge_alias_choices)
     app.connect("env-before-read-docs", validate_config)
     app.connect("autodoc-process-signature", process_signature)
+    # napoleon rewrites the docstring at the default priority
+    app.connect("autodoc-process-docstring", _note_attributes_before_napoleon, priority=499)
     app.connect("autodoc-process-docstring", process_docstring)
     app.connect("object-description-transform", add_type_params)
     app.connect("object-description-transform", render_header_types)

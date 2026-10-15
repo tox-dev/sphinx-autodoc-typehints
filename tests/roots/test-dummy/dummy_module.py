@@ -54,6 +54,20 @@ class GoogleAttributes:
     count: int
 
 
+class GoogleAttributesBesideField:
+    """
+    Class docstring.
+
+    :ivar written: written as a field
+
+    Attributes:
+        count: the count
+    """
+
+    count: int
+    written: str
+
+
 class GoogleInitAttributes:
     """
     Class docstring.
