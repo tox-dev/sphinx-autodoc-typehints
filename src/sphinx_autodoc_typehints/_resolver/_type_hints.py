@@ -12,13 +12,11 @@ import types
 from typing import (
     TYPE_CHECKING,
     Any,
-    Final,
     ForwardRef,
     NewType,
     ParamSpec,
     TypeVar,
     TypeVarTuple,
-    Union,
     get_origin,
 )
 
@@ -33,6 +31,7 @@ from ._util import (
     SHADOWED_BY_GUARD,
     annotation_globals,
     defining_module,
+    evaluate_annotation,
     get_obj_location,
     guarded_names,
     type_hints,
@@ -45,8 +44,6 @@ if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping
 
 _LOGGER = logging.getLogger(__name__)
-
-_UNION: Final = "__sphinx_autodoc_typehints_union__"
 
 
 def get_all_type_hints(
@@ -169,33 +166,13 @@ def resolve_string_annotations(
             if not isinstance(source, str):
                 break
             try:
-                resolved[key] = source = _evaluate(source, globalns, localns)
+                resolved[key] = source = evaluate_annotation(source, globalns, localns)
             except Exception:  # ruff:ignore[blind-except]
                 _LOGGER.debug(
                     "Failed to resolve annotation %r=%r for %s", key, source, getattr(obj, "__qualname__", "?")
                 )
                 break
     return resolved
-
-
-def _evaluate(source: str, globalns: dict[str, Any], localns: dict[str, Any]) -> Any:
-    try:
-        return eval(source, globalns, localns)  # ruff:ignore[suspicious-eval-usage]
-    except TypeError:
-        # X | Y means Union[X, Y], which also accepts operands that don't support |, such as the objects
-        # autodoc_mock_imports puts in place of a missing module's
-        tree = ast.fix_missing_locations(_PipeAsUnion().visit(ast.parse(source, mode="eval")))
-        code = compile(tree, "<annotation>", "eval")
-        return eval(code, globalns, {**localns, _UNION: Union})  # ruff:ignore[suspicious-eval-usage]
-
-
-class _PipeAsUnion(ast.NodeTransformer):
-    def visit_BinOp(self, node: ast.BinOp) -> ast.expr:
-        self.generic_visit(node)
-        if not isinstance(node.op, ast.BitOr):
-            return node
-        members = ast.Tuple(elts=[node.left, node.right], ctx=ast.Load())
-        return ast.Subscript(value=ast.Name(id=_UNION, ctx=ast.Load()), slice=members, ctx=ast.Load())
 
 
 def resolve_type_guarded_imports(autodoc_mock_imports: list[str], obj: Any) -> None:

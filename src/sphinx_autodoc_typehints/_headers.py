@@ -2,16 +2,12 @@
 
 from __future__ import annotations
 
-import ast
 import inspect
 from functools import cached_property, partial
-from types import ModuleType
-from typing import TYPE_CHECKING, Any, Final, cast, get_args, get_origin
+from typing import TYPE_CHECKING, Any, Final, cast
 
 from sphinx import addnodes
 from sphinx.domains.python._annotations import _parse_annotation  # ruff:ignore[import-private-name]  # no public parser
-from sphinx.errors import PycodeError
-from sphinx.pycode import ModuleAnalyzer
 from sphinx.util import logging
 from sphinx.util.inspect import safe_getattr
 
@@ -22,14 +18,11 @@ from ._resolver import (
     resolve_annotations,
     resolve_type_guarded_imports,
     type_alias_namespace,
-    written_annotations,
 )
 from ._type_params import bound_type_args, specialize
 from ._typed_dict import typed_dict_keys
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
-
     from sphinx.application import Sphinx
     from sphinx.environment import BuildEnvironment
 
@@ -61,8 +54,19 @@ def render_header_types(app: Sphinx, domain: str, objtype: str, contentnode: add
             isinstance(signode, addnodes.desc_signature)
             and (typed := _type_annotation(signode)) is not None
             and is_documented(app.env, name := f"{signode.get('module')}.{signode.get('fullname')}")
-            and (text := _header_text(app, signode, objtype, name)) is not None
+            and (hint := _hint(app, signode, objtype, name)) is not _MISSING
         ):
+            with annotation_state(
+                app.config,
+                _typehints_env=app.env,
+                _typehints_module_prefix=name.rpartition(".")[0],
+                _typehints_resolve_guarded_imports=partial(
+                    resolve_type_guarded_imports, app.config.autodoc_mock_imports
+                ),
+                _typehints_signature=True,
+            ):
+                short_literals = app.config.python_display_short_literal_types
+                text = signature_text(format_annotation(hint, app.config, short_literals=short_literals))
             # the children after the ": " separator are the type
             del typed[2:]
             typed.extend(_parse_annotation(text, app.env))
@@ -84,28 +88,14 @@ def _type_annotation(signode: addnodes.desc_signature) -> addnodes.desc_annotati
     )
 
 
-def _header_text(app: Sphinx, signode: addnodes.desc_signature, objtype: str, name: str) -> str | None:
+def _hint(app: Sphinx, signode: addnodes.desc_signature, objtype: str, name: str) -> Any:
     *path, attribute = signode.get("fullname", "").split(".")
     owner = object_at(signode.get("module"), path)
     # the header's own resolution reports nothing, the docstring of the same object warns about what fails there
     with logging.suppress_logging():
         hint = _declared_hint(app, owner, attribute, objtype, name)
-    if hint is _MISSING:
-        return None
-    if (written := _written_when_arguments_drop(owner, attribute, objtype, hint)) is not None:
-        return written
     # a member inherited from a generic base reads the arguments the documenting class gives its type parameters
-    if arguments := bound_type_args(owner, attribute):
-        hint = specialize(hint, arguments)
-    with annotation_state(
-        app.config,
-        _typehints_env=app.env,
-        _typehints_module_prefix=name.rpartition(".")[0],
-        _typehints_resolve_guarded_imports=partial(resolve_type_guarded_imports, app.config.autodoc_mock_imports),
-        _typehints_signature=True,
-    ):
-        short_literals = app.config.python_display_short_literal_types
-        return signature_text(format_annotation(hint, app.config, short_literals=short_literals))
+    return specialize(hint, arguments) if (arguments := bound_type_args(owner, attribute)) else hint
 
 
 def _declared_hint(app: Sphinx, owner: Any, attribute: str, objtype: str, name: str) -> Any:
@@ -150,67 +140,6 @@ def _resolved_hints(app: Sphinx, annotated: Any, name: str) -> dict[str, Any]:
     if keys := typed_dict_keys(annotated, localns):
         return keys
     return resolve_annotations(app.config.autodoc_mock_imports, annotated, name, localns) | written_aliases
-
-
-def _written_when_arguments_drop(owner: Any, attribute: str, objtype: str, hint: Any) -> str | None:
-    """
-    Return the annotation as written when evaluating it left bare a class it subscripts, so the header keeps them.
-
-    A class whose ``__class_getitem__`` hands back the class itself, as SQLAlchemy's ``TypeEngine`` does, evaluates
-    ``TypeEngine[_T]`` to ``TypeEngine``.
-    """
-    if (
-        not (
-            bare := {
-                leaf.__name__
-                for leaf in _bare_classes(hint)
-                if inspect.getattr_static(leaf, "__class_getitem__", None) is not None
-            }
-        )
-        or (written := _written_annotation(owner, attribute, objtype)) is None
-    ):
-        return None
-    subscripted = (
-        ast.unparse(node.value).rpartition(".")[2]
-        for node in ast.walk(ast.parse(written, mode="eval"))
-        if isinstance(node, ast.Subscript)
-    )
-    return None if bare.isdisjoint(subscripted) else written
-
-
-def _bare_classes(hint: Any) -> Iterator[type]:
-    if isinstance(hint, type) and get_origin(hint) is None:
-        yield hint
-    # the parameters of a Callable come as a list
-    for argument in hint if isinstance(hint, list) else get_args(hint):
-        yield from _bare_classes(argument)
-
-
-def _written_annotation(owner: Any, attribute: str, objtype: str) -> str | None:
-    if objtype == "property":
-        return written_annotations(_property_getter(owner, attribute)).get("return")
-    # autodoc replaces the annotations a module and its classes hold with what it evaluated, so read the source
-    if isinstance(owner, ModuleType):
-        return _source_annotation(owner.__name__, "", attribute)
-    # the attribute of an instance is annotated in its class
-    klass = owner if isinstance(owner, type) else type(owner)
-    return next(
-        (
-            written
-            for holder in klass.__mro__
-            if (written := _source_annotation(holder.__module__, holder.__qualname__, attribute))
-        ),
-        None,
-    )
-
-
-def _source_annotation(module: str, qualname: str, attribute: str) -> str | None:
-    try:
-        analyzer = ModuleAnalyzer.for_module(module)
-        analyzer.analyze()
-    except PycodeError:
-        return None
-    return analyzer.annotations.get((qualname, attribute))
 
 
 __all__ = ["render_header_types"]
