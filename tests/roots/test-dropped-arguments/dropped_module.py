@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import dataclasses
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, Any, overload
 
-import attrs
+from attrs import define
 
 if TYPE_CHECKING:
     from engines import Engine
@@ -17,8 +17,8 @@ def compare(kind: Engine[Any] | None, spare: Engine[str] | Engine[bytes]) -> Eng
     """
     Compare.
 
-    :param kind: the kind
-    :param spare: the spare
+    :param kind: optional engine of anything
+    :param spare: fallback engine of text or bytes
     """
     raise NotImplementedError
 
@@ -27,7 +27,7 @@ def quoted(kind: "Engine[int]") -> None:  # ruff:ignore[quoted-annotation]  # a 
     """
     Quoted.
 
-    :param kind: the kind
+    :param kind: engine named in a string
     """
 
 
@@ -44,9 +44,9 @@ class Column:
     """
     A column.
 
-    :ivar kind: the kind
-    :ivar other: the other
-    :ivar limited: the limited
+    :ivar kind: column engine
+    :ivar other: optional text engine
+    :ivar limited: capped count
     """
 
     kind: Engine[Any]
@@ -60,7 +60,7 @@ def sliced(kind: Engine[int, 1:2]) -> None:
     """
     Sliced.
 
-    :param kind: the kind
+    :param kind: engine subscripted with a slice
     """
 
 
@@ -68,7 +68,7 @@ def reassigned(kind: Missing[int]) -> None:  # ruff:ignore[undefined-name]  # th
     """
     Reassigned.
 
-    :param kind: the kind
+    :param kind: engine whose source no longer evaluates
     """
 
 
@@ -82,27 +82,27 @@ def aliased(kind: Engines) -> None:
     """
     Aliased.
 
-    :param kind: the kind
+    :param kind: engines behind an alias
     """
 
 
-@dataclasses.dataclass
+@dataclass
 class Record:
     """
     A record.
 
-    :param kind: the kind
+    :param kind: record engine
     """
 
     kind: Engine[int]
 
 
-@attrs.define
+@define
 class Entry:
     """
     An entry.
 
-    :param kind: the kind
+    :param kind: entry engine
     """
 
     kind: Engine[int]
@@ -112,8 +112,8 @@ class Switched:
     """
     Switched.
 
-    :ivar kind: the kind
-    :ivar same: the same
+    :ivar kind: engine that differs per branch
+    :ivar same: engine both branches agree on
     """
 
     if PAIRS:
@@ -134,7 +134,7 @@ class Commented:
         """
         Bind.
 
-        :param kind: the kind
+        :param kind: engine to bind
         """
 
 
@@ -142,7 +142,7 @@ class Holder[T]:
     """
     A holder.
 
-    :ivar kind: the kind
+    :ivar kind: held engine
     """
 
     kind: Engine[T]

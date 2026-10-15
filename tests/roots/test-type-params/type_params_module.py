@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import sys
 from abc import ABC, abstractmethod
 from pathlib import Path
+from sys import version_info
 from typing import TYPE_CHECKING, Any, Generic, Protocol, overload
 
 from typing_extensions import ParamSpec, TypeVar, TypeVarTuple
@@ -84,7 +84,7 @@ def takes_rejected(value: RejectedAlias) -> None:
 
 D = TypeVar("D", default=int)
 DP = ParamSpec("DP", default=[int, str])
-# what ``*tuple[int, ...]`` evaluates to, which a default can only be written as from 3.13 on
+# what ``*tuple[int, ...]`` evaluates to, a spelling a default can take only from 3.13 on
 DTs = TypeVarTuple("DTs", default=next(iter(tuple[int, ...])))
 
 
@@ -138,11 +138,11 @@ class IntBox(Box[int]):
 
 
 class Listing[U](Box[list[U]]):
-    """Binds the type parameter of its base to an alias of its own."""
+    """Fills the type parameter of its base with a list of its own type parameter."""
 
 
 class IntListing(Listing[int]):
-    """Binds the type parameter of its base, which binds that of its own base."""
+    """Picks int for a base that binds the type parameter of its own base."""
 
 
 class IntStack(Stack[int]):
@@ -157,7 +157,7 @@ class Pool[T]:
     """
     Holds the members its subclasses inherit, one annotated in its body and one overloaded.
 
-    :ivar size: how many it holds
+    :ivar size: the member count
     """
 
     size: T
@@ -173,7 +173,7 @@ class Pool[T]:
 
 class IntPool(Pool[int]):
     """
-    Binds the type parameter of a PEP 695 base.
+    Fixes the type parameter of its PEP 695 base to int.
 
     :ivar size: how many it holds
     """
@@ -183,7 +183,7 @@ class Crate(Generic[E]):  # ruff:ignore[non-pep695-generic-class]  # the pre-PEP
     """
     Holds the members its subclasses inherit the pre-PEP 695 way.
 
-    :ivar size: how many it holds
+    :ivar size: the member count
     """
 
     size: E
@@ -199,7 +199,7 @@ class Crate(Generic[E]):  # ruff:ignore[non-pep695-generic-class]  # the pre-PEP
 
 class IntCrate(Crate[int]):
     """
-    Binds the type parameter of its base.
+    Fixes the type parameter of its pre-PEP 695 base to int.
 
     :ivar size: how many it holds
     """
@@ -222,7 +222,7 @@ class Feed[T](Protocol):
 
 
 class IntFeed(Feed[int]):
-    """Binds the type parameter of a protocol that is not runtime checkable."""
+    """Gives int to the type parameter of a protocol that is not runtime checkable."""
 
 
 class Sink[T](ABC):
@@ -244,7 +244,7 @@ Sink.register(Registered)
 
 
 class IntSink(Registered, Sink[int]):
-    """Binds the type parameter of its abstract base class, after a base registered with it."""
+    """Lists a base registered with its abstract base class before binding the type parameter of that class."""
 
     def close(self) -> None:
         """Close it."""
@@ -262,7 +262,7 @@ class Shelf[T]:
         raise NotImplementedError
 
 
-if sys.version_info >= (4,):
+if version_info >= (4,):
 
     @overload
     def pick[K: int](key: K) -> list[K]: ...
@@ -271,7 +271,7 @@ if sys.version_info >= (4,):
 
 
 def pick(key: int | str) -> list[int] | str:
-    """Pick one, overloaded where no interpreter runs the overloads, so typing never registers them."""
+    """Pick one, with overloads behind a version check no interpreter passes, so typing holds no record of them."""
     raise NotImplementedError
 
 

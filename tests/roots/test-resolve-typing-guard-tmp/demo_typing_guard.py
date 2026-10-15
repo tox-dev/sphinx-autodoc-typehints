@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import datetime as dt
+import datetime as dt  # the module-qualified annotations are the case under test
 
 from attrs import define
 

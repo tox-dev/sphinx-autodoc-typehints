@@ -1,4 +1,4 @@
-"""Globals whose annotations record each time they are evaluated."""
+"""Globals whose annotations record each evaluation."""
 
 from __future__ import annotations
 

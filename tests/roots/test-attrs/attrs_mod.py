@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import attr
-import attrs
+import attr  # attr.s and attr.ib are the classic spelling under test
+from attrs import define
 
 
 @attr.s
@@ -21,7 +21,7 @@ class AutoAttribs:
     age: int
 
 
-@attrs.define
+@define
 class ModernAttrs:
     """A class using modern attrs.define."""
 
@@ -33,9 +33,9 @@ class Outer:
     """A class with nested attrs classes to test forward reference resolution."""
 
     class Foo:
-        """A nested class referenced by Bar."""
+        """Referenced by Bar."""
 
-    @attrs.define
+    @define
     class Bar:
         """An attrs class referencing a sibling nested class."""
 

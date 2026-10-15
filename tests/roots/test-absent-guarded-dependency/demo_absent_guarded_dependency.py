@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from decimal import Decimal
 
-    import no_such_array.core
+    import no_such_array.core  # a guarded import of a missing submodule is the case under test
     from no_such_cube.cube import Cube
 
 

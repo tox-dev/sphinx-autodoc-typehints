@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import pathlib
-import sys
+from pathlib import Path
+from sys import path
 
 master_doc = "index"
-sys.path.insert(0, str(pathlib.Path(__file__).parent))
+path.insert(0, str(Path(__file__).parent))
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx_autodoc_typehints",
