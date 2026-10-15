@@ -9,9 +9,18 @@ from docutils import nodes
 from docutils.parsers.rst.directives.admonitions import BaseAdmonition
 from docutils.parsers.rst.states import Body, Text
 from sphinx.directives import ObjectDescription
+from sphinx.ext.autodoc._dynamic import (  # ruff:ignore[import-private-name]  # where autodoc evaluates annotations
+    _importer,
+    _loader,
+)
 from sphinx.ext.napoleon.docstring import GoogleDocstring
+from sphinx.util.typing import get_type_hints
+
+from ._resolver import guarded_names_bound
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from sphinx.application import Sphinx
     from sphinx.environment import BuildEnvironment
     from sphinx.ext.autodoc import Options
@@ -189,6 +198,29 @@ def _patch_signature_lines() -> None:
     ObjectDescription.get_signatures = get_signatures  # type: ignore[method-assign]
 
 
+@wraps(get_type_hints)
+def _guarded_type_hints(
+    obj: Any,
+    globalns: dict[str, Any] | None = None,
+    localns: Mapping[str, Any] | None = None,
+    include_extras: bool = False,  # ruff:ignore[boolean-type-hint-positional-argument, boolean-default-value-positional-argument]  # as the one it replaces
+) -> dict[str, Any]:
+    with guarded_names_bound(obj):
+        return get_type_hints(obj, globalns, localns, include_extras=include_extras)
+
+
+@lru_cache
+def _patch_autodoc_type_hints() -> None:
+    """
+    Have autodoc evaluate annotations with the names the ``TYPE_CHECKING`` blocks run so far bind.
+
+    autodoc evaluates in the globals of the module, which hold those names only while it does, so it does not list them
+    as members. Without them it misses an attribute only a base class annotates, and the type an attribute shows.
+    """
+    _importer.get_type_hints = _guarded_type_hints  # ty: ignore[invalid-assignment]  # typed as the function itself
+    _loader.get_type_hints = _guarded_type_hints  # ty: ignore[invalid-assignment]  # typed as the function itself
+
+
 def _signature_lines(env: BuildEnvironment) -> dict[str, list[str]]:
     return cast("dict[str, list[str]]", env.temp_data.setdefault(_SIGNATURE_LINES, {}))
 
@@ -202,6 +234,7 @@ def install_patches(app: Sphinx) -> None:
     # For Sphinx 9+ directive-based architecture
     fix_directive_based_signature_formatting()
     _patch_signature_lines()
+    _patch_autodoc_type_hints()
     app.connect("builder-inited", lambda app: _BUILDING.add(id(app)))
     app.connect("build-finished", lambda app, _exception: _BUILDING.discard(id(app)))
     _patch_google_docstring_lookup_annotation()

@@ -14,7 +14,7 @@ from sphinx.domains.python._annotations import (  # ruff:ignore[import-private-n
 )
 from sphinx.util.typing import stringify_annotation
 
-from ._resolver import is_documented, object_at
+from ._resolver import guard_bound, is_documented, object_at
 
 if sys.version_info >= (3, 14):  # pragma: >=3.14 cover
     from annotationlib import Format, call_evaluate_function, get_annotations
@@ -56,9 +56,15 @@ def add_type_params(app: Sphinx, domain: str, objtype: str, contentnode: addnode
             and not any(isinstance(node, addnodes.desc_type_parameter_list) for node in signode)
             and (name := next((node for node in signode if isinstance(node, addnodes.desc_name)), None)) is not None
             and is_documented(app.env, f"{signode.get('module')}.{signode.get('fullname')}")
-            and (params := _type_params(object_at(signode.get("module"), (signode.get("fullname") or "").split("."))))
+            and (
+                params := _type_params(
+                    documented := object_at(signode.get("module"), (signode.get("fullname") or "").split("."))
+                )
+            )
         ):
-            type_params = _parse_type_list(", ".join(_type_param(param, mode) for param in params), app.env)
+            # PEP 695 evaluates a bound, constraints or default on first access, in the globals of the module
+            with guard_bound(app.config.autodoc_mock_imports, documented):
+                type_params = _parse_type_list(", ".join(_type_param(param, mode) for param in params), app.env)
             # Sphinx keeps a default as the text it was written as, so a ``~`` would show and no name would link
             for default in list(type_params.findall(_is_default)):
                 default[:] = _parse_default(default.astext(), app.env)

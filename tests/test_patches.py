@@ -317,3 +317,14 @@ def test_patched_class_lists_no_member_autodoc_would_not(
     app.build()
 
     assert f"{member}(" not in (Path(app.srcdir) / "_build/text/index.txt").read_text()
+
+
+@pytest.mark.sphinx("text", testroot="headers")
+def test_autodoc_finds_an_attribute_a_base_annotates_with_a_guarded_name(
+    app: SphinxTestApp, write_rst: Callable[[str], None]
+) -> None:
+    # documenting the base runs the guard binding Callable, which autodoc reads looking for the attribute
+    write_rst(".. autoclass:: header_module.Engined\n\n.. autoattribute:: header_module.SubEngined.engine")
+    app.build()
+
+    assert "SubEngined.engine: Engine[str]" in (Path(app.outdir) / "index.txt").read_text().splitlines()
