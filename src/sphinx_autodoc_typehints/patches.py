@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from functools import lru_cache, partial
+from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Final, cast
 
 from docutils import nodes
@@ -75,22 +75,10 @@ def _patched_lookup_annotation(*_args: Any) -> str:
     return ""
 
 
-@lru_cache
 def _patch_google_docstring_lookup_annotation() -> None:
     """Fix issue https://github.com/tox-dev/sphinx-autodoc-typehints/issues/308."""
-    original_lookup = GoogleDocstring._lookup_annotation
-    original_parse_attributes = GoogleDocstring._parse_attributes_section
-
-    def parse_attributes(self: GoogleDocstring, section: str) -> list[str]:
-        # the class annotations are right for its attributes, so only parameter fields go without them
-        vars(self)["_lookup_annotation"] = partial(original_lookup, self)
-        try:
-            return original_parse_attributes(self, section)
-        finally:
-            del vars(self)["_lookup_annotation"]
-
+    # the extension types the attributes of a class or module itself, rendered like its other fields
     GoogleDocstring._lookup_annotation = _patched_lookup_annotation  # type: ignore[assignment]
-    GoogleDocstring._parse_attributes_section = parse_attributes  # ty: ignore[invalid-assignment]  # monkeypatch
 
 
 orig_base_admonition_run = BaseAdmonition.run

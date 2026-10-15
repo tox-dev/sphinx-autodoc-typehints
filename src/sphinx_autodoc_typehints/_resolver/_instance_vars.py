@@ -5,10 +5,11 @@ import inspect
 import textwrap
 from typing import TYPE_CHECKING, Any, ClassVar, Final, get_args, get_origin
 
-from ._util import annotation_globals, evaluate_annotation, type_hints
+from ._util import annotation_globals, evaluate_annotation, guarded_names, type_hints
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
+    from types import ModuleType
 
 
 def get_instance_var_annotations(cls: type) -> dict[str, Any]:
@@ -58,14 +59,15 @@ def get_instance_var_annotations(cls: type) -> dict[str, Any]:
     return resolved
 
 
-def get_class_body_annotations(cls: type) -> dict[str, Any]:
+def get_body_annotations(owner: type | ModuleType) -> dict[str, Any]:
     """
-    Return the attributes the bodies of a class and its bases annotate, the PEP 526 way to declare one.
+    Return the attributes the body of a module, or of a class and its bases, annotates, the PEP 526 way to declare one.
 
     A ``ClassVar`` or ``Final`` qualifier says how the attribute behaves, not what it holds, so it is left off.
     """
     try:
-        hints = type_hints(cls, None, None)
+        # a class reads the guard of the module defining each base itself
+        hints = type_hints(owner, None, None if isinstance(owner, type) else guarded_names(owner))
     except Exception:  # ruff:ignore[blind-except]  # an annotation runs user code, which may raise anything
         return {}
     held = {name: get_args(hint)[0] if _is_qualifier(get_origin(hint)) else hint for name, hint in hints.items()}
@@ -85,4 +87,4 @@ def _own_nodes(node: ast.AST) -> Iterator[ast.AST]:
             yield from _own_nodes(child)
 
 
-__all__ = ["get_class_body_annotations", "get_instance_var_annotations"]
+__all__ = ["get_body_annotations", "get_instance_var_annotations"]

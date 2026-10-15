@@ -54,6 +54,32 @@ class GoogleAttributes:
     count: int
 
 
+class GoogleInitAttributes:
+    """
+    Class docstring.
+
+    Attributes:
+        location: the location
+    """
+
+    def __init__(self) -> None:
+        self.location: list[Path] = []
+
+
+class NumpyInitAttributes:
+    """
+    Class docstring.
+
+    Attributes
+    ----------
+    location
+        the location
+    """
+
+    def __init__(self) -> None:
+        self.location: list[Path] = []
+
+
 class NumpyParameterShadowedByAttribute:
     """
     Class docstring.

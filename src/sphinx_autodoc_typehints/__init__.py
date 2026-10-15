@@ -76,7 +76,7 @@ from ._resolver import (
     backfill_attrs_annotations,
     backfill_type_hints,
     get_all_type_hints,
-    get_class_body_annotations,
+    get_body_annotations,
     get_descriptor_type_hint,
     get_instance_var_annotations,
     get_obj_location,
@@ -381,6 +381,9 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
         env.note_dependency(str(stub))
     # before unwrapping, as a decorator marks the function it is given
     declared = obj
+    if inspect.ismodule(obj):
+        _type_module_attributes(app, name, obj, lines)
+        return
     # a data or attribute entry documents the value it holds, which a call to it does not describe
     if what in {"data", "attribute"} or not callable(obj):
         _maybe_inject_descriptor_type(app, what, name, obj, lines)
@@ -450,7 +453,7 @@ def _class_body_annotations(cls: type) -> dict[str, Any]:
     """Return the class-body annotations of ``cls``, one inherited from a generic base read as ``cls`` binds it."""
     return {
         attribute: specialize(hint, arguments) if (arguments := bound_type_args(cls, attribute)) else hint
-        for attribute, hint in get_class_body_annotations(cls).items()
+        for attribute, hint in get_body_annotations(cls).items()
     }
 
 
@@ -540,6 +543,23 @@ def _constructor_name(cls: type) -> Literal["__new__", "__init__"]:
     # a __new__ that only wraps object's, as @warnings.deprecated adds, is no constructor of its own to inspect
     own_new = inspect.unwrap(cls.__new__) is not object.__new__
     return "__new__" if own_new and depth["__new__"] <= depth["__init__"] else "__init__"
+
+
+def _type_module_attributes(app: Sphinx, name: str, module: types.ModuleType, lines: list[str]) -> None:
+    """Type the attributes a module docstring lists, as napoleon writes an ``Attributes`` section, from annotations."""
+    # evaluating the annotations runs the module's guard, which a docstring listing no attribute does not need
+    if not any(_IVAR_FIELD_RE.match(line) or line.startswith(".. attribute:: ") for line in lines):
+        return
+    resolve_type_guarded_imports(app.config.autodoc_mock_imports, module)
+    annotations = get_body_annotations(module)
+    with annotation_state(
+        app.config,
+        _typehints_env=getattr(app, "env", None),
+        _typehints_module_prefix=name,
+        _typehints_resolve_guarded_imports=partial(resolve_type_guarded_imports, app.config.autodoc_mock_imports),
+    ):
+        _inject_ivar_types(annotations, app, lines)
+        _inject_attribute_types(annotations, app, lines)
 
 
 def _maybe_inject_descriptor_type(app: Sphinx, what: str, name: str, obj: Any, lines: list[str]) -> None:

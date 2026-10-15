@@ -11,7 +11,7 @@ from conftest import make_docstring_app
 
 from sphinx_autodoc_typehints import process_docstring
 from sphinx_autodoc_typehints._resolver import resolve_type_guarded_imports
-from sphinx_autodoc_typehints._resolver._instance_vars import get_class_body_annotations, get_instance_var_annotations
+from sphinx_autodoc_typehints._resolver._instance_vars import get_body_annotations, get_instance_var_annotations
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -165,7 +165,7 @@ class _DeclaredBadly:
     ],
 )
 def test_class_body_annotations(cls: type, expected: dict[str, type]) -> None:
-    assert get_class_body_annotations(cls) == expected
+    assert get_body_annotations(cls) == expected
 
 
 class _Model:
@@ -281,4 +281,4 @@ def test_class_body_annotation_of_a_base_ignores_the_guard_of_the_module_of_a_su
     monkeypatch.syspath_prepend(str(tmp_path))
     child = importlib.import_module("guarded_child").Child
     resolve_type_guarded_imports([], child)
-    assert get_class_body_annotations(child) == {"inherited": int, "own": Decimal}
+    assert get_body_annotations(child) == {"inherited": int, "own": Decimal}
