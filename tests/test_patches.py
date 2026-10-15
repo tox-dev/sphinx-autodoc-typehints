@@ -265,3 +265,55 @@ def test_admonition_line_counts_within_its_own_file(app: SphinxTestApp, warning:
     app.build()
 
     assert re.findall(r"index\.rst:(\d+): WARNING: colspec", warning.getvalue()) == ["6"]
+
+
+@pytest.mark.parametrize(
+    ("method", "expected"),
+    [
+        pytest.param(
+            "docutils.parsers.rst.states.Text.indent",
+            "Text.indent(match, context, next_state)\n\n   Definition list item.\n",
+            id="module-level-patch",
+        ),
+        pytest.param(
+            "sphinx.pycode.ModuleAnalyzer.analyze",
+            'ModuleAnalyzer.analyze()\n\n   Analyze the source code.\n\n   Return type:\n      "None"\n',
+            id="patch-built-on-install",
+        ),
+        pytest.param(
+            "sphinx.domains.python.PyObject.get_signatures",
+            "PyObject.get_signatures()\n\n   Retrieve the signatures to document from the directive arguments.\n\n"
+            "   By default, signatures are given as arguments, one per line.\n\n"
+            '   Return type:\n      "list"["str"]\n',
+            id="patch-of-a-base-class",
+        ),
+    ],
+)
+@pytest.mark.sphinx("text", testroot="dummy")
+def test_patched_method_documents_as_the_original(
+    app: SphinxTestApp, write_rst: Callable[[str], None], warning: StringIO, method: str, expected: str
+) -> None:
+    write_rst(f".. automethod:: {method}")
+    app.build()
+
+    assert ((Path(app.srcdir) / "_build/text/index.txt").read_text(), "local_function" in warning.getvalue()) == (
+        expected,
+        False,
+    )
+
+
+@pytest.mark.parametrize(
+    ("cls", "member"),
+    [
+        pytest.param("sphinx.domains.python.PyObject", "get_signatures", id="inherited-method"),
+        pytest.param("sphinx.ext.napoleon.docstring.GoogleDocstring", "_lookup_annotation", id="undocumented-method"),
+    ],
+)
+@pytest.mark.sphinx("text", testroot="dummy")
+def test_patched_class_lists_no_member_autodoc_would_not(
+    app: SphinxTestApp, write_rst: Callable[[str], None], cls: str, member: str
+) -> None:
+    write_rst(f".. autoclass:: {cls}\n   :members:\n   :private-members:")
+    app.build()
+
+    assert f"{member}(" not in (Path(app.srcdir) / "_build/text/index.txt").read_text()

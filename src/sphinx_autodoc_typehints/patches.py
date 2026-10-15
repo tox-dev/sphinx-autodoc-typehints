@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from functools import lru_cache
+from functools import lru_cache, wraps
 from typing import TYPE_CHECKING, Any, Final, cast
 
 from docutils import nodes
 from docutils.parsers.rst.directives.admonitions import BaseAdmonition
 from docutils.parsers.rst.states import Body, Text
-from sphinx.domains.python import PyObject
+from sphinx.directives import ObjectDescription
 from sphinx.ext.napoleon.docstring import GoogleDocstring
 
 if TYPE_CHECKING:
@@ -66,6 +66,7 @@ def fix_napoleon_numpy_docstring_return_type(app: Sphinx) -> None:
     app.connect("autodoc-process-docstring", napoleon_numpy_docstring_return_type_processor, priority=499)
 
 
+@wraps(GoogleDocstring._lookup_annotation)
 def _patched_lookup_annotation(*_args: Any) -> str:
     """
     GoogleDocstring._lookup_annotation sometimes adds incorrect type annotations to constructor parameters.
@@ -84,6 +85,7 @@ def _patch_google_docstring_lookup_annotation() -> None:
 orig_base_admonition_run = BaseAdmonition.run
 
 
+@wraps(orig_base_admonition_run)
 def _patched_base_admonition_run(self: BaseAdmonition) -> Any:
     result = orig_base_admonition_run(self)
     # the directive counts lines across included files, the node names its place within its own source file
@@ -94,6 +96,7 @@ def _patched_base_admonition_run(self: BaseAdmonition) -> Any:
 orig_text_indent = Text.indent
 
 
+@wraps(orig_text_indent)
 def _patched_text_indent(self: Text, *args: Any) -> Any:
     _, line = self.state_machine.get_source_and_line()  # ty: ignore[unresolved-attribute]
     result = orig_text_indent(self, *args)
@@ -104,6 +107,7 @@ def _patched_text_indent(self: Text, *args: Any) -> Any:
     return result
 
 
+@wraps(Body.doctest)
 def _patched_body_doctest(
     self: Body, _match: None, _context: None, next_state: str | None
 ) -> tuple[list[Any], str | None, list[Any]]:
@@ -143,6 +147,7 @@ def fix_directive_based_signature_formatting() -> None:
 
     original_analyze = ModuleAnalyzer.analyze
 
+    @wraps(original_analyze)
     def patched_analyze(self: Any) -> None:
         original_analyze(self)
         if self.overloads:
@@ -169,9 +174,11 @@ def _patch_signature_lines() -> None:
     The event replaces only the first line, and a line break in it breaks the directive, while the Python domain
     parses each line of the directive into a signature of its own, linking only the first as the target.
     """
-    original_get_signatures = PyObject.get_signatures
+    # patched where it is defined, so the Python domain's directives list no member of their own
+    original_get_signatures = ObjectDescription.get_signatures
 
-    def get_signatures(self: PyObject) -> list[str]:
+    @wraps(original_get_signatures)
+    def get_signatures(self: ObjectDescription[Any]) -> list[str]:
         line = self.arguments[0]
         key = f"{self.options.get('module')}.{line}"
         if signatures := _signature_lines(self.env).pop(key, None):
@@ -179,7 +186,7 @@ def _patch_signature_lines() -> None:
             self.arguments[0] = "\n".join(f"{name}{signature}" for signature in signatures)
         return original_get_signatures(self)
 
-    PyObject.get_signatures = get_signatures  # type: ignore[method-assign]
+    ObjectDescription.get_signatures = get_signatures  # type: ignore[method-assign]
 
 
 def _signature_lines(env: BuildEnvironment) -> dict[str, list[str]]:
