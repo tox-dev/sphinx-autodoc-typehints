@@ -22,13 +22,13 @@ if TYPE_CHECKING:
 _STUB_AST_CACHE: dict[tuple[Path, int], ast.Module | None] = {}
 
 
-def _backfill_from_stub(obj: Any) -> dict[str, str]:
-    if (path := stub_path(obj)) and (tree := _parse_stub_ast(path)):
+def _backfill_from_stub(obj: Any, name: str = "") -> dict[str, str]:
+    if (path := stub_path(obj, name)) and (tree := _parse_stub_ast(path)):
         return _extract_annotations_from_stub(tree, obj)
     return {}
 
 
-def _get_stub_context(obj: Any) -> tuple[dict[str, Any], set[str], str]:
+def _get_stub_context(obj: Any, name: str = "") -> tuple[dict[str, Any], set[str], str]:
     """
     Return (localns, crossref_names, owner_module_name) from the stub owning *obj*.
 
@@ -40,7 +40,7 @@ def _get_stub_context(obj: Any) -> tuple[dict[str, Any], set[str], str]:
     numpy's ``_SeriesLikeCoef_co`` living in the stub-only ``numpy/polynomial/_polytypes.pyi``. Both render as a plain
     cross-reference instead of failing to evaluate.
     """
-    if (info := _find_stub_owner(obj)) is None:
+    if (info := _find_stub_owner(obj, name)) is None:
         return {}, set(), ""
     path, owner_module = info
     if (tree := _parse_stub_ast(path)) is None:
@@ -204,12 +204,12 @@ def _get_module(obj: Any) -> types.ModuleType | None:
     return None
 
 
-def stub_path(obj: Any) -> Path | None:
-    """Return the stub file describing ``obj``, whose edits change what its documentation shows."""
-    return info[0] if (info := _find_stub_owner(obj)) else None
+def stub_path(obj: Any, name: str = "") -> Path | None:
+    """Return the stub file describing ``obj`` documented as ``name``, whose edits change what that shows."""
+    return info[0] if (info := _find_stub_owner(obj, name)) else None
 
 
-def _find_stub_owner(obj: Any) -> tuple[Path, types.ModuleType] | None:
+def _find_stub_owner(obj: Any, name: str = "") -> tuple[Path, types.ModuleType] | None:
     if (module := _get_module(obj)) is None:
         return None
     if result := _find_stub_for_module(module):
@@ -230,6 +230,40 @@ def _find_stub_owner(obj: Any) -> tuple[Path, types.ModuleType] | None:
             and inspect.getattr_static(parent, top_name, None) is defined
         ):
             return result, parent
+    return _find_documenting_stub(name, top_name, defined)
+
+
+def _find_documenting_stub(name: str, top_name: str, defined: Any) -> tuple[Path, types.ModuleType] | None:
+    """
+    Return the stub of the module ``name`` is documented under, when that module exposes the object.
+
+    Its stub types the names it exports, also by importing them from another stub, as ``attrs/__init__.pyi`` does with
+    ``from attr import asdict as asdict`` although ``attrs.asdict`` is a different function at runtime.
+    """
+    parts = name.split(".")
+    documenting = next(
+        (found for depth in range(len(parts) - 1, 0, -1) if (found := sys.modules.get(".".join(parts[:depth])))), None
+    )
+    if documenting is None or inspect.getattr_static(documenting, top_name, None) is not defined:
+        return None
+    return _find_stub_naming(documenting, top_name, set())
+
+
+def _find_stub_naming(module: types.ModuleType, top_name: str, seen: set[str]) -> tuple[Path, types.ModuleType] | None:
+    seen.add(module.__name__)
+    if (path := _find_stub_for_module(module)) is None or (tree := _parse_stub_ast(path)) is None:
+        return None
+    for node in _live_statements(tree.body):
+        if isinstance(node, ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef) and node.name == top_name:
+            return path, module
+        if (
+            isinstance(node, ast.ImportFrom)
+            and any(alias.name == top_name and alias.asname in {None, top_name} for alias in node.names)
+            and (source_name := _resolve_import_from(node, _stub_owner_package(module, path)))
+            and source_name not in seen
+            and (source := _import_module_or_none(source_name)) is not None
+        ):
+            return _find_stub_naming(source, top_name, seen)
     return None
 
 

@@ -389,6 +389,45 @@ def test_get_all_type_hints_reads_parent_stub_only_for_reexports(
     assert get_all_type_hints([], greet, "mypkg.greet", {}) == expected
 
 
+@pytest.mark.parametrize(
+    ("documenting_stub", "name", "expected"),
+    [
+        pytest.param(
+            "from reexp_src import conv as conv\n", "reexp_doc.conv", {"x": int, "return": str}, id="reexported-stub"
+        ),
+        pytest.param(
+            "def conv(x: bytes) -> bytes: ...\n", "reexp_doc.conv", {"x": bytes, "return": bytes}, id="own-stub"
+        ),
+        pytest.param("from reexp_doc import conv as conv\n", "reexp_doc.conv", {}, id="reexported-from-itself"),
+        pytest.param("from reexp_src import conv as conv\n", "reexp_src._next.conv", {}, id="defining-module"),
+        pytest.param("from reexp_src import conv as conv\n", "reexp_src.conv", {}, id="other-object-named-alike"),
+    ],
+)
+def test_get_all_type_hints_reads_stub_of_documenting_module(
+    reexport_packages: Path, documenting_stub: str, name: str, expected: dict[str, type]
+) -> None:
+    (reexport_packages / "reexp_doc" / "__init__.pyi").write_text(documenting_stub)
+    importlib.import_module("reexp_doc")
+    assert get_all_type_hints([], importlib.import_module("reexp_src._next").conv, name, {}) == expected
+
+
+@pytest.fixture
+def reexport_packages(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[Path]:
+    """Lay out ``attrs.asdict``: a package exposing an untyped function its stub types as another package's."""
+    source = tmp_path / "reexp_src"
+    source.mkdir()
+    (source / "__init__.py").write_text("from reexp_src._funcs import conv\n")
+    (source / "__init__.pyi").write_text("def conv(x: int) -> str: ...\n")
+    (source / "_funcs.py").write_text("def conv(x, legacy=True):\n    return str(x)\n")
+    (source / "_next.py").write_text("def conv(x):\n    return str(x)\n")
+    (tmp_path / "reexp_doc").mkdir()
+    (tmp_path / "reexp_doc" / "__init__.py").write_text("from reexp_src._next import conv\n")
+    monkeypatch.syspath_prepend(tmp_path)
+    yield tmp_path
+    for name in [name for name in sys.modules if name.partition(".")[0] in {"reexp_src", "reexp_doc"}]:
+        del sys.modules[name]
+
+
 @pytest.fixture
 def native_package(tmp_path: Path) -> Iterator[tuple[types.ModuleType, types.ModuleType]]:
     pkg_dir = tmp_path / "mypkg"

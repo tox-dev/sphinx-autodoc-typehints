@@ -70,9 +70,9 @@ def get_all_type_hints(
         stub_crossref_names: set[str] = set()
         stub_owner_module: str = ""
         if not result:
-            result = _backfill_from_stub(stub_obj)
+            result = _backfill_from_stub(stub_obj, name)
             if result:
-                stub_localns, stub_crossref_names, stub_owner_module = _get_stub_context(stub_obj)
+                stub_localns, stub_crossref_names, stub_owner_module = _get_stub_context(stub_obj, name)
         combined_localns = {**stub_localns, **localns}
         for crossref_name in stub_crossref_names:
             ref = MyTypeAliasForwardRef(crossref_name)
