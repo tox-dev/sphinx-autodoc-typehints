@@ -193,3 +193,21 @@ def nest(**kwargs: Unpack[Diamond]) -> None:
 
     :keyword name: the name
     """
+
+
+class Unstated:
+    """Leaves a TypedDict neither closed nor open, counting how often that is asked."""
+
+    asked: ClassVar[int] = 0
+
+    def __get__(self, instance: object, owner: type) -> None:
+        Unstated.asked += 1
+
+
+Spread = Root
+for level in range(10):
+    # each level is a diamond over the one below, so a base is reached along 2**level paths
+    sides = [type(Root)(f"Spread{side}{level}", (Spread,), {}) for side in ("Left", "Right")]
+    Spread = type(Root)("Spread", tuple(sides), {"__module__": __name__, "__doc__": "A diamond of diamonds."})
+    for spread in (*sides, Spread):
+        spread.__closed__ = Unstated()

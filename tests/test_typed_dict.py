@@ -156,3 +156,16 @@ def test_typed_dict_unpacked_from_diamonds_reads_each_class_once(
 
     # Root and the diamonds over it, each with its left and right
     assert sys.modules["typed_dict_module"].Counted.created == 1 + 3 * 10
+
+
+@pytest.mark.sphinx("text", testroot="typed-dict")
+def test_typed_dict_extra_items_reads_each_base_once(
+    app: SphinxTestApp, write_rst: Callable[[str], None], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # a fresh import starts the count
+    monkeypatch.delitem(sys.modules, "typed_dict_module", raising=False)
+    write_rst(".. autoclass:: typed_dict_module.Spread")
+    app.build()
+
+    # the diamonds and their left and right, and autodoc once reading the members of the one documented
+    assert sys.modules["typed_dict_module"].Unstated.asked == 3 * 10 + 1
