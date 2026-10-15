@@ -398,7 +398,7 @@ def process_docstring(  # ruff:ignore[too-many-arguments, too-many-positional-ar
     original_obj = obj
     obj = obj.fget if isinstance(obj, property) else obj
     # a stub supplies the types of what it describes, so editing it has to reread the pages documenting them
-    if (env := getattr(app, "env", None)) is not None and (stub := stub_path(obj)) is not None:
+    if (env := getattr(app, "env", None)) is not None and (stub := stub_path(obj, name)) is not None:
         env.note_dependency(str(stub))
     # before unwrapping, as a decorator marks the function it is given
     declared = obj

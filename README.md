@@ -564,6 +564,8 @@ the type annotations, and they'll be picked up. Beyond that:
 - A function a package re-exports from a native submodule, such as `pkg._native.parse` exposed as `pkg.parse`, takes its
   types from the package's `__init__.pyi`, and a native submodule without a `__file__`, as PyO3 builds them, finds its
   stub too.
+- A function documented under a package whose stub imports it from another stub, as `attrs/__init__.pyi` does with
+  `from attr import asdict as asdict`, takes its types from that stub.
 - The `@overload` variants of a stub combine into a union, unless the stub also gives the implementation's signature.
 - `if sys.version_info` and `if sys.platform` branches are followed for the running interpreter.
 - A name that exists only in the stub, including a stub `TypeAlias` or `type` alias, renders as a cross-reference.
