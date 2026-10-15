@@ -447,12 +447,33 @@ def _format_mock_subscript(annotation: Any) -> str:
     subscripted object as its module, so the arguments are read back from that text.
     """
     text = re.sub(r"<class '([^']+)'>", r"\1", annotation.__name__).removeprefix("(").removesuffix(")")
-    parts = [part.strip() for part in text.split(",") if part.strip()]
-    args = ", ".join(
-        (f":py:class:`{'~' if '.' in part else ''}{part}`" if re.fullmatch(r"[\w.]+", part) else f"``{part}``")
-        for part in parts
-    )
-    return f":py:class:`~{annotation.__module__}`\\ \\[{args}]"
+    return f":py:class:`~{annotation.__module__}`\\ \\[{_format_mock_arguments(text)}]"
+
+
+def _format_mock_arguments(text: str) -> str:
+    return ", ".join(_format_mock_argument(part) for part in _top_level_parts(text))
+
+
+def _format_mock_argument(part: str) -> str:
+    if re.fullmatch(r"[\w.]+", part):
+        return f":py:class:`{'~' if '.' in part else ''}{part}`"
+    # an argument is itself subscripted, as ``dict[str, typing.Any]``, or a list of them, as ``Callable`` takes
+    if match := re.fullmatch(r"([\w.]*)\[(.*)\]", part):
+        name, arguments = match.groups()
+        subscript = f"\\[{_format_mock_arguments(arguments)}]"
+        return f"{_format_mock_argument(name)}\\ {subscript}" if name else subscript
+    return f"``{part}``"
+
+
+def _top_level_parts(text: str) -> list[str]:
+    """Split ``text`` at the commas outside brackets, so a nested subscript stays one argument."""
+    parts, depth, start = [], 0, 0
+    for index, char in enumerate(text):
+        depth += (char in "[(") - (char in "])")
+        if char == "," and not depth:
+            parts.append(text[start:index])
+            start = index + 1
+    return [stripped for part in [*parts, text[start:]] if (stripped := part.strip())]
 
 
 def get_annotation_module(annotation: Any) -> str:
