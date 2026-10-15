@@ -106,3 +106,19 @@ class Entry:
     """
 
     kind: Engine[int]
+
+
+class Switched:
+    """
+    Switched.
+
+    :ivar kind: the kind
+    :ivar same: the same
+    """
+
+    if PAIRS:
+        kind: Engine[int]
+        same: Engine[int]
+    else:
+        kind: Engine[str]
+        same: Engine[int]

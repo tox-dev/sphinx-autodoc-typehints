@@ -7,11 +7,13 @@ import inspect
 import sys
 import textwrap
 import types
-from functools import partial
+from collections import defaultdict
+from functools import cache, partial
 from typing import TYPE_CHECKING, Any, Final, Union, cast, get_args, get_origin, get_type_hints
 
 from sphinx.errors import PycodeError
 from sphinx.pycode import ModuleAnalyzer
+from sphinx.pycode.parser import VariableCommentPicker
 
 from sphinx_autodoc_typehints._annotations import (
     MyTypeAliasForwardRef,
@@ -158,7 +160,31 @@ def _source_annotations(module: str, qualname: str) -> dict[str, str]:
         analyzer.analyze()
     except PycodeError:
         return {}
-    return {attribute: source for (scope, attribute), source in analyzer.annotations.items() if scope == qualname}
+    return {attribute: source for (scope, attribute), source in _unambiguous(analyzer).items() if scope == qualname}
+
+
+@cache
+def _unambiguous(analyzer: ModuleAnalyzer) -> dict[tuple[str, str], str]:
+    """
+    Return the annotations of the analyzed source that are written one way only.
+
+    Sphinx keeps the last annotation written for a name, which under ``if``/``else`` may be the branch that did not run.
+    """
+    picker = _AnnotationsPicker(analyzer.code.splitlines(keepends=True), "utf-8")
+    picker.visit(ast.parse(analyzer.code, type_comments=True))
+    return {key: written.pop() for key, written in picker.written.items() if len(written) == 1}
+
+
+class _AnnotationsPicker(VariableCommentPicker):
+    def __init__(self, buffers: list[str], encoding: str) -> None:
+        super().__init__(buffers, encoding)
+        self.written: defaultdict[tuple[str, str], set[str]] = defaultdict(set)
+
+    def add_variable_annotation(self, name: str, annotation: ast.AST) -> None:
+        super().add_variable_annotation(name, annotation)
+        if qualname := self.get_qualname_for(name):
+            key = ".".join(qualname[:-1]), name
+            self.written[key].add(self.annotations[key])
 
 
 def _evaluated_again(hint: Any, source: str, globalns: dict[str, Any], localns: Mapping[str, Any]) -> Any:

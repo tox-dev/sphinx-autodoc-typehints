@@ -195,6 +195,11 @@ def test_collect_documented_type_aliases_annotations_error(error: Exception) -> 
             ".. autoclass:: dropped_module.Record", '**kind** ("Engine"["int"]) -- the kind', id="dataclass-field"
         ),
         pytest.param(".. autoclass:: dropped_module.Entry", '**kind** ("Engine"["int"]) -- the kind', id="attrs-field"),
+        pytest.param(
+            ".. autoclass:: dropped_module.Switched",
+            '* **same** ("Engine"["int"]) -- the same',
+            id="class-body-ivar-written-alike-in-each-branch",
+        ),
     ],
 )
 @pytest.mark.sphinx("text", testroot="dropped-arguments")
@@ -269,3 +274,15 @@ def test_field_type_keeps_the_evaluated_type_when_the_source_keeps_no_arguments(
     app.build()
 
     assert expected in [line.strip() for line in (Path(app.outdir) / "index.txt").read_text().splitlines()]
+
+
+@pytest.mark.sphinx("text", testroot="dropped-arguments")
+def test_field_type_keeps_the_evaluated_type_when_branches_annotate_differently(
+    app: SphinxTestApp, write_rst: Callable[[str], None]
+) -> None:
+    write_rst(".. autoclass:: dropped_module.Switched")
+    app.build()
+
+    assert '* **kind** ("Engine") -- the kind' in [
+        line.strip() for line in (Path(app.outdir) / "index.txt").read_text().splitlines()
+    ]
