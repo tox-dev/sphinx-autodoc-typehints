@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -63,6 +64,29 @@ def test_header_type_links_a_type_checking_import(app: SphinxTestApp, write_rst:
 
     signature = next(app.env.get_doctree("index").findall(addnodes.desc_signature))
     assert [ref["reftarget"] for ref in signature.findall(addnodes.pending_xref)] == ["decimal.Decimal", "None"]
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason="annotations evaluate lazily from Python 3.14")
+@pytest.mark.sphinx("text", testroot="headers")
+def test_header_type_reads_a_lazy_annotation_as_guarded(  # pragma: >=3.14 cover
+    app: SphinxTestApp, write_rst: Callable[[str], None]
+) -> None:
+    (Path(app.srcdir) / "lazy_header_module.py").write_text(
+        "from typing import TYPE_CHECKING\n"
+        "\n"
+        "if TYPE_CHECKING:\n"
+        "    from decimal import Decimal\n"
+        "else:\n"
+        "    Decimal = float\n"
+        "\n"
+        "class Ledger:\n"
+        "    total: Decimal\n"
+        '    """The total."""\n'
+    )
+    write_rst(".. autoattribute:: lazy_header_module.Ledger.total")
+    app.build()
+
+    assert (Path(app.outdir) / "index.txt").read_text().splitlines()[0] == "Ledger.total: Decimal"
 
 
 @pytest.mark.sphinx("text", testroot="headers", confoverrides={"typehints_fully_qualified": True})

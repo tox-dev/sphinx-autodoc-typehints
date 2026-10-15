@@ -6,7 +6,8 @@ import ast
 import inspect
 import sys
 import textwrap
-from typing import TYPE_CHECKING, Any, Final, cast
+import types
+from typing import TYPE_CHECKING, Any, Final, cast, get_type_hints
 
 from sphinx_autodoc_typehints._annotations import (
     MyTypeAliasForwardRef,
@@ -15,12 +16,19 @@ from sphinx_autodoc_typehints._annotations import (
     enclosing_scopes,
 )
 
+if sys.version_info >= (3, 14):  # pragma: >=3.14 cover
+    from typing import evaluate_forward_ref
+
+    from annotationlib import Format, ForwardRef, get_annotations
+
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
 
     from sphinx.environment import BuildEnvironment
 
 _DOCUMENTED: Final = "sphinx_autodoc_typehints_documented"
+#: Per module, what its ``TYPE_CHECKING`` block binds a name to that the module binds to something else at runtime.
+SHADOWED_BY_GUARD: Final[dict[str, dict[str, Any]]] = {}
 
 
 def note_documented(env: BuildEnvironment, name: str) -> None:
@@ -52,6 +60,134 @@ def get_obj_location(obj: Any) -> str | None:
         return filepath
     else:
         return f"{filepath}:{lineno}"
+
+
+def type_hints(obj: Any, globalns: dict[str, Any] | None, localns: Mapping[str, Any] | None) -> dict[str, Any]:
+    """Return :func:`typing.get_type_hints` with the extras, reading a name a guard shadows as the guard binds it."""
+    if sys.version_info >= (3, 14) and _reads_shadowed_name(obj):  # pragma: >=3.14 cover
+        return _hints_from_source(obj, globalns, localns)
+    return get_type_hints(obj, globalns, localns, include_extras=True)
+
+
+def _reads_shadowed_name(obj: Any) -> bool:  # pragma: >=3.14 cover
+    """
+    Whether an annotation of ``obj`` evaluated at runtime names what the ``TYPE_CHECKING`` block of its module shadows.
+
+    PEP 649 evaluates such an annotation in the globals it was compiled in, which hold the runtime binding of the name.
+    """
+    return any(
+        (getattr(owner, "__annotate__", None) is not None or _holds_values(owner))
+        and (shadowed := guarded_names(owner))
+        and any(
+            isinstance(node, ast.Name) and node.id in shadowed
+            for source in _written(owner).values()
+            if isinstance(source, str)
+            for node in ast.walk(ast.parse(source, mode="eval"))
+        )
+        for owner in (obj.__mro__ if isinstance(obj, type) else (obj,))
+    )
+
+
+def _hints_from_source(  # pragma: >=3.14 cover
+    obj: Any, globalns: dict[str, Any] | None, localns: Mapping[str, Any] | None
+) -> dict[str, Any]:
+    """Evaluate the source of each annotation as :func:`typing.get_type_hints` would, in the guarded globals."""
+    if not isinstance(obj, type):
+        globalns = annotation_globals(obj) if globalns is None else globalns
+        return _evaluate_written(
+            obj, globalns, globalns if localns is None else localns, is_argument=not isinstance(obj, types.ModuleType)
+        )
+    hints: dict[str, Any] = {}
+    for base in reversed(obj.__mro__):
+        base_globals = annotation_globals(base) if globalns is None else globalns
+        base_locals = dict(vars(base)) if localns is None else localns
+        if localns is None and globalns is None:
+            # as get_type_hints does, so the names of the module come before those of the class body
+            base_globals, base_locals = base_locals, base_globals
+        hints |= _evaluate_written(base, dict(base_globals), base_locals, is_argument=False)
+    return hints
+
+
+def _evaluate_written(  # pragma: >=3.14 cover
+    owner: Any, globalns: dict[str, Any], localns: Mapping[str, Any], *, is_argument: bool
+) -> dict[str, Any]:
+    params = getattr(owner, "__type_params__", ())
+    hints: dict[str, Any] = {}
+    for name, source in _written(owner).items():
+        if isinstance(source, str):
+            ref = ForwardRef(source, is_argument=is_argument, is_class=isinstance(owner, type))
+            value = evaluate_forward_ref(
+                ref,
+                owner=owner,
+                globals=globalns,
+                locals=localns,
+                # typeshed declares a 3-tuple of one TypeVar, ParamSpec and TypeVarTuple, not a tuple of any of them
+                type_params=params,  # ty: ignore[invalid-argument-type]
+            )
+        else:
+            value = source
+        hints[name] = type(None) if value is None else value
+    return hints
+
+
+def _written(owner: Any) -> dict[str, Any]:  # pragma: >=3.14 cover
+    """
+    Return the source of each annotation of ``owner``, or its value where the source is gone.
+
+    The values include what was added to the annotations after they were evaluated, as attrs fields are.
+    """
+    stored = dict(getattr(owner, "__annotations__", None) or {})
+    if getattr(owner, "__annotate__", None) is not None:
+        return stored | get_annotations(owner, format=Format.STRING)
+    return stored | _annotated_assignments(owner) if _holds_values(owner) else stored
+
+
+def _holds_values(owner: Any) -> bool:  # pragma: >=3.14 cover
+    """
+    Whether autodoc replaced the lazy annotations of a module or class with their values.
+
+    It does so to add the types its comments give, which drops the code that would evaluate them again.
+    """
+    return isinstance(owner, type | types.ModuleType) and any(
+        not isinstance(value, str) for value in (getattr(owner, "__annotations__", None) or {}).values()
+    )
+
+
+def _annotated_assignments(owner: type | types.ModuleType) -> dict[str, str]:  # pragma: >=3.14 cover
+    try:
+        tree = ast.parse(textwrap.dedent(inspect.getsource(owner)))
+    except (OSError, TypeError, SyntaxError):
+        return {}
+    body = cast("ast.ClassDef", tree.body[0]).body if isinstance(owner, type) else tree.body
+    return {
+        statement.target.id: ast.unparse(statement.annotation)
+        for statement in body
+        if isinstance(statement, ast.AnnAssign) and isinstance(statement.target, ast.Name)
+    }
+
+
+def annotation_globals(obj: Any) -> dict[str, Any]:
+    """
+    Return the globals the annotations of ``obj`` evaluate in, read as a type checker reads them.
+
+    Generated code such as an attrs ``__init__`` runs in a globals dict of its own, which misses the names the module
+    binds afterwards, so the module's names fill the gaps.
+    """
+    if (module := defining_module(obj)) is None:
+        return getattr(obj, "__globals__", {})
+    own = getattr(obj, "__globals__", vars(module))
+    names = own if own is vars(module) else {**vars(module), **own}
+    return {**names, **shadowed} if (shadowed := guarded_names(obj)) else names
+
+
+def guarded_names(obj: Any) -> dict[str, Any]:
+    """Return what the ``TYPE_CHECKING`` block of the module of ``obj`` binds the names it rebinds at runtime to."""
+    return SHADOWED_BY_GUARD.get(module.__name__, {}) if (module := defining_module(obj)) else {}
+
+
+def defining_module(obj: Any) -> types.ModuleType | None:
+    # re-exporting reassigns ``__module__``, while the globals stay those of the module defining the object
+    return sys.modules.get(getattr(obj, "__globals__", {}).get("__name__", "")) or inspect.getmodule(obj)
 
 
 def object_at(module: str | None, path: Iterable[str]) -> Any:
@@ -97,7 +233,7 @@ def collect_documented_type_aliases(
     if not raw_annotations:
         return deferred, written_as
 
-    obj_globals = getattr(obj, "__globals__", {})
+    obj_globals = annotation_globals(obj) if hasattr(obj, "__globals__") else {}
     # an alias evaluates to the object it names (``Count = int``), so only the annotation as written tells them apart;
     # a module or class holds no globals to find the alias in, so its source is not worth parsing
     written = _written_annotations(obj) if obj_globals else {}
@@ -154,12 +290,17 @@ def _is_documented_type(name: str, module_prefix: str, py_objects: dict[str, Any
 
 
 __all__ = [
+    "SHADOWED_BY_GUARD",
+    "annotation_globals",
     "collect_documented_type_aliases",
+    "defining_module",
     "documented_type_names",
     "get_obj_location",
+    "guarded_names",
     "is_documented",
     "note_documented",
     "object_at",
     "type_alias_namespace",
+    "type_hints",
     "written_type_alias",
 ]

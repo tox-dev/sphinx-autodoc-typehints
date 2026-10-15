@@ -448,7 +448,10 @@ This extension automatically imports types from
 [`TYPE_CHECKING`](https://docs.python.org/3/library/typing.html#typing.TYPE_CHECKING) blocks at doc-build time. Any
 module-level guard counts, whether it names `TYPE_CHECKING` directly or through a module alias such as
 `t.TYPE_CHECKING`, including the `else` branch of `if not TYPE_CHECKING:` and tests that combine it with `and` or `or`.
-When the block imports a dependency your docs environment lacks, the extension mocks it the way
+Annotations read the names as a type checker does, so with `else: ArrayLike = Any` they document the guarded
+`ArrayLike`. The module itself keeps what it binds at runtime: the fallback, or the function behind `@overload` stubs,
+stays for your code and autodoc during the build, and the block only adds the names the module lacks. When the block
+imports a dependency your docs environment lacks, the extension mocks it the way
 [`autodoc_mock_imports`](https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#confval-autodoc_mock_imports)
 would, so its types still render as cross-references, in a pipe union such as `Thing | None` too; install it when you
 want those references to resolve. That includes a relative import of a sibling module that is absent. An import

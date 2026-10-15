@@ -14,16 +14,20 @@ from ._type_hints import (
     resolve_type_guarded_imports,
 )
 from ._util import (
+    annotation_globals,
     documented_type_names,
     get_obj_location,
+    guarded_names,
     is_documented,
     note_documented,
     object_at,
     type_alias_namespace,
+    type_hints,
     written_type_alias,
 )
 
 __all__ = [
+    "annotation_globals",
     "backfill_attrs_annotations",
     "backfill_type_hints",
     "documented_type_names",
@@ -32,6 +36,7 @@ __all__ = [
     "get_descriptor_type_hint",
     "get_instance_var_annotations",
     "get_obj_location",
+    "guarded_names",
     "is_documented",
     "note_documented",
     "object_at",
@@ -40,5 +45,6 @@ __all__ = [
     "resolve_type_guarded_imports",
     "stub_path",
     "type_alias_namespace",
+    "type_hints",
     "written_type_alias",
 ]

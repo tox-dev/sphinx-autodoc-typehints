@@ -20,7 +20,6 @@ from typing import (
     TypeVarTuple,
     Union,
     get_origin,
-    get_type_hints,
 )
 
 from sphinx.ext.autodoc.mock import mock
@@ -30,7 +29,14 @@ from sphinx_autodoc_typehints._annotations import MyTypeAliasForwardRef, _is_typ
 
 from ._stubs import _backfill_descriptor_annotation, _backfill_from_stub, _get_stub_context
 from ._type_comments import backfill_type_hints
-from ._util import get_obj_location
+from ._util import (
+    SHADOWED_BY_GUARD,
+    annotation_globals,
+    defining_module,
+    get_obj_location,
+    guarded_names,
+    type_hints,
+)
 
 if sys.version_info >= (3, 14):  # pragma: >=3.14 cover
     import annotationlib
@@ -40,7 +46,6 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
-_TYPE_GUARD_IMPORTS_RESOLVED: set[str] = set()
 _UNION: Final = "__sphinx_autodoc_typehints_union__"
 
 
@@ -104,14 +109,16 @@ def get_descriptor_type_hint(obj: Any) -> Any | None:
 
 def _get_type_hint(autodoc_mock_imports: list[str], name: str, obj: Any, localns: Mapping[str, Any]) -> dict[str, Any]:
     resolve_type_guarded_imports(autodoc_mock_imports, obj)
-    localns = _build_localns(obj, localns)
+    # as locals, since a class reads the annotations of each of its bases in the globals of the module defining it
+    localns = {**guarded_names(obj), **_build_localns(obj, localns)}
     try:
         if getattr(obj, "__no_type_check__", False):
             # typing.get_type_hints() unconditionally returns {} for @typing.no_type_check
             # targets; inspect.get_annotations() has no such guard, so use it to still surface
             # annotations in the rendered docs (see issue #680).
             return inspect.get_annotations(obj, locals=localns, eval_str=True)
-        return get_type_hints(obj, _module_backed_globals(obj), localns, include_extras=True)
+        globalns = annotation_globals(obj) if hasattr(obj, "__globals__") else None
+        return type_hints(obj, globalns, localns)
     except RecursionError:
         return {}
     except Exception as exc:  # ruff:ignore[blind-except]  # an annotation runs user code, which may raise anything
@@ -135,18 +142,6 @@ def resolve_annotations(
     return _get_type_hint(autodoc_mock_imports, name, obj, localns)
 
 
-def _module_backed_globals(obj: Any) -> dict[str, Any] | None:
-    """
-    Fill the gaps in a function's globals with its module's names.
-
-    Generated code such as an attrs ``__init__`` runs in a globals dict of its own, which misses the names the module
-    binds afterwards, the ``TYPE_CHECKING`` imports among them.
-    """
-    if (own := getattr(obj, "__globals__", None)) is None or (module := inspect.getmodule(obj)) is None:
-        return None
-    return own if vars(module) is own else {**vars(module), **own}
-
-
 def _get_unevaluated_annotations(obj: Any) -> dict[str, Any]:
     if sys.version_info < (3, 14):  # pragma: <3.14 cover
         return getattr(obj, "__annotations__", {})
@@ -163,11 +158,7 @@ def resolve_string_annotations(
     # Use the stub owner module's namespace when available — the obj's __module__ may point at a C extension child
     # (e.g. cbor2._cbor2) while the stub lives in the parent (cbor2/__init__.pyi). Otherwise the module defining obj,
     # which a re-export does not change, as the evaluation that failed before this one used.
-    globalns = (
-        vars(sys.modules[owner_module])
-        if owner_module in sys.modules
-        else _module_backed_globals(obj) or (vars(module) if (module := _defining_module(obj)) else {})
-    )
+    globalns = vars(sys.modules[owner_module]) if owner_module in sys.modules else annotation_globals(obj)
     resolved: dict[str, Any] = {}
     for key, value in annotations.items():
         resolved[key] = value
@@ -208,50 +199,65 @@ class _PipeAsUnion(ast.NodeTransformer):
 
 
 def resolve_type_guarded_imports(autodoc_mock_imports: list[str], obj: Any) -> None:
-    """Execute the ``if TYPE_CHECKING`` block of *obj*'s module, binding the names it guards."""
+    """
+    Execute the ``if TYPE_CHECKING`` block of *obj*'s module, binding the names it guards.
+
+    The module gains the names it lacks, which what reads its globals directly, such as autodoc or a ``type`` alias,
+    needs too. A name it binds at runtime keeps that binding, so its own code sees what it always sees; annotations see
+    the guarded binding through :func:`guarded_names`.
+    """
     if inspect.isclass(obj) and (module := inspect.getmodule(obj)) is not None:
         obj = module
     if _should_skip_guarded_import_resolution(obj):
         return
 
-    if module := _defining_module(obj):
+    if module := defining_module(obj):
         try:
             module_code = inspect.getsource(module)
         except (TypeError, OSError):
             ...
         else:
-            _TYPE_GUARD_IMPORTS_RESOLVED.add(module.__name__)
-            _execute_guarded_code(autodoc_mock_imports, obj, module_code)
+            shadowed = SHADOWED_BY_GUARD[module.__name__] = {}
+            _execute_guarded_code(autodoc_mock_imports, obj, module_code, shadowed)
 
 
 def _should_skip_guarded_import_resolution(obj: Any) -> bool:
     if isinstance(obj, types.ModuleType):
-        return obj.__name__ in _TYPE_GUARD_IMPORTS_RESOLVED
+        return obj.__name__ in SHADOWED_BY_GUARD
 
     if not hasattr(obj, "__globals__"):
         return True
 
     module_name = obj.__globals__.get("__name__", obj.__module__)
-    return module_name in _TYPE_GUARD_IMPORTS_RESOLVED or module_name in sys.builtin_module_names
+    return module_name in SHADOWED_BY_GUARD or module_name in sys.builtin_module_names
 
 
-def _defining_module(obj: Any) -> types.ModuleType | None:
-    # re-exporting reassigns ``__module__``, while the globals stay those of the module defining the object
-    return sys.modules.get(getattr(obj, "__globals__", {}).get("__name__", "")) or inspect.getmodule(obj)
-
-
-def _execute_guarded_code(autodoc_mock_imports: list[str], obj: Any, module_code: str) -> None:
+def _execute_guarded_code(
+    autodoc_mock_imports: list[str], obj: Any, module_code: str, shadowed: dict[str, Any]
+) -> None:
     branches = (_type_checking_branch(node) for node in ast.parse(module_code).body if isinstance(node, ast.If))
+    namespace = getattr(obj, "__globals__", obj.__dict__)
+    # what a type checker sees, which the functions the block defines take as their globals
+    scope = dict(namespace)
     # One statement at a time, so an unimportable optional dependency cannot strand the names after it — #741
     for statement in (statement for branch in branches for statement in branch):
+        # a stub of a function the module defines, such as an @overload, is no type an annotation names, and its
+        # decorator would register it against the function
+        if isinstance(statement, ast.FunctionDef | ast.AsyncFunctionDef) and statement.name in namespace:
+            continue
         try:
-            _run_guarded_import(autodoc_mock_imports, obj, statement)
+            _run_guarded_import(autodoc_mock_imports, obj, statement, scope)
         except Exception as exc:  # ruff:ignore[blind-except]
             if any(isinstance(node, ast.Import | ast.ImportFrom) for node in ast.walk(statement)):
                 _warn_guarded_import(obj, exc)
             else:
                 _LOGGER.debug("Skipped guarded statement the interpreter rejects: %r", exc)
-                _bind_unresolvable_names(obj, statement)
+                _bind_unresolvable_names(scope, statement)
+    for name, value in scope.items():
+        if name not in namespace:
+            namespace[name] = value
+        elif namespace[name] is not value:
+            shadowed[name] = value
 
 
 def _type_checking_branch(node: ast.If) -> list[ast.stmt]:
@@ -293,13 +299,12 @@ def _warn_guarded_import(obj: Any, exc: Exception) -> None:
     )
 
 
-def _bind_unresolvable_names(obj: Any, statement: ast.stmt) -> None:
+def _bind_unresolvable_names(namespace: dict[str, Any], statement: ast.stmt) -> None:
     """
     Bind the names a guarded statement would have defined, so annotations can still use them.
 
     Type checkers accept constructs the interpreter rejects, e.g. ``TypeVar("T", bound="A" | B)`` (#751).
     """
-    namespace = getattr(obj, "__globals__", obj.__dict__)
     for name in _defined_names(statement):
         namespace.setdefault(name, MyTypeAliasForwardRef(name))
 
@@ -318,8 +323,7 @@ def _defined_names(node: ast.AST) -> Iterator[str]:
             yield from _defined_names(child)
 
 
-def _run_guarded_import(autodoc_mock_imports: list[str], obj: Any, statement: ast.stmt) -> None:
-    ns = getattr(obj, "__globals__", obj.__dict__)
+def _run_guarded_import(autodoc_mock_imports: list[str], obj: Any, statement: ast.stmt, ns: dict[str, Any]) -> None:
     guarded_code = ast.unparse(statement)
     mocked = list(autodoc_mock_imports)
     while True:
