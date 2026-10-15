@@ -7,11 +7,13 @@ import inspect
 import sys
 import textwrap
 import types
-from functools import partial
+from collections import defaultdict
+from functools import cache, partial
 from typing import TYPE_CHECKING, Any, Final, Union, cast, get_args, get_origin, get_type_hints
 
 from sphinx.errors import PycodeError
 from sphinx.pycode import ModuleAnalyzer
+from sphinx.pycode.parser import VariableCommentPicker
 
 from sphinx_autodoc_typehints._annotations import (
     MyTypeAliasForwardRef,
@@ -125,6 +127,13 @@ def _written_sources(
         scope_globals = annotation_globals(obj) if globalns is None else globalns
         scope_locals = scope_globals if localns is None else localns
         yield from ((key, written[key], scope_globals, scope_locals) for key in keys & written.keys())
+        # the __init__ a dataclass or attrs generates takes its annotations from the fields the class body writes
+        if (
+            inspect.isroutine(obj)
+            and (unwritten := keys - written.keys())
+            and isinstance(owner := _owning_class(obj), type)
+        ):
+            yield from _written_sources(owner, unwritten, None, localns)
         return
     # the attribute of an instance is annotated in its class
     for base in reversed((obj if isinstance(obj, type) else type(obj)).__mro__):
@@ -132,8 +141,15 @@ def _written_sources(
         base_locals = dict(vars(base)) if localns is None else localns
         if localns is None and globalns is None:
             base_globals, base_locals = base_locals, base_globals
+        # a generic class binds its type parameters in a scope of their own, neither the module nor the class body
+        if params := {param.__name__: param for param in getattr(base, "__type_params__", ())}:
+            base_locals = {**base_locals, **params}
         written = _source_annotations(base.__module__, base.__qualname__)
         yield from ((key, written[key], dict(base_globals), base_locals) for key in keys & written.keys())
+
+
+def _owning_class(routine: Any) -> Any:
+    return object_at(getattr(defining_module(routine), "__name__", None), routine.__qualname__.split(".")[:-1])
 
 
 def _source_annotations(module: str, qualname: str) -> dict[str, str]:
@@ -147,7 +163,31 @@ def _source_annotations(module: str, qualname: str) -> dict[str, str]:
         analyzer.analyze()
     except PycodeError:
         return {}
-    return {attribute: source for (scope, attribute), source in analyzer.annotations.items() if scope == qualname}
+    return {attribute: source for (scope, attribute), source in _unambiguous(analyzer).items() if scope == qualname}
+
+
+@cache
+def _unambiguous(analyzer: ModuleAnalyzer) -> dict[tuple[str, str], str]:
+    """
+    Return the annotations of the analyzed source that are written one way only.
+
+    Sphinx keeps the last annotation written for a name, which under ``if``/``else`` may be the branch that did not run.
+    """
+    picker = _AnnotationsPicker(analyzer.code.splitlines(keepends=True), "utf-8")
+    picker.visit(ast.parse(analyzer.code, type_comments=True))
+    return {key: written.pop() for key, written in picker.written.items() if len(written) == 1}
+
+
+class _AnnotationsPicker(VariableCommentPicker):
+    def __init__(self, buffers: list[str], encoding: str) -> None:
+        super().__init__(buffers, encoding)
+        self.written: defaultdict[tuple[str, str], set[str]] = defaultdict(set)
+
+    def add_variable_annotation(self, name: str, annotation: ast.AST) -> None:
+        super().add_variable_annotation(name, annotation)
+        if qualname := self.get_qualname_for(name):
+            key = ".".join(qualname[:-1]), name
+            self.written[key].add(self.annotations[key])
 
 
 def _evaluated_again(hint: Any, source: str, globalns: dict[str, Any], localns: Mapping[str, Any]) -> Any:
@@ -166,14 +206,16 @@ def _evaluated_again(hint: Any, source: str, globalns: dict[str, Any], localns: 
 def evaluate_annotation(source: str, globalns: dict[str, Any], localns: Mapping[str, Any]) -> Any:
     """Evaluate an annotation written as ``source``, keeping the arguments a class subscripted in it drops."""
     tree = _KeepArguments().visit(ast.parse(source, mode="eval"))
-    namespace = {**localns, _SUBSCRIPT: _subscript}
+    # a nested scope, such as a generator expression or a lambda, reads the globals but not the locals, so the helpers
+    # go in a copy of the globals, which leaves those of the module untouched
+    namespace = {**globalns, _SUBSCRIPT: _subscript}
     try:
-        return eval(compile(ast.fix_missing_locations(tree), "<annotation>", "eval"), globalns, namespace)  # ruff:ignore[suspicious-eval-usage]
+        return eval(compile(ast.fix_missing_locations(tree), "<annotation>", "eval"), namespace, localns)  # ruff:ignore[suspicious-eval-usage]
     except TypeError:
         # X | Y means Union[X, Y], which also accepts operands that don't support |, such as the objects
         # autodoc_mock_imports puts in place of a missing module's
         code = compile(ast.fix_missing_locations(_PipeAsUnion().visit(tree)), "<annotation>", "eval")
-        return eval(code, globalns, {**namespace, _UNION: Union})  # ruff:ignore[suspicious-eval-usage]
+        return eval(code, namespace | {_UNION: Union}, localns)  # ruff:ignore[suspicious-eval-usage]
 
 
 def _subscript(value: Any, item: Any) -> Any:

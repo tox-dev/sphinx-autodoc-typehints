@@ -2,10 +2,15 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, overload
+import dataclasses
+from typing import TYPE_CHECKING, Annotated, Any, overload
+
+import attrs
 
 if TYPE_CHECKING:
     from engines import Engine
+
+PAIRS = [(1, 2), (3, 4)]
 
 
 def compare(kind: Engine[Any] | None, spare: Engine[str] | Engine[bytes]) -> Engine[int]:
@@ -41,12 +46,14 @@ class Column:
 
     :ivar kind: the kind
     :ivar other: the other
+    :ivar limited: the limited
     """
 
     kind: Engine[Any]
 
     def __init__(self) -> None:
         self.other: Engine[str] | None = None
+        self.limited: Annotated[int, max(PAIRS, key=lambda pair: pair[0] - pair[1])] = 1
 
 
 def sliced(kind: Engine[int, 1:2]) -> None:
@@ -77,3 +84,51 @@ def aliased(kind: Engines) -> None:
 
     :param kind: the kind
     """
+
+
+@dataclasses.dataclass
+class Record:
+    """
+    A record.
+
+    :param kind: the kind
+    """
+
+    kind: Engine[int]
+
+
+@attrs.define
+class Entry:
+    """
+    An entry.
+
+    :param kind: the kind
+    """
+
+    kind: Engine[int]
+
+
+class Switched:
+    """
+    Switched.
+
+    :ivar kind: the kind
+    :ivar same: the same
+    """
+
+    if PAIRS:
+        kind: Engine[int]
+        same: Engine[int]
+    else:
+        kind: Engine[str]
+        same: Engine[int]
+
+
+class Holder[T]:
+    """
+    A holder.
+
+    :ivar kind: the kind
+    """
+
+    kind: Engine[T]

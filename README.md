@@ -775,7 +775,9 @@ class from a module in `autodoc_mock_imports` shows by its name, as it does in a
 A class whose subscription hands back the class itself, as SQLAlchemy's `TypeEngine` does, evaluates `TypeEngine[_T]` to
 a bare `TypeEngine`. The extension evaluates such an annotation again from its source, keeping the arguments, so the
 header, the signature, the parameter, return and `:ivar:` fields and the overloads all show `TypeEngine[_T]`, with
-`TypeEngine` still linked.
+`TypeEngine` still linked. The `__init__` a dataclass or attrs class generates has no source of its own, so its
+parameters take the annotations its fields write. A name the branches of an `if` annotate differently keeps the bare
+class, as the source does not tell which branch ran.
 
 Autodoc leaves the type parameters of a generic object out of its signature. The extension adds them after the name,
 with bounds, constraints and defaults, the way [PEP 695](https://peps.python.org/pep-0695/) writes them:
