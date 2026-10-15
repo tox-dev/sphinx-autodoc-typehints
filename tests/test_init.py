@@ -34,6 +34,7 @@ from sphinx import addnodes
 from sphinx.application import Sphinx
 from sphinx.config import Config
 from sphinx.ext.autodoc import Options
+from sphinx.ext.autodoc._dynamic import _signatures
 from sphinx.ext.autosummary import extract_summary
 from typing_extensions import Doc, deprecated
 
@@ -268,6 +269,17 @@ class _LoopedLock(_Lock, metaclass=_LoopingMeta): ...
 )
 def test_process_signature_class_strips_types_from_metaclass_call(cls: type, given: str, expected: str) -> None:
     assert process_signature(make_sig_app(), "class", "mod.Lock", cls, Options(), given, "") == (expected, None)
+
+
+def test_process_signature_reads_metaclass_call_when_sphinx_moves_its_blacklist(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delattr(_signatures, "_METACLASS_CALL_BLACKLIST")
+    monkeypatch.delitem(sys.modules, "sphinx_autodoc_typehints")
+    reloaded = importlib.import_module("sphinx_autodoc_typehints")
+    given = "(path: str, timeout: float = -1, **kwargs: Any)"
+    result = reloaded.process_signature(make_sig_app(), "class", "mod.Lock", _ExtendedLock, Options(), given, "")
+    assert result == ("(path, timeout=-1, **kwargs)", None)
 
 
 def test_process_signature_class_omits_constructor_return() -> None:

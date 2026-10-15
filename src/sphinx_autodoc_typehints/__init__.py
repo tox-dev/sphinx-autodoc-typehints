@@ -26,9 +26,6 @@ from typing import (
 
 from docutils import nodes
 from sphinx.errors import ConfigError, PycodeError
-from sphinx.ext.autodoc._dynamic._signatures import (  # ruff:ignore[import-private-name]  # the metaclasses autodoc skips
-    _METACLASS_CALL_BLACKLIST,
-)
 from sphinx.ext.autodoc.mock import ismock
 from sphinx.locale import _  # ruff:ignore[import-private-name]  # the translation napoleon labels its fields with
 from sphinx.pycode import ModuleAnalyzer
@@ -42,6 +39,11 @@ from sphinx.util.inspect import (
     stringify_signature,
 )
 from sphinx.util.inspect import signature as sphinx_signature
+
+try:
+    from sphinx.ext.autodoc._dynamic._signatures import _METACLASS_CALL_BLACKLIST  # the metaclasses autodoc skips
+except ImportError:  # Sphinx moves its private autodoc modules between releases, so keep loading with 9.1's value
+    _METACLASS_CALL_BLACKLIST: Final[frozenset[str]] = frozenset({"enum.EnumType.__call__"})
 
 # re-exports for backward compatibility
 from ._annotations import (
