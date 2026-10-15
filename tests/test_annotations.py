@@ -742,7 +742,17 @@ def test_format_annotation_alias_union_leaves_optional_alone() -> None:
         pytest.param(lambda sub: sub.Thing[int], r"\[:py:class:`int`]", id="builtin"),
         pytest.param(lambda sub: sub.Thing[sub.Other], r"\[:py:class:`~mockedpkg.sub.Other`]", id="mocked"),
         pytest.param(lambda sub: sub.Thing[int, str], r"\[:py:class:`int`, :py:class:`str`]", id="several"),
-        pytest.param(lambda sub: sub.Thing[Literal["a"]], r"\[``typing.Literal['a']``]", id="not-a-name"),
+        pytest.param(lambda sub: sub.Thing[Literal["a"]], r"\[:py:class:`~typing.Literal`\ \[``'a'``]]", id="literal"),
+        pytest.param(
+            lambda sub: sub.Thing[str, dict[str, Any]],
+            r"\[:py:class:`str`, :py:class:`dict`\ \[:py:class:`str`, :py:class:`~typing.Any`]]",
+            id="nested",
+        ),
+        pytest.param(
+            lambda sub: sub.Thing[typing.Callable[[int], str]],
+            r"\[:py:class:`~typing.Callable`\ \[\[:py:class:`int`], :py:class:`str`]]",
+            id="nested-list",
+        ),
     ],
 )
 def test_format_annotation_subscripted_mock(subscript: Callable[[Any], Any], expected: str) -> None:
