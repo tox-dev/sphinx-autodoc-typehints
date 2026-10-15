@@ -122,3 +122,13 @@ class Switched:
     else:
         kind: Engine[str]
         same: Engine[int]
+
+
+class Holder[T]:
+    """
+    A holder.
+
+    :ivar kind: the kind
+    """
+
+    kind: Engine[T]

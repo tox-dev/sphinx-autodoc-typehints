@@ -196,6 +196,11 @@ def test_collect_documented_type_aliases_annotations_error(error: Exception) -> 
         ),
         pytest.param(".. autoclass:: dropped_module.Entry", '**kind** ("Engine"["int"]) -- the kind', id="attrs-field"),
         pytest.param(
+            ".. autoclass:: dropped_module.Holder",
+            '**kind** ("Engine"["T"]) -- the kind',
+            id="class-body-ivar-of-a-type-parameter",
+        ),
+        pytest.param(
             ".. autoclass:: dropped_module.Switched",
             '* **same** ("Engine"["int"]) -- the same',
             id="class-body-ivar-written-alike-in-each-branch",

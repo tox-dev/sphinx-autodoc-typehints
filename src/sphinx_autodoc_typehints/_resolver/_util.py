@@ -141,6 +141,9 @@ def _written_sources(
         base_locals = dict(vars(base)) if localns is None else localns
         if localns is None and globalns is None:
             base_globals, base_locals = base_locals, base_globals
+        # a generic class binds its type parameters in a scope of their own, neither the module nor the class body
+        if params := {param.__name__: param for param in getattr(base, "__type_params__", ())}:
+            base_locals = {**base_locals, **params}
         written = _source_annotations(base.__module__, base.__qualname__)
         yield from ((key, written[key], dict(base_globals), base_locals) for key in keys & written.keys())
 
