@@ -124,6 +124,47 @@ def test_header_type_binds_an_inherited_type_parameter(
 @pytest.mark.parametrize(
     ("rst", "expected"),
     [
+        pytest.param(".. autodata:: header_module.ENGINE", "header_module.ENGINE: Engine[int]", id="data"),
+        pytest.param(".. autoattribute:: header_module.Engined.engine", "Engined.engine: Engine[str]", id="attribute"),
+        pytest.param(
+            ".. autoattribute:: header_module.Engined.backup",
+            "Engined.backup: Engine[str] | None = None",
+            id="nested",
+        ),
+        pytest.param(
+            ".. autoattribute:: header_module.Engined.starter",
+            "Engined.starter: Callable[[Engine[str]], None]",
+            id="callable-parameter",
+        ),
+        pytest.param(
+            ".. autoattribute:: header_module.SubEngined.engine", "SubEngined.engine: Engine[str]", id="inherited"
+        ),
+        pytest.param(
+            ".. autoproperty:: header_module.Engined.spare", "property Engined.spare: Engine[bytes]", id="property"
+        ),
+        pytest.param(
+            ".. autoattribute:: header_module.Generated.engine",
+            "Generated.engine: Engine[str]",
+            id="inherited-by-a-class-without-source",
+        ),
+        pytest.param(
+            ".. autoattribute:: header_module.INSTANCE.engine", "INSTANCE.engine: Engine[str]", id="of-an-instance"
+        ),
+    ],
+)
+@pytest.mark.sphinx("text", testroot="headers")
+def test_header_type_keeps_the_arguments_evaluation_drops(
+    app: SphinxTestApp, write_rst: Callable[[str], None], rst: str, expected: str
+) -> None:
+    write_rst(rst)
+    app.build()
+
+    assert (Path(app.outdir) / "index.txt").read_text().splitlines()[0] == expected
+
+
+@pytest.mark.parametrize(
+    ("rst", "expected"),
+    [
         pytest.param(".. autodata:: header_module.SCORE", "header_module.SCORE: Num = 1", id="data"),
         pytest.param(".. autoattribute:: header_module.Scored.points", "Scored.points: Num = 0", id="attribute"),
         pytest.param(".. autoproperty:: header_module.Scored.best", "property Scored.best: Num", id="property"),

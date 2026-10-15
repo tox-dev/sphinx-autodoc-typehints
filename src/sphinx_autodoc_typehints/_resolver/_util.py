@@ -230,7 +230,7 @@ def collect_documented_type_aliases(
     obj_globals = annotation_globals(obj) if hasattr(obj, "__globals__") else {}
     # an alias evaluates to the object it names (``Count = int``), so only the annotation as written tells them apart;
     # a module or class holds no globals to find the alias in, so its source is not worth parsing
-    written = _written_annotations(obj) if obj_globals else {}
+    written = written_annotations(obj) if obj_globals else {}
     for key, annotation in raw_annotations.items():
         if isinstance(annotation, str):
             if _is_documented_type(annotation, module_prefix, py_objects):
@@ -263,7 +263,7 @@ def _collect_module_type_aliases(module_prefix: str, py_objects: dict[str, Any])
     return result
 
 
-def _written_annotations(obj: Any) -> dict[str, str]:
+def written_annotations(obj: Any) -> dict[str, str]:
     try:
         node = ast.parse(textwrap.dedent(inspect.getsource(obj))).body[0]
     except (OSError, TypeError, SyntaxError):
@@ -295,5 +295,6 @@ __all__ = [
     "object_at",
     "type_alias_namespace",
     "type_hints",
+    "written_annotations",
     "written_type_alias",
 ]

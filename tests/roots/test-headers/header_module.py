@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from functools import cached_property
-from typing import TYPE_CHECKING, Annotated, Generic, TypedDict, TypeVar
+from typing import TYPE_CHECKING, Annotated, Any, Generic, TypedDict, TypeVar
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from decimal import Decimal
 
 U = TypeVar("U")
@@ -138,3 +139,42 @@ class Totals(TypedDict):
 
     count: Num
     """The count."""
+
+
+class Engine:
+    """Hands back the class itself when subscripted, as SQLAlchemy's TypeEngine does."""
+
+    def __class_getitem__(cls, item: Any) -> type[Engine]:
+        return cls
+
+
+ENGINE: Engine[int]
+"""The engine."""
+
+
+class Engined:
+    """Holds engines."""
+
+    engine: Engine[str]
+    """The engine."""
+
+    backup: Engine[str] | None = None
+    """The backup."""
+
+    starter: Callable[[Engine[str]], None]
+    """The starter."""
+
+    @property
+    def spare(self) -> Engine[bytes]:
+        """The spare."""
+        raise NotImplementedError
+
+
+class SubEngined(Engined):
+    """Inherits engines."""
+
+
+INSTANCE = Engined()
+"""An instance holding engines."""
+
+Generated = type("Generated", (Engined,), {"__module__": "generated", "__doc__": "Made where no source is at hand."})
