@@ -7,6 +7,7 @@ import inspect
 import sys
 import textwrap
 import types
+from functools import partial
 from typing import TYPE_CHECKING, Any, Final, cast, get_type_hints
 
 from sphinx_autodoc_typehints._annotations import (
@@ -22,7 +23,7 @@ if sys.version_info >= (3, 14):  # pragma: >=3.14 cover
     from annotationlib import Format, ForwardRef, get_annotations
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator, Mapping
+    from collections.abc import Callable, Iterable, Iterator, Mapping
 
     from sphinx.environment import BuildEnvironment
 
@@ -66,7 +67,37 @@ def type_hints(obj: Any, globalns: dict[str, Any] | None, localns: Mapping[str, 
     """Return :func:`typing.get_type_hints` with the extras, reading a name a guard shadows as the guard binds it."""
     if sys.version_info >= (3, 14) and _reads_shadowed_name(obj):  # pragma: >=3.14 cover
         return _hints_from_source(obj, globalns, localns)
+    if isinstance(obj, type) and any(guarded_names(base) for base in obj.__mro__):
+        return _hints_of_bases(obj, globalns, localns, _declared_hints)
     return get_type_hints(obj, globalns, localns, include_extras=True)
+
+
+def _hints_of_bases(
+    cls: type,
+    globalns: dict[str, Any] | None,
+    localns: Mapping[str, Any] | None,
+    evaluate: Callable[[type, dict[str, Any], Mapping[str, Any]], dict[str, Any]],
+) -> dict[str, Any]:
+    """Evaluate the annotations of each base as :func:`typing.get_type_hints` would, in the globals of its module."""
+    hints: dict[str, Any] = {}
+    for base in reversed(cls.__mro__):
+        base_globals = annotation_globals(base) if globalns is None else globalns
+        base_locals = dict(vars(base)) if localns is None else localns
+        if localns is None and globalns is None:
+            # as get_type_hints does, so the names of the module come before those of the class body
+            base_globals, base_locals = base_locals, base_globals
+        hints |= evaluate(base, dict(base_globals), base_locals)
+    return hints
+
+
+def _declared_hints(base: type, globalns: dict[str, Any], localns: Mapping[str, Any]) -> dict[str, Any]:
+    # a class holding only what the base declares, as get_type_hints evaluates the annotations of every base it holds
+    declared = type(
+        base.__name__,
+        (),
+        {"__annotations__": inspect.get_annotations(base), "__type_params__": getattr(base, "__type_params__", ())},
+    )
+    return get_type_hints(declared, globalns, localns, include_extras=True)
 
 
 def _reads_shadowed_name(obj: Any) -> bool:  # pragma: >=3.14 cover
@@ -108,15 +139,7 @@ def _hints_from_source(  # pragma: >=3.14 cover
         return _evaluate_written(
             obj, globalns, globalns if localns is None else localns, is_argument=not isinstance(obj, types.ModuleType)
         )
-    hints: dict[str, Any] = {}
-    for base in reversed(obj.__mro__):
-        base_globals = annotation_globals(base) if globalns is None else globalns
-        base_locals = dict(vars(base)) if localns is None else localns
-        if localns is None and globalns is None:
-            # as get_type_hints does, so the names of the module come before those of the class body
-            base_globals, base_locals = base_locals, base_globals
-        hints |= _evaluate_written(base, dict(base_globals), base_locals, is_argument=False)
-    return hints
+    return _hints_of_bases(obj, globalns, localns, partial(_evaluate_written, is_argument=False))
 
 
 def _evaluate_written(  # pragma: >=3.14 cover

@@ -5,7 +5,7 @@ import inspect
 import textwrap
 from typing import TYPE_CHECKING, Any, ClassVar, Final, get_args, get_origin
 
-from ._util import annotation_globals, guarded_names, type_hints
+from ._util import annotation_globals, type_hints
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -65,9 +65,7 @@ def get_class_body_annotations(cls: type) -> dict[str, Any]:
     A ``ClassVar`` or ``Final`` qualifier says how the attribute behaves, not what it holds, so it is left off.
     """
     try:
-        # given locals, get_type_hints stops reading the class body's own names first, so they go in with them
-        localns = {**shadowed, **vars(cls)} if (shadowed := guarded_names(cls)) else None
-        hints = type_hints(cls, None, localns)
+        hints = type_hints(cls, None, None)
     except Exception:  # ruff:ignore[blind-except]  # an annotation runs user code, which may raise anything
         return {}
     held = {name: get_args(hint)[0] if _is_qualifier(get_origin(hint)) else hint for name, hint in hints.items()}

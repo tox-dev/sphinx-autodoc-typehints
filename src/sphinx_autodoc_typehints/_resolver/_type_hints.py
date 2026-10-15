@@ -109,8 +109,8 @@ def get_descriptor_type_hint(obj: Any) -> Any | None:
 
 def _get_type_hint(autodoc_mock_imports: list[str], name: str, obj: Any, localns: Mapping[str, Any]) -> dict[str, Any]:
     resolve_type_guarded_imports(autodoc_mock_imports, obj)
-    # as locals, since a class reads the annotations of each of its bases in the globals of the module defining it
-    localns = {**guarded_names(obj), **_build_localns(obj, localns)}
+    # a class reads the guard of the module defining each of its bases in that base's globals, not in shared locals
+    localns = {**({} if inspect.isclass(obj) else guarded_names(obj)), **_build_localns(obj, localns)}
     try:
         if getattr(obj, "__no_type_check__", False):
             # typing.get_type_hints() unconditionally returns {} for @typing.no_type_check

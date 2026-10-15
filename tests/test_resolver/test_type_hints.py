@@ -821,6 +821,37 @@ def test_lazy_annotation_neither_source_nor_runtime_evaluates_warns(  # pragma: 
     assert "name 'Missing' is not defined" in str(mock_logger.warning.call_args.args[-1])
 
 
+@pytest.mark.parametrize(
+    "future",
+    [
+        pytest.param("from __future__ import annotations\n", id="stringified"),
+        pytest.param(
+            "",
+            id="lazy",
+            marks=pytest.mark.skipif(sys.version_info < (3, 14), reason="annotations evaluate lazily from Python 3.14"),
+        ),
+    ],
+)
+def test_annotation_of_a_base_ignores_the_guard_of_the_module_of_a_subclass(
+    guarded_module: _GuardedModuleBuilder, future: str
+) -> None:
+    module = guarded_module(
+        f"{future}from typing import TYPE_CHECKING\n"
+        "from unguarded_base import Base\n"
+        "\n"
+        "if TYPE_CHECKING:\n"
+        "    from decimal import Decimal as Item\n"
+        "else:\n"
+        "    Item = str\n"
+        "\n"
+        "class Child(Base):\n"
+        "    own: Item\n",
+        files={"unguarded_base.py": f"{future}Item = int\n\nclass Base:\n    inherited: Item\n"},
+    )
+    hints = get_all_type_hints([], module.Child, f"{module.__name__}.Child", {})
+    assert hints == {"inherited": int, "own": Decimal}
+
+
 def test_guarded_import_adds_the_names_the_module_lacks_beside_a_runtime_one(
     guarded_module: _GuardedModuleBuilder,
 ) -> None:
