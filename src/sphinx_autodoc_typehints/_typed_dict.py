@@ -11,6 +11,9 @@ from ._annotations import add_type_css_class, format_annotation
 from ._resolver import guarded_names, type_hints
 from ._type_params import specialize, type_arguments
 
+if sys.version_info >= (3, 14):  # pragma: >=3.14 cover
+    import annotationlib
+
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
@@ -81,12 +84,26 @@ class _Hierarchy:
         if (found := self._keys.get(typed_dict)) is not None:
             return found
         inherited: dict[str, Any] = {}
-        for base in _typed_dict_bases(typed_dict):
-            inherited |= self._split(get_origin(base) or base)[0]
+        bases = [get_origin(base) or base for base in _typed_dict_bases(typed_dict)]
+        for base in bases:
+            inherited |= self._split(base)[0]
         # a key written as a string names the type parameters of the class declaring it, which may be a base
         localns = {**guarded_names(typed_dict), **self._localns, **self._scope(typed_dict)}
         hints = type_hints(typed_dict, None, localns)
-        own = {key: hint for key, hint in hints.items() if key not in inherited or not _same(inherited[key], hint)}
+        # a key holding what a base holds is that base's, read in the module and guard of the base, not of this class
+        written = _written(typed_dict)
+        declared_by_base = [_written(base) for base in bases]
+        own = {
+            key: hint
+            for key, hint in hints.items()
+            if key not in inherited
+            or not (
+                _same(inherited[key], hint)
+                or any(
+                    key in base_written and _same(base_written[key], written[key]) for base_written in declared_by_base
+                )
+            )
+        }
         found = self._keys[typed_dict] = inherited | own, own
         return found
 
@@ -117,6 +134,13 @@ def _same(left: Any, right: Any) -> bool:
         return type(left) is type(right) and (left == right) is True
     except Exception:  # ruff:ignore[blind-except]  # metadata compares through user code, which may raise anything
         return False
+
+
+def _written(typed_dict: type) -> dict[str, Any]:
+    """Return the annotations of a TypedDict without reading a guard, so a key it inherits holds what its base holds."""
+    if sys.version_info >= (3, 14):  # pragma: >=3.14 cover
+        return annotationlib.get_annotations(typed_dict, format=annotationlib.Format.FORWARDREF)
+    return dict(typed_dict.__annotations__)  # pragma: <3.14 cover
 
 
 def _typed_dict_bases(typed_dict: type) -> list[Any]:
