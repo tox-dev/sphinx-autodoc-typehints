@@ -141,6 +141,49 @@ def teststub_path_extension_module_package_fallback(tmp_path: Path) -> None:
     assert result.name == "__init__.pyi"
 
 
+class _ProxyModule(types.ModuleType):
+    """A module subclass reporting where it lives through properties, as module proxies do."""
+
+    def __init__(self, name: str, file: str, path: list[str] | None) -> None:
+        super().__init__(name)
+        self.location = file, path
+
+    @property
+    def __file__(self) -> str:  # ruff:ignore[bad-dunder-method-name]  # the module attribute a proxy reports
+        return self.location[0]
+
+    @property
+    def __path__(self) -> list[str]:  # ruff:ignore[bad-dunder-method-name]  # the module attribute a proxy reports
+        # a proxy for a plain module, which is no package
+        if (path := self.location[1]) is None:
+            msg = "__path__"
+            raise AttributeError(msg)
+        return path
+
+
+@pytest.mark.parametrize(
+    ("stub", "package_dir"),
+    [
+        pytest.param("_mod.pyi", None, id="beside-file"),
+        pytest.param("stubs/__init__.pyi", "stubs", id="in-package-path"),
+    ],
+)
+def teststub_path_reads_module_properties(tmp_path: Path, stub: str, package_dir: str | None) -> None:
+    (tmp_path / "stubs").mkdir()
+    (tmp_path / stub).write_text("x: int\n")
+    module = _ProxyModule(
+        "_mod", str(tmp_path / "_mod.py"), None if package_dir is None else [str(tmp_path / package_dir)]
+    )
+    with patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getmodule", return_value=module):
+        assert stub_path(lambda: None) == tmp_path / stub
+
+
+def teststub_path_skips_package_path_property_that_raises(tmp_path: Path) -> None:
+    module = _ProxyModule("_mod", str(tmp_path / "_mod.py"), None)
+    with patch("sphinx_autodoc_typehints._resolver._stubs.inspect.getmodule", return_value=module):
+        assert stub_path(lambda: None) is None
+
+
 def teststub_path_package_init_pyi(tmp_path: Path) -> None:
     pkg_dir = tmp_path / "mypkg"
     pkg_dir.mkdir()

@@ -235,15 +235,26 @@ def _find_stub_owner(obj: Any) -> tuple[Path, types.ModuleType] | None:
 
 def _find_stub_for_module(module: types.ModuleType) -> Path | None:
     # a module lacking an attribute hands the lookup to its ``__getattr__``
-    if not (source_file := inspect.getattr_static(module, "__file__", None)):
+    if not (source_file := _module_attribute(module, "__file__")):
         return _find_native_submodule_stub(module)
     source = Path(source_file)
     if (stub := source.with_name(f"{source.name.split('.')[0]}.pyi")).is_file():
         return stub
-    for pkg_dir in inspect.getattr_static(module, "__path__", ()):
+    for pkg_dir in _module_attribute(module, "__path__") or ():
         if (init_stub := Path(pkg_dir) / "__init__.pyi").is_file():
             return init_stub
     return None
+
+
+def _module_attribute(module: types.ModuleType, name: str) -> Any:
+    """Read a module attribute without its ``__getattr__``, through the property a module subclass may define."""
+    if not inspect.isdatadescriptor(value := inspect.getattr_static(module, name, None)):
+        return value
+    # calling the getter directly skips the fallback to __getattr__ that getattr takes when it raises AttributeError
+    try:
+        return value.__get__(module, type(module))
+    except AttributeError:
+        return None
 
 
 def _find_native_submodule_stub(module: types.ModuleType) -> Path | None:
