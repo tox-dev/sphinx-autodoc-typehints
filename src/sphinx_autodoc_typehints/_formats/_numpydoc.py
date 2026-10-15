@@ -54,19 +54,15 @@ class _NumpydocEntry:
 
 def _convert_numpydoc_to_sphinx_fields(lines: list[str]) -> None:  # ruff:ignore[complex-structure, too-many-branches]
     """Convert numpydoc-formatted sections in ``lines`` to Sphinx field list syntax in-place."""
-    if not any(line.strip() in _NUMPYDOC_SECTIONS for line in lines):
-        return
-
     result: list[str] = []
     i = 0
     while i < len(lines):
-        stripped = lines[i].strip()
-        if stripped not in _NUMPYDOC_SECTIONS:
+        if not _is_numpydoc_section(lines, i):
             result.append(lines[i])
             i += 1
             continue
 
-        section = stripped[1:-1]
+        section = lines[i].strip()[1:-1]
         i += 1
         if i < len(lines) and not lines[i].strip():
             i += 1
@@ -96,6 +92,21 @@ def _convert_numpydoc_to_sphinx_fields(lines: list[str]) -> None:  # ruff:ignore
                 result.extend(_field(f"   * {_label(entry)}", entry.description, indent="     "))
 
     lines[:] = result
+
+
+def _is_numpydoc_section(lines: list[str], index: int) -> bool:
+    """
+    Tell a section numpydoc wrote from a reST field list of the same name, such as docutils' own ``:Parameters:``.
+
+    numpydoc names every parameter in bold, while a field list written by hand holds whatever list its author chose.
+    """
+    if (section := lines[index].strip()) not in _NUMPYDOC_SECTIONS:
+        return False
+    entry = next((line for line in lines[index + 1 :] if line.strip()), "")
+    return bool(
+        _NUMPYDOC_BOLD_RE.match(entry)
+        or (section not in {":Parameters:", ":Other Parameters:"} and _NUMPYDOC_PLAIN_RE.match(entry))
+    )
 
 
 def _other_parameters(entries: list[_NumpydocEntry]) -> list[str]:
@@ -183,7 +194,7 @@ class NumpydocFormat(DocstringFormat):
 
     @staticmethod
     def detect(lines: list[str]) -> bool:
-        return any(line.strip() in _NUMPYDOC_SECTIONS for line in lines)
+        return any(_is_numpydoc_section(lines, index) for index in range(len(lines)))
 
     def _ensure_converted(self, lines: list[str]) -> None:
         if not self._converted:
