@@ -7,6 +7,7 @@ import contextlib
 import importlib
 import importlib.util
 import inspect
+import re
 import sys
 import types
 import warnings
@@ -52,6 +53,8 @@ _RUNNING_GUARDS: Final[list[str]] = []
 #: Guarded imports that named a module from ``_RUNNING_GUARDS``: namespace and shadowed names of the importer, the name
 #: it binds, the source module, the imported name, and whether the importer binds that name at runtime.
 _IMPORTS_FROM_RUNNING_GUARDS: Final[list[tuple[dict[str, Any], dict[str, Any], str, str, str, bool]]] = []
+#: A statement of the module body starting with ``if``, with its indented lines and its ``elif`` and ``else`` branches.
+_TOP_LEVEL_IF: Final = re.compile(r"^if\b.*\n(?:(?:[ \t]+.*|(?:elif|else)\b.*)?\n)*", re.MULTILINE)
 
 
 def get_all_type_hints(
@@ -229,11 +232,9 @@ def _execute_guarded_code(
     namespace = getattr(obj, "__globals__", obj.__dict__)
     # what a type checker sees, which the functions the block defines take as their globals
     scope = dict(namespace)
-    try:
-        statements = _guarded_statements(module_code)
-    except SyntaxError as exc:
+    statements, errors = _guarded_statements(module_code)
+    for exc in errors:
         _warn_guarded_import(obj, exc)
-        return
     deferred: list[tuple[str, str, str]] = []
     # One statement at a time, so an unimportable optional dependency cannot strand the names after it — #741
     for statement in statements:
@@ -270,14 +271,38 @@ def _bind_imports_from_running_guards() -> None:
                 namespace[bound] = names[name]
 
 
-def _guarded_statements(module_code: str) -> list[ast.stmt]:
+def _guarded_statements(module_code: str) -> tuple[list[ast.stmt], list[SyntaxError]]:
+    """Return the statements only a type checker runs, and why the guards that could not be read failed to parse."""
     if "TYPE_CHECKING" not in module_code:
-        return []
+        return [], []
     # the module compiled already, so its warnings are no news, and -W error would turn them into a SyntaxError
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", SyntaxWarning)
-        tree = ast.parse(module_code)
-    return [statement for node in tree.body if isinstance(node, ast.If) for statement in _type_checking_branch(node)]
+        try:
+            nodes, errors = ast.parse(module_code).body, []
+        except SyntaxError:
+            nodes, errors = _parse_guards_alone(module_code)
+    return [
+        statement for node in nodes if isinstance(node, ast.If) for statement in _type_checking_branch(node)
+    ], errors
+
+
+def _parse_guards_alone(module_code: str) -> tuple[list[ast.stmt], list[SyntaxError]]:
+    """
+    Parse each top-level ``if`` naming ``TYPE_CHECKING`` on its own, as 3.13.10 did.
+
+    The source ``inspect`` reads may not parse as a whole, as a stale ``linecache`` entry or a module a custom loader
+    compiles from another language does, while its guards do.
+    """
+    nodes: list[ast.stmt] = []
+    errors: list[SyntaxError] = []
+    for block in _TOP_LEVEL_IF.findall(f"{module_code}\n"):
+        if "TYPE_CHECKING" in block:
+            try:
+                nodes.extend(ast.parse(block).body)
+            except SyntaxError as exc:
+                errors.append(exc)
+    return nodes, errors
 
 
 def _type_checking_branch(node: ast.If) -> list[ast.stmt]:
@@ -401,10 +426,7 @@ def _import_as_guarded(
 
 
 def _guard_binds(module: types.ModuleType, names: set[str]) -> bool:
-    try:
-        statements = _guarded_statements(_module_source(module))
-    except SyntaxError:
-        return False
+    statements, _ = _guarded_statements(_module_source(module))
     return any(name in names for statement in statements for name in _defined_names(statement))
 
 

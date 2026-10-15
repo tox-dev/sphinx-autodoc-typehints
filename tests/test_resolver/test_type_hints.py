@@ -575,20 +575,41 @@ def test_guarded_import_ignores_the_syntax_warnings_of_the_module(
     assert get_all_type_hints([], module.func, f"{module.__name__}.func", {})["value"] is expected
 
 
-def test_guarded_import_warns_when_the_source_of_the_module_does_not_parse(
+def test_guarded_import_reads_the_guard_of_a_module_whose_whole_source_does_not_parse(
+    guarded_module: _GuardedModuleBuilder, tmp_path: Path
+) -> None:
+    source = (
+        "from __future__ import annotations\n"
+        "from typing import TYPE_CHECKING\n"
+        "\n"
+        "if TYPE_CHECKING:\n"
+        "    from decimal import Decimal\n"
+        "else:\n"
+        "    Decimal = float\n"
+        "\n"
+        "def func(value: Decimal) -> None: ...\n"
+    )
+    module = guarded_module(source)
+    # what a stale linecache entry or a transpiling loader hands inspect.getsource
+    (tmp_path / f"{module.__name__}.py").write_text(f"{source}this is not python (\n", encoding="utf-8")
+    assert get_all_type_hints([], module.func, f"{module.__name__}.func", {})["value"] is Decimal
+
+
+def test_guarded_import_warns_when_a_guard_does_not_parse(
     guarded_module: _GuardedModuleBuilder, tmp_path: Path
 ) -> None:
     source = "from typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n    import decimal\n\ndef func() -> None: ...\n"
     module = guarded_module(source)
-    # what a stale linecache entry or a transpiling loader hands inspect.getsource
-    (tmp_path / f"{module.__name__}.py").write_text(f"{source}this is not python (\n", encoding="utf-8")
+    (tmp_path / f"{module.__name__}.py").write_text(
+        f"{source}\nif TYPE_CHECKING:\n    this is not python (\n", encoding="utf-8"
+    )
     mock_logger = MagicMock()
     with patch("sphinx_autodoc_typehints._resolver._type_hints._LOGGER", mock_logger):
         get_all_type_hints([], module.func, f"{module.__name__}.func", {})
     assert "was never closed" in str(mock_logger.warning.call_args_list)
 
 
-def test_guarded_import_from_a_module_whose_source_does_not_parse_does_not_warn(
+def test_guarded_import_from_a_module_whose_source_does_not_parse_reads_its_guard(
     guarded_module: _GuardedModuleBuilder, tmp_path: Path
 ) -> None:
     source = "from typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n    Thing = int\nelse:\n    Thing = str\n"
@@ -604,10 +625,7 @@ def test_guarded_import_from_a_module_whose_source_does_not_parse_does_not_warn(
     )
     importlib.import_module("unparsed_source")
     (tmp_path / "unparsed_source.py").write_text(f"{source}this is not python (\n", encoding="utf-8")
-    mock_logger = MagicMock()
-    with patch("sphinx_autodoc_typehints._resolver._type_hints._LOGGER", mock_logger):
-        get_all_type_hints([], module.func, f"{module.__name__}.func", {})
-    mock_logger.warning.assert_not_called()
+    assert get_all_type_hints([], module.func, f"{module.__name__}.func", {})["value"] is int
 
 
 def test_guarded_comprehension_target_leaves_the_builtin_alone(
