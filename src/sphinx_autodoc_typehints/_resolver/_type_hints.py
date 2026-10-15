@@ -203,10 +203,12 @@ def resolve_type_guarded_imports(autodoc_mock_imports: list[str], obj: Any) -> N
     if (module := defining_module(obj)) and (module_code := _module_source(module)):
         shadowed = SHADOWED_BY_GUARD[module.__name__] = {}
         _RUNNING_GUARDS.append(module.__name__)
-        _execute_guarded_code(autodoc_mock_imports, obj, module_code, shadowed)
-        _RUNNING_GUARDS.pop()
-        if not _RUNNING_GUARDS:
-            _bind_imports_from_running_guards()
+        try:
+            _execute_guarded_code(autodoc_mock_imports, obj, module_code, shadowed)
+        finally:
+            _RUNNING_GUARDS.pop()
+            if not _RUNNING_GUARDS:
+                _bind_imports_from_running_guards()
 
 
 def _module_source(module: types.ModuleType) -> str:
@@ -265,7 +267,9 @@ def _bind_imports_from_running_guards() -> None:
     """Bind what a guard imported from a guard that was still running, now that every guard it waited on finished."""
     while _IMPORTS_FROM_RUNNING_GUARDS:
         namespace, shadowed, bound, source, name, at_runtime = _IMPORTS_FROM_RUNNING_GUARDS.pop()
-        if name in (names := ChainMap(SHADOWED_BY_GUARD[source], vars(sys.modules[source]))):
+        # a guard may have taken the module out of sys.modules since, leaving only what its own guard bound
+        module_globals = vars(module) if (module := sys.modules.get(source)) else {}
+        if name in (names := ChainMap(SHADOWED_BY_GUARD[source], module_globals)):
             if at_runtime:
                 shadowed[bound] = names[name]
             else:

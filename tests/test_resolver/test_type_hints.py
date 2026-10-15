@@ -1001,18 +1001,54 @@ def test_guarded_import_reads_a_name_as_the_guard_of_its_module_binds_it(
 def test_guarded_imports_of_each_other_read_what_each_guard_binds(
     guarded_module: _GuardedModuleBuilder, order: tuple[str, str], imported: str, runtime: str
 ) -> None:
-    guard = "from __future__ import annotations\nfrom typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n"
     module = guarded_module(
         "import amod_mutual\nimport bmod_mutual\n",
-        files={
-            "amod_mutual.py": f"{guard}    from bmod_mutual import BAlias\n\n    AAlias = int\nelse:\n"
-            "    AAlias = str\n\ndef func(value: BAlias) -> None: ...\n",
-            "bmod_mutual.py": f"{guard}    from amod_mutual import {imported}\n\n    BAlias = bytes\nelse:\n"
-            f"    BAlias = float\n{runtime}\ndef func(value: AAlias) -> None: ...\n",
-        },
+        files=_guards_importing_each_other("amod_mutual", "bmod_mutual", imported=imported, runtime=runtime),
     )
     hints = {name: get_all_type_hints([], getattr(module, name).func, f"{name}.func", {})["value"] for name in order}
     assert hints == {"amod_mutual": bytes, "bmod_mutual": int}
+
+
+def test_guarded_imports_of_each_other_bind_after_a_guard_that_raised(guarded_module: _GuardedModuleBuilder) -> None:
+    module = guarded_module(
+        "import amod_raised\nimport bmod_raised\nimport exiting_guard\n",
+        files={
+            **_guards_importing_each_other("amod_raised", "bmod_raised"),
+            "exiting_guard.py": f"{_GUARD}    import exiting_dependency\n",
+            "exiting_dependency.py": "raise SystemExit(1)\n",
+        },
+    )
+    with pytest.raises(SystemExit):
+        resolve_type_guarded_imports([], module.exiting_guard)
+    get_all_type_hints([], module.amod_raised.func, "amod_raised.func", {})
+    assert get_all_type_hints([], module.bmod_raised.func, "bmod_raised.func", {})["value"] is int
+
+
+def test_guarded_import_from_a_guard_that_left_sys_modules_reads_what_the_guard_bound(
+    guarded_module: _GuardedModuleBuilder,
+) -> None:
+    module = guarded_module(
+        "import amod_removed\nimport bmod_removed\n",
+        files=_guards_importing_each_other(
+            "amod_removed", "bmod_removed", extra='    import sys\n    del sys.modules["amod_removed"]\n'
+        ),
+    )
+    get_all_type_hints([], module.amod_removed.func, "amod_removed.func", {})
+    assert get_all_type_hints([], module.bmod_removed.func, "bmod_removed.func", {})["value"] is int
+
+
+_GUARD: Final = "from __future__ import annotations\nfrom typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n"
+
+
+def _guards_importing_each_other(
+    first: str, second: str, *, imported: str = "AAlias", runtime: str = "", extra: str = ""
+) -> dict[str, str]:
+    return {
+        f"{first}.py": f"{_GUARD}    from {second} import BAlias\n\n    AAlias = int\nelse:\n"
+        "    AAlias = str\n\ndef func(value: BAlias) -> None: ...\n",
+        f"{second}.py": f"{_GUARD}    from {first} import {imported}\n{extra}\n    BAlias = bytes\nelse:\n"
+        f"    BAlias = float\n{runtime}\ndef func(value: AAlias) -> None: ...\n",
+    }
 
 
 def test_guarded_import_adds_the_names_the_module_lacks_beside_a_runtime_one(
