@@ -9,9 +9,11 @@ import importlib.util
 import inspect
 import sys
 import types
+from collections import ChainMap
 from typing import (
     TYPE_CHECKING,
     Any,
+    Final,
     ForwardRef,
     NewType,
     ParamSpec,
@@ -44,6 +46,11 @@ if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping
 
 _LOGGER = logging.getLogger(__name__)
+#: Modules whose ``TYPE_CHECKING`` block is executing, innermost last.
+_RUNNING_GUARDS: Final[list[str]] = []
+#: Guarded imports that named a module from ``_RUNNING_GUARDS``: namespace and shadowed names of the importer, the name
+#: it binds, the source module, the imported name, and whether the importer binds that name at runtime.
+_IMPORTS_FROM_RUNNING_GUARDS: Final[list[tuple[dict[str, Any], dict[str, Any], str, str, str, bool]]] = []
 
 
 def get_all_type_hints(
@@ -190,7 +197,11 @@ def resolve_type_guarded_imports(autodoc_mock_imports: list[str], obj: Any) -> N
 
     if (module := defining_module(obj)) and (module_code := _module_source(module)):
         shadowed = SHADOWED_BY_GUARD[module.__name__] = {}
+        _RUNNING_GUARDS.append(module.__name__)
         _execute_guarded_code(autodoc_mock_imports, obj, module_code, shadowed)
+        _RUNNING_GUARDS.pop()
+        if not _RUNNING_GUARDS:
+            _bind_imports_from_running_guards()
 
 
 def _module_source(module: types.ModuleType) -> str:
@@ -217,6 +228,7 @@ def _execute_guarded_code(
     namespace = getattr(obj, "__globals__", obj.__dict__)
     # what a type checker sees, which the functions the block defines take as their globals
     scope = dict(namespace)
+    deferred: list[tuple[str, str, str]] = []
     # One statement at a time, so an unimportable optional dependency cannot strand the names after it — #741
     for statement in _guarded_statements(module_code):
         # a stub of a function the module defines, such as an @overload, is no type an annotation names, and its
@@ -224,18 +236,32 @@ def _execute_guarded_code(
         if isinstance(statement, ast.FunctionDef | ast.AsyncFunctionDef) and statement.name in namespace:
             continue
         try:
-            _run_guarded_import(autodoc_mock_imports, obj, statement, scope)
+            _run_guarded_import(autodoc_mock_imports, obj, statement, scope, deferred)
         except Exception as exc:  # ruff:ignore[blind-except]
             if any(isinstance(node, ast.Import | ast.ImportFrom) for node in ast.walk(statement)):
                 _warn_guarded_import(obj, exc)
             else:
                 _LOGGER.debug("Skipped guarded statement the interpreter rejects: %r", exc)
                 _bind_unresolvable_names(scope, statement)
+    _IMPORTS_FROM_RUNNING_GUARDS.extend(
+        (namespace, shadowed, bound, source, name, bound in namespace) for bound, source, name in deferred
+    )
     for name, value in scope.items():
         if name not in namespace:
             namespace[name] = value
         elif namespace[name] is not value:
             shadowed[name] = value
+
+
+def _bind_imports_from_running_guards() -> None:
+    """Bind what a guard imported from a guard that was still running, now that every guard it waited on finished."""
+    while _IMPORTS_FROM_RUNNING_GUARDS:
+        namespace, shadowed, bound, source, name, at_runtime = _IMPORTS_FROM_RUNNING_GUARDS.pop()
+        if name in (names := ChainMap(SHADOWED_BY_GUARD[source], vars(sys.modules[source]))):
+            if at_runtime:
+                shadowed[bound] = names[name]
+            else:
+                namespace[bound] = names[name]
 
 
 def _guarded_statements(module_code: str) -> Iterator[ast.stmt]:
@@ -309,7 +335,13 @@ def _defined_names(node: ast.AST) -> Iterator[str]:
             yield from _defined_names(child)
 
 
-def _run_guarded_import(autodoc_mock_imports: list[str], obj: Any, statement: ast.stmt, ns: dict[str, Any]) -> None:
+def _run_guarded_import(
+    autodoc_mock_imports: list[str],
+    obj: Any,
+    statement: ast.stmt,
+    ns: dict[str, Any],
+    deferred: list[tuple[str, str, str]],
+) -> None:
     guarded_code = ast.unparse(statement)
     mocked = list(autodoc_mock_imports)
     while True:
@@ -332,14 +364,23 @@ def _run_guarded_import(autodoc_mock_imports: list[str], obj: Any, statement: as
             with mock(mocked), contextlib.suppress(ImportError):
                 exec(guarded_code, ns)  # ruff:ignore[exec-builtin]
         if isinstance(statement, ast.ImportFrom):
-            _import_as_guarded(autodoc_mock_imports, statement, ns)
+            _import_as_guarded(autodoc_mock_imports, statement, ns, deferred)
         return
 
 
-def _import_as_guarded(autodoc_mock_imports: list[str], statement: ast.ImportFrom, ns: dict[str, Any]) -> None:
+def _import_as_guarded(
+    autodoc_mock_imports: list[str],
+    statement: ast.ImportFrom,
+    ns: dict[str, Any],
+    deferred: list[tuple[str, str, str]],
+) -> None:
     """Bind what the statement imports as a type checker does, reading a name the guard of its module shadows."""
     source = importlib.util.resolve_name("." * statement.level + (statement.module or ""), ns.get("__package__"))
     if (module := sys.modules.get(source)) is None:
+        return
+    # modules whose guards import from each other: the one still running is half-built, so read it once it finishes
+    if source in _RUNNING_GUARDS:
+        deferred.extend((alias.asname or alias.name, source, alias.name) for alias in statement.names)
         return
     imported = {alias.name for alias in statement.names}
     # running the guard of every module a guard imports from would warn about what nothing here reads

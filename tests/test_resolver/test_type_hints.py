@@ -239,7 +239,7 @@ def test_execute_guarded_code_catches_exception() -> None:
 def test_run_guarded_import_no_exc_name() -> None:
     ns: dict[str, Any] = {}
     obj: Any = type("FakeObj", (), {"__globals__": ns})()
-    _run_guarded_import([], obj, ast.parse("raise ImportError()").body[0], ns)
+    _run_guarded_import([], obj, ast.parse("raise ImportError()").body[0], ns, [])
 
 
 def test_forward_ref_warning_includes_module() -> None:
@@ -885,6 +885,32 @@ def test_guarded_import_reads_a_name_as_the_guard_of_its_module_binds_it(
     )
     hint = get_all_type_hints([], module.func, f"{module.__name__}.func", {})["value"]
     assert Protocol in getattr(hint, "__bases__", ())
+
+
+@pytest.mark.parametrize(
+    ("order", "imported", "runtime"),
+    [
+        pytest.param(("amod_mutual", "bmod_mutual"), "AAlias", "", id="first-imported-first"),
+        pytest.param(("bmod_mutual", "amod_mutual"), "AAlias", "", id="last-imported-first"),
+        pytest.param(("amod_mutual", "bmod_mutual"), "AAlias", "    AAlias = complex\n", id="importer-rebinds-it"),
+        pytest.param(("amod_mutual", "bmod_mutual"), "AAlias, Missing", "", id="beside-a-name-never-bound"),
+    ],
+)
+def test_guarded_imports_of_each_other_read_what_each_guard_binds(
+    guarded_module: _GuardedModuleBuilder, order: tuple[str, str], imported: str, runtime: str
+) -> None:
+    guard = "from __future__ import annotations\nfrom typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n"
+    module = guarded_module(
+        "import amod_mutual\nimport bmod_mutual\n",
+        files={
+            "amod_mutual.py": f"{guard}    from bmod_mutual import BAlias\n\n    AAlias = int\nelse:\n"
+            "    AAlias = str\n\ndef func(value: BAlias) -> None: ...\n",
+            "bmod_mutual.py": f"{guard}    from amod_mutual import {imported}\n\n    BAlias = bytes\nelse:\n"
+            f"    BAlias = float\n{runtime}\ndef func(value: AAlias) -> None: ...\n",
+        },
+    )
+    hints = {name: get_all_type_hints([], getattr(module, name).func, f"{name}.func", {})["value"] for name in order}
+    assert hints == {"amod_mutual": bytes, "bmod_mutual": int}
 
 
 def test_guarded_import_adds_the_names_the_module_lacks_beside_a_runtime_one(
