@@ -35,6 +35,7 @@ from ._util import (
     defining_module,
     evaluate_annotation,
     get_obj_location,
+    guarded_forward_refs,
     guarded_names,
     type_hints,
 )
@@ -151,7 +152,7 @@ def _get_unevaluated_annotations(obj: Any) -> dict[str, Any]:
         return getattr(obj, "__annotations__", {})
     # ForwardRef proxies keep unevaluatable annotations renderable as their source text — see #712
     try:  # pragma: >=3.14 cover
-        return annotationlib.get_annotations(obj, format=annotationlib.Format.FORWARDREF)
+        return guarded_forward_refs(obj, annotationlib.get_annotations(obj, format=annotationlib.Format.FORWARDREF))
     except Exception:  # pragma: >=3.14 cover  # ruff:ignore[blind-except]  # see _get_type_hint
         return {}
 
