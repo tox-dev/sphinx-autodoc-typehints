@@ -124,6 +124,20 @@ class Switched:
         same: Engine[int]
 
 
+class Commented:
+    """A class whose method types its parameter in a comment."""
+
+    kind: Engine[int]
+
+    def bind(self, kind):  # ruff:ignore[missing-type-function-argument, missing-return-type-undocumented-public-function]  # typed by the comment
+        # type: (Engine[str]) -> None
+        """
+        Bind.
+
+        :param kind: the kind
+        """
+
+
 class Holder[T]:
     """
     A holder.

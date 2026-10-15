@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import ast
+import dataclasses
 import inspect
 import sys
 import textwrap
 import types
+import warnings
 from collections import defaultdict
 from functools import cache, partial
 from typing import TYPE_CHECKING, Any, Final, Union, cast, get_args, get_origin, get_type_hints
@@ -128,11 +130,7 @@ def _written_sources(
         scope_locals = scope_globals if localns is None else localns
         yield from ((key, written[key], scope_globals, scope_locals) for key in keys & written.keys())
         # the __init__ a dataclass or attrs generates takes its annotations from the fields the class body writes
-        if (
-            inspect.isroutine(obj)
-            and (unwritten := keys - written.keys())
-            and isinstance(owner := _owning_class(obj), type)
-        ):
+        if (unwritten := keys - written.keys()) and (owner := _generated_init_owner(obj)):
             yield from _written_sources(owner, unwritten, None, localns)
         return
     # the attribute of an instance is annotated in its class
@@ -148,8 +146,13 @@ def _written_sources(
         yield from ((key, written[key], dict(base_globals), base_locals) for key in keys & written.keys())
 
 
-def _owning_class(routine: Any) -> Any:
-    return object_at(getattr(defining_module(routine), "__name__", None), routine.__qualname__.split(".")[:-1])
+def _generated_init_owner(obj: Any) -> type | None:
+    """Return the dataclass or attrs class whose generated ``__init__`` the object is, code compiled from no file."""
+    code = getattr(obj, "__code__", None)
+    if getattr(obj, "__name__", None) != "__init__" or not getattr(code, "co_filename", "").startswith("<"):
+        return None
+    owner = object_at(getattr(defining_module(obj), "__name__", None), obj.__qualname__.split(".")[:-1])
+    return owner if dataclasses.is_dataclass(owner) or hasattr(owner, "__attrs_attrs__") else None
 
 
 def _source_annotations(module: str, qualname: str) -> dict[str, str]:
@@ -174,7 +177,10 @@ def _unambiguous(analyzer: ModuleAnalyzer) -> dict[tuple[str, str], str]:
     Sphinx keeps the last annotation written for a name, which under ``if``/``else`` may be the branch that did not run.
     """
     picker = _AnnotationsPicker(analyzer.code.splitlines(keepends=True), "utf-8")
-    picker.visit(ast.parse(analyzer.code, type_comments=True))
+    # the analyzer may have parsed the code where warnings were ignored, while -W error turns them into a SyntaxError
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", SyntaxWarning)
+        picker.visit(ast.parse(analyzer.code, type_comments=True))
     return {key: written.pop() for key, written in picker.written.items() if len(written) == 1}
 
 

@@ -3,6 +3,8 @@ from __future__ import annotations
 import dataclasses
 import importlib
 import re
+import types
+import warnings
 from operator import attrgetter
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -11,9 +13,10 @@ from unittest.mock import MagicMock, create_autospec, patch
 import pytest
 from sphinx import addnodes
 from sphinx.environment import BuildEnvironment
+from sphinx.pycode import ModuleAnalyzer
 
 from sphinx_autodoc_typehints._annotations import MyTypeAliasForwardRef
-from sphinx_autodoc_typehints._resolver._util import collect_documented_type_aliases, get_obj_location
+from sphinx_autodoc_typehints._resolver._util import collect_documented_type_aliases, get_obj_location, type_hints
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -281,13 +284,45 @@ def test_field_type_keeps_the_evaluated_type_when_the_source_keeps_no_arguments(
     assert expected in [line.strip() for line in (Path(app.outdir) / "index.txt").read_text().splitlines()]
 
 
+@pytest.mark.parametrize(
+    ("rst", "expected"),
+    [
+        pytest.param(
+            ".. autoclass:: dropped_module.Switched", '* **kind** ("Engine") -- the kind', id="branches-differ"
+        ),
+        pytest.param(
+            ".. automethod:: dropped_module.Commented.bind",
+            '**kind** ("Engine") -- the kind',
+            id="method-typed-by-a-comment-beside-a-class-attribute",
+        ),
+    ],
+)
 @pytest.mark.sphinx("text", testroot="dropped-arguments")
-def test_field_type_keeps_the_evaluated_type_when_branches_annotate_differently(
-    app: SphinxTestApp, write_rst: Callable[[str], None]
+def test_field_type_keeps_the_evaluated_type_when_the_source_tells_no_arguments(
+    app: SphinxTestApp, write_rst: Callable[[str], None], rst: str, expected: str
 ) -> None:
-    write_rst(".. autoclass:: dropped_module.Switched")
+    write_rst(rst)
     app.build()
 
-    assert '* **kind** ("Engine") -- the kind' in [
-        line.strip() for line in (Path(app.outdir) / "index.txt").read_text().splitlines()
-    ]
+    assert expected in [line.strip() for line in (Path(app.outdir) / "index.txt").read_text().splitlines()]
+
+
+def test_type_hints_reads_a_module_with_syntax_warnings_analyzed_where_they_were_ignored(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest
+) -> None:
+    name = re.sub(r"\W", "_", request.node.name)
+    (tmp_path / f"{name}.py").write_text(
+        "class Engine:\n"
+        "    def __class_getitem__(cls, item):\n"
+        "        return cls\n\n\n"
+        'PATTERN = "\\d"\n\n\n'
+        "class Holder:\n"
+        "    kind: Engine[int]\n"
+    )
+    monkeypatch.syspath_prepend(tmp_path)
+    monkeypatch.setattr(ModuleAnalyzer, "cache", {})
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", SyntaxWarning)
+        module = importlib.import_module(name)
+        ModuleAnalyzer.for_module(name).analyze()
+    assert type_hints(module.Holder, None, None)["kind"] == types.GenericAlias(module.Engine, int)
