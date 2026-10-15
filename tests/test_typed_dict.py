@@ -20,6 +20,12 @@ if TYPE_CHECKING:
         pytest.param(".. autoattribute:: typed_dict_module.Movie.rating", "NotRequired[float]", id="not-required"),
         pytest.param(".. autoattribute:: typed_dict_module.Movie.note", "NotRequired[str]", id="annotated"),
         pytest.param(".. autoattribute:: typed_dict_module.Plain.year", "int", id="not-a-typed-dict"),
+        pytest.param(".. autoattribute:: typed_dict_module.Shape.size", "ReadOnly[int | str]", id="read-only"),
+        pytest.param(
+            ".. autoattribute:: typed_dict_module.Shape.label",
+            "NotRequired[ReadOnly[str]]",
+            id="read-only-not-required",
+        ),
     ],
 )
 @pytest.mark.sphinx("text", testroot="typed-dict")
@@ -108,7 +114,10 @@ def test_typed_dict_key_redeclared_over_its_base(
     app.build()
 
     lines = (Path(app.outdir) / "index.txt").read_text().splitlines()
-    assert [line for line in lines if line.startswith("   ") and ": " in line] == ["   label: str", "   size: int"]
+    assert [line for line in lines if line.startswith("   ") and ": " in line] == [
+        "   label: ReadOnly[str]",
+        "   size: ReadOnly[int]",
+    ]
 
 
 @pytest.mark.sphinx("text", testroot="typed-dict")
@@ -117,7 +126,7 @@ def test_typed_dict_unpacked_key_redeclared_over_its_base(app: SphinxTestApp, wr
     app.build()
 
     lines = [line.strip() for line in (Path(app.outdir) / "index.txt").read_text().splitlines()]
-    assert '**size** ("int") -- the size' in lines
+    assert '**size** ("ReadOnly"["int"]) -- the size' in lines
 
 
 @pytest.mark.sphinx("text", testroot="typed-dict")

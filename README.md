@@ -285,14 +285,17 @@ def configure(**kwargs: Unpack[Options]) -> None:
     """
 ```
 
-renders `verbose` as `bool` and `level` as `NotRequired[int]`, since a caller may leave it out. A key described through
-`Annotated[..., Doc(...)]`, or every key with `always_document_param_types = True`, gets a keyword entry of its own.
+renders `verbose` as `bool` and `level` as `NotRequired[int]`, since a caller may leave it out, and a `ReadOnly` key
+keeps its `ReadOnly[...]`. A key described through `Annotated[..., Doc(...)]`, or every key with
+`always_document_param_types = True`, gets a keyword entry of its own.
 
 ### Document `TypedDict` classes
 
 A `TypedDict` documented with `:members:` and `:undoc-members:` lists its keys as attributes. A key that may be left out
 shows as `NotRequired[...]`, also when the class's `total=False` makes it so rather than its annotation, and one a
-caller must pass shows its type alone, also when written as `Required[...]`. The items a
+caller must pass shows its type alone, also when written as `Required[...]`. A
+[PEP 705](https://peps.python.org/pep-0705/) read-only key keeps its `ReadOnly[...]`, inside the `NotRequired[...]` as
+the typing spec nests them, so `rating: ReadOnly[NotRequired[float]]` shows `NotRequired[ReadOnly[float]]`. The items a
 [PEP 728](https://peps.python.org/pep-0728/) `TypedDict` accepts beyond its keys show as an `Extra items` field:
 
 ```python

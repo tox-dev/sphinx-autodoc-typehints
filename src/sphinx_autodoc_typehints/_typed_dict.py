@@ -126,12 +126,14 @@ def _typed_dict_bases(typed_dict: type) -> list[Any]:
 
 def _key_annotation(annotation: Any, *, optional: bool) -> Any:
     """
-    Drop the key qualifiers of a TypedDict annotation, marking a key that may be left out as ``NotRequired``.
+    Nest the key qualifiers of a TypedDict annotation as ``NotRequired[ReadOnly[...]]``, the order the typing spec uses.
 
-    A written ``Required`` or ``NotRequired`` decides over the class's ``__optional_keys__``, which misses both when
-    the annotations are strings.
+    A key that may be left out shows as ``NotRequired``, one a caller must pass without a marker. A written ``Required``
+    or ``NotRequired`` decides over the class's ``__optional_keys__``, which misses both when the annotations are
+    strings. ``ReadOnly`` stays, as it tells the reader the key cannot be assigned (PEP 705).
     """
     metadata: list[Any] = []
+    read_only = None
     while True:
         origin = get_origin(annotation)
         qualifier = getattr(origin, "_name", None)
@@ -139,8 +141,13 @@ def _key_annotation(annotation: Any, *, optional: bool) -> Any:
             break
         if qualifier in {"Required", "NotRequired"}:
             optional = qualifier == "NotRequired"
+        elif qualifier == "ReadOnly":
+            # the one written, as typing has none before Python 3.13
+            read_only = origin
         annotation, *more = get_args(annotation)
         metadata.extend(more)
+    if read_only is not None:
+        annotation = read_only[annotation]
     if optional:
         annotation = NotRequired[annotation]
     # an Annotated outermost keeps its Doc() a description
