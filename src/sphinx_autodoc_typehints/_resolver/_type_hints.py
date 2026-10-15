@@ -121,19 +121,24 @@ def get_descriptor_type_hint(obj: Any) -> Any | None:
 def _get_type_hint(autodoc_mock_imports: list[str], name: str, obj: Any, localns: Mapping[str, Any]) -> dict[str, Any]:
     resolve_type_guarded_imports(autodoc_mock_imports, obj)
     # a class reads the guard of the module defining each of its bases in that base's globals, not in shared locals
-    localns = {**({} if inspect.isclass(obj) else guarded_names(obj)), **_build_localns(obj, localns)}
+    scope = {**({} if inspect.isclass(obj) else guarded_names(obj)), **_build_localns(obj, localns)}
     try:
         if getattr(obj, "__no_type_check__", False):
             # typing.get_type_hints() unconditionally returns {} for @typing.no_type_check
             # targets; inspect.get_annotations() has no such guard, so use it to still surface
             # annotations in the rendered docs (see issue #680).
-            return inspect.get_annotations(obj, locals=localns, eval_str=True)
+            return inspect.get_annotations(obj, locals=scope, eval_str=True)
         globalns = annotation_globals(obj) if hasattr(obj, "__globals__") else None
-        return type_hints(obj, globalns, localns)
+        return type_hints(obj, globalns, scope)
     except RecursionError:
         return {}
     except Exception as exc:  # ruff:ignore[blind-except]  # an annotation runs user code, which may raise anything
-        if isinstance(exc, (NameError, AttributeError, SyntaxError)):
+        # ``_t.Alias`` where ``_t`` is a module whose own guard binds ``Alias``, as ``from . import _types as _t``
+        if (module := _guarded_attribute_owner(exc)) is not None:
+            if module.__name__ not in SHADOWED_BY_GUARD:
+                with guard_bound(autodoc_mock_imports, module):
+                    return _get_type_hint(autodoc_mock_imports, name, obj, localns)
+        elif isinstance(exc, (NameError, AttributeError, SyntaxError)):
             _LOGGER.warning(
                 'Cannot resolve forward reference in type annotations of "%s" (module %s): %s',
                 name,
@@ -143,7 +148,14 @@ def _get_type_hint(autodoc_mock_imports: list[str], name: str, obj: Any, localns
                 subtype="forward_reference",
                 location=get_obj_location(obj),
             )
-        return resolve_string_annotations(obj, _get_unevaluated_annotations(obj), localns)
+        return resolve_string_annotations(obj, _get_unevaluated_annotations(obj), scope)
+
+
+def _guarded_attribute_owner(exc: Exception) -> types.ModuleType | None:
+    """Return the module an attribute was missing from when its ``TYPE_CHECKING`` block binds that attribute."""
+    if isinstance(exc, AttributeError) and isinstance(module := exc.obj, types.ModuleType) and exc.name:
+        return module if _guard_binds(module, {exc.name}) else None
+    return None
 
 
 def resolve_annotations(
