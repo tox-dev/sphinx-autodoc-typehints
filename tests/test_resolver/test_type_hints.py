@@ -778,6 +778,49 @@ def test_lazy_annotation_naming_no_shadowed_name_keeps_its_closure(  # pragma: >
     assert (hints["value"], mock_logger.warning.call_args_list) == (int, [])
 
 
+_NO_SOURCE: Final = "from typing import Annotated, TypeVarTuple\n\nTs = TypeVarTuple('Ts')\n"
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason="annotations evaluate lazily from Python 3.14")
+@pytest.mark.parametrize(
+    ("declaration", "owner"),
+    [
+        pytest.param("def func(*args: *Ts, value: Decimal) -> None: ...\n", "func", id="starred"),
+        pytest.param(
+            "def func(check: Annotated[int, lambda v: v], value: Decimal) -> None: ...\n", "func", id="lambda-first"
+        ),
+        pytest.param(
+            "def func(value: Decimal, check: Annotated[int, lambda v: v]) -> None: ...\n", "func", id="lambda-last"
+        ),
+        pytest.param(
+            "class Holder:\n    check: Annotated[int, lambda v: v]\n    value: Decimal\n", "Holder", id="class"
+        ),
+    ],
+)
+def test_lazy_annotation_beside_one_without_source_reads_the_guarded_type(  # pragma: >=3.14 cover
+    guarded_module: _GuardedModuleBuilder, declaration: str, owner: str
+) -> None:
+    module = guarded_module(f"{_LAZY_FALLBACK}{_NO_SOURCE}{declaration}")
+    mock_logger = MagicMock()
+    with patch("sphinx_autodoc_typehints._resolver._type_hints._LOGGER", mock_logger):
+        hints = get_all_type_hints([], getattr(module, owner), f"{module.__name__}.{owner}", {})
+    assert (hints["value"], mock_logger.warning.call_args_list) == (Decimal, [])
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason="annotations evaluate lazily from Python 3.14")
+def test_lazy_annotation_neither_source_nor_runtime_evaluates_warns(  # pragma: >=3.14 cover
+    guarded_module: _GuardedModuleBuilder,
+) -> None:
+    module = guarded_module(
+        f"{_LAZY_FALLBACK}class Holder:\n    value: Decimal\n    other: Missing\n\n"
+        "Holder.__annotations__ = {'value': float}\n"
+    )
+    mock_logger = MagicMock()
+    with patch("sphinx_autodoc_typehints._resolver._type_hints._LOGGER", mock_logger):
+        get_all_type_hints([], module.Holder, f"{module.__name__}.Holder", {})
+    assert "name 'Missing' is not defined" in str(mock_logger.warning.call_args.args[-1])
+
+
 def test_guarded_import_adds_the_names_the_module_lacks_beside_a_runtime_one(
     guarded_module: _GuardedModuleBuilder,
 ) -> None:

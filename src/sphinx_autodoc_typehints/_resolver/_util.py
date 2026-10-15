@@ -22,7 +22,7 @@ if sys.version_info >= (3, 14):  # pragma: >=3.14 cover
     from annotationlib import Format, ForwardRef, get_annotations
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Mapping
+    from collections.abc import Iterable, Iterator, Mapping
 
     from sphinx.environment import BuildEnvironment
 
@@ -79,13 +79,24 @@ def _reads_shadowed_name(obj: Any) -> bool:  # pragma: >=3.14 cover
         (getattr(owner, "__annotate__", None) is not None or _holds_values(owner))
         and (shadowed := guarded_names(owner))
         and any(
-            isinstance(node, ast.Name) and node.id in shadowed
+            name in shadowed
             for source in _written(owner).values()
             if isinstance(source, str)
-            for node in ast.walk(ast.parse(source, mode="eval"))
+            for name in _names_read(source)
         )
         for owner in (obj.__mro__ if isinstance(obj, type) else (obj,))
     )
+
+
+def _names_read(source: str) -> Iterator[str]:  # pragma: >=3.14 cover
+    # as annotationlib compiles ``*Ts``, the starred annotation of ``*args``
+    code = f"({source},)[0]" if source.lstrip().startswith("*") else source
+    try:
+        tree = ast.parse(code, mode="eval")
+    except SyntaxError:
+        # the source prints a value it holds no code for, such as a lambda in ``Annotated`` metadata, by its repr
+        return
+    yield from (node.id for node in ast.walk(tree) if isinstance(node, ast.Name))
 
 
 def _hints_from_source(  # pragma: >=3.14 cover
@@ -116,14 +127,20 @@ def _evaluate_written(  # pragma: >=3.14 cover
     for name, source in _written(owner).items():
         if isinstance(source, str):
             ref = ForwardRef(source, is_argument=is_argument, is_class=isinstance(owner, type))
-            value = evaluate_forward_ref(
-                ref,
-                owner=owner,
-                globals=globalns,
-                locals=localns,
-                # typeshed declares a 3-tuple of one TypeVar, ParamSpec and TypeVarTuple, not a tuple of any of them
-                type_params=params,  # ty: ignore[invalid-argument-type]
-            )
+            try:
+                value = evaluate_forward_ref(
+                    ref,
+                    owner=owner,
+                    globals=globalns,
+                    locals=localns,
+                    # typeshed declares a 3-tuple of one TypeVar, ParamSpec and TypeVarTuple, not a tuple of any of them
+                    type_params=params,  # ty: ignore[invalid-argument-type]
+                )
+            except Exception:
+                # a value printed by its repr, as a lambda is, may not evaluate, so it reads as the runtime evaluated it
+                if name not in (runtime := getattr(owner, "__annotations__", None) or {}):
+                    raise
+                value = runtime[name]
         else:
             value = source
         hints[name] = type(None) if value is None else value
