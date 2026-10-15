@@ -9,6 +9,7 @@ import importlib.util
 import inspect
 import sys
 import types
+import warnings
 from collections import ChainMap
 from typing import (
     TYPE_CHECKING,
@@ -228,9 +229,14 @@ def _execute_guarded_code(
     namespace = getattr(obj, "__globals__", obj.__dict__)
     # what a type checker sees, which the functions the block defines take as their globals
     scope = dict(namespace)
+    try:
+        statements = _guarded_statements(module_code)
+    except SyntaxError as exc:
+        _warn_guarded_import(obj, exc)
+        return
     deferred: list[tuple[str, str, str]] = []
     # One statement at a time, so an unimportable optional dependency cannot strand the names after it — #741
-    for statement in _guarded_statements(module_code):
+    for statement in statements:
         # a stub of a function the module defines, such as an @overload, is no type an annotation names, and its
         # decorator would register it against the function
         if isinstance(statement, ast.FunctionDef | ast.AsyncFunctionDef) and statement.name in namespace:
@@ -264,10 +270,14 @@ def _bind_imports_from_running_guards() -> None:
                 namespace[bound] = names[name]
 
 
-def _guarded_statements(module_code: str) -> Iterator[ast.stmt]:
-    for node in ast.parse(module_code).body:
-        if isinstance(node, ast.If):
-            yield from _type_checking_branch(node)
+def _guarded_statements(module_code: str) -> list[ast.stmt]:
+    if "TYPE_CHECKING" not in module_code:
+        return []
+    # the module compiled already, so its warnings are no news, and -W error would turn them into a SyntaxError
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", SyntaxWarning)
+        tree = ast.parse(module_code)
+    return [statement for node in tree.body if isinstance(node, ast.If) for statement in _type_checking_branch(node)]
 
 
 def _type_checking_branch(node: ast.If) -> list[ast.stmt]:
@@ -391,9 +401,11 @@ def _import_as_guarded(
 
 
 def _guard_binds(module: types.ModuleType, names: set[str]) -> bool:
-    return "TYPE_CHECKING" in (module_code := _module_source(module)) and any(
-        name in names for statement in _guarded_statements(module_code) for name in _defined_names(statement)
-    )
+    try:
+        statements = _guarded_statements(_module_source(module))
+    except SyntaxError:
+        return False
+    return any(name in names for statement in statements for name in _defined_names(statement))
 
 
 def _imported_modules(statement: ast.stmt, package: str | None) -> Iterator[str]:
