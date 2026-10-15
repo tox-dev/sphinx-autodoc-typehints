@@ -1051,6 +1051,27 @@ def _guards_importing_each_other(
     }
 
 
+def test_guarded_import_parses_a_module_whose_guard_binds_none_of_its_names_once(
+    guarded_module: _GuardedModuleBuilder,
+) -> None:
+    provider = f"{_GUARD}    from decimal import Decimal\n\nValue = int\n"
+    importers = ("first_importer", "second_importer")
+    module = guarded_module(
+        "".join(f"import {name}\n" for name in importers),
+        files={
+            "guard_provider.py": provider,
+            **{
+                f"{name}.py": f"{_GUARD}    from guard_provider import Value\n\ndef func(value: Value) -> None: ...\n"
+                for name in importers
+            },
+        },
+    )
+    with patch("ast.parse", wraps=ast.parse) as parse:
+        for name in importers:
+            get_all_type_hints([], getattr(module, name).func, f"{name}.func", {})
+    assert [call.args[0] for call in parse.call_args_list].count(provider) == 1
+
+
 def test_guarded_import_adds_the_names_the_module_lacks_beside_a_runtime_one(
     guarded_module: _GuardedModuleBuilder,
 ) -> None:

@@ -12,6 +12,7 @@ import sys
 import types
 import warnings
 from collections import ChainMap
+from functools import cache
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -276,10 +277,13 @@ def _bind_imports_from_running_guards() -> None:
                 namespace[bound] = names[name]
 
 
-def _guarded_statements(module_code: str) -> tuple[list[ast.stmt], list[SyntaxError]]:
+# every importer of a module asks again while its guard binds none of the names imported, and parsing typing takes
+# milliseconds; keyed on the source, so a module edited and reloaded is parsed again
+@cache
+def _guarded_statements(module_code: str) -> tuple[tuple[ast.stmt, ...], tuple[SyntaxError, ...]]:
     """Return the statements only a type checker runs, and why the guards that could not be read failed to parse."""
     if "TYPE_CHECKING" not in module_code:
-        return [], []
+        return (), ()
     # the module compiled already, so its warnings are no news, and -W error would turn them into a SyntaxError
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", SyntaxWarning)
@@ -287,9 +291,9 @@ def _guarded_statements(module_code: str) -> tuple[list[ast.stmt], list[SyntaxEr
             nodes, errors = ast.parse(module_code).body, []
         except SyntaxError:
             nodes, errors = _parse_guards_alone(module_code)
-    return [
+    return tuple(
         statement for node in nodes if isinstance(node, ast.If) for statement in _type_checking_branch(node)
-    ], errors
+    ), tuple(errors)
 
 
 def _parse_guards_alone(module_code: str) -> tuple[list[ast.stmt], list[SyntaxError]]:
