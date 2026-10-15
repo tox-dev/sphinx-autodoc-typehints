@@ -28,7 +28,7 @@ class dummy_module.GoogleAttributes
       the count
 
       Type:
-         int
+         "int"
 """,
             id="attribute-typed-from-annotation",
         ),
@@ -54,6 +54,29 @@ def test_napoleon_class_annotation_lookup(
     app.build()
 
     assert (Path(app.srcdir) / "_build/text/index.txt").read_text() == expected
+
+
+@pytest.mark.parametrize(
+    ("use_ivar", "expected"),
+    [
+        pytest.param(
+            False, '   location\n\n      the location\n\n      Type:\n         "list"["Path"]\n', id="attribute"
+        ),
+        pytest.param(True, '   Variables:\n      **location** ("list"["Path"]) -- the location\n', id="ivar"),
+    ],
+)
+@pytest.mark.parametrize("cls", ["GoogleInitAttributes", "NumpyInitAttributes"])
+@pytest.mark.sphinx("text", testroot="dummy")
+def test_napoleon_attribute_from_init_rendered_as_field(
+    app: SphinxTestApp, write_rst: Callable[[str], None], cls: str, use_ivar: bool, expected: str
+) -> None:
+    app.config.napoleon_use_ivar = use_ivar
+    # documenting an attribute has autodoc add the __init__ annotations of the module's classes to theirs, where
+    # napoleon reads them
+    write_rst(f".. autoattribute:: dummy_module.GoogleAttributes.count\n\n.. autoclass:: dummy_module.{cls}")
+    app.build()
+
+    assert (Path(app.srcdir) / "_build/text/index.txt").read_text().split("Class docstring.\n\n")[1] == expected
 
 
 @pytest.mark.sphinx(

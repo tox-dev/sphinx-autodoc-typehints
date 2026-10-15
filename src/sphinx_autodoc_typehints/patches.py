@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 from functools import lru_cache, partial
 from typing import TYPE_CHECKING, Any, Final, cast
 
@@ -82,7 +83,10 @@ def _patch_google_docstring_lookup_annotation() -> None:
     original_parse_attributes = GoogleDocstring._parse_attributes_section
 
     def parse_attributes(self: GoogleDocstring, section: str) -> list[str]:
-        # the class annotations are right for its attributes, so only parameter fields go without them
+        # the extension types a class's attributes, rendered like its other fields, where napoleon would write plain
+        # text, so only a module's attributes take napoleon's lookup of its annotations
+        if inspect.isclass(self._obj):
+            return original_parse_attributes(self, section)
         vars(self)["_lookup_annotation"] = partial(original_lookup, self)
         try:
             return original_parse_attributes(self, section)

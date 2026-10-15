@@ -174,11 +174,13 @@ and the types go in parentheses after each name, where napoleon puts a type writ
 the docstring is kept. With [numpydoc](https://numpydoc.readthedocs.io/), an `Other Parameters` section renders this way
 too, under its own heading.
 
-The extension supplies the types napoleon would otherwise read from the annotations for parameters, while napoleon's
-`Attributes` sections keep its own lookup of the class body's annotations. An attribute annotated only where `__init__`
-assigns it gets its type from the extension, whether napoleon writes the section as `:ivar:` fields or, with
-`napoleon_use_ivar` off, as `.. attribute::` entries. A keyword argument napoleon writes as a `:keyword:` field gets a
-`:paramtype:` next to it, and a `:kwtype:` napoleon wrote from the docstring counts as an existing type.
+The extension supplies the types napoleon would otherwise read from the annotations for parameters and for the
+attributes in a class's `Attributes` section, annotated in the class body or where `__init__` assigns them, whether
+napoleon writes the section as `:ivar:` fields or, with `napoleon_use_ivar` off, as `.. attribute::` entries. These
+render like any other field, linked and with their arguments, while a type written in the docstring, as in
+`count (int): ...`, stays as written. A module's `Attributes` section keeps napoleon's own lookup of its annotations. A
+keyword argument napoleon writes as a `:keyword:` field gets a `:paramtype:` next to it, and a `:kwtype:` napoleon wrote
+from the docstring counts as an existing type.
 
 ### Use with numpydoc
 
