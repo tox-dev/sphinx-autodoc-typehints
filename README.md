@@ -201,7 +201,8 @@ extensions = [
 The `Parameters`, `Other Parameters`, `Returns`, `Yields` and `Raises` sections numpydoc produces are turned into field
 lists first, so the types from the annotations go in as they do for Sphinx-style docstrings. An entry naming several
 parameters, `a, b : int`, is split into one per name, and a type written in the docstring is kept for a parameter
-without an annotation.
+without an annotation. A `:Parameters:` field list written by hand, as in docutils' own docstrings, renders as written:
+numpydoc sets every parameter name in bold, and one without is not taken for its output.
 
 ### Control return type display
 

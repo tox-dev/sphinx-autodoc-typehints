@@ -604,6 +604,34 @@ def test_process_docstring_numpydoc_other_parameters_keep_their_section() -> Non
     ]
 
 
+@pytest.mark.parametrize(
+    "body",
+    [
+        pytest.param(
+            [
+                "    `name` : str",
+                "        The name,",
+                "        on two lines.",
+                "    `count` : int",
+                "        How many.",
+            ],
+            id="definition-list",
+        ),
+        pytest.param(
+            ["    - `name` -- the name, which goes on", "      for two lines.", "    - `count` -- how many."],
+            id="bullets",
+        ),
+    ],
+)
+def test_process_docstring_leaves_a_docutils_parameters_field(body: list[str]) -> None:
+    def scale(name: str, count: int) -> None: ...
+
+    lines = ["Summary.", "", ":Parameters:", *body, ""]
+    expected = lines.copy()
+    process_docstring(make_docstring_app(typehints_document_rtype=False), "function", "mod.scale", scale, None, lines)
+    assert lines == expected
+
+
 def test_process_docstring_numpydoc_separates_an_added_param_from_its_comment() -> None:
     def ratio(a: int) -> None: ...
 
