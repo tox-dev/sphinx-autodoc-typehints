@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 import importlib
 import sys
+from decimal import Decimal
 from typing import TYPE_CHECKING, Annotated, ClassVar, Final, Optional
 
 import pytest
@@ -256,3 +257,28 @@ def test_lazy_class_body_annotation_of_a_base_reads_the_guard_of_its_module(  # 
         r":vartype amount: :sphinx_autodoc_typehints_type:`\:py\:class\:\`\~decimal.Decimal\``",
         ":ivar amount: the amount",
     ]
+
+
+def test_class_body_annotation_of_a_base_ignores_the_guard_of_the_module_of_a_subclass(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "unguarded_parent.py").write_text(
+        "from __future__ import annotations\n\nItem = int\n\nclass Base:\n    inherited: Item\n"
+    )
+    (tmp_path / "guarded_child.py").write_text(
+        "from __future__ import annotations\n"
+        "from typing import TYPE_CHECKING\n"
+        "from unguarded_parent import Base\n"
+        "\n"
+        "if TYPE_CHECKING:\n"
+        "    from decimal import Decimal as Item\n"
+        "else:\n"
+        "    Item = str\n"
+        "\n"
+        "class Child(Base):\n"
+        "    own: Item\n"
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+    child = importlib.import_module("guarded_child").Child
+    resolve_type_guarded_imports([], child)
+    assert get_class_body_annotations(child) == {"inherited": int, "own": Decimal}

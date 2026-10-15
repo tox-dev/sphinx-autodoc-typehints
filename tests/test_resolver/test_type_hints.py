@@ -299,6 +299,7 @@ def guarded_module(tmp_path: Path, request: pytest.FixtureRequest) -> Iterator[_
     for loaded, module in list(sys.modules.items()):
         if str(getattr(module, "__file__", None) or "").startswith(str(tmp_path)):
             del sys.modules[loaded]
+            SHADOWED_BY_GUARD.pop(loaded, None)
 
 
 def test_guarded_import_binds_names_below_an_unimportable_one(
@@ -776,6 +777,114 @@ def test_lazy_annotation_naming_no_shadowed_name_keeps_its_closure(  # pragma: >
     with patch("sphinx_autodoc_typehints._resolver._type_hints._LOGGER", mock_logger):
         hints = get_all_type_hints([], module.make(), f"{module.__name__}.func", {})
     assert (hints["value"], mock_logger.warning.call_args_list) == (int, [])
+
+
+_NO_SOURCE: Final = "from typing import Annotated, TypeVarTuple\n\nTs = TypeVarTuple('Ts')\n"
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason="annotations evaluate lazily from Python 3.14")
+@pytest.mark.parametrize(
+    ("declaration", "owner"),
+    [
+        pytest.param("def func(*args: *Ts, value: Decimal) -> None: ...\n", "func", id="starred"),
+        pytest.param(
+            "def func(check: Annotated[int, lambda v: v], value: Decimal) -> None: ...\n", "func", id="lambda-first"
+        ),
+        pytest.param(
+            "def func(value: Decimal, check: Annotated[int, lambda v: v]) -> None: ...\n", "func", id="lambda-last"
+        ),
+        pytest.param(
+            "class Holder:\n    check: Annotated[int, lambda v: v]\n    value: Decimal\n", "Holder", id="class"
+        ),
+    ],
+)
+def test_lazy_annotation_beside_one_without_source_reads_the_guarded_type(  # pragma: >=3.14 cover
+    guarded_module: _GuardedModuleBuilder, declaration: str, owner: str
+) -> None:
+    module = guarded_module(f"{_LAZY_FALLBACK}{_NO_SOURCE}{declaration}")
+    mock_logger = MagicMock()
+    with patch("sphinx_autodoc_typehints._resolver._type_hints._LOGGER", mock_logger):
+        hints = get_all_type_hints([], getattr(module, owner), f"{module.__name__}.{owner}", {})
+    assert (hints["value"], mock_logger.warning.call_args_list) == (Decimal, [])
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason="annotations evaluate lazily from Python 3.14")
+def test_lazy_annotation_neither_source_nor_runtime_evaluates_warns(  # pragma: >=3.14 cover
+    guarded_module: _GuardedModuleBuilder,
+) -> None:
+    module = guarded_module(
+        f"{_LAZY_FALLBACK}class Holder:\n    value: Decimal\n    other: Missing\n\n"
+        "Holder.__annotations__ = {'value': float}\n"
+    )
+    mock_logger = MagicMock()
+    with patch("sphinx_autodoc_typehints._resolver._type_hints._LOGGER", mock_logger):
+        get_all_type_hints([], module.Holder, f"{module.__name__}.Holder", {})
+    assert "name 'Missing' is not defined" in str(mock_logger.warning.call_args.args[-1])
+
+
+@pytest.mark.parametrize(
+    "future",
+    [
+        pytest.param("from __future__ import annotations\n", id="stringified"),
+        pytest.param(
+            "",
+            id="lazy",
+            marks=pytest.mark.skipif(sys.version_info < (3, 14), reason="annotations evaluate lazily from Python 3.14"),
+        ),
+    ],
+)
+def test_annotation_of_a_base_ignores_the_guard_of_the_module_of_a_subclass(
+    guarded_module: _GuardedModuleBuilder, future: str
+) -> None:
+    module = guarded_module(
+        f"{future}from typing import TYPE_CHECKING\n"
+        "from unguarded_base import Base\n"
+        "\n"
+        "if TYPE_CHECKING:\n"
+        "    from decimal import Decimal as Item\n"
+        "else:\n"
+        "    Item = str\n"
+        "\n"
+        "class Child(Base):\n"
+        "    own: Item\n",
+        files={"unguarded_base.py": f"{future}Item = int\n\nclass Base:\n    inherited: Item\n"},
+    )
+    hints = get_all_type_hints([], module.Child, f"{module.__name__}.Child", {})
+    assert hints == {"inherited": int, "own": Decimal}
+
+
+@pytest.mark.parametrize(
+    "imported",
+    [
+        pytest.param("Fn", id="runtime-name"),
+        pytest.param("Fn, Other", id="beside-a-guard-only-name"),
+    ],
+)
+def test_guarded_import_reads_a_name_as_the_guard_of_its_module_binds_it(
+    guarded_module: _GuardedModuleBuilder, imported: str
+) -> None:
+    module = guarded_module(
+        "from __future__ import annotations\n"
+        "from typing import TYPE_CHECKING\n"
+        "\n"
+        "if TYPE_CHECKING:\n"
+        f"    from guarded_source import {imported}\n"
+        "\n"
+        "def func(value: Fn) -> None: ...\n",
+        files={
+            "guarded_source.py": "from collections.abc import Callable\n"
+            "from typing import TYPE_CHECKING, Protocol\n"
+            "\n"
+            "if TYPE_CHECKING:\n"
+            "    class Fn(Protocol): ...\n"
+            "\n"
+            "    Other = int\n"
+            "else:\n"
+            "    Fn = Callable[[int], str]\n"
+        },
+    )
+    hint = get_all_type_hints([], module.func, f"{module.__name__}.func", {})["value"]
+    assert Protocol in getattr(hint, "__bases__", ())
 
 
 def test_guarded_import_adds_the_names_the_module_lacks_beside_a_runtime_one(
