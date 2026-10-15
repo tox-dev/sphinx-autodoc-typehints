@@ -169,3 +169,19 @@ def test_typed_dict_extra_items_reads_each_base_once(
 
     # the diamonds and their left and right, and autodoc once reading the members of the one documented
     assert sys.modules["typed_dict_module"].Unstated.asked == 3 * 10 + 1
+
+
+@pytest.mark.sphinx("text", testroot="typed-dict")
+def test_typed_dict_key_inherited_from_another_module_ignores_the_guard_of_the_subclass(
+    app: SphinxTestApp, write_rst: Callable[[str], None], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # autodoc lists the keys a TypedDict inherits only on the build importing its module
+    monkeypatch.delitem(sys.modules, "typed_dict_guarded_child", raising=False)
+    write_rst(".. autoclass:: typed_dict_guarded_child.Child\n   :members:\n   :undoc-members:")
+    app.build()
+
+    lines = (Path(app.outdir) / "index.txt").read_text().splitlines()
+    assert [line for line in lines if line.startswith("   ") and ": " in line] == [
+        "   inherited: int",
+        "   own: Decimal",
+    ]
