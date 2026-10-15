@@ -161,16 +161,21 @@ def inject_extra_items(app: Sphinx, cls: Any, lines: list[str]) -> None:
 
     ``closed=True`` means the same as ``extra_items=Never`` (PEP 728), so both show as an ``Extra items`` type.
     """
-    if (extra := _extra_items(cls)) is _OPEN or any(line.startswith(":Extra items:") for line in lines):
+    if (extra := _extra_items(cls, set())) is _OPEN or any(line.startswith(":Extra items:") for line in lines):
         return
     formatted = add_type_css_class(format_annotation(extra, app.config))
     lines.extend(["", f":Extra items: {formatted}"])
 
 
-def _extra_items(typed_dict: Any) -> Any:
-    """Return the type of the items a TypedDict accepts beyond its keys, which a subclass inherits, or ``_OPEN``."""
-    if not hasattr(typed_dict, "__optional_keys__"):
+def _extra_items(typed_dict: Any, seen: set[int]) -> Any:
+    """
+    Return the type of the items a TypedDict accepts beyond its keys, which a subclass inherits, or ``_OPEN``.
+
+    A diamond reaches a base along several paths, and a base read once stated nothing, so it is not read again.
+    """
+    if id(typed_dict) in seen or not hasattr(typed_dict, "__optional_keys__"):
         return _OPEN
+    seen.add(id(typed_dict))
     if (closed := getattr(typed_dict, "__closed__", None)) is True:
         return Never
     # the sentinel a TypedDict without extra_items holds, typing's from 3.15 or the backport's
@@ -184,7 +189,11 @@ def _extra_items(typed_dict: Any) -> Any:
     if closed is False:
         return _OPEN
     return next(
-        (found for base in getattr(typed_dict, "__orig_bases__", ()) if (found := _extra_items(base)) is not _OPEN),
+        (
+            found
+            for base in getattr(typed_dict, "__orig_bases__", ())
+            if (found := _extra_items(base, seen)) is not _OPEN
+        ),
         _OPEN,
     )
 
