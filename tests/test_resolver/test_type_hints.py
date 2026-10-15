@@ -809,6 +809,25 @@ def test_lazy_annotation_beside_one_without_source_reads_the_guarded_type(  # pr
 
 
 @pytest.mark.skipif(sys.version_info < (3, 14), reason="annotations evaluate lazily from Python 3.14")
+def test_lazy_annotation_stringified_union_of_a_mocked_type_evaluates_as_union(  # pragma: >=3.14 cover
+    guarded_module: _GuardedModuleBuilder,
+) -> None:
+    module = guarded_module(
+        "from __future__ import annotations\n"
+        "from typing import TYPE_CHECKING\n"
+        "\n"
+        "if TYPE_CHECKING:\n"
+        "    from absent_buffers import Buffer\n"
+        "else:\n"
+        "    Buffer = object\n"
+        "\n"
+        "def func(value: Buffer | str) -> None: ...\n"
+    )
+    hint = get_all_type_hints(["absent_buffers"], module.func, f"{module.__name__}.func", {})["value"]
+    assert (get_origin(hint), [str(arg) for arg in get_args(hint)]) == (Union, ["absent_buffers.Buffer", str(str)])
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason="annotations evaluate lazily from Python 3.14")
 def test_lazy_annotation_neither_source_nor_runtime_evaluates_warns(  # pragma: >=3.14 cover
     guarded_module: _GuardedModuleBuilder,
 ) -> None:

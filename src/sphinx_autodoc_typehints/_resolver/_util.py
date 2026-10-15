@@ -336,7 +336,10 @@ def _evaluate_written(  # pragma: >=3.14 cover
                 # a value printed by its repr, as a lambda is, may not evaluate, so it reads as the runtime evaluated it
                 if name not in (runtime := getattr(owner, "__annotations__", None) or {}):
                     raise
-                value = runtime[name]
+                # under ``from __future__ import annotations`` the runtime value is the source again, which reads
+                # ``X | Y`` of mocked operands as a Union
+                if isinstance(value := runtime[name], str):
+                    value = evaluate_annotation(value, globalns, localns)
         else:
             value = source
         hints[name] = type(None) if value is None else value
