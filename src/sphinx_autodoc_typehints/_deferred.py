@@ -11,6 +11,7 @@ from sphinx import addnodes
 from sphinx.errors import NoUri
 from sphinx.parsers import RSTParser
 from sphinx.transforms.post_transforms import SphinxPostTransform
+from sphinx.util import logging
 from sphinx.util.docutils import sphinx_domains
 
 from ._parser import parse, unescape
@@ -28,14 +29,17 @@ ALIAS_CHOICE_ROLE: Final = "sphinx_autodoc_typehints_alias"
 #: Node attribute and build environment attribute the two renderings are looked up through.
 ALIAS_CHOICE_KEY: Final = "sphinx_autodoc_typehints_alias_key"
 ALIAS_CHOICE_ENV_ATTR: Final = "_typehints_alias_choices"
+_DEFAULT_DOMAIN_KEY: Final = "sphinx_autodoc_typehints_default_domain"
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def alias_choice_role(
     _role: str,
     _rawtext: str,
     text: str,
-    _lineno: int,
-    _inliner: states.Inliner,
+    lineno: int,
+    inliner: states.Inliner,
     _options: dict[str, Any] | None = None,
     _content: list[str] | None = None,
 ) -> tuple[list[Node], list[Node]]:
@@ -43,6 +47,12 @@ def alias_choice_role(
     # No classes: `replace_self` would copy them onto whichever rendering wins
     node = nodes.inline("", "")
     node[ALIAS_CHOICE_KEY] = unescape(text)
+    # the docstring the marker came from, which the field list transform no longer keeps on the nodes around it
+    node.source, node.line = inliner.reporter.get_source_and_line(lineno)
+    # the renderings hold roles written for this spot, such as a formatter's :class:, which the write phase parses
+    # outside any document, so it needs the domain they would have resolved in here
+    if (domain := inliner.document.settings.env.current_document.default_domain) is not None:
+        node[_DEFAULT_DOMAIN_KEY] = domain.name
     return [node], []
 
 
@@ -106,9 +116,9 @@ class DeferAliasChoice(SphinxPostTransform):
                 node.replace_self([])  # nothing recorded this choice, e.g. a doctree from an older version
                 continue
             linked, expanded, *objtype = choice
-            replacement = self._reference(linked, objtype)
+            replacement = self._reference(node, linked, objtype)
             if replacement is None:
-                replacement = self._parse(expanded).children[0].children
+                replacement = self._parse(node, expanded).children[0].children
                 # An expanded value can name further aliases, whose choices are still to be made
                 pending.extend(marker for child in replacement for marker in self._markers(child))
             node.replace_self(list(replacement))
@@ -117,23 +127,36 @@ class DeferAliasChoice(SphinxPostTransform):
     def _markers(node: Node) -> list[nodes.Element]:
         return [n for n in node.findall(nodes.inline) if ALIAS_CHOICE_KEY in n]
 
-    def _parse(self, rst: str) -> nodes.document:
+    def _parse(self, marker: nodes.Element, rst: str) -> nodes.document:
         # the document being written carries its writer's settings, which lack the rST parser's (man has no tab_width)
         settings = get_default_settings(RSTParser())
         settings.env = self.env
-        with sphinx_domains(self.env):
-            doc = parse(rst, settings)
+        # reported through Sphinx below, against the spot in the document rather than this detached snippet
+        settings.warning_stream = False
+        current = self.env.current_document
+        default_domain = current.default_domain
+        current.default_domain = self.env.domains.get(marker.get(_DEFAULT_DOMAIN_KEY, ""))
+        try:
+            with sphinx_domains(self.env):
+                doc = parse(rst, settings)
+        finally:
+            current.default_domain = default_domain
+        for message in doc.findall(nodes.system_message):
+            if message["level"] >= settings.report_level:
+                _LOGGER.log(message["type"], message.children[0].astext(), location=marker, type="docutils")
+        for nested in self._markers(doc):
+            nested.source, nested.line = marker.source, marker.line
         for xref in doc.findall(addnodes.pending_xref):
             xref.setdefault("refdoc", self.env.docname)
         return doc
 
-    def _reference(self, linked: str, objtypes: list[str]) -> list[Node] | None:
+    def _reference(self, marker: nodes.Element, linked: str, objtypes: list[str]) -> list[Node] | None:
         """
         Render the reference ``linked`` describes, or ``None`` if nothing documents its target (as one of ``objtypes``).
 
         The target is the first reference: the type arguments after it resolve, or not, like any other reference.
         """
-        doc = self._parse(linked)
+        doc = self._parse(marker, linked)
         target = next(doc.findall(addnodes.pending_xref))
         # a role resolves to whatever object has the name, as :py:type: does to a class
         documented = self.env.get_domain("py").objects.get(target["reftarget"])  # ty: ignore[unresolved-attribute]

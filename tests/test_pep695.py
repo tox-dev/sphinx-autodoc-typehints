@@ -790,6 +790,32 @@ def test_eager_alias_documented_after_its_use_shows_its_value_in_the_signature(a
     assert "mod_eager.count_eager(amount: int, limit: int)" in result
 
 
+def _int_as_bool_class(annotation: object, _config: object) -> str | None:
+    return ":class:`bool`" if annotation is int else None
+
+
+def _int_as_unknown_role(annotation: object, _config: object) -> str | None:
+    return ":unknown:`bool`" if annotation is int else None
+
+
+@pytest.mark.sphinx("text", testroot="integration", confoverrides={"typehints_formatter": _int_as_bool_class})
+def test_eager_alias_value_keeps_the_roles_a_formatter_writes(app: SphinxTestApp) -> None:
+    (Path(app.srcdir) / "index.rst").write_text(".. autofunction:: mod_eager.get_user_eager\n")
+    app.build()
+
+    result = normalize_sphinx_text((Path(app.srcdir) / "_build/text/index.txt").read_text())
+    assert '"bool"' in result
+
+
+@pytest.mark.sphinx("text", testroot="integration", confoverrides={"typehints_formatter": _int_as_unknown_role})
+def test_eager_alias_value_reports_its_markup_errors_at_the_docstring(app: SphinxTestApp, warning: StringIO) -> None:
+    (Path(app.srcdir) / "index.rst").write_text(".. autofunction:: mod_eager.get_user_eager\n")
+    app.build()
+
+    expected = 'docstring of mod_eager.get_user_eager:3: ERROR: Unknown interpreted text role "unknown"'
+    assert expected in warning.getvalue()
+
+
 @pytest.mark.parametrize(
     ("directive", "expected"),
     [
