@@ -211,12 +211,6 @@ def type_alias_namespace(
     return localns | deferred, eager
 
 
-def documented_type_names(env: BuildEnvironment) -> frozenset[str]:
-    """Return the names the docs read so far document as a type, the ones an annotation may resolve to an alias."""
-    py_objects = env.get_domain("py").objects  # ty: ignore[unresolved-attribute]
-    return frozenset(name for name, entry in py_objects.items() if entry.objtype == "type")
-
-
 def collect_documented_type_aliases(
     obj: Any, module_prefix: str, env: BuildEnvironment
 ) -> tuple[dict[str, MyTypeAliasForwardRef], dict[str, WrittenTypeAlias]]:
@@ -294,7 +288,6 @@ __all__ = [
     "annotation_globals",
     "collect_documented_type_aliases",
     "defining_module",
-    "documented_type_names",
     "get_obj_location",
     "guarded_names",
     "is_documented",
