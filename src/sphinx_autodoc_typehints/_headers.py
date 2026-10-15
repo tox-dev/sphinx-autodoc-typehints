@@ -12,13 +12,7 @@ from sphinx.util import logging
 from sphinx.util.inspect import safe_getattr
 
 from ._annotations import annotation_state, format_annotation, signature_text
-from ._resolver import (
-    is_documented,
-    object_at,
-    resolve_annotations,
-    resolve_type_guarded_imports,
-    type_alias_namespace,
-)
+from ._resolver import guard_bound, is_documented, object_at, resolve_annotations, type_alias_namespace
 from ._type_params import bound_type_args, specialize
 from ._typed_dict import typed_dict_keys
 
@@ -60,9 +54,7 @@ def render_header_types(app: Sphinx, domain: str, objtype: str, contentnode: add
                 app.config,
                 _typehints_env=app.env,
                 _typehints_module_prefix=name.rpartition(".")[0],
-                _typehints_resolve_guarded_imports=partial(
-                    resolve_type_guarded_imports, app.config.autodoc_mock_imports
-                ),
+                _typehints_guard_bound=partial(guard_bound, app.config.autodoc_mock_imports),
                 _typehints_signature=True,
             ):
                 short_literals = app.config.python_display_short_literal_types

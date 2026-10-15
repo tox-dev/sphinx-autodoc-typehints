@@ -13,11 +13,13 @@ import warnings
 from collections import OrderedDict
 from collections.abc import Iterator, Mapping, Sequence
 from csv import Error
-from decimal import Context, Decimal
+from decimal import Decimal
 from fractions import Fraction
 from operator import attrgetter
 from pathlib import Path
+from textwrap import dedent
 from typing import (
+    TYPE_CHECKING,
     Any,
     Final,
     ParamSpec,
@@ -50,6 +52,11 @@ from sphinx_autodoc_typehints._resolver._type_hints import (
     resolve_type_guarded_imports,
 )
 from sphinx_autodoc_typehints._resolver._util import SHADOWED_BY_GUARD
+
+if TYPE_CHECKING:
+    from io import StringIO
+
+    from sphinx.testing.util import SphinxTestApp
 
 STUB_ROOT = Path(__file__).parent.parent / "roots" / "test-pyi-stubs"
 
@@ -1072,9 +1079,7 @@ def test_guarded_import_parses_a_module_whose_guard_binds_none_of_its_names_once
     assert [call.args[0] for call in parse.call_args_list].count(provider) == 1
 
 
-def test_guarded_import_adds_the_names_the_module_lacks_beside_a_runtime_one(
-    guarded_module: _GuardedModuleBuilder,
-) -> None:
+def test_guarded_import_adds_no_name_to_the_module(guarded_module: _GuardedModuleBuilder) -> None:
     module = guarded_module(
         "from typing import TYPE_CHECKING\n"
         "\n"
@@ -1085,8 +1090,104 @@ def test_guarded_import_adds_the_names_the_module_lacks_beside_a_runtime_one(
         "\n"
         "def func(value: Decimal) -> None: ...\n"
     )
+    runtime = dict(vars(module))
     resolve_type_guarded_imports([], module.func)
-    assert (module.Context, module.Decimal) == (Context, float)
+    assert vars(module) == runtime
+
+
+def test_guarded_module_alias_reads_what_the_guard_of_that_module_binds(
+    guarded_module: _GuardedModuleBuilder,
+) -> None:
+    module = guarded_module(
+        "from __future__ import annotations\n"
+        "from typing import TYPE_CHECKING\n"
+        "\n"
+        "if TYPE_CHECKING:\n"
+        "    import guard_rebinding_types as _t\n"
+        "\n"
+        "def func(value: _t.Rebound, other: _t.Runtime) -> None: ...\n",
+        files={
+            "guard_rebinding_types.py": "from typing import TYPE_CHECKING\n"
+            "\n"
+            "Rebound = Runtime = object\n"
+            "\n"
+            "if TYPE_CHECKING:\n"
+            "    from decimal import Decimal as Rebound\n"
+        },
+    )
+    resolve_type_guarded_imports([], importlib.import_module("guard_rebinding_types"))
+    hints = get_all_type_hints([], module.func, f"{module.__name__}.func", {})
+    assert hints == {"value": Decimal, "other": object, "return": type(None)}
+
+
+@pytest.mark.parametrize(
+    ("package", "aliases", "kind"),
+    [
+        pytest.param("guard_leak_class", "Kind = int\n", '"int"', id="guard-only-class"),
+        pytest.param("guard_leak_alias", 'type Kind = "Left" | "Right"\n', '"Kind"', id="alias-whose-value-fails"),
+    ],
+)
+@pytest.mark.sphinx("text", testroot="integration")
+def test_guard_run_for_an_imported_member_adds_no_member_to_its_module(
+    app: SphinxTestApp, status: StringIO, monkeypatch: pytest.MonkeyPatch, package: str, aliases: str, kind: str
+) -> None:
+    pkg = Path(app.srcdir) / package
+    pkg.mkdir()
+    (pkg / "__init__.py").touch()
+    (pkg / "aliases.py").write_text(aliases)
+    (pkg / "impl.py").write_text(
+        dedent("""\
+        from __future__ import annotations
+
+        from typing import TYPE_CHECKING
+
+        if TYPE_CHECKING:
+            from typing import Protocol
+
+            from .aliases import Kind
+
+            class Reader(Protocol):
+                def read(self) -> bytes: ...
+
+
+        class Parser:
+            \"\"\"Parse.\"\"\"
+
+            def parse(self, reader: Reader, kind: Kind) -> int:
+                \"\"\"Parse it.
+
+                :param reader: the source
+                :param kind: the kind
+                \"\"\"
+                return 1
+        """)
+    )
+    (pkg / "api.py").write_text(f"from {package}.impl import Parser\n")
+    (Path(app.srcdir) / "index.rst").write_text(
+        f".. automodule:: {package}.api\n   :members:\n\n"
+        f".. automodule:: {package}.impl\n   :members:\n   :undoc-members:\n"
+    )
+    monkeypatch.syspath_prepend(str(app.srcdir))
+    app.build()
+
+    assert "build succeeded" in status.getvalue()
+    assert (Path(app.srcdir) / "_build/text/index.txt").read_text() == dedent(f"""\
+        class {package}.impl.Parser
+
+           Parse.
+
+           parse(reader, kind)
+
+              Parse it.
+
+              Parameters:
+                 * **reader** ("Reader") -- the source
+
+                 * **kind** ({kind}) -- the kind
+
+              Return type:
+                 "int"
+        """)
 
 
 def test_guarded_overload_stubs_of_a_runtime_function_register_no_overloads(

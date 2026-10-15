@@ -40,6 +40,7 @@ from ._util import (
     get_obj_location,
     guarded_forward_refs,
     guarded_names,
+    guarded_names_bound,
     type_hints,
 )
 
@@ -47,14 +48,14 @@ if sys.version_info >= (3, 14):  # pragma: >=3.14 cover
     import annotationlib
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Mapping
+    from collections.abc import Generator, Iterator, Mapping
 
 _LOGGER = logging.getLogger(__name__)
 #: Modules whose ``TYPE_CHECKING`` block is executing, innermost last.
 _RUNNING_GUARDS: Final[list[str]] = []
-#: Guarded imports that named a module from ``_RUNNING_GUARDS``: namespace and shadowed names of the importer, the name
-#: it binds, the source module, the imported name, and whether the importer binds that name at runtime.
-_IMPORTS_FROM_RUNNING_GUARDS: Final[list[tuple[dict[str, Any], dict[str, Any], str, str, str, bool]]] = []
+#: Guarded imports that named a module from ``_RUNNING_GUARDS``: the guarded names of the importer, the name it binds,
+#: the source module, and the imported name.
+_IMPORTS_FROM_RUNNING_GUARDS: Final[list[tuple[dict[str, Any], str, str, str]]] = []
 #: A statement of the module body starting with ``if``, with its indented lines and its ``elif`` and ``else`` branches.
 _TOP_LEVEL_IF: Final = re.compile(r"^if\b.*\n(?:(?:[ \t]+.*|(?:elif|else)\b.*)?\n)*", re.MULTILINE)
 
@@ -190,11 +191,10 @@ def resolve_string_annotations(
 
 def resolve_type_guarded_imports(autodoc_mock_imports: list[str], obj: Any) -> None:
     """
-    Execute the ``if TYPE_CHECKING`` block of *obj*'s module, binding the names it guards.
+    Execute the ``if TYPE_CHECKING`` block of *obj*'s module, recording the names it binds for :func:`guarded_names`.
 
-    The module gains the names it lacks, which what reads its globals directly, such as autodoc or a ``type`` alias,
-    needs too. A name it binds at runtime keeps that binding, so its own code sees what it always sees; annotations see
-    the guarded binding through :func:`guarded_names`.
+    The module itself stays as it is: autodoc would list a name it gained as a member, and its own code sees what it
+    always sees.
     """
     if inspect.isclass(obj) and (module := inspect.getmodule(obj)) is not None:
         obj = module
@@ -210,6 +210,14 @@ def resolve_type_guarded_imports(autodoc_mock_imports: list[str], obj: Any) -> N
             _RUNNING_GUARDS.pop()
             if not _RUNNING_GUARDS:
                 _bind_imports_from_running_guards()
+
+
+@contextlib.contextmanager
+def guard_bound(autodoc_mock_imports: list[str], obj: Any) -> Generator[None, None, None]:
+    """Run the ``if TYPE_CHECKING`` block of the module of ``obj``, binding the names it adds while the block runs."""
+    resolve_type_guarded_imports(autodoc_mock_imports, obj)
+    with guarded_names_bound(obj):
+        yield
 
 
 def _module_source(module: types.ModuleType) -> str:
@@ -254,27 +262,20 @@ def _execute_guarded_code(
             else:
                 _LOGGER.debug("Skipped guarded statement the interpreter rejects: %r", exc)
                 _bind_unresolvable_names(scope, statement)
-    _IMPORTS_FROM_RUNNING_GUARDS.extend(
-        (namespace, shadowed, bound, source, name, bound in namespace) for bound, source, name in deferred
-    )
-    for name, value in scope.items():
-        if name not in namespace:
-            namespace[name] = value
-        elif namespace[name] is not value:
-            shadowed[name] = value
+    _IMPORTS_FROM_RUNNING_GUARDS.extend((shadowed, bound, source, name) for bound, source, name in deferred)
+    shadowed.update({
+        name: value for name, value in scope.items() if name not in namespace or namespace[name] is not value
+    })
 
 
 def _bind_imports_from_running_guards() -> None:
     """Bind what a guard imported from a guard that was still running, now that every guard it waited on finished."""
     while _IMPORTS_FROM_RUNNING_GUARDS:
-        namespace, shadowed, bound, source, name, at_runtime = _IMPORTS_FROM_RUNNING_GUARDS.pop()
+        shadowed, bound, source, name = _IMPORTS_FROM_RUNNING_GUARDS.pop()
         # a guard may have taken the module out of sys.modules since, leaving only what its own guard bound
         module_globals = vars(module) if (module := sys.modules.get(source)) else {}
         if name in (names := ChainMap(SHADOWED_BY_GUARD[source], module_globals)):
-            if at_runtime:
-                shadowed[bound] = names[name]
-            else:
-                namespace[bound] = names[name]
+            shadowed[bound] = names[name]
 
 
 # every importer of a module asks again while its guard binds none of the names imported, and parsing typing takes
@@ -494,6 +495,7 @@ def _type_params(obj: Any) -> tuple[TypeVar | ParamSpec | TypeVarTuple, ...]:
 
 __all__ = [
     "get_all_type_hints",
+    "guard_bound",
     "resolve_annotations",
     "resolve_string_annotations",
     "resolve_type_guarded_imports",

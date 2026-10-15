@@ -10,6 +10,7 @@ import textwrap
 import types
 import warnings
 from collections import defaultdict
+from contextlib import contextmanager
 from functools import cache, partial
 from typing import TYPE_CHECKING, Any, Final, Union, cast, get_args, get_origin, get_type_hints
 
@@ -30,14 +31,15 @@ if sys.version_info >= (3, 14):  # pragma: >=3.14 cover
     from annotationlib import Format, ForwardRef, get_annotations
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Iterator, Mapping
+    from collections.abc import Callable, Generator, Iterable, Iterator, Mapping
 
     from sphinx.environment import BuildEnvironment
 
 _DOCUMENTED: Final = "sphinx_autodoc_typehints_documented"
 _UNION: Final = "__sphinx_autodoc_typehints_union__"
 _SUBSCRIPT: Final = "__sphinx_autodoc_typehints_subscript__"
-#: Per module, what its ``TYPE_CHECKING`` block binds a name to that the module binds to something else at runtime.
+#: Per module, what its ``TYPE_CHECKING`` block binds a name to that the module lacks or binds to something else at
+#: runtime; kept out of the module, where autodoc would list a name it lacks as a member.
 SHADOWED_BY_GUARD: Final[dict[str, dict[str, Any]]] = {}
 
 
@@ -419,8 +421,50 @@ def annotation_globals(obj: Any) -> dict[str, Any]:
 
 
 def guarded_names(obj: Any) -> dict[str, Any]:
-    """Return what the ``TYPE_CHECKING`` block of the module of ``obj`` binds the names it rebinds at runtime to."""
-    return SHADOWED_BY_GUARD.get(module.__name__, {}) if (module := defining_module(obj)) else {}
+    """Return what the ``TYPE_CHECKING`` block of the module of ``obj`` binds the names it lacks or rebinds to."""
+    if not (module := defining_module(obj)):
+        return {}
+    return {name: _as_guarded(value) for name, value in SHADOWED_BY_GUARD.get(module.__name__, {}).items()}
+
+
+def _as_guarded(value: Any) -> Any:
+    return _GuardedModule(value) if isinstance(value, types.ModuleType) else value
+
+
+class _GuardedModule:
+    """A module read as a type checker reads it, ``_t.Alias`` included where ``Alias`` only its guard binds."""
+
+    def __init__(self, module: types.ModuleType) -> None:
+        self._module = module
+
+    def __getattr__(self, name: str) -> Any:
+        if name in (guarded := SHADOWED_BY_GUARD.get(self._module.__name__, {})):
+            return _as_guarded(guarded[name])
+        return _as_guarded(getattr(self._module, name))
+
+
+@contextmanager
+def guarded_names_bound(obj: Any) -> Generator[None, None, None]:
+    """
+    Bind the names the guards of the modules defining ``obj`` and its bases add, only while the block runs.
+
+    What evaluates in the globals of the module itself reads them nowhere else, as autodoc evaluating an annotation and
+    the value of a ``type`` alias do. A name the module binds at runtime keeps that binding.
+    """
+    added: list[tuple[dict[str, Any], dict[str, Any]]] = []
+    owners = obj.__mro__ if isinstance(obj, type) else (obj,)
+    for module in {module for owner in owners if (module := defining_module(owner))}:
+        namespace = vars(module)
+        missing = {name: value for name, value in guarded_names(module).items() if name not in namespace}
+        namespace.update(missing)
+        added.append((namespace, missing))
+    try:
+        yield
+    finally:
+        for namespace, missing in added:
+            for name, value in missing.items():
+                if namespace.get(name) is value:
+                    del namespace[name]
 
 
 def defining_module(obj: Any) -> types.ModuleType | None:
@@ -530,6 +574,7 @@ __all__ = [
     "get_obj_location",
     "guarded_forward_refs",
     "guarded_names",
+    "guarded_names_bound",
     "is_documented",
     "note_documented",
     "object_at",

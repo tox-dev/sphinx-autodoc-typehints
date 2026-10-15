@@ -80,6 +80,7 @@ from ._resolver import (
     get_descriptor_type_hint,
     get_instance_var_annotations,
     get_obj_location,
+    guard_bound,
     note_documented,
     object_at,
     resolve_string_annotations,
@@ -525,7 +526,7 @@ def _resolved_type_hints(
         "_typehints_env": env,
         "_typehints_module_prefix": module_prefix,
         "_typehints_declared_type_params": declared_type_params(original_obj, obj, documenting),
-        "_typehints_resolve_guarded_imports": partial(resolve_type_guarded_imports, app.config.autodoc_mock_imports),
+        "_typehints_guard_bound": partial(guard_bound, app.config.autodoc_mock_imports),
     }
     return type_hints, written_as, state
 
@@ -592,7 +593,7 @@ def _type_module_attributes(
         app.config,
         _typehints_env=getattr(app, "env", None),
         _typehints_module_prefix=name,
-        _typehints_resolve_guarded_imports=partial(resolve_type_guarded_imports, app.config.autodoc_mock_imports),
+        _typehints_guard_bound=partial(guard_bound, app.config.autodoc_mock_imports),
     ):
         _inject_ivar_types(annotations, app, lines)
         _inject_attribute_types(annotations, app, lines)
@@ -611,7 +612,7 @@ def _maybe_inject_descriptor_type(app: Sphinx, what: str, name: str, obj: Any, l
         app.config,
         _typehints_env=getattr(app, "env", None),
         _typehints_module_prefix=_module_prefix(name),
-        _typehints_resolve_guarded_imports=partial(resolve_type_guarded_imports, app.config.autodoc_mock_imports),
+        _typehints_guard_bound=partial(guard_bound, app.config.autodoc_mock_imports),
     ):
         formatted = format_annotation(hint, app.config, short_literals=app.config.python_display_short_literal_types)
     lines.extend(["", f":type: {add_type_css_class(formatted)}"])

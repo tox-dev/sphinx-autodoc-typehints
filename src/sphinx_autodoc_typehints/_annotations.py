@@ -635,17 +635,31 @@ def _can_expand_alias(alias: TypeAliasType, config: Config) -> bool:
     the value uses can still be missing; run that block before giving up, so what we render does not depend on the
     order Sphinx reads modules in (#764).
     """
-    if _alias_value_evaluates(alias):
+    if _alias_evaluates(alias):
         return True
-    if (resolve_guarded_imports := getattr(config, "_typehints_resolve_guarded_imports", None)) is None:
+    if (guard_bound := getattr(config, "_typehints_guard_bound", None)) is None:
         return False
-    resolve_guarded_imports(inspect.getmodule(alias))
-    return _alias_value_evaluates(alias)
+    # they evaluate in the globals of the module, which hold what the block binds only while they evaluate
+    with guard_bound(inspect.getmodule(alias)):
+        return _alias_evaluates(alias)
+
+
+def _alias_evaluates(alias: TypeAliasType) -> bool:
+    """Whether the value evaluates, and the bound, constraints and default of each type parameter its value shows."""
+    return _alias_value_evaluates(alias) and all(map(_type_param_evaluates, alias.__type_params__))
 
 
 def _alias_value_evaluates(alias: TypeAliasType) -> bool:
     try:
         _ = alias.__value__
+    except Exception:  # ruff:ignore[blind-except]  # an annotation runs user code, which may raise anything
+        return False
+    return True
+
+
+def _type_param_evaluates(param: Any) -> bool:
+    try:
+        _ = [getattr(param, f"__{kind}__", None) for kind in ("bound", "constraints", "default")]
     except Exception:  # ruff:ignore[blind-except]  # an annotation runs user code, which may raise anything
         return False
     return True

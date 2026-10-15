@@ -602,6 +602,13 @@ def test_recursive_type_alias_from_other_module(
             '"Sequence"["int"]',
             id="generic",
         ),
+        pytest.param(
+            "pkg_764_bound",
+            "type Alias[T: Sequence[str]] = list[T]",
+            "Alias",
+            '"list"["TypeVar"("T", bound="Sequence"["str"])]',
+            id="type-parameter-bound",
+        ),
     ],
 )
 @pytest.mark.sphinx("text", testroot="integration")
