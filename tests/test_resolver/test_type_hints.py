@@ -1120,6 +1120,42 @@ def test_guarded_module_alias_reads_what_the_guard_of_that_module_binds(
     assert hints == {"value": Decimal, "other": object, "return": type(None)}
 
 
+_GUARDED_MODULE_ALIAS: Final = (
+    "from __future__ import annotations\n"
+    "from typing import TYPE_CHECKING\n"
+    "\n"
+    "if TYPE_CHECKING:\n"
+    "    import guard_alias_types as _t\n"
+    "\n"
+    "def func(value: _t.Number) -> None: ...\n"
+)
+
+
+def test_guarded_module_alias_runs_the_guard_of_that_module(guarded_module: _GuardedModuleBuilder) -> None:
+    module = guarded_module(
+        _GUARDED_MODULE_ALIAS,
+        files={
+            "guard_alias_types.py": "from typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n"
+            "    from decimal import Decimal as Number\n"
+        },
+    )
+    assert get_all_type_hints([], module.func, f"{module.__name__}.func", {})["value"] is Decimal
+
+
+def test_guarded_module_alias_its_guard_cannot_bind_does_not_warn(
+    guarded_module: _GuardedModuleBuilder, caplog: pytest.LogCaptureFixture
+) -> None:
+    module = guarded_module(
+        _GUARDED_MODULE_ALIAS,
+        files={
+            "guard_alias_types.py": "from typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n"
+            "    from decimal import NoSuchName as Number\n"
+        },
+    )
+    get_all_type_hints([], module.func, f"{module.__name__}.func", {})
+    assert not [record for record in caplog.records if record.levelno == logging.WARNING]
+
+
 @pytest.mark.parametrize(
     ("package", "aliases", "kind"),
     [
