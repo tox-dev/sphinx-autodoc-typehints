@@ -462,8 +462,10 @@ imports a dependency your docs environment lacks, the extension mocks it the way
 would, so its types still render as cross-references, in a pipe union such as `Thing | None` too; install it when you
 want those references to resolve. That includes a relative import of a sibling module that is absent. An import
 statement raises a warning when it fails for another reason, such as a dependency you have installed but that fails to
-import. A guarded statement that only a type checker accepts, and that imports nothing, is skipped silently, and the
-names it would define still work in annotations. Fix the environment, or suppress the warning:
+import. When the source of a module does not parse as a whole, as one a custom loader compiles from another language may
+not, each guard is read on its own, and one that does not parse warns too. A guarded statement that only a type checker
+accepts, and that imports nothing, is skipped silently, and the names it would define still work in annotations. Fix the
+environment, or suppress the warning:
 
 ```python
 suppress_warnings = ["sphinx_autodoc_typehints.guarded_import"]
@@ -746,7 +748,7 @@ All warnings can be suppressed via Sphinx's
 | `sphinx_autodoc_typehints`                    | Catch-all for every warning from this extension.                                                          |
 | `sphinx_autodoc_typehints.comment`            | A type comment (`# type: ...`) couldn't be parsed, or lists fewer types than the function has parameters. |
 | `sphinx_autodoc_typehints.forward_reference`  | An annotation names something undefined or isn't valid Python, on 3.14 unevaluated too; shown as written. |
-| `sphinx_autodoc_typehints.guarded_import`     | An import in a `TYPE_CHECKING` block failed for a reason other than an absent dependency.                 |
+| `sphinx_autodoc_typehints.guarded_import`     | A `TYPE_CHECKING` import failed other than for an absent dependency, or a guard didn't parse.             |
 | `sphinx_autodoc_typehints.local_function`     | A method of a class defined inside a function can't be processed; wrap wrappers with `functools.wraps`.   |
 | `sphinx_autodoc_typehints.multiple_ast_nodes` | The source of an unannotated function didn't parse to one definition, so its type comment can't be read.  |
 
