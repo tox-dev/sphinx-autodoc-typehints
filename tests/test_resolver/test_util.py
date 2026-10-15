@@ -187,6 +187,11 @@ def test_collect_documented_type_aliases_annotations_error(error: Exception) -> 
             id="instance-ivar",
         ),
         pytest.param(
+            ".. autoclass:: dropped_module.Column",
+            '* **limited** ("int") -- the limited',
+            id="instance-ivar-subscripting-in-a-nested-scope",
+        ),
+        pytest.param(
             ".. autoclass:: dropped_module.Record", '**kind** ("Engine"["int"]) -- the kind', id="dataclass-field"
         ),
         pytest.param(".. autoclass:: dropped_module.Entry", '**kind** ("Engine"["int"]) -- the kind', id="attrs-field"),

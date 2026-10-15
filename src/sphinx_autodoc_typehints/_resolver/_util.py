@@ -177,14 +177,16 @@ def _evaluated_again(hint: Any, source: str, globalns: dict[str, Any], localns: 
 def evaluate_annotation(source: str, globalns: dict[str, Any], localns: Mapping[str, Any]) -> Any:
     """Evaluate an annotation written as ``source``, keeping the arguments a class subscripted in it drops."""
     tree = _KeepArguments().visit(ast.parse(source, mode="eval"))
-    namespace = {**localns, _SUBSCRIPT: _subscript}
+    # a nested scope, such as a generator expression or a lambda, reads the globals but not the locals, so the helpers
+    # go in a copy of the globals, which leaves those of the module untouched
+    namespace = {**globalns, _SUBSCRIPT: _subscript}
     try:
-        return eval(compile(ast.fix_missing_locations(tree), "<annotation>", "eval"), globalns, namespace)  # ruff:ignore[suspicious-eval-usage]
+        return eval(compile(ast.fix_missing_locations(tree), "<annotation>", "eval"), namespace, localns)  # ruff:ignore[suspicious-eval-usage]
     except TypeError:
         # X | Y means Union[X, Y], which also accepts operands that don't support |, such as the objects
         # autodoc_mock_imports puts in place of a missing module's
         code = compile(ast.fix_missing_locations(_PipeAsUnion().visit(tree)), "<annotation>", "eval")
-        return eval(code, globalns, {**namespace, _UNION: Union})  # ruff:ignore[suspicious-eval-usage]
+        return eval(code, namespace | {_UNION: Union}, localns)  # ruff:ignore[suspicious-eval-usage]
 
 
 def _subscript(value: Any, item: Any) -> Any:
