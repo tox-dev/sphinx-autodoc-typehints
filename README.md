@@ -178,9 +178,13 @@ The extension supplies the types napoleon would otherwise read from the annotati
 attributes in an `Attributes` section: a class's, annotated in the class body or where `__init__` assigns them, and a
 module's, annotated at module level, whether napoleon writes the section as `:ivar:` fields or, with `napoleon_use_ivar`
 off, as `.. attribute::` entries. These render like any other field, linked and with their arguments, while a type
-written in the docstring, as in `count (int): ...`, stays as written. A keyword argument napoleon writes as a
-`:keyword:` field gets a `:paramtype:` next to it, and a `:kwtype:` napoleon wrote from the docstring counts as an
-existing type.
+written in the docstring, as in `count (int): ...`, stays as written. With
+[`napoleon_attr_annotations`](https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html#confval-napoleon_attr_annotations)
+set to `False`, the entries napoleon writes for an `Attributes` section take no type from annotations, as napoleon would
+give them none. The one exception is an attribute annotated where `__init__` assigns it, which still gets its type in
+napoleon's `:ivar:` fields (with `napoleon_use_ivar` on). An `:ivar:` field or `.. attribute::` entry written in the
+docstring itself keeps getting its type. A keyword argument napoleon writes as a `:keyword:` field gets a `:paramtype:`
+next to it, and a `:kwtype:` napoleon wrote from the docstring counts as an existing type.
 
 ### Use with numpydoc
 

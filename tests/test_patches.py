@@ -144,6 +144,88 @@ def test_napoleon_module_attributes_rendered_as_fields(
     assert (Path(app.srcdir) / "_build/text/index.txt").read_text().split("Module docstring.\n\n")[1] == expected
 
 
+@pytest.mark.parametrize(
+    ("directive", "use_ivar", "expected"),
+    [
+        pytest.param("autoclass:: dummy_module.GoogleAttributes", False, "   count\n\n      the count\n", id="class"),
+        pytest.param(
+            "autoclass:: dummy_module.GoogleAttributes",
+            True,
+            "   Variables:\n      **count** -- the count\n",
+            id="class-ivar",
+        ),
+        pytest.param(
+            "autoclass:: dummy_module.GoogleInitAttributes",
+            False,
+            "   location\n\n      the location\n",
+            id="init-assignment",
+        ),
+        pytest.param(
+            "automodule:: attributes_module",
+            False,
+            """\
+attributes_module.location
+
+   the location
+
+attributes_module.level
+
+   the level
+
+attributes_module.written
+
+   written by hand
+
+   Type:
+      str
+""",
+            id="module",
+        ),
+        pytest.param(
+            "automodule:: attributes_module",
+            True,
+            """\
+ivar location:
+   the location
+
+ivar level:
+   the level
+
+ivar written:
+   written by hand
+
+vartype written:
+   str
+""",
+            id="module-ivar",
+        ),
+    ],
+)
+@pytest.mark.sphinx("text", testroot="dummy")
+def test_napoleon_attributes_without_attr_annotations_stay_untyped(
+    app: SphinxTestApp, write_rst: Callable[[str], None], directive: str, use_ivar: bool, expected: str
+) -> None:
+    app.config.napoleon_attr_annotations = False
+    app.config.napoleon_use_ivar = use_ivar
+    write_rst(f".. {directive}")
+    app.build()
+
+    assert (Path(app.srcdir) / "_build/text/index.txt").read_text().split("docstring.\n\n")[1] == expected
+
+
+@pytest.mark.sphinx("text", testroot="dummy")
+def test_napoleon_without_attr_annotations_types_a_field_written_by_hand(
+    app: SphinxTestApp, write_rst: Callable[[str], None]
+) -> None:
+    app.config.napoleon_attr_annotations = False
+    write_rst(".. autoclass:: dummy_module.GoogleAttributesBesideField")
+    app.build()
+
+    assert (Path(app.srcdir) / "_build/text/index.txt").read_text().split("Class docstring.\n\n")[1] == (
+        '   Variables:\n      **written** ("str") -- written as a field\n\n   count\n\n      the count\n'
+    )
+
+
 @pytest.mark.sphinx(
     "doctest",
     testroot="dummy",
