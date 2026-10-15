@@ -299,6 +299,7 @@ def guarded_module(tmp_path: Path, request: pytest.FixtureRequest) -> Iterator[_
     for loaded, module in list(sys.modules.items()):
         if str(getattr(module, "__file__", None) or "").startswith(str(tmp_path)):
             del sys.modules[loaded]
+            SHADOWED_BY_GUARD.pop(loaded, None)
 
 
 def test_guarded_import_binds_names_below_an_unimportable_one(
@@ -850,6 +851,40 @@ def test_annotation_of_a_base_ignores_the_guard_of_the_module_of_a_subclass(
     )
     hints = get_all_type_hints([], module.Child, f"{module.__name__}.Child", {})
     assert hints == {"inherited": int, "own": Decimal}
+
+
+@pytest.mark.parametrize(
+    "imported",
+    [
+        pytest.param("Fn", id="runtime-name"),
+        pytest.param("Fn, Other", id="beside-a-guard-only-name"),
+    ],
+)
+def test_guarded_import_reads_a_name_as_the_guard_of_its_module_binds_it(
+    guarded_module: _GuardedModuleBuilder, imported: str
+) -> None:
+    module = guarded_module(
+        "from __future__ import annotations\n"
+        "from typing import TYPE_CHECKING\n"
+        "\n"
+        "if TYPE_CHECKING:\n"
+        f"    from guarded_source import {imported}\n"
+        "\n"
+        "def func(value: Fn) -> None: ...\n",
+        files={
+            "guarded_source.py": "from collections.abc import Callable\n"
+            "from typing import TYPE_CHECKING, Protocol\n"
+            "\n"
+            "if TYPE_CHECKING:\n"
+            "    class Fn(Protocol): ...\n"
+            "\n"
+            "    Other = int\n"
+            "else:\n"
+            "    Fn = Callable[[int], str]\n"
+        },
+    )
+    hint = get_all_type_hints([], module.func, f"{module.__name__}.func", {})["value"]
+    assert Protocol in getattr(hint, "__bases__", ())
 
 
 def test_guarded_import_adds_the_names_the_module_lacks_beside_a_runtime_one(

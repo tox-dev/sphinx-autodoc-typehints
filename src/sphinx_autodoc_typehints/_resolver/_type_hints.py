@@ -211,14 +211,16 @@ def resolve_type_guarded_imports(autodoc_mock_imports: list[str], obj: Any) -> N
     if _should_skip_guarded_import_resolution(obj):
         return
 
-    if module := defining_module(obj):
-        try:
-            module_code = inspect.getsource(module)
-        except (TypeError, OSError):
-            ...
-        else:
-            shadowed = SHADOWED_BY_GUARD[module.__name__] = {}
-            _execute_guarded_code(autodoc_mock_imports, obj, module_code, shadowed)
+    if (module := defining_module(obj)) and (module_code := _module_source(module)):
+        shadowed = SHADOWED_BY_GUARD[module.__name__] = {}
+        _execute_guarded_code(autodoc_mock_imports, obj, module_code, shadowed)
+
+
+def _module_source(module: types.ModuleType) -> str:
+    try:
+        return inspect.getsource(module)
+    except (TypeError, OSError):
+        return ""
 
 
 def _should_skip_guarded_import_resolution(obj: Any) -> bool:
@@ -235,12 +237,11 @@ def _should_skip_guarded_import_resolution(obj: Any) -> bool:
 def _execute_guarded_code(
     autodoc_mock_imports: list[str], obj: Any, module_code: str, shadowed: dict[str, Any]
 ) -> None:
-    branches = (_type_checking_branch(node) for node in ast.parse(module_code).body if isinstance(node, ast.If))
     namespace = getattr(obj, "__globals__", obj.__dict__)
     # what a type checker sees, which the functions the block defines take as their globals
     scope = dict(namespace)
     # One statement at a time, so an unimportable optional dependency cannot strand the names after it — #741
-    for statement in (statement for branch in branches for statement in branch):
+    for statement in _guarded_statements(module_code):
         # a stub of a function the module defines, such as an @overload, is no type an annotation names, and its
         # decorator would register it against the function
         if isinstance(statement, ast.FunctionDef | ast.AsyncFunctionDef) and statement.name in namespace:
@@ -258,6 +259,12 @@ def _execute_guarded_code(
             namespace[name] = value
         elif namespace[name] is not value:
             shadowed[name] = value
+
+
+def _guarded_statements(module_code: str) -> Iterator[ast.stmt]:
+    for node in ast.parse(module_code).body:
+        if isinstance(node, ast.If):
+            yield from _type_checking_branch(node)
 
 
 def _type_checking_branch(node: ast.If) -> list[ast.stmt]:
@@ -318,6 +325,8 @@ def _defined_names(node: ast.AST) -> Iterator[str]:
     elif isinstance(node, ast.AnnAssign):
         if isinstance(node.target, ast.Name):
             yield node.target.id
+    elif isinstance(node, ast.Import | ast.ImportFrom):
+        yield from (alias.asname or alias.name.partition(".")[0] for alias in node.names)
     elif isinstance(node, ast.stmt):
         for child in ast.iter_child_nodes(node):
             yield from _defined_names(child)
@@ -345,7 +354,28 @@ def _run_guarded_import(autodoc_mock_imports: list[str], obj: Any, statement: as
             resolve_type_guarded_imports(autodoc_mock_imports, importlib.import_module(exc.name))
             with mock(mocked), contextlib.suppress(ImportError):
                 exec(guarded_code, ns)  # ruff:ignore[exec-builtin]
+        if isinstance(statement, ast.ImportFrom):
+            _import_as_guarded(autodoc_mock_imports, statement, ns)
         return
+
+
+def _import_as_guarded(autodoc_mock_imports: list[str], statement: ast.ImportFrom, ns: dict[str, Any]) -> None:
+    """Bind what the statement imports as a type checker does, reading a name the guard of its module shadows."""
+    source = importlib.util.resolve_name("." * statement.level + (statement.module or ""), ns.get("__package__"))
+    if (module := sys.modules.get(source)) is None:
+        return
+    imported = {alias.name for alias in statement.names}
+    # running the guard of every module a guard imports from would warn about what nothing here reads
+    if source not in SHADOWED_BY_GUARD and _guard_binds(module, imported):
+        resolve_type_guarded_imports(autodoc_mock_imports, module)
+    shadowed = SHADOWED_BY_GUARD.get(source, {})
+    ns.update({alias.asname or alias.name: shadowed[alias.name] for alias in statement.names if alias.name in shadowed})
+
+
+def _guard_binds(module: types.ModuleType, names: set[str]) -> bool:
+    return "TYPE_CHECKING" in (module_code := _module_source(module)) and any(
+        name in names for statement in _guarded_statements(module_code) for name in _defined_names(statement)
+    )
 
 
 def _imported_modules(statement: ast.stmt, package: str | None) -> Iterator[str]:
