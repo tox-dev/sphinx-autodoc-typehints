@@ -13,7 +13,6 @@ from sphinx.util.inspect import safe_getattr
 
 from ._annotations import annotation_state, format_annotation, signature_text
 from ._resolver import (
-    documented_type_names,
     is_documented,
     object_at,
     resolve_annotations,
@@ -25,11 +24,13 @@ from ._typed_dict import typed_dict_keys
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
+    from sphinx.environment import BuildEnvironment
 
+_TYPES_DOCUMENTED: Final = "sphinx_autodoc_typehints_types_documented"
 _MISSING: Final = object()
 #: The hints resolved per owner while one document is read, keyed by that document; resolving an owner evaluates every
 #: annotation it holds, which a module of many documented globals would otherwise repeat for each of their headers.
-_RESOLVED: Final[dict[object, dict[tuple[str, frozenset[str]], dict[str, Any]]]] = {}
+_RESOLVED: Final[dict[object, dict[tuple[str, int], dict[str, Any]]]] = {}
 
 
 def render_header_types(app: Sphinx, domain: str, objtype: str, contentnode: addnodes.desc_content) -> None:
@@ -40,7 +41,13 @@ def render_header_types(app: Sphinx, domain: str, objtype: str, contentnode: add
     for type checking, so they resolved only when documenting something else had bound them first. A header written
     by hand, rather than by autodoc, keeps its type.
     """
-    if domain != "py" or objtype not in {"data", "attribute", "property"}:
+    if domain != "py":
+        return
+    if objtype == "type":
+        # an alias documented further down the page changes what the annotations of the headers after it resolve to
+        app.env.temp_data[_TYPES_DOCUMENTED] = _types_documented(app.env) + 1
+        return
+    if objtype not in {"data", "attribute", "property"}:
         return
     for signode in cast("addnodes.desc", contentnode.parent).children:
         if (
@@ -63,6 +70,10 @@ def render_header_types(app: Sphinx, domain: str, objtype: str, contentnode: add
             # the children after the ": " separator are the type
             del typed[2:]
             typed.extend(_parse_annotation(text, app.env))
+
+
+def _types_documented(env: BuildEnvironment) -> int:
+    return cast("int", env.temp_data.get(_TYPES_DOCUMENTED, 0))
 
 
 def _type_annotation(signode: addnodes.desc_signature) -> addnodes.desc_annotation | None:
@@ -113,8 +124,8 @@ def _owner_hints(app: Sphinx, owner: Any, name: str) -> dict[str, Any]:
     if (resolved := _RESOLVED.get(document := app.env.current_document)) is None:
         _RESOLVED.clear()
         resolved = _RESOLVED[document] = {}
-    # an alias documented further down the page changes what the owner's annotations resolve to
-    key = name.rpartition(".")[0], documented_type_names(app.env)
+    # the aliases documented on other pages stay the same while this one is read, so counting this page's will do
+    key = name.rpartition(".")[0], _types_documented(app.env)
     if (hints := resolved.get(key)) is None:
         hints = resolved[key] = _resolved_hints(app, owner, name)
     return hints

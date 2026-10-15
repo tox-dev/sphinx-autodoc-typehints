@@ -15,7 +15,6 @@ from ._type_hints import (
 )
 from ._util import (
     annotation_globals,
-    documented_type_names,
     get_obj_location,
     guarded_names,
     is_documented,
@@ -30,7 +29,6 @@ __all__ = [
     "annotation_globals",
     "backfill_attrs_annotations",
     "backfill_type_hints",
-    "documented_type_names",
     "get_all_type_hints",
     "get_class_body_annotations",
     "get_descriptor_type_hint",
