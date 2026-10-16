@@ -133,8 +133,8 @@ an annotation Python keeps as a string to evaluate later.
         parse
       - Fix the docs environment so the import runs
     * - ``sphinx_autodoc_typehints.local_function``
-      - The extension can't process a method of a class defined inside a function
-      - Wrap a decorator's wrapper with :func:`functools.wraps`
+      - A function defined inside another function has no importable class owner to identify its method binding
+      - Expose the owning class under a module name, or wrap a decorator's wrapper with :func:`functools.wraps`
     * - ``sphinx_autodoc_typehints.multiple_ast_nodes``
       - The source of a function without annotations parses to more than one definition, so its type comment can't be
         read

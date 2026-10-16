@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from sphinx.testing.util import SphinxTestApp
 
 
-_SUBTYPES: Final[set[str]] = {"comment", "forward_reference", "guarded_import", "local_function", "multiple_ast_nodes"}
+_SUBTYPES: Final[set[str]] = {"comment", "forward_reference", "guarded_import", "multiple_ast_nodes"}
 
 
 @mark.parametrize(

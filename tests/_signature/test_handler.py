@@ -57,6 +57,16 @@ class _BindsHelper:
 def _nothing() -> None: ...
 
 
+def _make_local_class() -> type:
+    class Local:
+        def method(self, value: int) -> str: ...
+
+    return Local
+
+
+_LOCAL_CLASS: Final[type] = _make_local_class()
+
+
 @mark.parametrize(
     ("name", "method", "expected"),
     [
@@ -90,12 +100,25 @@ def _nothing() -> None: ...
             f"{__name__}._BindsHelper.cached_class", _BindsHelper.cached_class, "(value)", id="classmethod-of-wrapper"
         ),
         param("not_imported.Missing.nothing", _nothing, "()", id="no-parameters-whatever-the-class"),
+        param(f"{__name__}._LOCAL_CLASS.method", vars(_LOCAL_CLASS)["method"], "(value)", id="method-of-local-class"),
     ],
 )
 def test_process_signature_first_parameter_by_member_kind(
     signature_of: SignatureOf, name: str, method: Callable[..., object], expected: str
 ) -> None:
     assert signature_of("method", name, method) == (expected, None)
+
+
+@mark.sphinx(
+    "text",
+    testroot="dummy",
+    confoverrides={"typehints_use_signature": True, "typehints_use_signature_return": True},
+)
+def test_process_signature_types_method_of_local_class(signature_of: SignatureOf) -> None:
+    assert signature_of("method", f"{__name__}._LOCAL_CLASS.method", vars(_LOCAL_CLASS)["method"]) == (
+        "(value: int) -> str",
+        None,
+    )
 
 
 def _unowned(self: _Lock, count: int) -> str: ...

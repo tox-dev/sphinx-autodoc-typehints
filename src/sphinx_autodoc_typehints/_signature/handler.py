@@ -170,12 +170,14 @@ def _leading_skip(
         return 1
     if entry.what != "method":
         return 0
-    if "<locals>" in annotated.__qualname__:
-        warn(
-            "local_function", 'Cannot handle as a local function: "%s" (use @functools.wraps)', entry.name, at=annotated
-        )
-        return None
     if (member_type := class_member_type(entry.name)) is None:
+        if "<locals>" in annotated.__qualname__:
+            warn(
+                "local_function",
+                'Cannot handle as a local function: "%s" (use @functools.wraps)',
+                entry.name,
+                at=annotated,
+            )
         return None
     return 0 if issubclass(member_type, staticmethod) or ismethod(callee) else 1
 
