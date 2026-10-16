@@ -1,0 +1,2 @@
+Render aliases built with ``typing_extensions.TypeAliasType`` like ``type`` statement aliases instead of as the
+``TypeAliasType`` class.

@@ -1,0 +1,2 @@
+Document a class or function that sets ``__signature__``, such as a pydantic model, by that signature with its
+fields typed.

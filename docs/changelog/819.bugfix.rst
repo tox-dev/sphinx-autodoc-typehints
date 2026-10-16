@@ -1,0 +1,2 @@
+Link a type documented in this project to its local entry, even when another project's intersphinx inventory re-exports
+it under a different name.

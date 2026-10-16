@@ -1,0 +1,1 @@
+Show a backslash in a signature default once, as plain Sphinx does, unless :confval:`strip_signature_backslash` is on.

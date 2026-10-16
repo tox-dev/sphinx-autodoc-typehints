@@ -1,0 +1,2 @@
+Run ``TYPE_CHECKING`` guards written as ``if not TYPE_CHECKING: ... else:`` or combined with ``and``/``or``, so their
+imports resolve.

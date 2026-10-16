@@ -1,0 +1,2 @@
+Keep the first parameter of static methods bound through ``staticmethod(func)`` and of name-mangled private static
+methods.

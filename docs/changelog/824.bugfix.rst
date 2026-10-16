@@ -1,0 +1,2 @@
+Pass the Sphinx config to :confval:`typehints_formatter` when rendering signatures with
+:confval:`typehints_use_signature` or :confval:`typehints_use_signature_return`.

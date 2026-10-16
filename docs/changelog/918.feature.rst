@@ -1,0 +1,2 @@
+With napoleon's ``napoleon_use_ivar = False``, type ``.. attribute::`` entries from ``self.x: T`` annotations in
+``__init__`` unless ``napoleon_attr_annotations = False``; a ``:type:`` already in the docstring wins.

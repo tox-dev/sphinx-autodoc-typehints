@@ -1,0 +1,1 @@
+Leave the return annotation off class signatures with ``typehints_use_signature_return = True``.

@@ -1,0 +1,2 @@
+Show a dataclass or attrs default factory as its call, such as ``list()``, in the signature and fields instead of
+``<factory>`` or ``NOTHING``; lambdas, partials and nested functions keep ``<factory>``.

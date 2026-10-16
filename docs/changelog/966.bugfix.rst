@@ -1,0 +1,3 @@
+Type napoleon ``Attributes`` entries from the class, ``__init__`` and module annotations, linked and rendered like
+other fields with :confval:`typehints_fully_qualified`, type aliases and :confval:`typehints_formatter` applied, unless
+:confval:`napoleon_attr_annotations` is ``False``.

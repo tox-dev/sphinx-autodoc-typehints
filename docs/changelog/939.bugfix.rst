@@ -1,0 +1,2 @@
+Unwrap an ``Annotated`` return annotation before checking it, so an ``Annotated`` generator types its ``Yields`` entry
+instead of getting a return type, and ``typehints_document_rtype_none = False`` hides ``Annotated[None, ...]``.

@@ -1,0 +1,2 @@
+Leave ``:param:``, ``:returns:`` and ``:yields:`` lines inside literal blocks and directives alone instead of
+treating them as the object's fields.

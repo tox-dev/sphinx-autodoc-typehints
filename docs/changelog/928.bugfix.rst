@@ -1,0 +1,2 @@
+Fix a crash on a generator whose return annotation is unhashable, such as
+``Annotated[Iterator[int], {"unit": "m"}]``, when its docstring has a ``Yields`` section.

@@ -1,0 +1,2 @@
+Show a plain-assignment alias documented with ``.. py:type::`` by name only where the annotation writes that name,
+whatever order Sphinx reads the entries in, so ``int`` parameters no longer render as an alias of ``int``.

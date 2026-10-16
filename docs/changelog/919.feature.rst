@@ -1,0 +1,1 @@
+Add a ``Setter accepts`` field to a property whose setter annotation differs from the getter's return type.

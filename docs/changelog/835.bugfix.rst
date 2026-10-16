@@ -1,0 +1,1 @@
+Strip types from the signature of ``functools.cache`` and ``functools.lru_cache`` decorated functions on Python 3.14.

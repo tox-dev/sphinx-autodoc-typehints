@@ -1,0 +1,2 @@
+Leave the location out of warnings about code without a source file, such as the ``__init__`` that dataclasses and
+attrs generate, instead of pointing at a nonexistent ``<string>.rst``.

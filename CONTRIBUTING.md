@@ -1,7 +1,7 @@
 # Contributing to sphinx-autodoc-typehints
 
-Thank you for your interest in contributing. This guide covers how to set up a development environment, how the
-extension is laid out, and what a pull request needs before it can merge.
+This guide covers setting up a development environment, the layout of the extension, and what a pull request needs
+before it can merge.
 
 ## Code of Conduct
 
@@ -45,7 +45,7 @@ check-wheel-contents.
 
 ## Architecture
 
-The extension hooks into Sphinx autodoc: it reads the annotations of each object autodoc documents and writes them into
+The extension hooks into Sphinx autodoc. It reads the annotations of each object autodoc documents and writes them into
 the signature, the docstring fields and the header of the entry. Everything lives under `src/sphinx_autodoc_typehints/`,
 split into layered packages.
 
@@ -98,18 +98,18 @@ every module opens with a docstring stating what it owns.
 
 | Path                  | Responsibility                                                                                                                                                                                                       |
 | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `_extension.py`       | `setup`: registers the options, roles, directive and post-transform, connects the event handlers and installs the patches                                                                                            |
+| `_extension.py`       | `setup`: registers the options, the roles, the directive and the post-transform, connects the event handlers and installs the patches                                                                                |
 | `_config.py`          | The configuration options and their validation                                                                                                                                                                       |
-| `_patches/`           | Monkeypatches to autodoc, napoleon and docutils                                                                                                                                                                      |
-| `_docstring/`         | The `autodoc-process-docstring` handler, which writes parameter, return, attribute and other fields                                                                                                                  |
-| `_docstring/formats/` | One subpackage per docstring style the extension edits: `field_list` (reST field lists), `napoleon` output and `numpydoc` sections                                                                                   |
-| `_signature/`         | The `autodoc-process-signature` handler, and `header/`, which rewrites the header Sphinx builds: overload lines, type parameters and the type of data                                                                |
-| `_documented/`        | What the extension works out about the documented object: its hints, overloads, members and render scope                                                                                                             |
+| `_patches/`           | Monkeypatches to autodoc, to napoleon and to docutils                                                                                                                                                                |
+| `_docstring/`         | The `autodoc-process-docstring` handler, which writes the fields of parameters, of the return value, of attributes and the rest                                                                                      |
+| `_docstring/formats/` | One subpackage per docstring style the extension edits, `field_list` (reST field lists), `napoleon` output and `numpydoc` sections                                                                                   |
+| `_signature/`         | The `autodoc-process-signature` handler, and `header/`, which rewrites the overload lines, type parameters and data type of the header Sphinx builds                                                                 |
+| `_documented/`        | What the extension works out about the documented object, such as its hints, its overloads, its members and its render scope                                                                                         |
 | `_render/`            | Turning types into reST cross-references; `annotation/` walks one annotation, `deferred.py` chooses alias links once every document is read                                                                          |
 | `_resolve/`           | Turning annotations into types: `evaluate/` evaluates them, `guards/` runs `if TYPE_CHECKING:` blocks into an overlay, `backfill/` reads type comments and `.pyi` stubs                                              |
 | foundation modules    | Helpers every layer may use: `_objects` (unwrapping, owners), `_refs`, `_state` (environment records), `_warnings`, `_private_imports` (every private name read from a dependency or the standard library), `_types` |
 
-Tests mirror this tree: tests for `src/sphinx_autodoc_typehints/_resolve/guards/run.py` live in
+Tests mirror this tree, so tests for `src/sphinx_autodoc_typehints/_resolve/guards/run.py` live in
 `tests/_resolve/guards/test_run.py`, and `src/sphinx_autodoc_typehints/_config.py` maps to `tests/test__config.py`.
 Sphinx projects that tests build live in `tests/roots/`.
 
@@ -186,11 +186,11 @@ Fork the repository on GitHub, clone your fork, and create a branch from `main` 
 
 ### Code Style
 
-Follow the patterns in the code around your change. `tox r -e fix` must pass, and every function, test and fixture
-carries type annotations that `tox r -e type` accepts. A few conventions the linters don't catch:
+Follow the patterns in the code around your change. `tox r -e fix` must pass, and all code, tests included, carries type
+annotations that `tox r -e type` accepts. A few conventions the linters don't catch:
 
 - Keep functions between 20 and 50 lines, and pull a part into its own function only when two places call it.
-- Comments explain why, never what. Private functions carry no docstrings.
+- Comments explain why the code does something, not what it does. Private functions carry no docstrings.
 - Quote code in comments and docstrings with single backticks.
 - Write multi-line strings as triple-quoted `textwrap.dedent` text rather than `"\n"` escapes.
 - Every `noqa` or `ty: ignore` names its code and gives the reason inline; a ty gap links the upstream
@@ -204,9 +204,36 @@ mock only true boundaries such as the network.
 
 ### Documentation
 
-The README is the documentation. Update it for any user-visible change; `tests/test_readme.py` builds its examples and
-checks its option and warning tables against the code, so a stale example fails the suite. Format it with
-`mdformat --wrap 120`, which `tox r -e fix` also runs.
+The documentation lives in `docs/` as reStructuredText and publishes to
+[Read the Docs](https://sphinx-autodoc-typehints.readthedocs.io). It follows [Diátaxis](https://diataxis.fr): a tutorial
+in `tutorials.rst`, task guides in `how-to.rst`, the reference in `reference.rst`, and the explanation in
+`concepts.rst`. Update it for any user-visible change, and build it with `tox r -e docs`, which fails on any warning and
+prints the path of the built `index.html`.
+
+Show an example through the `live-example` directive from `docs/_ext/live_example.py`. Its content holds the `conf.py`
+lines, a `---` line, then the source of a module `mod`. While the docs build, the directive renders that module twice,
+once with this extension and once with Sphinx's `autodoc_typehints = "description"` alone, and shows four tabs, the
+settings, the source and both rendered pages. Both builds resolve links through the inventories the docs build
+downloaded, which the directive writes next to its cache. The directive caches each page under the doctree folder by the
+hash of the example, the extension's source and those inventories. An example that fails to build with this extension
+fails the docs build; one that fails without it shows Sphinx's warnings in its tab:
+
+```rst
+.. live-example::
+
+    # show each type with its module
+    typehints_fully_qualified = True
+    ---
+    def total(prices: list[int]) -> int:
+        """Add the prices up."""
+        return sum(prices)
+```
+
+Define a configuration option with `.. confval::` in `reference.rst`, giving its `:default:` and `:rebuild:`, and add
+its annotation to `OPTION_TYPES` in `docs/_ext/option_reference.py`; the directive renders the type from it with this
+extension, a callable option through the protocol the extension calls it with. `tests/test_docs.py` checks the options,
+their types, defaults and rebuild values, the warning categories and the typing constructs table against the code, so a
+stale reference fails the suite.
 
 ## Submitting Changes
 
@@ -224,16 +251,16 @@ implementation's value there contradicted the overload's own annotation.
 
 ### Pull Requests
 
-Make sure `tox r -e fix,type,3.12,3.15` passes, push to your fork and open a pull request against `main`. Describe the
-problem and the change, and show the rendered output before and after where it changed. CI runs every supported Python
-version, including the free-threaded builds.
+Make sure `tox r -e fix,type,docs,3.12,3.15` passes, push to your fork and open a pull request against `main`. Describe
+the problem and the change, and show the rendered output before and after where it changed. CI runs every supported
+Python version, including the free-threaded builds.
 
 ## Getting Help
 
 Check the existing [issues](https://github.com/tox-dev/sphinx-autodoc-typehints/issues) and the
-[README](https://github.com/tox-dev/sphinx-autodoc-typehints#readme) before asking, then open an issue for bugs or
-feature requests.
+[documentation](https://sphinx-autodoc-typehints.readthedocs.io) before asking, then open an issue for bugs or feature
+requests.
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the project's MIT License.
+By contributing, you agree to release your contributions under the project's MIT License.

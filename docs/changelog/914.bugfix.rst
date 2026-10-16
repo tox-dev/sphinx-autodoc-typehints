@@ -1,0 +1,2 @@
+Fix an ``Explicit markup ends without a blank line`` warning when numpydoc processes a docstring without a
+``Parameters`` section and the extension adds parameter types.

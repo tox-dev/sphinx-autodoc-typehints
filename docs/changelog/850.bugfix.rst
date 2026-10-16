@@ -1,0 +1,1 @@
+Keep the text of a napoleon NumPy-style ``Returns`` section that only describes the value.

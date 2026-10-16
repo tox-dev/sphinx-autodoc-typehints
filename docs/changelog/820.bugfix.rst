@@ -1,0 +1,2 @@
+Use the role the linked inventory documents for ``types`` classes, so references resolve against ``docs.python.org/3``
+when building on Python 3.12.

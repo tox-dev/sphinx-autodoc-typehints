@@ -1,0 +1,2 @@
+Run a module's ``if TYPE_CHECKING:`` block without writing to the module, so the names it defines, such as
+``@overload`` stubs or ``Protocol`` classes, no longer replace runtime bindings or show up as module members.

@@ -1,0 +1,1 @@
+With ``typehints_use_rtype = False``, add the return type to a ``:returns:`` description that contains ``--``.

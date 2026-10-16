@@ -1,0 +1,1 @@
+With ``typehints_use_rtype = False``, keep the inline return type when the docstring had an ``:rtype:`` field.

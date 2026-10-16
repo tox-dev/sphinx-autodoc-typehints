@@ -1,0 +1,2 @@
+Resolve names imported under ``TYPE_CHECKING`` guards written through a module alias, on one line, with a comment at
+column zero, or at the end of the file.

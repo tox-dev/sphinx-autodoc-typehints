@@ -1,0 +1,2 @@
+Keep the ``|`` of a union around an :confval:`autodoc_type_aliases` name on Python 3.12 and 3.13 instead of rendering
+``Optional`` or ``Union``.

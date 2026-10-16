@@ -1,0 +1,82 @@
+name: Prepare release
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Version bump"
+        required: true
+        default: auto
+        type: choice
+        options: [auto, major, minor, patch]
+permissions:
+  contents: read
+jobs:
+  prepare-release:
+    runs-on: ubuntu-26.04
+    # the app credentials are scoped to the release environment, so selecting it resolves them
+    environment:
+      name: release
+    permissions:
+      contents: read
+    steps:
+      # the tox-dev-release app bypasses the main ruleset, and a tag pushed with GITHUB_TOKEN would not start
+      # release.yaml; its token expires with the job
+      - id: token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # full history so the version calculation sees the latest tag
+          token: ${{ steps.token.outputs.token }}
+          persist-credentials: true # zizmor: ignore[artipacked] the job pushes the release commit and tag
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          python-version: "3.15"
+          enable-cache: false
+      - name: Compute next version
+        id: version
+        env:
+          BUMP: ${{ inputs.bump }}
+        run: |
+          current=$(git tag --list --sort=-v:refname | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
+          current=${current:-0.0.0}
+          IFS='.' read -r major minor patch <<< "$current"
+          bump="$BUMP"
+          if [ "$bump" = "auto" ]; then
+            if ls docs/changelog/*.breaking.rst >/dev/null 2>&1; then
+              bump=major
+            elif ls docs/changelog/*.feature.rst >/dev/null 2>&1; then
+              bump=minor
+            else
+              bump=patch
+            fi
+          fi
+          case "$bump" in
+            major) next="$((major + 1)).0.0" ;;
+            minor) next="$major.$((minor + 1)).0" ;;
+            patch) next="$major.$minor.$((patch + 1))" ;;
+          esac
+          echo "Bumping $current -> $next ($bump)"
+          echo "version=$next" >> "$GITHUB_OUTPUT"
+      - name: Build changelog, commit, and tag
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if git ls-remote --tags origin "refs/tags/$VERSION" | grep -q .; then
+            echo "Tag $VERSION already exists, nothing to do"
+            exit 1
+          fi
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR_ID}+${GITHUB_ACTOR}@users.noreply.github.com"
+          uv run --only-group release towncrier build --yes --version "$VERSION"
+          git add docs/changelog docs/changelog.rst
+          git commit -m "Release $VERSION"
+          git tag "$VERSION"
+          # Push the branch first, then the tag. The tag is pushed with the app token, so it triggers the
+          # release workflow on the tag ref, where the build is verified against the changelog and published to PyPI.
+          git push origin HEAD:main
+          git push origin "$VERSION"

@@ -1,0 +1,2 @@
+Render a string annotation that is not a Python expression, such as ``"a positive float"``, as written with a
+``forward_reference`` warning instead of aborting the build.
