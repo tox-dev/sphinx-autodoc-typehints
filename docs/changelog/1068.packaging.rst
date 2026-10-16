@@ -1,0 +1,2 @@
+Advertise Sphinx, autodoc and type hints in the PyPI keywords instead of unrelated virtual environment terms, and add
+classifiers for documentation, OS independence and the package's type annotations.
