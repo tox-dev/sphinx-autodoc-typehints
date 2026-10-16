@@ -5,8 +5,12 @@ from typing import TYPE_CHECKING, Final
 
 from pytest import MarkDecorator, mark, param
 
+from _docstring.conftest import INT
+from sphinx_autodoc_typehints._docstring import note_attributes_before_napoleon, process_docstring
+
 if TYPE_CHECKING:
-    from conftest import BuildText
+    from conftest import BuildText, MakeModule
+    from sphinx.testing.util import SphinxTestApp
 
 
 def _untyped(**options: bool) -> MarkDecorator:
@@ -120,3 +124,24 @@ pytestmark: Final[list[MarkDecorator]] = [mark.sphinx("text", testroot="dummy"),
 )
 def test_napoleon_attributes_without_attr_annotations(build_text: BuildText, directive: str, expected: str) -> None:
     assert build_text(f".. {directive}") == expected
+
+
+def test_napoleon_attributes_noted_for_a_failed_docstring_stay_out_of_the_next(
+    app: SphinxTestApp, make_module: MakeModule
+) -> None:
+    ledger = make_module(
+        "noted_ledger",
+        dedent("""\
+            class Ledger:
+                def __init__(self) -> None:
+                    self.amount: int = 0
+        """),
+    ).Ledger
+    # the same list stands in for a later one python allocates where the failed docstring's list was freed
+    lines = ["Ledger docstring."]
+    note_attributes_before_napoleon(app, "class", "noted_ledger.Ledger", ledger, None, lines)
+    app.config.napoleon_attr_annotations = True
+    lines[:] = [".. attribute:: amount", "", "   how much", ""]
+    note_attributes_before_napoleon(app, "class", "noted_ledger.Ledger", ledger, None, lines)
+    process_docstring(app, "class", "noted_ledger.Ledger", ledger, None, lines)
+    assert lines == [".. attribute:: amount", "", "   how much", "", f"   :type: {INT}", ""]
