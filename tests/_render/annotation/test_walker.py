@@ -872,3 +872,44 @@ def test_formatter_receives_type_location_in_signature(build_text: BuildText) ->
 
     assert "value: PARAMETER" in output
     assert "-> RETURN" in output
+
+
+@mark.sphinx("text", testroot="render-types", confoverrides={"typehints_annotated_metadata": (str,)})
+def test_annotated_metadata_shows_selected_types(build_text: BuildText, make_module: MakeModule) -> None:
+    make_module(
+        "metadata_demo",
+        dedent('''\
+            from typing import Annotated
+
+
+            def resize(width: Annotated[int, "pixels", range(0, 1)]) -> None:
+                """Resize.
+
+                :param width: the new width
+                """
+            '''),
+    )
+
+    output = build_text(".. autofunction:: metadata_demo.resize")
+    assert "Annotated" in output
+    assert "pixels" in output
+    assert "range" not in output
+
+
+@mark.sphinx("text", testroot="render-types", confoverrides={"typehints_annotated_metadata": (range,)})
+def test_annotated_metadata_can_show_range_values(build_text: BuildText, make_module: MakeModule) -> None:
+    make_module(
+        "range_metadata_demo",
+        dedent('''\
+            from typing import Annotated
+
+
+            def clamp(value: Annotated[int, range(0, 100)]) -> None:
+                """Clamp a value.
+
+                :param value: the value
+                """
+            '''),
+    )
+
+    assert "range(0, 100)" in build_text(".. autofunction:: range_metadata_demo.clamp")

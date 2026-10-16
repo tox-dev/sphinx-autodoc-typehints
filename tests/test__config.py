@@ -29,6 +29,7 @@ def test_setup_registers_the_documented_options(app: SphinxTestApp) -> None:
         "typehints_fixup_module_name": (None, "env", frozenset()),
         "typehints_formatter": (None, "env", frozenset()),
         "typehints_formatter_pass_context": (False, "env", frozenset({bool})),
+        "typehints_annotated_metadata": ((), "env", frozenset({tuple})),
         "typehints_fully_qualified": (False, "env", frozenset({bool})),
         "typehints_use_rtype": (True, "env", frozenset()),
         "typehints_use_signature": (False, "env", frozenset()),
@@ -59,6 +60,25 @@ def test_setup_registers_the_documented_options(app: SphinxTestApp) -> None:
 def test_unusable_option_fails_the_build(app: SphinxTestApp, pattern: str) -> None:
     with raises(ConfigError, match=pattern):
         app.build()
+
+
+@mark.sphinx("text", testroot="dummy")
+def test_annotated_metadata_rejects_names_instead_of_types(
+    app: SphinxTestApp, make_app: Callable[..., SphinxTestApp]
+) -> None:
+    with raises(ConfigError, match="typehints_annotated_metadata needs a tuple of types"):
+        make_app("text", srcdir=app.srcdir, confoverrides={"typehints_annotated_metadata": ("str",)})
+
+
+@mark.sphinx("text", testroot="dummy", confoverrides={"typehints_annotated_metadata": (str,)})
+def test_annotated_metadata_keeps_the_config_cacheable(
+    build_text: BuildText, app: SphinxTestApp, make_app: Callable[..., SphinxTestApp]
+) -> None:
+    build_text(".. autofunction:: dummy_module.undocumented_function")
+    rebuilt = make_app("text", srcdir=app.srcdir, confoverrides={"typehints_annotated_metadata": (str,)})
+    rebuilt.build()
+
+    assert "typehints_annotated_metadata" not in rebuilt.status.getvalue()
 
 
 def _fixup_to_first(module: str) -> str:

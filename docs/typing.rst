@@ -243,7 +243,8 @@ strings. An API that runs SQL or shell commands uses it to reject text a user ty
 =============
 
 :data:`~typing.Annotated`, :pep:`593`, attaches extra values to a type, such as validation rules for a library to read.
-Type checkers see only the first argument, and so does the extension: it drops the metadata. ``Annotated`` exists on
+Type checkers see only the first argument. By default the extension also drops the metadata; see
+:ref:`how-to:Show selected Annotated metadata` to display values of selected metadata types. ``Annotated`` exists on
 every Python the extension supports.
 
 .. live-example::
