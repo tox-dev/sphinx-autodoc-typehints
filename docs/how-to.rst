@@ -46,6 +46,21 @@ gets its type there, and :confval:`always_document_param_types` adds the rest on
 constructor's overloads, the keys of ``**kwargs: Unpack[...]`` and a :pep:`727` ``Doc()`` description go there too,
 while a :func:`@deprecated <warnings.deprecated>` notice heads the class docstring.
 
+A class created inside a function can be documented when the module exports it:
+
+.. code-block:: python
+
+    def make_widget():
+        class Widget:
+            def resize(self, width: int) -> None:
+                """Resize the widget."""
+
+        return Widget
+
+    Widget = make_widget()
+
+The extension uses the exported ``Widget`` to identify ``resize`` as a method and leave ``self`` out of its signature.
+
 *******************
  Use with napoleon
 *******************

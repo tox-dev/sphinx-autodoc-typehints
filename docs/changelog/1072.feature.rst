@@ -1,0 +1,1 @@
+Process method signatures of classes defined inside functions when the module exports the class under a name autodoc can import.

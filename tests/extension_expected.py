@@ -87,7 +87,7 @@ EXPECTED: Final[dict[str, str]] = {
               Return type:
                  "str"
 
-           locally_defined_callable_field() -> str
+           locally_defined_callable_field()
 
               Wrapper
 
@@ -885,12 +885,6 @@ OPTIONS: Final[dict[str, dict[str, str | bool | dict[str, str] | TypehintsFormat
 }
 
 WARNINGS: Final[dict[str, list[str]]] = {
-    "Class": [
-        (
-            'Cannot handle as a local function: "mod.Class.locally_defined_callable_field" (use @functools.wraps)'
-            " [sphinx_autodoc_typehints.local_function]"
-        )
-    ],
     "function_with_unresolvable_annotation": [
         (
             'Cannot resolve forward reference in type annotations of "mod.function_with_unresolvable_annotation"'
