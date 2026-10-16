@@ -201,7 +201,7 @@ def test_wrapper_lists_the_parameters_it_states(process: Process) -> None:
     assert process("function", "mod.injected", injected, [":param name: the name"]) == [
         f":type name: {STR}",
         ":param name: the name",
-        f":type count: {INT}, default: ``1``",
+        f":type count: {INT}, default: :sphinx_autodoc_typehints_value:`1`",
         ":param count:",
         "",
         f":rtype: {BOOL}",
@@ -260,7 +260,7 @@ def test_process_docstring_shows_a_dataclass_factory_as_its_call(process: Proces
     assert process("class", "mod.Made", Made, [":param value: the value"]) == [
         (
             r":type value: :sphinx_autodoc_typehints_type:`\:py\:class\:\`list\`\\ \\\[\:py\:class\:\`int\`\]`, "
-            "default: ``list()``"
+            "default: :sphinx_autodoc_typehints_value:`list()`"
         ),
         ":param value: the value",
     ]

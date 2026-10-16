@@ -1,0 +1,2 @@
+Values in rendered types and defaults, such as ``'fill'`` in ``Literal["fill", 1, None]``, now take the colors of the
+project's Pygments style in light and dark mode, the way a code block does.

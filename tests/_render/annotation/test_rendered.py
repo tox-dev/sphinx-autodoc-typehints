@@ -23,14 +23,17 @@ if TYPE_CHECKING:
             as_field_type,
             Literal["a"],
             False,
-            r":sphinx_autodoc_typehints_type:`\:py\:data\:\`\~typing.Literal\`\\ \\\[\`\`\'a\'\`\`\]`",
+            (
+                r":sphinx_autodoc_typehints_type:`\:py\:data\:\`\~typing.Literal\`\\ \\\["
+                r"\:sphinx\_autodoc\_typehints\_value\:\`\'a\'\`\]`"
+            ),
             id="field-subscript",
         ),
         param(
             as_field_type,
             Literal["a"],
             True,
-            r":sphinx_autodoc_typehints_type:`\`\`\'a\'\`\``",
+            r":sphinx_autodoc_typehints_type:`\:sphinx\_autodoc\_typehints\_value\:\`\'a\'\``",
             id="field-short",
         ),
         param(as_signature_type, Literal["a"], False, "~typing.Literal['a']", id="signature-subscript"),

@@ -17,7 +17,7 @@ from .._documented import (
     typed_overloads,
 )
 from .._objects import documented_owner, stored_name, unwrapped
-from .._render import as_field_type, fixup_module_name
+from .._render import as_field_type, fixup_module_name, value_markup
 from .._resolve import bound_type_args, resolve_overloads
 from .._state import written_signatures
 from .parameters import VARIADIC_STARS
@@ -70,7 +70,7 @@ def inject_overloads(entry: Entry, obj: Callable[..., object], lines: list[str])
             entries.append(
                 f"**{VARIADIC_STARS.get(param.kind.name, '')}{param.name}**"
                 f"{f' ({typed})' if hint is not Parameter.empty and (typed := render(hint)) else ''}"
-                f"{'' if param.default is param.empty else f' = ``{object_description(param.default)}``'}"
+                f"{'' if param.default is param.empty else f' = {value_markup(object_description(param.default))}'}"
             )
             if param.kind is param.POSITIONAL_ONLY and (
                 at + 1 == len(parameters) or parameters[at + 1].kind is not param.POSITIONAL_ONLY

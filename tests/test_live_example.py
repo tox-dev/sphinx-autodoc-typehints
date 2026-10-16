@@ -102,7 +102,7 @@ def _tab(app: SphinxTestApp, label: str) -> str:
     [
         param('typehints_defaults</span> <span class="o">=</span>', id="conf"),
         param('<span class="k">def</span><span class="w"> </span><span class="nf">scale</span>', id="source"),
-        param("</span>, default: <code", id="rendered default"),
+        param('</span>, default: <span class="highlight sphinx_autodoc_typehints-value"><code', id="rendered default"),
         param('<span class="sphinx_autodoc_typehints-type">', id="rendered type"),
     ],
 )

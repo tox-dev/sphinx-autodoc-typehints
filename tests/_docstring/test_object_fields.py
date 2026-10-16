@@ -106,10 +106,13 @@ _PICK: Final[list[str]] = [
             [
                 "",
                 ":Overloads:",
-                rf"   * **first** ({INT}), /, **second** ({STR}) = ``'x'``, \*, **third** ({BOOL}) → {NONE}",
                 (
-                    rf"   * **first** ({STR}), /, **\*args** ({INT}), **third** ({BOOL}) = ``True``, "
-                    rf"**\*\*kwargs** ({STR}) → {NONE}"
+                    rf"   * **first** ({INT}), /, **second** ({STR}) = :sphinx_autodoc_typehints_value:`'x'`, \*, "
+                    rf"**third** ({BOOL}) → {NONE}"
+                ),
+                (
+                    rf"   * **first** ({STR}), /, **\*args** ({INT}), **third** ({BOOL}) = "
+                    rf":sphinx_autodoc_typehints_value:`True`, **\*\*kwargs** ({STR}) → {NONE}"
                 ),
                 "",
             ],
