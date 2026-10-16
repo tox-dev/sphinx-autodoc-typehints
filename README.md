@@ -32,8 +32,37 @@ extensions = ["sphinx.ext.autodoc", "sphinx_autodoc_typehints"]
 Sphinx's
 [`autodoc_typehints = "description"`](https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#confval-autodoc_typehints)
 already moves annotations into the parameter and return fields, links them, and works with napoleon docstrings and type
-comments. If your annotations resolve at runtime and you use Sphinx fields or napoleon, that setting may be enough. This
-extension adds:
+comments. If your annotations resolve at runtime and you use Sphinx fields or napoleon, that setting may be enough.
+
+The same `demo.py` below renders differently with each option. Both builds use `.. automodule:: demo` with `:members:`;
+the left uses the configuration above, while the right loads only `sphinx.ext.autodoc` with
+`autodoc_typehints = "description"`.
+
+```python
+from typing import TypedDict, Unpack
+
+
+class Options(TypedDict, total=False):
+    """The options of a run."""
+
+    verbose: bool
+    level: int
+
+
+def configure(**kwargs: Unpack[Options]) -> None:
+    """
+    Configure the run.
+
+    :keyword verbose: print every step
+    :keyword level: how much to print
+    """
+```
+
+![Side-by-side Sphinx output: this extension adds NotRequired types to verbose and level; Sphinx's built-in output leaves them untyped and adds a kwargs entry.](docs/_static/sphinx-comparison.png)
+
+The
+[live example](https://sphinx-autodoc-typehints.readthedocs.io/en/latest/concepts.html#keyword-arguments-from-a-typeddict)
+lets you inspect the rendered text and configuration. Beyond this example, this extension adds:
 
 - [Names imported under `if TYPE_CHECKING:`](https://sphinx-autodoc-typehints.readthedocs.io/en/latest/typing.html#type-checking-imports)
   link to their real module (`decimal.Decimal`, not a bare `Decimal`).

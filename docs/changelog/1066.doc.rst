@@ -1,1 +1,1 @@
-Link the typing examples from the README and correct the event and return-field descriptions.
+Compare both rendered outputs in the README, link the typing examples, and correct the event and return-field descriptions.
