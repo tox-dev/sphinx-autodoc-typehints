@@ -63,6 +63,7 @@ dev = [
   { include-group = "type" },
 ]
 test = [
+  "annotated-doc>=0.0.5",
   "attrs>=26.1",
   "covdefaults>=2.3",
   "coverage>=7.16.2",

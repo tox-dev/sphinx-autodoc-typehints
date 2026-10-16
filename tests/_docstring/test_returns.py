@@ -4,6 +4,7 @@ import typing  # its generator aliases are tested next to the collections.abc on
 from textwrap import dedent
 from typing import TYPE_CHECKING, Annotated, Final
 
+from annotated_doc import Doc as AnnotatedDoc
 from pytest import MarkDecorator, fixture, mark, param
 from typing_extensions import Doc
 
@@ -25,6 +26,7 @@ pytestmark: Final[MarkDecorator] = mark.sphinx("text", testroot="dummy")
     ("annotation", "expected"),
     [
         param(Annotated[int, Doc("hello")], "hello", id="annotated-with-doc"),
+        param(Annotated[int, AnnotatedDoc("hello")], "hello", id="annotated-doc-package"),
         param(Annotated[int, 42], None, id="annotated-without-doc"),
         param(int, None, id="plain-type"),
         param(Annotated[int, Doc("first"), Doc("second")], "first", id="picks-first-doc"),
@@ -32,6 +34,12 @@ pytestmark: Final[MarkDecorator] = mark.sphinx("text", testroot="dummy")
 )
 def test_description_from_doc(annotation: Annotation, expected: str | None) -> None:
     assert description_from_doc(annotation) == expected
+
+
+def test_annotated_doc_package_describes_a_return(process: Process) -> None:
+    def count() -> Annotated[int, AnnotatedDoc("the count")]: ...
+
+    assert process("function", "mod.count", count, []) == [f":rtype: {INT}", ":return: the count"]
 
 
 @mark.parametrize(

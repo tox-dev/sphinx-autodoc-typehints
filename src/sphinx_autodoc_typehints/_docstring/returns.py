@@ -1,4 +1,4 @@
-"""Types what a callable returns and yields, and adds the description a `typing.Doc` return carries."""
+"""Types what a callable returns and yields, and adds the description a `Doc` return carries."""
 
 from __future__ import annotations
 
@@ -107,14 +107,15 @@ def _type_yields(annotation: Hint, description: str | None, app: Sphinx, lines: 
 
 
 def description_from_doc(annotation: Hint | None) -> str | None:
-    """Return the text of the `typing.Doc` an `Annotated` type carries, `None` for a type without one."""
+    """Return the text of a `Doc` an `Annotated` type carries, `None` for a type without one."""
     if get_origin(annotation) is not Annotated:
         return None
     return next(
         (
             meta.documentation
             for meta in get_args(annotation)[1:]
-            if type(meta).__qualname__ == "Doc" and type(meta).__module__ in {"typing_extensions", "typing"}
+            if type(meta).__qualname__ == "Doc"
+            and type(meta).__module__ in {"typing_extensions", "typing", "annotated_doc.main"}
         ),
         None,
     )

@@ -43,7 +43,7 @@ this extension; :ref:`concepts:Compared with Sphinx's built-in type hints` compa
 With :confval:`autoclass_content = "both" <autoclass_content>`, or the ``:class-doc-from: both`` option of an
 :rst:dir:`autoclass` directive, Sphinx joins the class and constructor docstrings. A parameter either of them documents
 gets its type there, and :confval:`always_document_param_types` adds the rest once, under the constructor docstring. The
-constructor's overloads, the keys of ``**kwargs: Unpack[...]`` and a :pep:`727` ``Doc()`` description go there too,
+constructor's overloads, the keys of ``**kwargs: Unpack[...]`` and an ``Annotated[..., Doc(...)]`` description go there too,
 while a :func:`@deprecated <warnings.deprecated>` notice heads the class docstring.
 
 A class created inside a function can be documented when the module exports it:
