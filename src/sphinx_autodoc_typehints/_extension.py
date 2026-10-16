@@ -18,11 +18,11 @@ from ._docstring import (
     note_attributes_before_napoleon,
     place_rtype,
     process_docstring,
-    take_over_napoleon_attr_annotations,
 )
 from ._patches import (
     BUILDING,
     patch_autodoc_type_hints,
+    patch_napoleon_attr_annotations,
     patch_overload_capture,
     patch_signature_lines,
 )
@@ -67,8 +67,6 @@ def setup(app: Sphinx) -> dict[str, bool | int | str]:
     app.add_post_transform(DeferAliasChoice)
     app.add_env_collector(AliasChoiceCollector)
     app.connect("config-inited", cache_fixup_module_name)
-    # after Sphinx checked the type of each option against its default
-    app.connect("config-inited", take_over_napoleon_attr_annotations, priority=900)
     app.connect("builder-inited", add_value_stylesheet)
     app.connect("builder-inited", note_builder)
     # after intersphinx, at the default priority, had its chance to link the member itself
@@ -89,6 +87,7 @@ def setup(app: Sphinx) -> dict[str, bool | int | str]:
     patch_overload_capture()
     patch_signature_lines()
     patch_autodoc_type_hints()
+    patch_napoleon_attr_annotations()
     # `builder-inited` fires while the app is created, so an app never built would count as building for good
     app.connect("env-before-read-docs", lambda sphinx_app, _env, _docnames: BUILDING.add(id(sphinx_app)))
     # a module edited and imported again since the last build in this process finds other stubs and binds other names

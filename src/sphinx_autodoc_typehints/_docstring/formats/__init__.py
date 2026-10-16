@@ -22,7 +22,6 @@ from .napoleon import (
     mark_numpy_returns,
     note_attributes_before_napoleon,
     reads_as_type,
-    take_over_napoleon_attr_annotations,
     type_combined_field_entry,
 )
 
@@ -39,7 +38,6 @@ __all__ = [
     "note_attributes_before_napoleon",
     "place_rtype",
     "reads_as_type",
-    "take_over_napoleon_attr_annotations",
     "type_combined_field_entry",
     "write_rtype",
 ]
