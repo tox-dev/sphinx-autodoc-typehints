@@ -32,13 +32,13 @@ from ._render import (
     ENUM_MEMBER_ROLE,
     VALUE_ROLE,
     VALUE_STYLESHEET,
+    AliasChoiceCollector,
     DeferAliasChoice,
     add_value_stylesheet,
     alias_choice_role,
     constant_role,
     enum_member_role,
     link_enum_member_owner,
-    merge_alias_choices,
     note_builder,
     unescape,
     value_role,
@@ -53,7 +53,7 @@ if TYPE_CHECKING:
     from sphinx.application import Sphinx
 
 
-def setup(app: Sphinx) -> dict[str, bool | str]:
+def setup(app: Sphinx) -> dict[str, bool | int | str]:
     app.setup_extension("sphinx.ext.autodoc")
     for option in OPTIONS:
         app.add_config_value(option.name, option.default, option.rebuild, option.types)
@@ -65,12 +65,12 @@ def setup(app: Sphinx) -> dict[str, bool | str]:
     app.add_css_file(VALUE_STYLESHEET)
     app.add_directive(DEPRECATED_DIRECTIVE, DeprecatedDirective)
     app.add_post_transform(DeferAliasChoice)
+    app.add_env_collector(AliasChoiceCollector)
     app.connect("config-inited", cache_fixup_module_name)
     # after Sphinx checked the type of each option against its default
     app.connect("config-inited", take_over_napoleon_attr_annotations, priority=900)
     app.connect("builder-inited", add_value_stylesheet)
     app.connect("builder-inited", note_builder)
-    app.connect("env-merge-info", merge_alias_choices)
     # after intersphinx, at the default priority, had its chance to link the member itself
     app.connect("missing-reference", link_enum_member_owner, priority=900)
     app.connect("env-before-read-docs", validate_config)
@@ -95,6 +95,7 @@ def setup(app: Sphinx) -> dict[str, bool | str]:
     patch_doctest_line_number()
     return {
         "version": __version__,
+        "env_version": 1,
         "parallel_read_safe": True,
         "parallel_write_safe": True,
     }

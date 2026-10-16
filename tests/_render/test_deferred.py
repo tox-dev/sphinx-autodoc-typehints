@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from re import findall
 from sys import version_info
 from textwrap import dedent
@@ -10,7 +11,7 @@ from sphinx.errors import NoUri
 
 from sphinx_autodoc_typehints._render import ALIAS_CHOICE_ROLE, annotation_state
 from sphinx_autodoc_typehints._render.deferred import defer_alias_choice
-from sphinx_autodoc_typehints._state import recorded_alias_choices
+from sphinx_autodoc_typehints._state import alias_choices, document_alias_choices
 
 if TYPE_CHECKING:
     from io import StringIO
@@ -53,7 +54,7 @@ def test_defer_alias_choice_records_the_choice_its_marker_names(
 ) -> None:
     with annotation_state(app.config, env=app.env):
         marker = defer_alias_choice(app.config, ":py:type:`~mod.Alias`", ":py:class:`int`", objtype=objtype)
-    choices = recorded_alias_choices(app.env)
+    choices = alias_choices(app.env)
     assert (marker, list(choices.values())) == (f":{ALIAS_CHOICE_ROLE}:`{next(iter(choices))}`", [expected])
 
 
@@ -470,3 +471,36 @@ def test_deferred_alias_marker_without_a_recorded_choice_is_dropped(build_text: 
     assert build_text(f"Text :{ALIAS_CHOICE_ROLE}:`0123456789abcdef` end.") == dedent("""\
         Text  end.
     """)
+
+
+_ALIAS_DOCUMENT: Final[str] = ".. autofunction:: render_pep695.type_alias_func\n"
+
+
+@mark.sphinx("text", testroot="render-types")
+def test_alias_choice_collector_files_choices_under_their_document(build_text: BuildText, app: SphinxTestApp) -> None:
+    build_text(_ALIAS_DOCUMENT)
+    assert set(document_alias_choices(app.env)) == {"index"}
+
+
+@mark.sphinx("text", testroot="render-types")
+def test_alias_choice_collector_drops_choices_of_a_removed_document(build_text: BuildText, app: SphinxTestApp) -> None:
+    build_text(_ALIAS_DOCUMENT)
+    app.env.events.emit("env-purge-doc", app.env, "index")
+    assert document_alias_choices(app.env) == {}
+
+
+@mark.sphinx("text", testroot="render-types")
+def test_alias_choice_collector_drops_choices_a_reread_document_no_longer_has(
+    build_text: BuildText, app: SphinxTestApp
+) -> None:
+    build_text(_ALIAS_DOCUMENT)
+    (Path(app.srcdir) / "index.rst").write_text("Nothing to resolve.\n")
+    app.build()
+    assert document_alias_choices(app.env) == {}
+
+
+@mark.sphinx("text", testroot="render-types", parallel=2)
+def test_alias_choice_collector_merges_documents_read_in_workers(build_text: BuildText, app: SphinxTestApp) -> None:
+    names = [f"doc{number}" for number in range(8)]
+    build_text(_ALIAS_DOCUMENT, **dict.fromkeys(names, _ALIAS_DOCUMENT))
+    assert set(document_alias_choices(app.env)) == {"index", *names}

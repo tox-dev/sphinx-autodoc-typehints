@@ -1,0 +1,1 @@
+Keep the choices between a type alias and its expanded value per document, so removing or editing a document no longer leaves its choices in the cached environment. The first build after upgrading re-reads every document once.
