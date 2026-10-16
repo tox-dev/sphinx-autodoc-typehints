@@ -17,12 +17,12 @@ from ._docstring import (
     mark_numpy_returns,
     note_attributes_before_napoleon,
     process_docstring,
+    take_over_napoleon_attr_annotations,
 )
 from ._patches import (
     BUILDING,
     patch_autodoc_type_hints,
     patch_doctest_line_number,
-    patch_lookup_annotation,
     patch_overload_capture,
     patch_signature_lines,
 )
@@ -66,6 +66,8 @@ def setup(app: Sphinx) -> dict[str, bool | str]:
     app.add_directive(DEPRECATED_DIRECTIVE, DeprecatedDirective)
     app.add_post_transform(DeferAliasChoice)
     app.connect("config-inited", cache_fixup_module_name)
+    # after Sphinx checked the type of each option against its default
+    app.connect("config-inited", take_over_napoleon_attr_annotations, priority=900)
     app.connect("builder-inited", add_value_stylesheet)
     app.connect("builder-inited", note_builder)
     app.connect("env-merge-info", merge_alias_choices)
@@ -89,7 +91,6 @@ def setup(app: Sphinx) -> dict[str, bool | str]:
     # a module edited and imported again since the last build in this process binds other names in its guard
     app.connect("env-before-read-docs", lambda _sphinx_app, _env, _docnames: SHADOWED_BY_GUARD.clear())
     app.connect("build-finished", lambda sphinx_app, _exception: BUILDING.discard(id(sphinx_app)))
-    patch_lookup_annotation()
     patch_doctest_line_number()
     return {
         "version": __version__,
