@@ -15,7 +15,7 @@ from typing import IO, TYPE_CHECKING, Annotated, AnyStr, Final, ForwardRef, Lite
 from warnings import catch_warnings
 
 import typing_extensions  # passed as a library and compared by identity
-from pytest import mark, param, raises, skip
+from pytest import mark, param, skip
 from sphinx.util.inspect import TypeAliasForwardRef
 
 from sphinx_autodoc_typehints._refs import MyTypeAliasForwardRef, WrittenTypeAlias
@@ -438,23 +438,18 @@ def test_format_annotation_both_libs(
 
 
 @mark.parametrize(
-    ("form", "missing"),
+    ("form", "expected"),
     [
-        param(typing.NewType, "__supertype__", id="NewType"),
-        param(typing.Annotated, "__origin__", id="Annotated"),
+        param(typing.NewType, ":py:class:`~typing.NewType`", id="NewType"),
+        param(typing.Annotated, ":py:data:`~typing.Annotated`", id="Annotated"),
     ],
 )
-def test_format_annotation_of_a_bare_form_fails_in_a_field(config: Config, form: Annotation, missing: str) -> None:
-    with raises(AttributeError) as read:
-        getattr(form, missing)
-    with raises(AttributeError) as rendered:
-        format_annotation(form, config)
-    assert str(rendered.value) == str(read.value)
-
-
-def test_format_annotation_of_a_bare_new_type_in_a_signature_names_the_class(config: Config) -> None:
-    with annotation_state(config, signature=True):
-        assert format_annotation(typing.NewType, config) == ":py:class:`~typing.NewType`"
+@mark.parametrize("signature", [param(False, id="field"), param(True, id="signature")])
+def test_format_annotation_of_a_bare_form_names_it(
+    config: Config, form: Annotation, expected: str, *, signature: bool
+) -> None:
+    with annotation_state(config, signature=signature):
+        assert format_annotation(form, config) == expected
 
 
 def test_format_annotation_role_matches_python_inventory(config: Config, inv: Inventory) -> None:
@@ -462,7 +457,6 @@ def test_format_annotation_role_matches_python_inventory(config: Config, inv: In
     not_rendered_as_itself = {
         *("types.BuiltinFunctionType", "types.LambdaType", "typing.Text"),  # aliases render as their target
         *("types.NoneType", "types.UnionType", "typing.ForwardRef"),  # rendered as None, Union, annotationlib
-        *("typing.Annotated", "typing.NewType"),  # only meaningful subscripted or called
         *("typing.NoDefault", "typing.NoExtraItems", "typing.TYPE_CHECKING"),  # values, not annotations
     }
     with catch_warnings(action="ignore", category=DeprecationWarning):  # typing.ByteString on 3.15+
