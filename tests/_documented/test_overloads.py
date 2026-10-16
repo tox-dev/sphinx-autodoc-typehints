@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from functools import partial, update_wrapper
+from inspect import signature
 from textwrap import dedent
 from types import FunctionType
 from typing import TYPE_CHECKING, Final, get_overloads, overload
@@ -65,6 +67,22 @@ if TYPE_CHECKING:
 def _guarded[Item](value: Item | None) -> list[Item] | None: ...
 
 
+@overload
+def _fetch(session: str, key: int) -> int: ...
+
+
+@overload
+def _fetch(session: str, key: str) -> str: ...
+
+
+def _fetch(session: str, key: int | str) -> int | str: ...
+
+
+# a decorator supplying `session` hides it from callers by stating the signature without it
+_FETCH: Final = update_wrapper(partial(_fetch, "session"), _fetch)
+vars(_FETCH)["__signature__"] = signature(_fetch).replace(parameters=list(signature(_fetch).parameters.values())[1:])
+
+
 @mark.parametrize(
     ("name", "target", "skip", "arguments", "expected"),
     [
@@ -83,6 +101,14 @@ def _guarded[Item](value: Item | None) -> list[Item] | None: ...
             dict.fromkeys(_Box.__type_params__, int),
             [(["key"], {"key": int, "return": int}), (["key"], {"key": str, "return": list[int]})],
             id="method-past-self-with-bound-arguments",
+        ),
+        param(
+            "_fetch",
+            _FETCH,
+            0,
+            {},
+            [(["key"], {"key": int, "return": int}), (["key"], {"key": str, "return": str})],
+            id="parameter-the-stated-signature-hides",
         ),
     ],
 )
@@ -161,3 +187,13 @@ def test_typed_overloads_of_functions_wrapping_a_mock_keep_their_types(
     assert overloads is not None
     typed = typed_overloads(app, f"{__name__}._pick", _pick, overloads, 0, {})
     assert [hints for _, hints in typed] == [{"value": int, "return": int}, {"value": str, "return": str}]
+
+
+def test_typed_overloads_stating_a_signature_over_a_mock_keep_every_parameter(
+    app: SphinxTestApp, monkeypatch: MonkeyPatch, mocked_object: Callable[..., object]
+) -> None:
+    monkeypatch.setattr(_FETCH, "__wrapped__", mocked_object)
+    overloads = resolve_overloads(_FETCH)
+    assert overloads is not None
+    typed = typed_overloads(app, f"{__name__}._fetch", _FETCH, overloads, 0, {})
+    assert [[parameter.name for parameter in params] for params, _ in typed] == [["session", "key"]] * 2

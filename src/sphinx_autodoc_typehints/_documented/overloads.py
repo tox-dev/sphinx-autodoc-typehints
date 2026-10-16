@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from inspect import Parameter, Signature, signature
 from typing import TYPE_CHECKING, Final, get_overloads
 
-from .._objects import prefix_of, unwrapped
+from .._objects import declared_signature, prefix_of, unwrapped
 from .._render import annotation_state, render_context
 from .._resolve import (
     annotation_globals,
@@ -18,7 +19,6 @@ from .hints import as_written
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
-    from inspect import Parameter, Signature
 
     from sphinx.application import Sphinx
 
@@ -54,9 +54,16 @@ def typed_overloads(
     scope = aliases | {param.__name__: param for param in declared_type_params(None, obj, None)}
     namespace = annotation_globals(obj)
     declared = render_context(app.config).declared_type_params
+    # a decorator stating `__signature__` may hide parameters it supplies, which the overloads parsed from the source
+    # of the function it wraps still list
+    hidden = (
+        frozenset(signature(wrapped).parameters) - frozenset(stated.parameters)
+        if (stated := declared_signature(obj)) is not None and (wrapped := unwrapped(obj)) is not None
+        else frozenset()
+    )
     for overload, function in zip(overloads, defining, strict=True):
         own = declared_type_params(function, None, None)
-        parameters = list(overload.parameters.values())[skip:]
+        parameters = [param for param in list(overload.parameters.values())[skip:] if param.name not in hidden]
         written = {param.name: param.annotation for param in parameters} | {"return": overload.return_annotation}
         hints = resolve_string_annotations(obj, written, scope | {param.__name__: param for param in own})
         written_aliases = {

@@ -11,6 +11,7 @@ from .._resolve import (
     bound_type_args,
     declared_type_params,
     get_all_type_hints,
+    resolve_string_annotations,
     specialize,
     type_alias_namespace,
 )
@@ -46,9 +47,12 @@ def resolved_type_hints(
     if (stated_signature := declared_signature(original_obj)) is not None:
         # the parameters it lists, such as a pydantic model's fields, may be ones no annotation of the constructor names
         stated = {key: param.annotation for key, param in stated_signature.parameters.items()}
+        # a decorator building it with `inspect.signature` under `from __future__ import annotations` copies strings
         type_hints |= {
             key: annotation
-            for key, annotation in (stated | {"return": stated_signature.return_annotation}).items()
+            for key, annotation in resolve_string_annotations(
+                annotated, stated | {"return": stated_signature.return_annotation}, localns
+            ).items()
             if annotation is not stated_signature.empty
         }
     if arguments := bound_type_args(documenting, attribute):
