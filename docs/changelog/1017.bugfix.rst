@@ -1,0 +1,2 @@
+Link a name in the type of a data, attribute or property header the way the fields do, so the builtin ``type`` no
+longer links to an unrelated documented attribute such as ``Event.type``.

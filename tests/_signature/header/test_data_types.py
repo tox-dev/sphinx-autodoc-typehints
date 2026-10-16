@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from importlib import import_module
 from pathlib import Path
+from re import findall, search
 from sys import version_info
 from textwrap import dedent
 from typing import TYPE_CHECKING, Final
@@ -184,6 +185,34 @@ def test_header_type_reads_a_lazy_annotation_as_guarded(  # pragma: >=3.14 cover
 def test_header_type_links_its_names(build_doctree: BuildDoctree, rst: str, expected: list[str]) -> None:
     signature = list(build_doctree(rst).findall(addnodes.desc_signature))[-1]
     assert [ref["reftarget"] for ref in signature.findall(addnodes.pending_xref)] == expected
+
+
+@mark.sphinx("html", testroot="headers")
+def test_header_type_skips_an_attribute_of_the_same_name(make_module: MakeModule, build_text: BuildText) -> None:
+    make_module(
+        "named_module",
+        dedent("""\
+            class Event:
+                type: str
+                '''The event kind.'''
+
+            class Registry:
+                factory: type
+                '''What builds the entries.'''
+        """),
+    )
+    html = build_text(
+        dedent("""\
+            .. autoclass:: named_module.Event
+               :members:
+
+            .. autoclass:: named_module.Registry
+               :members:
+        """)
+    )
+
+    assert (header := search(r'(?s)<dt [^>]*id="named_module.Registry.factory".*?</dt>', html)) is not None
+    assert findall(r'href="([^"]*)"', header[0]) == ["#named_module.Registry.factory"]
 
 
 def test_header_type_follows_a_rebuild(
