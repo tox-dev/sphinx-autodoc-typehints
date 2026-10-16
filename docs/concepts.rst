@@ -63,7 +63,7 @@ types the ones you write yourself.
  Signatures you write yourself
 *******************************
 
-A signature you write yourself, in the directive as ``.. autofunction:: mod.f(x, y=3)`` or on the docstring's first line
+A signature you write yourself, in the directive as ``.. autofunction:: demo.f(x, y=3)`` or on the docstring's first line
 with :confval:`autodoc_docstring_signature`, stays as written when it names other parameters than the object takes. The
 extension replaces one with the same parameters, differing only in defaults or types, with the object's own, and does
 the same for one made of ``*args`` and ``**kwargs`` alone, which autodoc falls back to when it can't see a class's
@@ -130,7 +130,7 @@ as ``.. py:function:: first(items)``, shows only the type parameters it writes.
 ***************************************
 
 A member inherited from a generic base and documented under a subclass that binds the base's type parameters, as
-``:inherited-members:`` lists it or ``.. automethod:: mod.Child.get`` names it, shows the arguments the subclass gives
+``:inherited-members:`` lists it or ``.. automethod:: demo.Child.get`` names it, shows the arguments the subclass gives
 them. With ``class Child(Base[int])``, ``Base.get(self) -> T`` documents as returning ``int`` under ``Child``, while
 ``Base.get`` keeps ``T``. The binding follows the bases through each level, so ``class C(B[int])`` over
 ``class B(A[list[U]])`` turns ``A``'s ``T`` into ``list[int]`` under ``C``:

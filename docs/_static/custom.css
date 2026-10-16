@@ -262,3 +262,347 @@ body {
 .sidebar-logo {
     max-width: 6rem;
 }
+
+/* A gallery example frames its rendered page and a conf.py button floated into the page's top right corner, which opens
+   the options every example on the page renders with across the full width, keeping the closed button off its own row */
+.lep-box {
+    padding: 0.25rem 1rem;
+    border: 1px solid var(--color-background-border);
+    border-radius: 0.25rem;
+    background: var(--color-background-primary);
+}
+
+.lep-box > .live-example-output {
+    padding: 0;
+    border: 0;
+}
+
+.lep-details {
+    float: right;
+    margin: 0.5rem 0 0.25rem 0.75rem;
+}
+
+.lep-details[open] {
+    float: none;
+    margin: 0.5rem 0 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--color-background-border);
+}
+
+.lep-details > summary {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    list-style: none;
+    cursor: pointer;
+}
+
+.lep-details > summary::-webkit-details-marker {
+    display: none;
+}
+
+.lep-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.15rem 0.6rem;
+    border: 1px solid var(--color-background-border);
+    border-radius: 0.3rem;
+    background: var(--color-background-secondary);
+    color: var(--color-foreground-primary);
+    font-family: var(--font-stack--monospace);
+    font-size: var(--font-size--small--2);
+}
+
+.lep-toggle::before {
+    content: "\25B8";
+    transition: transform 0.15s;
+}
+
+.lep-details[open] .lep-toggle::before {
+    transform: rotate(90deg);
+}
+
+.lep-details > summary:hover .lep-toggle {
+    background: var(--color-background-hover);
+}
+
+.lep-details > summary:focus-visible {
+    outline: 2px solid var(--color-brand-primary);
+    outline-offset: 2px;
+}
+
+.lep-hint {
+    color: var(--color-foreground-secondary);
+    font-size: var(--font-size--small);
+}
+
+.lep-details:not([open]) .lep-hint {
+    display: none;
+}
+
+.lep-details[open] > .live-example-picker {
+    margin-top: 0.6rem;
+}
+
+.live-example-picker {
+    --lep-gap: 0.75rem;
+}
+
+/* columns rather than a grid, so a short group sits right under the one above it instead of beside a tall one */
+.lep-groups {
+    columns: 2 24rem;
+    column-gap: var(--lep-gap);
+    margin-bottom: var(--lep-gap);
+}
+
+.lep-group {
+    break-inside: avoid;
+    margin: 3px 0 calc(var(--lep-gap) + 3px);
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    min-width: 0;
+    padding: 0.6rem 0.75rem 0.75rem;
+    border: 1px solid var(--color-background-border);
+    border-radius: 0.4rem;
+    background: var(--color-background-secondary);
+}
+
+.lep-group legend {
+    padding: 0 0.3rem;
+    color: var(--color-foreground-secondary);
+    font-size: var(--font-size--small--2);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+/* the tooltip spans the option rather than its button, so it stays inside the group on any screen */
+.lep-option {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0.6rem;
+}
+
+/* the segmented control sits beside its label while the group is wide enough, and wraps below it otherwise */
+.lep-option-wide {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.75rem;
+}
+
+.lep-option:has(:disabled) {
+    opacity: 0.5;
+}
+
+.lep-head {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.lep-label {
+    color: var(--color-foreground-primary);
+    font-size: var(--font-size--small);
+    font-weight: 500;
+    cursor: pointer;
+}
+
+span.lep-label {
+    cursor: default;
+}
+
+/* the label and the option name share a row, and wrap onto two when the group is narrow */
+.lep-text {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.1rem 0.6rem;
+    min-width: 0;
+}
+
+.lep-name {
+    text-decoration: none;
+}
+
+.lep-name code {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--color-foreground-secondary);
+    font-size: var(--font-size--small--2);
+}
+
+.lep-name:hover code {
+    color: var(--color-link);
+    text-decoration: underline;
+}
+
+.lep-switch {
+    position: relative;
+    flex: none;
+    width: 2.2rem;
+    height: 1.25rem;
+    margin: 0.05rem 0 0;
+    border: 1px solid var(--color-foreground-border);
+    border-radius: 999px;
+    background: var(--color-foreground-border);
+    cursor: pointer;
+    appearance: none;
+    transition: background-color 0.15s;
+}
+
+.lep-switch::after {
+    position: absolute;
+    top: 0.125rem;
+    left: 0.125rem;
+    width: 0.9rem;
+    height: 0.9rem;
+    border-radius: 50%;
+    background: var(--color-background-primary);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 30%);
+    content: "";
+    transition: transform 0.15s;
+}
+
+.lep-switch:checked {
+    border-color: var(--color-brand-primary);
+    background: var(--color-brand-primary);
+}
+
+.lep-switch:checked::after {
+    transform: translateX(0.95rem);
+}
+
+.lep-switch:disabled {
+    cursor: not-allowed;
+}
+
+.lep-segmented {
+    display: flex;
+    width: fit-content;
+    border: 1px solid var(--color-background-border);
+    border-radius: 0.35rem;
+    overflow: hidden;
+}
+
+.lep-segment {
+    position: relative;
+}
+
+.lep-segment + .lep-segment {
+    border-left: 1px solid var(--color-background-border);
+}
+
+.lep-segment input {
+    position: absolute;
+    opacity: 0;
+}
+
+.lep-segment span {
+    display: block;
+    padding: 0.2rem 0.55rem;
+    background: var(--color-background-primary);
+    color: var(--color-foreground-primary);
+    font-family: var(--font-stack--monospace);
+    white-space: nowrap;
+    font-size: var(--font-size--small--2);
+    cursor: pointer;
+}
+
+.lep-segment input:checked + span {
+    background: var(--color-brand-primary);
+    color: var(--color-background-primary);
+}
+
+.live-example-picker :focus-visible,
+.lep-segment input:focus-visible + span {
+    outline: 2px solid var(--color-brand-primary);
+    outline-offset: 2px;
+}
+
+.lep-tipwrap {
+    display: inline-flex;
+}
+
+.lep-info {
+    width: 1rem;
+    height: 1rem;
+    padding: 0;
+    border: 1px solid var(--color-foreground-border);
+    border-radius: 50%;
+    background: transparent;
+    color: var(--color-foreground-secondary);
+    font: italic 600 0.65rem/1 var(--font-stack--monospace);
+    cursor: help;
+}
+
+.lep-tip {
+    position: absolute;
+    bottom: calc(100% + 0.3rem);
+    left: 0;
+    z-index: 20;
+    width: max-content;
+    max-width: 100%;
+    padding: 0.4rem 0.6rem;
+    border-radius: 0.3rem;
+    background: var(--color-foreground-primary);
+    color: var(--color-background-primary);
+    font-size: var(--font-size--small--2);
+    font-weight: 400;
+    line-height: 1.4;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.1s;
+}
+
+.lep-tip code {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+}
+
+.lep-info:hover + .lep-tip,
+.lep-info:focus-visible + .lep-tip,
+.lep-tipwrap.lep-open .lep-tip {
+    visibility: visible;
+    opacity: 1;
+}
+
+.lep-tipwrap.lep-dismissed .lep-tip {
+    visibility: hidden;
+    opacity: 0;
+}
+
+.lep-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0 0 var(--lep-gap);
+}
+
+.lep-reset {
+    padding: 0.3rem 0.8rem;
+    border: 1px solid var(--color-background-border);
+    border-radius: 0.3rem;
+    background: var(--color-background-secondary);
+    color: var(--color-foreground-primary);
+    font: inherit;
+    font-size: var(--font-size--small);
+    cursor: pointer;
+}
+
+.lep-reset:hover {
+    background: var(--color-background-hover);
+}
+
+.lep-status {
+    color: var(--color-foreground-secondary);
+    font-size: var(--font-size--small);
+}

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import typing
 from ast import literal_eval
 from collections.abc import Callable
 from importlib import import_module
@@ -23,6 +24,7 @@ if TYPE_CHECKING:
     from sphinx.testing.util import SphinxTestApp
 
 _REFERENCE: Final[str] = (Path(__file__).parents[1] / "docs" / "reference.rst").read_text(encoding="utf-8")
+_GALLERY: Final[str] = (Path(__file__).parents[1] / "docs" / "typing.rst").read_text(encoding="utf-8")
 _OPTIONS: Final[dict[str, dict[str, str]]] = {
     match["name"]: {key: value.strip("`") for key, value in findall(r":(\w+): (.*)", match["options"])}
     for match in finditer(r"^\.\. confval:: (?P<name>\w+)\n(?P<options>(?: +:\w+: .*\n)+)", _REFERENCE, MULTILINE)
@@ -160,3 +162,20 @@ def docs_namespace_fixture() -> dict[str, object]:
     namespace: dict[str, object] = {"__name__": "reference"}
     exec(dedent(block), namespace)  # ruff:ignore[exec-builtin]  # the table names what the reference's own code defines
     return namespace
+
+
+def test_docs_typing_gallery_names_every_public_typing_name() -> None:
+    referenced = findall(r":(?:class|data|func|obj):`[^`]*?\btyping\.(\w+)>?`", _GALLERY)
+    literal = findall(r"``(?:typing\.)?(\w+)``", _GALLERY)
+
+    assert set(typing.__all__) - {*referenced, *literal} == set()
+
+
+def test_docs_typing_gallery_describes_every_picked_option(monkeypatch: MonkeyPatch) -> None:
+    monkeypatch.syspath_prepend(Path(__file__).parents[1] / "docs" / "_ext")
+    content = _GALLERY.split(".. live-example-picker::\n", 1)[1].split("\n\n", 2)[1]
+    options = import_module("live_example_variants").parse_options(dedent(content).splitlines())
+
+    described = import_module("live_example_selector").describe(_REFERENCE)
+
+    assert [option.name for option in options if not described.get(option.name)] == []

@@ -147,7 +147,7 @@ an annotation Python keeps as a string to evaluate later.
 The table shows how a field renders each annotation, every name linked to its documentation. A generic type, such as
 ``list[T]``, takes type parameters: placeholders such as :class:`~typing.TypeVar` ``T`` that a use fills with a concrete
 type. A sentinel, :pep:`661`, is a unique marker value such as ``MISSING`` that stands for an argument left out. The
-table evaluates the annotations in this namespace:
+:doc:`typing` renders a module for each feature. The table evaluates the annotations in this namespace:
 
 .. code-block:: python
 
@@ -340,7 +340,7 @@ parameter's description. Sphinx's :confval:`python_display_short_literal_types` 
 ``'a' | 'b'``. A class from a module in :confval:`autodoc_mock_imports`, subscripted or not, renders by its name.
 
 The same rendering applies to the header autodoc writes for data, an attribute or a property, so
-``count: Annotated[int, ...]`` shows as ``count: int`` there. A header written by hand, such as ``.. py:data:: mod.x``
+``count: Annotated[int, ...]`` shows as ``count: int`` there. A header written by hand, such as ``.. py:data:: demo.x``
 with a ``:type:`` option, keeps its type as written. Each type the extension adds sits in an inline element with the
 CSS class ``sphinx_autodoc_typehints-type``, for a theme or stylesheet to target.
 
