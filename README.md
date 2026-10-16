@@ -34,35 +34,53 @@ Sphinx's
 already moves annotations into the parameter and return fields, links them, and works with napoleon docstrings and type
 comments. If your annotations resolve at runtime and you use Sphinx fields or napoleon, that setting may be enough.
 
-The same `demo.py` below renders differently with each option. Both builds use `.. automodule:: demo` with `:members:`;
-the left uses the configuration above, while the right loads only `sphinx.ext.autodoc` with
+The same `demo.py` below renders differently with each option. It uses `typing-extensions` for `Doc`. Both builds use
+`.. automodule:: demo` with `:members:`. The left adds `typehints_defaults = "braces"` and
+`always_document_param_types = True` to the configuration above; the right loads only `sphinx.ext.autodoc` with
 `autodoc_typehints = "description"`.
 
 ```python
-from typing import TypedDict, Unpack
+from __future__ import annotations
+
+from typing import Annotated, Literal, NotRequired, TypedDict, Unpack, overload
+
+from typing_extensions import Doc
 
 
-class Options(TypedDict, total=False):
-    """The options of a run."""
+class Options(TypedDict):
+    """Optional controls for a request."""
 
-    verbose: bool
-    level: int
+    retries: NotRequired[int]
+    trace: NotRequired[bool]
 
 
-def configure(**kwargs: Unpack[Options]) -> None:
+@overload
+def fetch(path: str, *, mode: Literal["text"], **options: Unpack[Options]) -> str: ...
+
+
+@overload
+def fetch(path: str, *, mode: Literal["bytes"], **options: Unpack[Options]) -> bytes: ...
+
+
+def fetch(
+    path: Annotated[str, Doc("resource path")],
+    *,
+    mode: Literal["text", "bytes"] = "text",
+    **options: Unpack[Options],
+) -> str | bytes:
+    """Fetch a resource.
+
+    :keyword retries: attempts after a failure
+    :keyword trace: log each request
     """
-    Configure the run.
-
-    :keyword verbose: print every step
-    :keyword level: how much to print
-    """
+    return "" if mode == "text" else b""
 ```
 
-![Side-by-side Sphinx output: this extension adds NotRequired types to verbose and level; Sphinx's built-in output leaves them untyped and adds a kwargs entry.](docs/_static/sphinx-comparison.png)
+![Side-by-side Sphinx output for overloads, Annotated descriptions, and TypedDict keyword types.](docs/_static/sphinx-comparison.png)
 
 The
-[live example](https://sphinx-autodoc-typehints.readthedocs.io/en/latest/concepts.html#keyword-arguments-from-a-typeddict)
-lets you inspect the rendered text and configuration. Beyond this example, this extension adds:
+[live TypedDict example](https://sphinx-autodoc-typehints.readthedocs.io/en/latest/concepts.html#keyword-arguments-from-a-typeddict)
+lets you change the configuration and inspect its output. See the examples for each difference:
 
 - [Names imported under `if TYPE_CHECKING:`](https://sphinx-autodoc-typehints.readthedocs.io/en/latest/typing.html#type-checking-imports)
   link to their real module (`decimal.Decimal`, not a bare `Decimal`).
@@ -70,6 +88,8 @@ lets you inspect the rendered text and configuration. Beyond this example, this 
   functions that carry no annotations, such as those of a C extension.
 - [`**kwargs: Unpack[TypedDict]`](https://sphinx-autodoc-typehints.readthedocs.io/en/latest/typing.html#kwargs-typed-with-unpack)
   gets keyword fields typed from the `TypedDict` entries.
+- [`Annotated[..., Doc(...)]`](https://sphinx-autodoc-typehints.readthedocs.io/en/latest/typing.html#doc) puts
+  descriptions from annotations into the parameter fields.
 - [numpydoc `Parameters` sections](https://sphinx-autodoc-typehints.readthedocs.io/en/latest/how-to.html#use-with-numpydoc)
   get types in place, rather than in a second list.
 - [`@overload` variants](https://sphinx-autodoc-typehints.readthedocs.io/en/latest/typing.html#overload) get an
