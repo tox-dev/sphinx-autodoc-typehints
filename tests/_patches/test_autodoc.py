@@ -29,6 +29,22 @@ def test_overloads_stay_visible_to_an_app_without_the_extension(
         """)
 
 
+@mark.sphinx("text", testroot="dummy")
+def test_overloads_stay_visible_beside_an_app_with_the_extension_never_built(
+    app: SphinxTestApp, write_rst: Callable[[str], None], make_app: Callable[..., SphinxTestApp]
+) -> None:
+    write_rst(".. automethod:: dummy_module.ClassWithOverloadedMethods.convert")
+    plain = make_app("text", srcdir=app.srcdir, confoverrides={"extensions": ["sphinx.ext.autodoc"]}, freshenv=True)
+    plain.build()
+
+    assert (Path(plain.outdir) / "index.txt").read_text() == dedent("""\
+        ClassWithOverloadedMethods.convert(value: int) -> int
+        ClassWithOverloadedMethods.convert(value: str) -> str
+
+           Convert value.
+        """)
+
+
 @mark.parametrize(
     ("method", "expected"),
     [

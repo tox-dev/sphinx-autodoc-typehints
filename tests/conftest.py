@@ -24,7 +24,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
     from types import ModuleType
 
-    from sphinx.application import Sphinx
     from sphinx.testing.util import SphinxTestApp
 
 
@@ -40,24 +39,14 @@ class BuildText(Protocol):
 
 @fixture(name="make_app")
 def make_app_fixture(make_app: Callable[..., SphinxTestApp]) -> Iterator[Callable[..., SphinxTestApp]]:
-    unfinished: dict[int, SphinxTestApp] = {}
     confdirs: set[str] = set()
-
-    def finished(app: Sphinx, _exception: Exception | None) -> None:
-        unfinished.pop(id(app), None)
 
     def make(*args: object, **kwargs: object) -> SphinxTestApp:
         app = make_app(*args, **kwargs)
-        unfinished[id(app)] = app
         confdirs.add(f"{app.confdir}{sep}")
-        app.connect("build-finished", finished)
         return app
 
     yield make
-    # the extension hides the overloads of each module analyzed while one of its apps builds, and an app counts as
-    # building from its creation, so an app a test leaves unbuilt would hide them for the rest of the session
-    for unfinished_app in list(unfinished.values()):
-        unfinished_app.emit("build-finished", None)
     # a project's conf.py puts its directory on sys.path and autodoc imports from there, so a later test importing the
     # same module name would get this copy, which the next build of that project deletes
     for name in [
