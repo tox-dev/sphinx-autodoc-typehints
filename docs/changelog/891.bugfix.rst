@@ -1,0 +1,2 @@
+Honor ``autodoc_typehints_format = "fully-qualified"``: :confval:`typehints_fully_qualified` defaults to it, so fields,
+signatures and type parameters show full paths. An explicit :confval:`typehints_fully_qualified` still wins.

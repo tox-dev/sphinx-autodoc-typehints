@@ -1,0 +1,2 @@
+Report an invalid :confval:`typehints_defaults` or :confval:`typehints_formatter` value as a configuration error instead
+of an extension crash with a traceback.

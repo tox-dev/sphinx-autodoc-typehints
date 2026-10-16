@@ -1,0 +1,2 @@
+Show the PEP 696 default of a ``TypeVar`` or ``ParamSpec`` after its bound, as in
+``TypeVar(T, bound=int, default=bool)``.

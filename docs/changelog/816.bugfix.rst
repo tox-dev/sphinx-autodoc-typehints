@@ -1,0 +1,2 @@
+Type keyword arguments documented in a napoleon ``Keyword Args`` section, and stop
+:confval:`always_document_param_types` listing them again under Parameters.

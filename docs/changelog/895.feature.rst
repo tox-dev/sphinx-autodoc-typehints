@@ -1,0 +1,3 @@
+With :confval:`typehints_use_signature`, render the types kept in the signature the same way as the fields, so stubs,
+guarded imports, documented aliases, :confval:`typehints_fixup_module_name`, :confval:`typehints_fully_qualified` and
+:confval:`typehints_formatter` apply to both.

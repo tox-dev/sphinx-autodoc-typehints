@@ -1,0 +1,1 @@
+Render ``tuple[()]`` and ``Tuple[()]`` as the empty tuple instead of a bare ``tuple``.

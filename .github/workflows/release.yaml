@@ -1,7 +1,12 @@
 name: Release to PyPI
 on:
   push:
-    tags: ["*"]
+    branches: ["main"]
+    tags: ["[0-9]+.[0-9]+.[0-9]+"]
+  pull_request:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 permissions:
   contents: read
 env:
@@ -12,14 +17,13 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
+          fetch-depth: 0 # full history so hatch-vcs derives the version from the tag
           persist-credentials: false
       - name: Install the latest version of uv
         uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
         with:
           python-version: "3.15"
-          enable-cache: false
-          cache-dependency-glob: "pyproject.toml"
+          enable-cache: false # this workflow builds the artifact that gets published; no cache to poison
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Build package
         run: uv build --python 3.15 --python-preference only-managed --sdist --wheel . --out-dir dist
@@ -31,13 +35,28 @@ jobs:
   release:
     needs:
       - build
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-26.04
     environment:
       name: release
       url: https://pypi.org/project/sphinx-autodoc-typehints/${{ github.ref_name }}
     permissions:
       id-token: write
+      contents: write
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Require a changelog section for this release
+        env:
+          VERSION: ${{ github.ref_name }}
+        # A tag reaches PyPI only through prepare-release, which builds the changelog first. A tag pushed by hand skips
+        # that, so refuse to publish a version the changelog does not document rather than ship it silently.
+        run: |
+          if ! grep -qE "^ ${VERSION//./\\.} \(" docs/changelog.rst; then
+            echo "::error::docs/changelog.rst has no section for $VERSION; release via the Prepare release workflow"
+            exit 1
+          fi
       - name: Download all the dists
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
@@ -47,3 +66,14 @@ jobs:
         uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
         with:
           attestations: true
+          skip-existing: true
+      - name: Create GitHub release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          VERSION: ${{ github.ref_name }}
+        run: |
+          if gh release view "$VERSION" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "Release $VERSION already exists, skipping"
+          else
+            gh release create "$VERSION" --repo "$GITHUB_REPOSITORY" --title="$VERSION" --verify-tag --generate-notes
+          fi

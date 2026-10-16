@@ -1,0 +1,2 @@
+Leave hand-written reST field lists, such as docutils' ``:Parameters:`` definition lists, alone instead of converting
+them as numpydoc output into empty ``:param :`` fields.

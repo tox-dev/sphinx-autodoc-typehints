@@ -1,0 +1,1 @@
+Drop ``cls`` from the signature of a ``@classmethod`` stacked on another decorator such as ``functools.cache``.

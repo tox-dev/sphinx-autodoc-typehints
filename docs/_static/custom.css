@@ -1,0 +1,264 @@
+/* Widen furo's body column, and keep both tables of contents on screen while doing it.
+
+   Furo compiles its layout from SASS: `.content { width: 46em }`, 15em drawers either side, and breakpoints derived
+   from their sum ($full-width = 82em). A media query resolves `em` against the *initial* font size, which is always
+   16px, while the layout resolves the same unit against the root font size the reader's browser actually applies. The
+   two only agree at a 16px default. Widening the body by re-setting those fixed widths therefore pushes the layout
+   past the viewport for anyone reading at a larger font: the columns grow, the breakpoint does not move, and the
+   right-hand table of contents is clipped off the edge before anything folds it away.
+
+   So do not restate a width the breakpoints depend on. Pin the two drawers, cap the body, and let the body alone take
+   up the slack. The layout then fits at any font size, and the reader keeps both tables of contents. */
+
+.content {
+    width: auto;
+    max-width: 69em;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+/* A flex item refuses to shrink below its content's intrinsic width unless told otherwise, and the body's widest
+   token is a line of code. Without this the row holding the body and the right drawer stops shrinking at whatever the
+   longest code line measures, and pushes the drawer off the edge instead. Let the row shrink: a long line then scrolls
+   inside its own code block, which furo already handles, rather than scrolling the whole page sideways. */
+.main {
+    min-width: 0;
+}
+
+/* The drawers share a flex row with the body, so an unpinned drawer donates its width to a growing body: the table of
+   contents stays on screen but shrinks until its entries wrap into an unreadable ribbon. Hold both at 15em. */
+.toc-drawer {
+    flex: 0 0 15em;
+}
+
+/* min-width keeps the navigation at 15em once the gutter runs out, so the body absorbs the remainder rather than the
+   drawer collapsing. The calc centers the wider block on a roomy screen: half the padded body (69em + 2*3em) is 37.5em.
+   Furo does the same around its own narrower column. */
+.sidebar-drawer {
+    width: calc(50% - 37.5em);
+    min-width: 15em;
+    flex: 0 0 auto;
+}
+
+/* Furo folds the right-hand table of contents into an icon below 82em, which on a normal desktop is width the reader
+   still has. Keep it down to the mobile breakpoint (63em), where furo turns the navigation into an overlay and the
+   drawers genuinely have nowhere to sit. Restoring the desktop rules means undoing furo's fold in full: static flow,
+   no fixed panel off the right edge, and the desktop type scale rather than the larger mobile one. */
+@media (min-width: 63.0625em) {
+    .toc-content-icon {
+        display: none;
+    }
+    .toc-drawer {
+        position: static;
+        top: auto;
+        right: auto;
+        height: auto;
+        border-left: none;
+    }
+    .toc-tree {
+        border-left: 1px solid var(--color-background-border);
+        font-size: var(--toc-font-size);
+    }
+}
+
+/* Center each diagram and let a wide flowchart scroll on its own. */
+.mermaid {
+    text-align: center;
+    overflow-x: auto;
+}
+
+/* The diagrams carry no colors of their own: sphinxcontrib-mermaid renders them in the browser and re-renders them on
+   every theme toggle, so a palette written into the diagram source would be baked at whichever theme happened to load
+   first and then stay light on a dark page. The source names a role, and the palettes below fill it in: a flowchart
+   node takes it as a class (`class written source`), a sequence diagram participant as the prefix of its id
+   (`participant extension_handlers as extension`), since mermaid copies the id onto the participant's box and
+   lifeline. Keep a role's color consistent across diagrams: blue (`source`) is the reader's own code, orange
+   (`sphinx`) is Sphinx and the extensions it runs first, green (`extension`) is this extension, purple (`output`) is
+   what ends up on the page. Notes take a fifth color that belongs to no role.
+
+   Fills sit at the middle of each hue's lightness range so a node reads as colored on either page; the stroke is the
+   saturated hue and the text the hue's far end, dark on the light page and pale on the dark one, each pair above 7:1.
+
+   Mermaid scopes its own rules under the generated SVG's id, which outranks anything selectable from here, so these
+   declarations need !important to land. */
+body {
+    --diagram-blue-bg: #b6d6f7;
+    --diagram-blue-line: #1565c0;
+    --diagram-blue-ink: #0b2545;
+    --diagram-orange-bg: #fdcb94;
+    --diagram-orange-line: #d35400;
+    --diagram-orange-ink: #3d1c00;
+    --diagram-green-bg: #addfb4;
+    --diagram-green-line: #2e7d32;
+    --diagram-green-ink: #0f2e14;
+    --diagram-purple-bg: #d3c5f0;
+    --diagram-purple-line: #5e35b1;
+    --diagram-purple-ink: #241246;
+    --diagram-note-bg: #f9e7a6;
+    --diagram-note-line: #b7860b;
+    --diagram-note-ink: #3a2c00;
+}
+
+/* Mirror furo's own two-selector split so an explicit toggle and an untouched "auto" both land. */
+@media not print {
+    body[data-theme="dark"] {
+        --diagram-blue-bg: #1f4a73;
+        --diagram-blue-line: #64b5f6;
+        --diagram-blue-ink: #e3f1ff;
+        --diagram-orange-bg: #7a4310;
+        --diagram-orange-line: #ffa040;
+        --diagram-orange-ink: #fff1e0;
+        --diagram-green-bg: #22552f;
+        --diagram-green-line: #73c27b;
+        --diagram-green-ink: #e6f6e8;
+        --diagram-purple-bg: #463677;
+        --diagram-purple-line: #b39ddb;
+        --diagram-purple-ink: #f0eaff;
+        --diagram-note-bg: #5a4a12;
+        --diagram-note-line: #e6c34a;
+        --diagram-note-ink: #fff6d6;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        body:not([data-theme="light"]) {
+            --diagram-blue-bg: #1f4a73;
+            --diagram-blue-line: #64b5f6;
+            --diagram-blue-ink: #e3f1ff;
+            --diagram-orange-bg: #7a4310;
+            --diagram-orange-line: #ffa040;
+            --diagram-orange-ink: #fff1e0;
+            --diagram-green-bg: #22552f;
+            --diagram-green-line: #73c27b;
+            --diagram-green-ink: #e6f6e8;
+            --diagram-purple-bg: #463677;
+            --diagram-purple-line: #b39ddb;
+            --diagram-purple-ink: #f0eaff;
+            --diagram-note-bg: #5a4a12;
+            --diagram-note-line: #e6c34a;
+            --diagram-note-ink: #fff6d6;
+        }
+    }
+}
+
+/* A decision renders as a polygon, a plain step as a rect; both take the color. */
+.mermaid g.node.source > :is(rect, polygon),
+.mermaid rect.actor[name^="source_"] {
+    fill: var(--diagram-blue-bg) !important;
+    stroke: var(--diagram-blue-line) !important;
+    stroke-width: 1.5px !important;
+}
+
+.mermaid g.node.source .nodeLabel {
+    color: var(--diagram-blue-ink) !important;
+}
+
+.mermaid rect.actor[name^="source_"] + text.actor > tspan {
+    fill: var(--diagram-blue-ink) !important;
+}
+
+.mermaid line.actor-line[name^="source_"] {
+    stroke: var(--diagram-blue-line) !important;
+}
+
+.mermaid g.node.sphinx > :is(rect, polygon),
+.mermaid rect.actor[name^="sphinx_"] {
+    fill: var(--diagram-orange-bg) !important;
+    stroke: var(--diagram-orange-line) !important;
+    stroke-width: 1.5px !important;
+}
+
+.mermaid g.node.sphinx .nodeLabel {
+    color: var(--diagram-orange-ink) !important;
+}
+
+.mermaid rect.actor[name^="sphinx_"] + text.actor > tspan {
+    fill: var(--diagram-orange-ink) !important;
+}
+
+.mermaid line.actor-line[name^="sphinx_"] {
+    stroke: var(--diagram-orange-line) !important;
+}
+
+.mermaid g.node.extension > :is(rect, polygon),
+.mermaid rect.actor[name^="extension_"] {
+    fill: var(--diagram-green-bg) !important;
+    stroke: var(--diagram-green-line) !important;
+    stroke-width: 1.5px !important;
+}
+
+.mermaid g.node.extension .nodeLabel {
+    color: var(--diagram-green-ink) !important;
+}
+
+.mermaid rect.actor[name^="extension_"] + text.actor > tspan {
+    fill: var(--diagram-green-ink) !important;
+}
+
+.mermaid line.actor-line[name^="extension_"] {
+    stroke: var(--diagram-green-line) !important;
+}
+
+.mermaid g.node.output > :is(rect, polygon),
+.mermaid rect.actor[name^="output_"] {
+    fill: var(--diagram-purple-bg) !important;
+    stroke: var(--diagram-purple-line) !important;
+    stroke-width: 1.5px !important;
+}
+
+.mermaid g.node.output .nodeLabel {
+    color: var(--diagram-purple-ink) !important;
+}
+
+.mermaid rect.actor[name^="output_"] + text.actor > tspan {
+    fill: var(--diagram-purple-ink) !important;
+}
+
+.mermaid line.actor-line[name^="output_"] {
+    stroke: var(--diagram-purple-line) !important;
+}
+
+/* Only this extension's participant activates in the sequence diagrams, as the bars mark where it runs; mermaid gives
+   a bar no hook naming its participant. */
+.mermaid rect[class^="activation"] {
+    fill: var(--diagram-green-line) !important;
+    stroke: var(--diagram-green-ink) !important;
+}
+
+.mermaid rect.note {
+    fill: var(--diagram-note-bg) !important;
+    stroke: var(--diagram-note-line) !important;
+}
+
+.mermaid text.noteText > tspan {
+    fill: var(--diagram-note-ink) !important;
+}
+
+/* A sequence diagram's `box` renders as a bare `rect.rect` with no per-box hook, so its color stays in the diagram
+   source, at a low alpha: it composites against whichever background the theme paints and keeps the band behind the
+   participants faint. */
+.mermaid rect.rect {
+    stroke: var(--color-background-border) !important;
+}
+
+/* Mermaid paints an edge label on a gray box of its own theme; take the page's colors instead. */
+.mermaid .edgeLabel,
+.mermaid .edgeLabel p,
+.mermaid .edgeLabel rect,
+.mermaid .labelBkg {
+    background-color: var(--color-background-primary) !important;
+    fill: var(--color-background-primary) !important;
+    color: var(--color-foreground-primary) !important;
+}
+
+/* The rendered tab of a live example holds the HTML a nested build wrote; frame it so it reads as a page of its own. */
+.live-example-output {
+    padding: 0.25rem 1rem;
+    border: 1px solid var(--color-background-border);
+    border-radius: 0.25rem;
+    background: var(--color-background-primary);
+}
+
+/* Furo stretches the sidebar logo to the drawer's width, which makes the square mark tower over the project name. */
+.sidebar-logo {
+    max-width: 6rem;
+}

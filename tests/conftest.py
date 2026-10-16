@@ -156,8 +156,7 @@ def make_module(tmp_path: Path, monkeypatch: MonkeyPatch) -> MakeModule:
 
 @fixture
 def fresh_mod(monkeypatch: MonkeyPatch) -> None:
-    # several testroots and the README examples name their module mod, so forget what the process keeps about the mod
-    # an earlier test imported
+    # several testroots name their module mod, so forget what the process keeps about the mod an earlier test imported
     monkeypatch.delitem(modules, "mod", raising=False)
     monkeypatch.delitem(ModuleAnalyzer.cache, ("module", "mod"), raising=False)
     monkeypatch.delitem(SHADOWED_BY_GUARD, "mod", raising=False)

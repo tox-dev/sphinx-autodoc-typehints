@@ -1,0 +1,2 @@
+Publish the documentation on Read the Docs, with tutorials, how-to guides, a reference and every example rendered live
+by the extension.

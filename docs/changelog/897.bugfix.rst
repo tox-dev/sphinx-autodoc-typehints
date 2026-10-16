@@ -1,0 +1,2 @@
+Show an annotation whose evaluation raises any exception, including a ``type`` alias whose value raises, as written
+instead of crashing the build or dropping the object.

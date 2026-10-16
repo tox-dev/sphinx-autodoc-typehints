@@ -1,0 +1,1 @@
+Render a ``ParamSpec`` argument list of a generic as a list, ``Box[[int, str]]``, instead of a tuple.

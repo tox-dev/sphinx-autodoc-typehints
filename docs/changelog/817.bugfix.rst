@@ -1,0 +1,2 @@
+With ``autoclass_content = "both"``, list each constructor parameter once, including those added through
+:confval:`always_document_param_types` or ``Doc()``.

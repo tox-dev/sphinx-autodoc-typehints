@@ -1,0 +1,3 @@
+Resolve and link the other annotations of a function when Python cannot evaluate one of them, such as Django's
+``QuerySet[...]`` without ``django-stubs-ext``, also for a function re-exported with a rewritten ``__module__``, instead
+of showing them all as plain text.

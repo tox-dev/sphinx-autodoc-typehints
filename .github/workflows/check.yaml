@@ -31,6 +31,7 @@ jobs:
           - type
           - dev
           - pkg_meta
+          - docs
     steps:
       - name: Install OS dependencies
         id: graphviz
@@ -61,3 +62,21 @@ jobs:
           PYTEST_ADDOPTS: "-vv --durations=20"
           # a pull request is held to 100% coverage of the lines it changes; other runs have no base to diff against
           DIFF_AGAINST: ${{ github.event.pull_request.base.sha || 'HEAD' }}
+  changelog:
+    runs-on: ubuntu-26.04
+    # A PR must add a docs/changelog/<pr>.<type>.rst fragment; automated dependency and pre-commit bumps are exempt, as
+    # is anything labeled skip news, for changes no user of the extension can observe.
+    if: >-
+      github.event_name == 'pull_request' && !contains(fromJSON('["dependabot[bot]", "pre-commit-ci[bot]"]'), github.event.pull_request.user.login) && !contains(github.event.pull_request.labels.*.name, 'skip news')
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          python-version: "3.15"
+          enable-cache: false
+      - name: Require a news fragment
+        run: uv run --only-group release towncrier check --compare-with "origin/${GITHUB_BASE_REF}"

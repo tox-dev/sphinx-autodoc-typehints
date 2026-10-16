@@ -1,0 +1,2 @@
+Show the return type of a generator with a ``Yields`` section when its docstring has a ``Returns`` section and the
+third argument of its ``Generator`` annotation is not ``None``.

@@ -1,0 +1,2 @@
+Resolve the classes, type variables and aliases a class body defines in its method annotations under
+``from __future__ import annotations``.

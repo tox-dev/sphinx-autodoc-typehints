@@ -1,0 +1,2 @@
+Read ``self.x: T`` annotations nested in ``if``, ``try``, ``with``, loop and ``match`` blocks of ``__init__``, and
+handle a positional-only ``self``.

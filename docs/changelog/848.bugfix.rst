@@ -1,0 +1,2 @@
+Treat numpydoc's ``..`` placeholder as no description, so entries without one render as ``x (int)`` instead of
+``x (int) -- ..``.

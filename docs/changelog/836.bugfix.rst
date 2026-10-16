@@ -1,0 +1,2 @@
+With ``napoleon_use_param = False`` or ``napoleon_use_keyword = False``, type the entries of napoleon's combined
+parameter field, add their defaults, and list the parameters the extension adds there instead of in a second list.

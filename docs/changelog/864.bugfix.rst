@@ -1,0 +1,1 @@
+Keep a numpydoc ``Other Parameters`` section under its own heading instead of merging it into ``Parameters``.

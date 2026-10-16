@@ -1,0 +1,2 @@
+Keep the subscript arguments of a class whose ``__class_getitem__`` returns the class itself, such as SQLAlchemy's
+``TypeEngine[Any]``, in headers, parameter and return fields, signatures, overloads and ``:ivar:`` types.

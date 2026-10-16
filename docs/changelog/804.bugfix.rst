@@ -1,0 +1,1 @@
+Report ``sphinx.ext.doctest`` failures on the line the example starts on instead of one line late.

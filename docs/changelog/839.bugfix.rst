@@ -1,0 +1,2 @@
+With :confval:`typehints_defaults`, render defaults the way the signature does, without memory addresses, with enum
+members by name and with sets in a stable order.

@@ -1,0 +1,2 @@
+Resolve names that two modules' ``if TYPE_CHECKING:`` blocks import from each other to their guarded types,
+whichever module Sphinx documents first.

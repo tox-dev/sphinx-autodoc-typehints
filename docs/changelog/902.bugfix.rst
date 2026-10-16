@@ -1,0 +1,2 @@
+Format the stub type of a C attribute (getset or member descriptor) with the intersphinx role and documented ``type``
+aliases that parameter types use, fixing broken cross-references.

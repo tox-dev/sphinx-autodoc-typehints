@@ -1,0 +1,2 @@
+Add parameters documented through :confval:`always_document_param_types` or ``Doc()`` in signature order among the
+documented ones instead of in a second list at the end of the docstring.

@@ -1,0 +1,1 @@
+Link :confval:`autodoc_type_aliases` targets documented as module data or in a document read later.

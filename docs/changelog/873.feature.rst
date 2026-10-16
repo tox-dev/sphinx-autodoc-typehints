@@ -1,0 +1,2 @@
+Show ``TypedDict`` keys a caller may omit as ``NotRequired[...]``, and add an ``Extra items`` field for PEP 728
+``extra_items`` and ``closed`` classes.

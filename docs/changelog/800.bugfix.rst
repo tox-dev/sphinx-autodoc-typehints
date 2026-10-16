@@ -1,0 +1,1 @@
+Strip the ``:no-overloads:`` marker from the output when :confval:`typehints_document_overloads` is ``False``.

@@ -1,0 +1,3 @@
+Follow the ``__signature__`` a decorator sets on its wrapper, so the signature and the parameter fields list the
+parameters callers pass instead of those of the wrapped function; the signature shows types only under
+:confval:`typehints_use_signature`.

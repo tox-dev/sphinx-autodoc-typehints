@@ -9,6 +9,7 @@ env_list = [
   "3.12",
   "3.14t",
   "3.15t",
+  "docs",
   "fix",
   "pkg_meta",
   "type",
@@ -35,6 +36,8 @@ commands = [
       "{env_site_packages_dir}{/}sphinx_autodoc_typehints",
       "--cov",
       "{tox_root}{/}tests",
+      "--cov",
+      "{tox_root}{/}docs{/}_ext",
       "--cov-config=pyproject.toml",
       "--no-cov-on-fail",
       "--cov-report",
@@ -68,6 +71,32 @@ set_env = { COVERAGE_FILE = "{work_dir}/.coverage.{env_name}", COVERAGE_CORE = "
 
 [env."3.15t"]
 set_env = { COVERAGE_FILE = "{work_dir}/.coverage.{env_name}", COVERAGE_CORE = "pytrace" }
+
+[env.docs]
+description = "build the documentation"
+dependency_groups = [ "docs" ]
+# the doctree folder outlives the run so the live examples cached in it stay rendered, and -E still re-reads every
+# page so -W reports each warning
+commands = [
+  [
+    "sphinx-build",
+    "-d",
+    "{work_dir}{/}docs_out{/}doctree",
+    "docs",
+    "{env:READTHEDOCS_OUTPUT:{work_dir}{/}docs_out}/html",
+    "--color",
+    "-b",
+    "html",
+    { replace = "posargs", default = [], extend = true },
+    "-E",
+    "-W",
+  ],
+  [
+    "python",
+    "-c",
+    'print(r"documentation available under file://{work_dir}{/}docs_out{/}html{/}index.html")',
+  ],
+]
 
 [env.fix]
 description = "format the code base to adhere to our styles, and complain about what we cannot do automatically"

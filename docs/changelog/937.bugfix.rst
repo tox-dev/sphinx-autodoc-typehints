@@ -1,0 +1,2 @@
+Stop the ``cannot cache unpickleable configuration value`` warning for :confval:`typehints_fixup_module_name`, and
+re-read the documents only when that function's source changes instead of on every build.
