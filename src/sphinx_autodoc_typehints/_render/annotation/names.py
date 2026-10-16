@@ -34,9 +34,9 @@ PYDATA_ANNOTATIONS: Final[set[tuple[str, str]]] = {
     *(
         ("typing", name)
         for name in (
-            *("Any", "AnyStr", "Callable", "ClassVar", "Concatenate", "Final", "Literal", "LiteralString", "Never"),
-            *("NoReturn", "NotRequired", "Optional", "ReadOnly", "Required", "Self", "Tuple", "TypeAlias", "TypeForm"),
-            *("TypeGuard", "TypeIs", "Unpack"),
+            *("Annotated", "Any", "AnyStr", "Callable", "ClassVar", "Concatenate", "Final", "Literal"),
+            *("LiteralString", "Never", "NoReturn", "NotRequired", "Optional", "ReadOnly", "Required", "Self"),
+            *("Tuple", "TypeAlias", "TypeForm", "TypeGuard", "TypeIs", "Unpack"),
             *(("ParamSpecArgs", "ParamSpecKwargs") if version_info < (3, 13) else ()),
             *(("Union",) if version_info < (3, 14) else ()),
         )

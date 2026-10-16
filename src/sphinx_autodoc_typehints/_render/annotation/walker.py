@@ -9,12 +9,12 @@ from __future__ import annotations
 import typing  # probed at runtime for names typing_extensions backports
 from dataclasses import dataclass
 from enum import Enum
-from operator import attrgetter
 from re import fullmatch, sub
 from sys import version_info
 from types import GenericAlias
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Concatenate,
     Final,
     ForwardRef,
@@ -361,13 +361,10 @@ def _named_class(reference: _Reference) -> _Frame:
 
 
 def _new_type(reference: _Reference) -> _Frame:
-    config = reference.config
-    # a signature names the class itself, a bare typing.NewType, as any class; a docstring field reads its supertype,
-    # and the AttributeError a bare one raises there stays
+    # the class itself, a bare typing.NewType, has no supertype and renders as any class does
     if not isinstance(annotation := reference.annotation, NewType):
-        if not render_context(config).signature:
-            attrgetter("__supertype__")(annotation)
         return
+    config = reference.config
     module = fixup_module_name(config, annotation.__module__)
     qualified = f"{module}.{annotation.__name__}" if module else annotation.__name__
     text = f":py:class:`{'' if reference.fully_qualified or not module else '~'}{qualified}`"
@@ -379,8 +376,9 @@ def _new_type(reference: _Reference) -> _Frame:
 
 
 def _annotated(reference: _Reference) -> _Frame:
-    # the form itself, a bare typing.Annotated, has no origin, and the AttributeError reading it raises stays
-    yield _Rendered((yield attrgetter("__origin__")(reference.annotation)))
+    # the form itself, a bare typing.Annotated, has no origin and renders as any special form does
+    if get_origin(annotation := reference.annotation) is Annotated:
+        yield _Rendered((yield get_args(annotation)[0]))
 
 
 def _type_variable(reference: _Reference) -> _Frame:
