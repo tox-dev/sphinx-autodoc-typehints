@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from functools import partial
-from inspect import Parameter, Signature, isclass, signature, unwrap
+from inspect import Parameter, Signature, isclass, signature
 from typing import TYPE_CHECKING
 
 from sphinx.util.inspect import object_description
@@ -16,7 +16,7 @@ from .._documented import (
     resolved_type_hints,
     typed_overloads,
 )
-from .._objects import documented_owner, stored_name
+from .._objects import documented_owner, stored_name, unwrapped
 from .._render import as_field_type, fixup_module_name
 from .._resolve import bound_type_args, resolve_overloads
 from .._state import written_signatures
@@ -101,7 +101,7 @@ def inject_setter_type(
     if not isinstance(obj, property) or obj.fset is None or any(line.startswith(":Setter accepts:") for line in lines):
         return
     # property() takes any object as its setter, and pygments passes a docstring there
-    if not callable(setter := unwrap(obj.fset)):
+    if not callable(setter := unwrapped(obj.fset)):
         return
     try:
         parameters = list(signature(setter).parameters)

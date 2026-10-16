@@ -4,7 +4,7 @@ from textwrap import dedent
 from types import FunctionType
 from typing import TYPE_CHECKING, Final, get_overloads, overload
 
-from pytest import MarkDecorator, mark, param
+from pytest import MarkDecorator, MonkeyPatch, mark, param
 
 from sphinx_autodoc_typehints._documented import typed_overloads
 from sphinx_autodoc_typehints._render import render_context
@@ -150,3 +150,14 @@ def test_typed_overloads_name_an_alias_in_the_signature(build_text: BuildText) -
            Parameters:
               **amount** ("int" | "str") -- The amount
         """)
+
+
+def test_typed_overloads_of_functions_wrapping_a_mock_keep_their_types(
+    app: SphinxTestApp, monkeypatch: MonkeyPatch, mocked_object: Callable[..., object]
+) -> None:
+    for function in get_overloads(_pick):
+        monkeypatch.setattr(function, "__wrapped__", mocked_object, raising=False)
+    overloads = resolve_overloads(_pick)
+    assert overloads is not None
+    typed = typed_overloads(app, f"{__name__}._pick", _pick, overloads, 0, {})
+    assert [hints for _, hints in typed] == [{"value": int, "return": int}, {"value": str, "return": str}]

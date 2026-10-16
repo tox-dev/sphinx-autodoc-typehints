@@ -14,6 +14,7 @@ from pytest import MarkDecorator, MonkeyPatch, fixture, mark, param
 from _docstring.conftest import INT, STR
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from io import StringIO
     from types import ModuleType
 
@@ -474,3 +475,10 @@ def test_build_documents_the_fields_of_an_attrs_class(
     build_text: BuildText, warning: StringIO, rst: str, expected: str
 ) -> None:
     assert (build_text(rst), warning.getvalue()) == (expected, "")
+
+
+def test_instance_variable_of_a_class_whose_init_a_mock_decorates_stays_as_written(
+    process: Process, mocked_object: Callable[..., object]
+) -> None:
+    widget = type("Widget", (), {"__init__": mocked_object})
+    assert process("class", "mod.Widget", widget, [":ivar size: the size"]) == [":ivar size: the size"]

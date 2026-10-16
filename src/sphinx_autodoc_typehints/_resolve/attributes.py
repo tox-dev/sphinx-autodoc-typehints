@@ -14,9 +14,9 @@ from ast import (
     unparse,
     walk,
 )
-from inspect import unwrap
 from typing import TYPE_CHECKING, ClassVar, Final, get_args, get_origin
 
+from .._objects import unwrapped
 from .evaluate import evaluate_annotation, type_hints
 from .generics import type_params_of
 from .guards import annotation_globals, guarded_names
@@ -37,7 +37,7 @@ def get_instance_var_annotations(cls: type) -> dict[str, Annotation | str]:
     source has it. Statements inside `if`, `try` and `with` blocks count; those of nested functions and classes
     do not, as they belong to a scope that may not run.
     """
-    if (init := cls.__init__) is object.__init__ or (tree := parsed_source(init)) is None:
+    if (init := unwrapped(cls.__init__)) is None or init is object.__init__ or (tree := parsed_source(init)) is None:
         return {}
     raw: dict[str, str] = {}
     for node in walk(tree):
@@ -56,7 +56,7 @@ def get_instance_var_annotations(cls: type) -> dict[str, Annotation | str]:
     if not raw:
         return {}
     # an inherited or re-exported `__init__` sees the names of the module defining it, not those of the class's
-    globalns = annotation_globals(unwrap(init))
+    globalns = annotation_globals(init)
     # the PEP 695 type parameters of the class defining `__init__` live in no module namespace
     definer = next(base for base in cls.__mro__ if "__init__" in vars(base))
     localns = {param.__name__: param for param in type_params_of(definer, legacy=False)}
