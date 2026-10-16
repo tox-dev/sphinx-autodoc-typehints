@@ -7,7 +7,6 @@ It also types a C data descriptor from the stub of its class.
 from __future__ import annotations
 
 from ast import AnnAssign, ClassDef, FunctionDef, If, Name, stmt, unparse
-from contextlib import suppress
 from inspect import get_annotations, getmodule, isclass, isroutine
 from types import GetSetDescriptorType, MemberDescriptorType, ModuleType
 from typing import TYPE_CHECKING, NewType, ParamSpec, TypeVar, TypeVarTuple, get_origin
@@ -38,7 +37,7 @@ def get_all_type_hints(
     """
     Return the type hints of `obj`, documented as `name`, backfilled from type comments or a stub when it has none.
 
-    The backfilled annotations replace those of `obj` where it accepts the assignment.
+    The annotations of `obj` stay as they were, as the object belongs to the user and other code reads them.
     """
     if result := resolve_annotations(autodoc_mock_imports, obj, name, localns):
         return result
@@ -55,13 +54,14 @@ def get_all_type_hints(
     )
     combined_localns = {**stub_localns, **localns, **crossrefs}
     try:
+        runtime = obj.__annotations__
         obj.__annotations__ = result
     except (AttributeError, TypeError):
         return resolve_string_annotations(obj, result, combined_localns, owner_module)
-    result = resolve_annotations(autodoc_mock_imports, obj, name, combined_localns)
-    with suppress(AttributeError, TypeError):
-        obj.__annotations__ = result
-    return result
+    try:
+        return resolve_annotations(autodoc_mock_imports, obj, name, combined_localns)
+    finally:
+        obj.__annotations__ = runtime
 
 
 def resolve_annotations(
