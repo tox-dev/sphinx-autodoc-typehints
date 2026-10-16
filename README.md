@@ -34,6 +34,9 @@ Sphinx's
 already moves annotations into the parameter and return fields, links them, and works with napoleon docstrings and type
 comments. If your annotations resolve at runtime and you use Sphinx fields or napoleon, that setting may be enough.
 
+<details>
+<summary>Show example code and configuration</summary>
+
 The same `demo.py` below renders differently with each option. It uses `typing-extensions` for `Doc`. Both builds use
 `.. automodule:: demo` with `:members:`. The left adds `typehints_defaults = "braces"` and
 `always_document_param_types = True` to the configuration above; the right loads only `sphinx.ext.autodoc` with
@@ -76,7 +79,9 @@ def fetch(
     return "" if mode == "text" else b""
 ```
 
-![Side-by-side Sphinx output for overloads, Annotated descriptions, and TypedDict keyword types.](docs/_static/sphinx-comparison.png)
+</details>
+
+![This extension puts overloads in a field, types the retries and trace keywords, and turns Annotated Doc into a path description. Built-in Sphinx keeps the overloads in signatures and leaves those keyword descriptions untyped.](docs/_static/sphinx-comparison.png)
 
 The
 [live TypedDict example](https://sphinx-autodoc-typehints.readthedocs.io/en/latest/concepts.html#keyword-arguments-from-a-typeddict)
