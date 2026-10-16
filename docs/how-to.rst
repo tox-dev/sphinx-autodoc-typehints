@@ -51,12 +51,12 @@ while a :func:`@deprecated <warnings.deprecated>` notice heads the class docstri
 *******************
 
 :doc:`sphinx.ext.napoleon <sphinx:usage/extensions/napoleon>` turns Google and NumPy style sections, such as ``Args:``
-and ``Returns:``, into the fields Sphinx renders. Load it before this extension, so the fields it writes exist when the
-extension adds their types.
+and ``Returns:``, into the fields Sphinx renders. The extension adds the types to those fields after napoleon writes
+them, whichever order :confval:`extensions` lists the two in.
 
 .. live-example::
 
-    # napoleon has to rewrite the docstring before this extension reads it
+    # napoleon writes the fields this extension types
     extensions = ["sphinx.ext.autodoc", "sphinx.ext.napoleon", "sphinx_autodoc_typehints"]
     ---
     def format_unit(value: float, unit: str) -> str:
@@ -86,13 +86,13 @@ there stays. The types napoleon's ``Attributes`` section would read from annotat
  Use with numpydoc
 *******************
 
-:doc:`numpydoc <numpydoc:index>` renders NumPy style docstrings with its own section layout. Load it before this
-extension, so the extension types the ``Parameters`` and ``Returns`` entries numpydoc writes rather than adding a second
-list.
+:doc:`numpydoc <numpydoc:index>` renders NumPy style docstrings with its own section layout. The extension types the
+``Parameters`` and ``Returns`` entries numpydoc writes rather than adding a second list, whichever order
+:confval:`extensions` lists the two in.
 
 .. live-example::
 
-    # numpydoc has to rewrite the docstring before this extension reads it
+    # numpydoc writes the sections this extension types
     extensions = ["sphinx.ext.autodoc", "numpydoc", "sphinx_autodoc_typehints"]
     ---
     def format_unit(value: float, unit: str) -> str:

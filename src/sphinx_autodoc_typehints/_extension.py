@@ -72,10 +72,11 @@ def setup(app: Sphinx) -> dict[str, bool | str]:
     app.connect("env-before-read-docs", validate_config)
     app.connect("env-before-read-docs", store_type_mapping)
     app.connect("autodoc-process-signature", process_signature)
-    # napoleon rewrites the docstring between these, at the default priority of 500
+    # napoleon and numpydoc rewrite the docstring between these, at the default priority of 500; above it the fields
+    # they write exist whichever order `extensions` lists them in
     app.connect("autodoc-process-docstring", note_attributes_before_napoleon, priority=499)
     app.connect("autodoc-process-docstring", mark_numpy_returns, priority=499)
-    app.connect("autodoc-process-docstring", process_docstring, priority=500)
+    app.connect("autodoc-process-docstring", process_docstring, priority=501)
     app.connect("object-description-transform", add_type_params)
     app.connect("object-description-transform", render_header_types)
     patch_overload_capture()

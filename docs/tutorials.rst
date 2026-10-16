@@ -24,7 +24,7 @@ Load it after autodoc
 
 Add the extension to :confval:`extensions` in ``conf.py``, after :doc:`autodoc <sphinx:usage/extensions/autodoc>`,
 the Sphinx extension that pulls documentation out of your code. An extension that rewrites docstrings, such as
-:doc:`napoleon <sphinx:usage/extensions/napoleon>` or :doc:`numpydoc <numpydoc:index>`, goes between the two, see
+:doc:`napoleon <sphinx:usage/extensions/napoleon>` or :doc:`numpydoc <numpydoc:index>`, can go anywhere in the list, see
 :ref:`how-to:Use with napoleon` and :ref:`how-to:Use with numpydoc`.
 
 .. code-block:: python

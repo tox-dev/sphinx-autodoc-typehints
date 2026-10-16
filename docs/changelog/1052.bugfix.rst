@@ -1,0 +1,2 @@
+Type the fields napoleon and numpydoc write when they come after ``sphinx_autodoc_typehints`` in ``extensions``;
+the order the two are listed in no longer matters.

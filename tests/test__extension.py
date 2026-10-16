@@ -5,7 +5,7 @@ from inspect import isclass
 from pathlib import Path
 from shutil import copytree
 from sys import modules
-from textwrap import dedent
+from textwrap import dedent, indent
 from typing import TYPE_CHECKING
 
 from extension_expected import EPILOG, EXPECTED, OPTIONS, PROLOG, WARNINGS
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from types import ModuleType
 
-    from conftest import BuildText
+    from conftest import BuildText, MakeModule
     from sphinx.testing.util import SphinxTestApp
 
 
@@ -159,3 +159,103 @@ def test_build_reads_the_guard_of_a_module_edited_since_the_last_build(
            Return type:
               "None"
         """)
+
+
+@mark.parametrize(
+    ("extension", "docstring", "expected"),
+    [
+        param(
+            "sphinx.ext.napoleon",
+            """\
+            Args:
+                x: the x coordinate
+
+            Attributes:
+                label: the name
+            """,
+            """\
+            class listed_after.Point(x)
+
+               A point.
+
+               Parameters:
+                  **x** ("int") -- the x coordinate
+
+               label
+
+                  the name
+
+                  Type:
+                     "str"
+            """,
+            id="napoleon-google",
+        ),
+        param(
+            "sphinx.ext.napoleon",
+            """\
+            Parameters
+            ----------
+            x
+                the x coordinate
+            """,
+            """\
+            class listed_after.Point(x)
+
+               A point.
+
+               Parameters:
+                  **x** ("int") -- the x coordinate
+            """,
+            id="napoleon-numpy",
+        ),
+        param(
+            "numpydoc",
+            """\
+            Parameters
+            ----------
+            x
+                the x coordinate
+            """,
+            """\
+            class listed_after.Point(x)
+
+               A point.
+
+               Parameters:
+                  **x** ("int") -- the x coordinate
+            """,
+            id="numpydoc",
+        ),
+    ],
+)
+def test_docstring_extension_listed_after_still_gets_types(
+    make_app: Callable[..., SphinxTestApp],
+    make_module: MakeModule,
+    tmp_path: Path,
+    extension: str,
+    docstring: str,
+    expected: str,
+) -> None:
+    make_module(
+        "listed_after",
+        dedent(f"""\
+            class Point:
+                \"""A point.
+
+{indent(dedent(docstring), "                ")}
+                \"""
+
+                label: str
+
+                def __init__(self, x: int) -> None:
+                    self.x = x
+        """),
+    )
+    (project := tmp_path / "project").mkdir()
+    (project / "conf.py").write_text(
+        f"extensions = ['sphinx.ext.autodoc', 'sphinx_autodoc_typehints', {extension!r}]\n"
+        "numpydoc_show_class_members = False\n"
+    )
+    (project / "index.rst").write_text(".. autoclass:: listed_after.Point")
+    (app := make_app("text", srcdir=project)).build()
+    assert (Path(app.outdir) / "index.txt").read_text() == dedent(expected)
