@@ -1708,8 +1708,8 @@ Context managers
 
 :class:`~typing.ContextManager` and :class:`~typing.AsyncContextManager` stand for
 :class:`contextlib.AbstractContextManager` and :class:`contextlib.AbstractAsyncContextManager`, deprecated since
-Python 3.9. Python 3.13 gave each a second type parameter, the type ``__exit__`` returns, with a default; the extension
-shows that default, ``bool | None``, though the source leaves it out.
+Python 3.9. Python 3.13 gave each a second type parameter, the type ``__exit__`` returns, with a default. A subscript
+that leaves it out renders as written, without the default.
 
 .. live-example::
 

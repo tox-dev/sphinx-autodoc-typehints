@@ -122,7 +122,7 @@ def get_annotation_args(annotation: Hint | NewType | None, module: str, class_na
     try:
         original = getattr(modules[module], class_name)
     except (KeyError, AttributeError):
-        pass
+        original = getattr(annotation, "__origin__", None)
     else:
         if annotation is original:
             return ()
@@ -135,7 +135,21 @@ def get_annotation_args(annotation: Hint | NewType | None, module: str, class_na
         return getattr(annotation, "__parameters__", ())
     if isinstance(annotation, InitVar):
         return (annotation.type,)
-    return () if len(args := getattr(annotation, "__args__", ())) == 1 and args[0] == () else args
+    return _subscript_args(annotation, original)
+
+
+# subscripting fills in the PEP 696 defaults the source leaves out, so a trailing argument the generic gives back
+# when subscripted without it is a default, whether written or filled in, and type checkers read both the same
+def _subscript_args(annotation: object, generic: object) -> tuple[RenderNode, ...]:
+    kept = len(args := getattr(annotation, "__args__", ()))
+    while kept > 1:
+        try:
+            if generic[args[: kept - 1]] != annotation:  # ty: ignore[not-subscriptable]  # TypeError when not generic
+                break
+        except TypeError:  # not subscriptable, or no default for the dropped parameter
+            break
+        kept -= 1
+    return args[:kept]
 
 
 def fixup_module_name(config: Config, module: str) -> str:
