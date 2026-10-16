@@ -58,7 +58,8 @@ def setup(app: Sphinx) -> dict[str, bool | str]:
     patch_overload_capture()
     patch_signature_lines()
     patch_autodoc_type_hints()
-    app.connect("builder-inited", lambda sphinx_app: BUILDING.add(id(sphinx_app)))
+    # `builder-inited` fires while the app is created, so an app never built would count as building for good
+    app.connect("env-before-read-docs", lambda sphinx_app, _env, _docnames: BUILDING.add(id(sphinx_app)))
     app.connect("build-finished", lambda sphinx_app, _exception: BUILDING.discard(id(sphinx_app)))
     patch_lookup_annotation()
     patch_line_numbers()
