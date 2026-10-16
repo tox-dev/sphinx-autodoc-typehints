@@ -9,6 +9,7 @@ from __future__ import annotations
 import typing  # probed at runtime for names typing_extensions backports
 from dataclasses import dataclass
 from enum import Enum
+from inspect import isclass
 from re import fullmatch, sub
 from sys import version_info
 from types import GenericAlias
@@ -282,7 +283,7 @@ def _class_reference(annotation: Hint | NewType | None, config: Config, *, short
         class_name = get_annotation_class_name(annotation, module)
         args = get_annotation_args(annotation, module, class_name)
     except ValueError:
-        yield _Rendered(str(annotation).strip("'"))
+        yield _Rendered(annotation.__qualname__ if isclass(annotation) else str(annotation).strip("'"))
     else:
         # where the docs place a class Python defines elsewhere, such as pathlib.Path living in pathlib._local from 3.13
         if documented := INVALID_BUILTIN_CLASSES.get((module, class_name)):

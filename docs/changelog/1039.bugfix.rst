@@ -1,0 +1,1 @@
+A class whose ``__module__`` is ``None`` now renders as its bare name instead of a broken cross-reference to ``None.ClassName``.

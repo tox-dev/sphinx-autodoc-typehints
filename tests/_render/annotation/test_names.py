@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import InitVar
 from importlib.machinery import ModuleSpec
-from re import Match, Pattern, findall
+from re import Match, Pattern, escape, findall
 from textwrap import dedent
 from types import CodeType, CoroutineType, FunctionType, ModuleType
 from typing import (  # ruff:ignore[deprecated-import]  # the legacy aliases are under test
@@ -160,9 +160,16 @@ def test_get_annotation_args(
     assert get_annotation_args(annotation, module, class_name) == args
 
 
-def test_get_annotation_module_raises_on_unknown() -> None:
-    with raises(ValueError, match="Cannot determine the module of Undefined"):
-        get_annotation_module("Undefined")
+@mark.parametrize(
+    ("annotation", "message"),
+    [
+        param("Undefined", "Undefined", id="no-module"),
+        param(type("NoModule", (), {"__module__": None}), "<class 'NoModule'>", id="module-not-a-string"),
+    ],
+)
+def test_get_annotation_module_raises_on_unknown(annotation: Hint, message: str) -> None:
+    with raises(ValueError, match=f"Cannot determine the module of {escape(message)}"):
+        get_annotation_module(annotation)
 
 
 @mark.parametrize(

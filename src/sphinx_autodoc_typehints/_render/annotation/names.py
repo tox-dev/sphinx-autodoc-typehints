@@ -66,18 +66,18 @@ _TYPES_NAMES: Final[Mapping[object, str]] = frozendict(
 
 
 def get_annotation_module(annotation: Hint | NewType | None) -> str:
-    """Return the module the reference to `annotation` names, raising `ValueError` when it has no `__module__`."""
+    """Return the module the reference to `annotation` names, raising `ValueError` when `__module__` is no string."""
     if annotation is None:
         return "builtins"
     if _get_types_type(annotation) is not None:
         return "types"
     if isinstance(annotation, NewType | TypeVar | ParamSpec | ParamSpecArgs | ParamSpecKwargs | TypeVarTuple):
         return "typing"
-    try:
-        return annotation.__module__
-    except AttributeError:
-        msg = f"Cannot determine the module of {annotation}"
-        raise ValueError(msg) from None
+    # `type()` accepts any `__module__`, such as `None`, and `repr` then shows the class name alone
+    if isinstance(module := getattr(annotation, "__module__", None), str):
+        return module
+    msg = f"Cannot determine the module of {annotation}"
+    raise ValueError(msg)
 
 
 def _get_types_type(obj: Hint | NewType | None) -> str | None:
