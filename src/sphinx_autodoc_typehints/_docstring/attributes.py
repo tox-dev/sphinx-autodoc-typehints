@@ -8,11 +8,10 @@ from __future__ import annotations
 
 import re  # a from-import of compile would shadow the builtin
 from contextlib import suppress
-from inspect import unwrap
 from textwrap import dedent
 from typing import TYPE_CHECKING, Final
 
-from .._objects import is_attrs_class
+from .._objects import is_attrs_class, unwrapped
 from .._render import as_field_type
 from .._resolve import (
     bound_type_args,
@@ -50,7 +49,7 @@ def class_attribute_annotations(
     # class and instance variable annotations evaluate in the modules defining the class and its __init__, so
     # their guarded imports must be bound first
     resolve_type_guarded_imports(app.config.autodoc_mock_imports, cls)
-    resolve_type_guarded_imports(app.config.autodoc_mock_imports, unwrap(cls.__init__))
+    resolve_type_guarded_imports(app.config.autodoc_mock_imports, unwrapped(cls.__init__))
     if is_attrs_class(cls):
         from attrs import fields  # ruff:ignore[import-outside-top-level]  # optional, and installed for any class it made
 

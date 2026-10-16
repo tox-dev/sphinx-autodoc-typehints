@@ -680,3 +680,11 @@ def test_typed_dict_extra_items_short_literal(build_text: BuildText) -> None:
 @mark.sphinx("text", testroot="integration")
 def test_overloads_name_an_alias_as_written(build_text: BuildText, index: str, expected: str) -> None:
     assert build_text(index) == expected
+
+
+def test_property_whose_setter_a_mock_decorates_shows_no_setter_type(
+    process: Process, mocked_object: Callable[..., None]
+) -> None:
+    assert process("property", f"{__name__}.Holder.value", property(_get_int, mocked_object), ["Summary."]) == [
+        "Summary."
+    ]

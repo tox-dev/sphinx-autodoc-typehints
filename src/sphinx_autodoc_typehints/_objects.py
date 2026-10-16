@@ -39,7 +39,7 @@ def callable_target(obj: Callable[..., object]) -> tuple[QualifiedCallable, Qual
     Unwrapping stops at a wrapper stating `__signature__`, as autodoc does. `None` means `obj` unwraps to a mock,
     which holds no types.
     """
-    if (callee := _unwrap(obj, stop=lambda func: declared_signature(func) is not None)) is None:
+    if (callee := unwrapped(obj, stop=lambda func: declared_signature(func) is not None)) is None:
         return None
     annotated: Callable[..., object] = callee
     # a partial or a partialmethod holds its annotations on the function it calls, and the method a partialmethod
@@ -56,20 +56,20 @@ def callable_target(obj: Callable[..., object]) -> tuple[QualifiedCallable, Qual
             break
     # a callable instance holds them on its __call__, and a wrapper may carry none of its own, like the 3.14 lru_cache
     # one that only copies __annotate__
-    found = _unwrap(annotated if isroutine(annotated) or isclass(annotated) else type(annotated).__call__)
+    found = unwrapped(annotated if isroutine(annotated) or isclass(annotated) else type(annotated).__call__)
     return None if found is None else (callee, found)
 
 
-# a mock answers __wrapped__ with a new mock, so inspect.unwrap would build mocks up to the recursion limit, and a
-# __wrapped__ cycle makes it raise ValueError
-def _unwrap(
+def unwrapped(
     obj: Callable[..., object], stop: Callable[[Callable[..., object]], bool] = lambda _: False
 ) -> QualifiedCallable | None:
+    """Return the callable `obj` wraps, `None` when that is a mock or the `__wrapped__` chain loops."""
+    # a mock answers __wrapped__ with a new mock, so inspect.unwrap would build mocks up to the recursion limit
     try:
-        unwrapped = unwrap(obj, stop=lambda func: ismock(func) or stop(func))
+        inner = unwrap(obj, stop=lambda func: ismock(func) or stop(func))
     except ValueError:
         return None
-    return None if ismock(unwrapped) else unwrapped
+    return None if ismock(inner) else inner
 
 
 def declared_signature(obj: Documented) -> Signature | None:
@@ -92,7 +92,7 @@ def constructor_name(cls: type) -> Literal["__new__", "__init__"]:
         for name in ("__new__", "__init__")
     }
     # a __new__ that only wraps object's, as @warnings.deprecated adds, is no constructor of its own to inspect
-    own_new = unwrap(cls.__new__) is not object.__new__
+    own_new = unwrapped(cls.__new__) is not object.__new__
     return "__new__" if own_new and depth["__new__"] <= depth["__init__"] else "__init__"
 
 
@@ -193,4 +193,5 @@ __all__ = [
     "prefix_of",
     "property_getter",
     "stored_name",
+    "unwrapped",
 ]

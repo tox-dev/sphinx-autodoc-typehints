@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from inspect import Parameter, Signature, unwrap
 from typing import TYPE_CHECKING, Final, get_overloads
 
-from .._objects import prefix_of
+from .._objects import prefix_of, unwrapped
 from .._render import annotation_state, render_context
 from .._resolve import (
     annotation_globals,
@@ -19,6 +18,7 @@ from .hints import as_written
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
+    from inspect import Parameter, Signature
 
     from sphinx.application import Sphinx
 
@@ -49,7 +49,7 @@ def typed_overloads(
         defining: list[Callable[..., object] | None] = [None] * len(overloads)
     else:
         # a staticmethod or classmethod overload registers the descriptor
-        defining = [unwrap(function) for function in functions]
+        defining = [unwrapped(function) for function in functions]
     aliases = type_alias_namespace(app.config["autodoc_type_aliases"], obj, prefix_of(name), app.env)[0]
     scope = aliases | {param.__name__: param for param in declared_type_params(None, obj, None)}
     namespace = annotation_globals(obj)

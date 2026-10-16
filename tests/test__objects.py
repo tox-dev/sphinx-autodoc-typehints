@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from pytest import fixture, mark, param
 
-from sphinx_autodoc_typehints._objects import callable_target, get_obj_location
+from sphinx_autodoc_typehints._objects import callable_target, constructor_name, get_obj_location
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -69,3 +69,7 @@ def test_get_obj_location_of_generated_code_is_none() -> None:
 # a mock answers every __wrapped__ with another mock, which unwrapping past it follows to the recursion limit
 def test_callable_target_of_a_mock_is_none(mocked_object: Callable[..., object]) -> None:
     assert callable_target(mocked_object) is None
+
+
+def test_constructor_name_of_a_new_a_mock_decorates_is_new(mocked_object: Callable[..., object]) -> None:
+    assert constructor_name(type("Made", (), {"__new__": mocked_object})) == "__new__"
