@@ -124,6 +124,7 @@ Parallel builds, ``sphinx-build -j``, work with the extension loaded.
     tutorials
     how-to
     reference
+    typing
     concepts
     changelog
     license

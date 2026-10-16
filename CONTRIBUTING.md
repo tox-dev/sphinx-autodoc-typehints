@@ -211,7 +211,7 @@ in `tutorials.rst`, task guides in `how-to.rst`, the reference in `reference.rst
 prints the path of the built `index.html`.
 
 Show an example through the `live-example` directive from `docs/_ext/live_example.py`. Its content holds the `conf.py`
-lines, a `---` line, then the source of a module `mod`. While the docs build, the directive renders that module twice,
+lines, a `---` line, then the source of a module `demo`. While the docs build, the directive renders that module twice,
 once with this extension and once with Sphinx's `autodoc_typehints = "description"` alone, and shows four tabs, the
 settings, the source and both rendered pages. Both builds resolve links through the inventories the docs build
 downloaded, which the directive writes next to its cache. The directive caches each page under the doctree folder by the
@@ -228,6 +228,15 @@ fails the docs build; one that fails without it shows Sphinx's warnings in its t
         """Add the prices up."""
         return sum(prices)
 ```
+
+A `live-example-picker` directive, as `typing.rst` has, makes the examples after it on the page share one `conf.py` and
+lists options, one `name = default, other, ...` line each, with `if other_option` at the end for an option that only
+matters while another one is on. A `conf.py` button in the corner of each rendered page then opens controls for those
+options in place of the `conf.py` tab, and a choice there switches every example on the page. One Sphinx application in
+the docs build process renders each example under the combinations of the options that change it, found by rendering it
+with up to two options away from their defaults, and the page loads those renderings from `_static/live-examples/` when
+the reader picks a combination. `docs/_static/live-example-picker.js` does the switching and keeps the choice in
+`localStorage`.
 
 Define a configuration option with `.. confval::` in `reference.rst`, giving its `:default:` and `:rebuild:`, and add
 its annotation to `OPTION_TYPES` in `docs/_ext/option_reference.py`; the directive renders the type from it with this

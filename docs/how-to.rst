@@ -3,7 +3,7 @@
 ###############
 
 Each guide changes one thing about the rendered docs and assumes you loaded the extension, as the :doc:`tutorials`
-show. Each example documents a module ``mod`` with ``.. automodule:: mod`` and shows, in its tabs, the page this
+show. Each example documents a module ``demo`` with ``.. automodule:: demo`` and shows, in its tabs, the page this
 extension renders and the page Sphinx renders without it. The :doc:`reference` lists every option, and :doc:`concepts`
 explains what the extension does during a build.
 

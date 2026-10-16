@@ -1485,6 +1485,7 @@ dev = [
     { name = "uv" },
 ]
 docs = [
+    { name = "attrs" },
     { name = "furo" },
     { name = "numpydoc" },
     { name = "sphinx" },
@@ -1566,6 +1567,7 @@ dev = [
     { name = "uv", specifier = ">=0.13.1" },
 ]
 docs = [
+    { name = "attrs", specifier = ">=26.1" },
     { name = "furo", specifier = ">=2025.12.19" },
     { name = "numpydoc", specifier = ">=1.11" },
     { name = "sphinx", specifier = ">=9.1" },

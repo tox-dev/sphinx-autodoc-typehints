@@ -53,12 +53,12 @@ them out of the docstring. The docstring describes each parameter with a ``:para
 Point autodoc at it
 ===================
 
-Save the code as ``mod.py`` where Python can import it while Sphinx runs, then let autodoc document the module from a
+Save the code as ``demo.py`` where Python can import it while Sphinx runs, then let autodoc document the module from a
 page of the docs, here ``index.rst``, with its :rst:dir:`automodule` directive:
 
 .. code-block:: rst
 
-    .. automodule:: mod
+    .. automodule:: demo
         :members:
 
 Build and read the result
@@ -70,8 +70,8 @@ Build the docs with :doc:`sphinx-build <sphinx:man/sphinx-build>`:
 
     sphinx-build -b html docs docs/_build/html
 
-Every example in these docs works this way, documenting a module ``mod`` with ``.. automodule:: mod`` and its
-``:members:`` option. Each has four tabs, built while these docs were: *conf.py* holds the settings, *mod.py* the
+Every example in these docs works this way, documenting a module ``demo`` with ``.. automodule:: demo`` and its
+``:members:`` option. Each has four tabs, built while these docs were: *conf.py* holds the settings, *demo.py* the
 source, *sphinx-autodoc-typehints* the page this extension renders, and *Sphinx built-in* the page Sphinx renders
 without it, with ``autodoc_typehints = "description"``.
 

@@ -1,0 +1,1 @@
+Add a typing features gallery that renders every public name of :mod:`typing` with the extension, with controls in each example's ``conf.py`` tab that switch the options it renders with.

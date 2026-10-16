@@ -76,6 +76,7 @@ type = [
   { include-group = "test" },
 ]
 docs = [
+  "attrs>=26.1",
   "furo>=2025.12.19",
   "numpydoc>=1.11",
   "sphinx>=9.1",
