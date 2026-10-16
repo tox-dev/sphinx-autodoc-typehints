@@ -100,8 +100,8 @@ def test_integration(
 @fixture(name="cases_module")
 def cases_module_fixture(rootdir: Path, monkeypatch: MonkeyPatch) -> ModuleType:
     monkeypatch.syspath_prepend(rootdir / "test-foundation-extension")
-    # the expected output names the module mod, while a module file of that name would share the guard record the
-    # extension keeps per module name with the mod of another testroot
+    # the expected output names the module mod, while a module file of that name would share the import and the source
+    # analysis the process keeps per module name with the mod of another testroot
     monkeypatch.setitem(modules, "mod", module := import_module("extension_cases"))
     return module
 
@@ -120,4 +120,42 @@ def test_type_role_keeps_the_default_role_of_the_document(build_text: BuildText)
 
            Return type:
               "str"
+        """)
+
+
+def test_build_reads_the_guard_of_a_module_edited_since_the_last_build(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path, monkeypatch: MonkeyPatch
+) -> None:
+    (project := tmp_path / "project").mkdir()
+    (project / "conf.py").write_text('extensions = ["sphinx.ext.autodoc", "sphinx_autodoc_typehints"]')
+    (project / "index.rst").write_text(".. autofunction:: guard_edited.convert")
+    monkeypatch.syspath_prepend(project)
+    for imported in ("from pathlib import Path", "from decimal import Decimal as Path"):
+        (project / "guard_edited.py").write_text(
+            dedent(f"""\
+                from typing import TYPE_CHECKING
+
+                if TYPE_CHECKING:
+                    {imported}
+
+
+                def convert(value: "Path") -> None:
+                    '''Convert.
+
+                    :param value: the input
+                    '''
+            """)
+        )
+        monkeypatch.delitem(modules, "guard_edited", raising=False)
+        (app := make_app("text", srcdir=project, freshenv=True)).build()
+    assert (Path(app.outdir) / "index.txt").read_text() == dedent("""\
+        guard_edited.convert(value)
+
+           Convert.
+
+           Parameters:
+              **value** ("Decimal") -- the input
+
+           Return type:
+              "None"
         """)

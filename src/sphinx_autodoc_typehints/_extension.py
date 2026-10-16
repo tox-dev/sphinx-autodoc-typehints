@@ -27,6 +27,7 @@ from ._patches import (
     patch_signature_lines,
 )
 from ._render import ALIAS_CHOICE_ROLE, DeferAliasChoice, alias_choice_role, merge_alias_choices, unescape
+from ._resolve import SHADOWED_BY_GUARD
 from ._signature import add_type_params, process_signature, render_header_types
 from .version import __version__
 
@@ -60,6 +61,8 @@ def setup(app: Sphinx) -> dict[str, bool | str]:
     patch_autodoc_type_hints()
     # `builder-inited` fires while the app is created, so an app never built would count as building for good
     app.connect("env-before-read-docs", lambda sphinx_app, _env, _docnames: BUILDING.add(id(sphinx_app)))
+    # a module edited and imported again since the last build in this process binds other names in its guard
+    app.connect("env-before-read-docs", lambda _sphinx_app, _env, _docnames: SHADOWED_BY_GUARD.clear())
     app.connect("build-finished", lambda sphinx_app, _exception: BUILDING.discard(id(sphinx_app)))
     patch_lookup_annotation()
     patch_line_numbers()
