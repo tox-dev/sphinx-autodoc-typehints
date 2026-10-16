@@ -1,0 +1,1 @@
+Keep single-word prose in hand-written ``:Returns:`` fields, and recognize numpydoc return types containing spaces.
