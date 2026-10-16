@@ -46,7 +46,7 @@ def test_callable_takes_the_types_of_what_it_calls(process: Process, obj: Callab
         f":type sep: {STR}",
         ":param sep: the separator",
         "",
-        f":rtype: {STR}",
+        f":sphinx_autodoc_typehints_rtype: {STR}",
     ]
 
 
@@ -95,7 +95,7 @@ def test_callable_with_an_unreadable_signature_types_only_its_return(process: Pr
     assert process("function", "mod.unreadable", UnreadableSignature(), [":param value: the value"]) == [
         ":param value: the value",
         "",
-        f":rtype: {STR}",
+        f":sphinx_autodoc_typehints_rtype: {STR}",
     ]
 
 
@@ -179,10 +179,10 @@ vars(_stated)["__signature__"] = Signature(
     [
         param(
             update_wrapper(_UnreadyWrapper(), _wrapped),
-            [*_FLOAT_VALUE, "", f":rtype: {NONE}"],
+            [*_FLOAT_VALUE, "", f":sphinx_autodoc_typehints_rtype: {NONE}"],
             id="wrapper-whose-signature-raises",
         ),
-        param(_stated, [*_FLOAT_VALUE, "", f":rtype: {STR}"], id="stated-signature"),
+        param(_stated, [*_FLOAT_VALUE, "", f":sphinx_autodoc_typehints_rtype: {STR}"], id="stated-signature"),
     ],
 )
 def test_function_takes_the_params_of_what_it_calls(process: Process, func: Documented, expected: list[str]) -> None:
@@ -204,7 +204,7 @@ def test_wrapper_lists_the_parameters_it_states(process: Process) -> None:
         f":type count: {INT}, default: :sphinx_autodoc_typehints_value:`1`",
         ":param count:",
         "",
-        f":rtype: {BOOL}",
+        f":sphinx_autodoc_typehints_rtype: {BOOL}",
     ]
 
 
@@ -247,7 +247,7 @@ def test_process_docstring_of_a_bound_method_types_its_return(process: Process, 
     assert process("method", f"mod.{method.__qualname__}", method, ["Summary."]) == [
         "Summary.",
         "",
-        r":rtype: :sphinx_autodoc_typehints_type:`\:py\:data\:\`\~typing.Self\``",
+        r":sphinx_autodoc_typehints_rtype: :sphinx_autodoc_typehints_type:`\:py\:data\:\`\~typing.Self\``",
     ]
 
 

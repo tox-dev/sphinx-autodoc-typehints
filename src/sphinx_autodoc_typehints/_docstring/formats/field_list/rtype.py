@@ -1,75 +1,55 @@
-"""
-Parses a docstring without warnings to find the line where the return type goes.
-
-Directives only Sphinx knows parse as placeholders, which keep their place in the document.
-"""
+"""Places the `:rtype:` field a docstring has no text position for, in the field list of the docstring's nodes."""
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from docutils import nodes
-from docutils.parsers.rst import Directive, directives
 
-from sphinx_autodoc_typehints._private_imports import BUILTIN_DIRECTIVES, suppress_logging
-from sphinx_autodoc_typehints._render import parse
+from .keywords import PARAM_SYNONYMS
 
 if TYPE_CHECKING:
-    from types import ModuleType
+    from sphinx.application import Sphinx
 
-    from docutils.nodes import Node
-    from sphinx.environment import BuildEnvironment
-
-
-def safe_parse(inputstr: str, env: BuildEnvironment) -> nodes.document:
-    """Parse a docstring with the directives only Sphinx knows standing in as placeholders, and no warnings."""
-    original_lookup = directives.directive
-
-    def safe_lookup(
-        directive_name: str,
-        language_module: ModuleType,
-        document: nodes.document,
-    ) -> tuple[type[Directive] | None, list[nodes.system_message]]:
-        cls, messages = original_lookup(directive_name, language_module, document)
-        if cls is not None and directive_name not in BUILTIN_DIRECTIVES:
-            return _NoOpDirective, messages
-        return cls, messages
-
-    # the real parse repeats this parse's warnings with the right line number, and autodoc also processes members it
-    # then leaves out, imported ones among them, so Sphinx's log stays quiet here as `parse` keeps docutils' stream
-    directives.directive = safe_lookup  # ty: ignore[invalid-assignment]  # https://github.com/astral-sh/ty/issues/3962
-    try:
-        with suppress_logging():
-            return parse(inputstr, env)
-    finally:
-        directives.directive = original_lookup
+RTYPE_MARKER: Final[str] = "sphinx_autodoc_typehints_rtype"
 
 
-class _NoOpDirective(Directive):
-    has_content = True
-    optional_arguments = 99
-    final_argument_whitespace = True
+def place_rtype(_app: Sphinx, _domain: str, _objtype: str, contentnode: nodes.Element) -> None:
+    """
+    Name the marked field `rtype` and put it where Sphinx puts the types it adds with `autodoc_typehints="description"`.
 
-    def run(self) -> list[nodes.Node]:
-        # a node keeps the directive's place, so the return type lands before it as before a docutils directive
-        placeholder = SphinxDirectivePlaceholder()
-        placeholder.line = self.lineno
-        return [placeholder]
+    That is the end of the first list with parameters, else of the last field list, else of a new list at the end of the
+    content.
+    """
+    marked = (node for node in contentnode.findall(nodes.field) if node[0].astext() == RTYPE_MARKER)
+    if (field := next(marked, None)) is None:
+        return
+    field[0].children = [nodes.Text("rtype")]
+    holder = field.parent
+    lists = [node for node in contentnode.children if isinstance(node, nodes.field_list)]
+    # the marker opens a list of its own where the docstring does not end in one, which an earlier list takes over, and
+    # inside a section nothing groups its fields
+    candidates = lists[: lists.index(holder) + 1] if holder in lists else lists
+    others = [node for node in candidates if node is not holder]
+    if (target := next((node for node in candidates if _has_params(node)), None)) is None:
+        if holder in candidates and (holder.index(field) != 0 or not others):
+            return
+        if others:
+            target = others[-1]
+        else:
+            contentnode.append(target := nodes.field_list())
+    if target is not holder:
+        holder.remove(field)
+        target.append(field)
+        if not holder.children:
+            holder.parent.remove(holder)
 
 
-class SphinxDirectivePlaceholder(nodes.Element):
-    """Stand in for a directive only Sphinx knows, during the parse that finds where the return type goes."""
-
-
-def node_line_no(node: Node) -> int | None:
-    """Return the line of `node`, or of its first descendant with one, `None` when none has a line."""
-    while node.line is None and node.children:
-        node = node.children[0]
-    return node.line
+def _has_params(node: nodes.field_list) -> bool:
+    return any(field[0].astext().startswith(PARAM_SYNONYMS) for field in node)
 
 
 __all__ = [
-    "SphinxDirectivePlaceholder",
-    "node_line_no",
-    "safe_parse",
+    "RTYPE_MARKER",
+    "place_rtype",
 ]

@@ -354,12 +354,12 @@ EXPECTED: Final[dict[str, str]] = {
 
            A docstring.
 
-           Return type:
-              "int"
-
            -[ Examples ]-
 
            Here are a couple of examples of how to use this function.
+
+           Return type:
+              "int"
     """),
     "func_with_overload": dedent("""\
         mod.func_with_overload(a, b)
@@ -552,26 +552,26 @@ EXPECTED: Final[dict[str, str]] = {
 
               print("some python code here")
 
-           Return type:
-              "int"
-
            -[ Examples ]-
 
            Here are a couple of examples of how to use this function.
+
+           Return type:
+              "int"
     """),
     "func_with_definition_list": dedent("""\
         mod.func_with_definition_list()
 
            Some text and then a definition list.
 
-           Return type:
-              "int"
-
            abc
               x
 
            xyz
               something
+
+           Return type:
+              "int"
     """),
     "decorator_2": dedent("""\
         mod.decorator_2(f)
@@ -838,15 +838,15 @@ EXPECTED: Final[dict[str, str]] = {
     "has_doctest1": dedent("""\
         mod.has_doctest1()
 
-           Test that the return type goes ahead of a doctest in the function.
-
-           Return type:
-              "None"
+           Test that the return type follows a doctest in the function.
 
            >>> this is a fake doctest
            a
            >>> more doctest
            b
+
+           Return type:
+              "None"
     """),
     "typehints_formatter_applied_to_signature": dedent("""\
         mod.typehints_formatter_applied_to_signature[Unformatted](param: Formatted) -> Formatted

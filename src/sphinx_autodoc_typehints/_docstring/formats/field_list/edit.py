@@ -9,10 +9,9 @@ from ..base import InsertIndexInfo
 from ..napoleon import reads_as_type
 from ..numpydoc import convert_to_field_list
 from .keywords import PARAM_SYNONYMS, STAR_PREFIXES, field_keyword_and_argument
-from .rtype import SphinxDirectivePlaceholder, node_line_no, safe_parse
+from .rtype import RTYPE_MARKER
 
 if TYPE_CHECKING:
-    from docutils.nodes import Node
     from sphinx.application import Sphinx
 
 
@@ -94,37 +93,7 @@ class FieldListFormat:
         if return_at is not None:
             return InsertIndexInfo(insert_index=return_at, found_return=True, found_rtype=rtype_at is not None)
 
-        doc = safe_parse("\n".join(lines), app.env)
-
-        for child in doc.children:
-            if child.tagname != "field_list":
-                continue
-
-            if not any(c.children[0].astext().startswith(PARAM_SYNONYMS) for c in child.children):
-                continue
-
-            at = (
-                max(line_no - _lines_back(next_sibling), 0)
-                if (next_sibling := child.next_node(descend=False, siblings=True))
-                and (line_no := node_line_no(next_sibling))
-                else len(lines)
-            )
-            return InsertIndexInfo(insert_index=at, found_param=True)
-
-        for child in doc.children:
-            if child.tagname in {
-                "literal_block",
-                "paragraph",
-                "field_list",
-                SphinxDirectivePlaceholder.__name__,
-            }:
-                continue
-            at = max(line_no - _lines_back(child), 0) if (line_no := node_line_no(child)) else len(lines)
-            if lines[at - 1]:
-                break
-            return InsertIndexInfo(insert_index=at, found_directive=True)
-
-        return InsertIndexInfo(insert_index=len(lines))
+        return InsertIndexInfo(insert_index=len(lines), deferred=True)
 
 
 def write_rtype(
@@ -135,6 +104,12 @@ def write_rtype(
     use_rtype: bool,
 ) -> None:
     """Write the return type at `info`, as an `:rtype:` field or, without `use_rtype`, in the return field."""
+    if info.deferred:
+        # the field goes where the docstring's nodes put it, once Sphinx parsed them
+        if lines and lines[-1].strip():
+            lines.append("")
+        lines.append(f":{RTYPE_MARKER}: {formatted_annotation}")
+        return
     insert_index = info.insert_index
     # the return field's line stays the one at insert_index as blank lines go in above it
     description = lines[insert_index].split(":", 2)[2].strip() if info.found_return else ""
@@ -150,27 +125,17 @@ def write_rtype(
     ):
         return
 
-    if info.found_param and insert_index < len(lines) and lines[insert_index].strip():
-        insert_index -= 1
-
     if 0 < insert_index <= len(lines) and lines[insert_index - 1].strip():
         lines.insert(insert_index, "")
         insert_index += 1
 
     if use_rtype or not info.found_return:
         lines.insert(insert_index, f":rtype: {formatted_annotation}")
-        if info.found_directive:
-            lines.insert(insert_index + 1, "")
     elif description:
         lines[insert_index] = f":return: {formatted_annotation} -- {description}"
     else:
         # the description starts on the next line, and a block such as a list cannot follow inline text
         lines[insert_index : insert_index + 1] = [f":return: {formatted_annotation} --", ""]
-
-
-def _lines_back(node: Node) -> int:
-    # docutils numbers these blocks from their first line, where the return type goes
-    return 1 if node.tagname in {"definition_list", "doctest_block"} else 2
 
 
 def _field_end(lines: list[str], at: int) -> int:

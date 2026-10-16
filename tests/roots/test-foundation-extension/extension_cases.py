@@ -787,7 +787,7 @@ def docstring_with_see_also() -> str:
 
 
 def has_doctest1() -> None:
-    r"""Test that the return type goes ahead of a doctest in the function.
+    r"""Test that the return type follows a doctest in the function.
 
     >>> this is a fake doctest
     a

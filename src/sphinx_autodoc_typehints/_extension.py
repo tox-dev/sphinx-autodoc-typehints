@@ -16,13 +16,13 @@ from ._docstring import (
     DeprecatedDirective,
     mark_numpy_returns,
     note_attributes_before_napoleon,
+    place_rtype,
     process_docstring,
     take_over_napoleon_attr_annotations,
 )
 from ._patches import (
     BUILDING,
     patch_autodoc_type_hints,
-    patch_doctest_line_number,
     patch_overload_capture,
     patch_signature_lines,
 )
@@ -81,6 +81,8 @@ def setup(app: Sphinx) -> dict[str, bool | str]:
     app.connect("autodoc-process-docstring", note_attributes_before_napoleon, priority=499)
     app.connect("autodoc-process-docstring", mark_numpy_returns, priority=499)
     app.connect("autodoc-process-docstring", process_docstring, priority=501)
+    # before Sphinx groups the fields by type, and before autodoc merges the type hints into them
+    app.connect("object-description-transform", place_rtype, priority=400)
     app.connect("object-description-transform", add_type_params)
     app.connect("object-description-transform", render_header_types)
     patch_overload_capture()
@@ -91,7 +93,6 @@ def setup(app: Sphinx) -> dict[str, bool | str]:
     # a module edited and imported again since the last build in this process binds other names in its guard
     app.connect("env-before-read-docs", lambda _sphinx_app, _env, _docnames: SHADOWED_BY_GUARD.clear())
     app.connect("build-finished", lambda sphinx_app, _exception: BUILDING.discard(id(sphinx_app)))
-    patch_doctest_line_number()
     return {
         "version": __version__,
         "parallel_read_safe": True,

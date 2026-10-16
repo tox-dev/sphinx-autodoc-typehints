@@ -54,7 +54,7 @@ def _nested_returns() -> Annotated[int, Doc("the count")]: ...
                 f":type value: {INT}",
                 ":param value: the value",
                 "",
-                f":rtype: {NONE}",
+                f":sphinx_autodoc_typehints_rtype: {NONE}",
             ],
             id="param",
         ),
@@ -67,7 +67,8 @@ def _nested_returns() -> Annotated[int, Doc("the count")]: ...
                 "    :yields: in a literal block",
                 "",
                 (
-                    r":rtype: :sphinx_autodoc_typehints_type:`\:py\:class\:\`\~collections.abc.Iterator\`\\ "
+                    r":sphinx_autodoc_typehints_rtype: "
+                    r":sphinx_autodoc_typehints_type:`\:py\:class\:\`\~collections.abc.Iterator\`\\ "
                     r"\\\[\:py\:class\:\`int\`\]`"
                 ),
             ],

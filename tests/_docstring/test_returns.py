@@ -433,7 +433,8 @@ def _iterable() -> Iterable[int]: ...
                 ":yields: the numbers",
                 "",
                 (
-                    r":rtype: :sphinx_autodoc_typehints_type:`\:py\:class\:\`\~collections.abc.Iterable\`\\ "
+                    r":sphinx_autodoc_typehints_rtype: "
+                    r":sphinx_autodoc_typehints_type:`\:py\:class\:\`\~collections.abc.Iterable\`\\ "
                     r"\\\[\:py\:class\:\`int\`\]`"
                 ),
             ],
@@ -444,7 +445,10 @@ def _iterable() -> Iterable[int]: ...
             [
                 ":yields: the numbers",
                 "",
-                r":rtype: :sphinx_autodoc_typehints_type:`\:py\:class\:\`list\`\\ \\\[\:py\:class\:\`str\`\]`",
+                (
+                    r":sphinx_autodoc_typehints_rtype: "
+                    r":sphinx_autodoc_typehints_type:`\:py\:class\:\`list\`\\ \\\[\:py\:class\:\`str\`\]`"
+                ),
             ],
             id="no-generator",
         ),

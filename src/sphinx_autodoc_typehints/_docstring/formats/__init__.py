@@ -13,6 +13,7 @@ from .field_list import (
     STAR_PREFIXES,
     FieldListFormat,
     field_keyword_and_argument,
+    place_rtype,
     write_rtype,
 )
 from .napoleon import (
@@ -36,6 +37,7 @@ __all__ = [
     "last_paragraph_end",
     "mark_numpy_returns",
     "note_attributes_before_napoleon",
+    "place_rtype",
     "reads_as_type",
     "take_over_napoleon_attr_annotations",
     "type_combined_field_entry",
