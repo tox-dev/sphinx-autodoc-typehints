@@ -148,7 +148,6 @@ def fresh_mod(monkeypatch: MonkeyPatch) -> None:
     # several testroots name their module mod, so forget what the process keeps about the mod an earlier test imported
     monkeypatch.delitem(modules, "mod", raising=False)
     monkeypatch.delitem(ModuleAnalyzer.cache, ("module", "mod"), raising=False)
-    monkeypatch.delitem(SHADOWED_BY_GUARD, "mod", raising=False)
     monkeypatch.delitem(OVERLOADS, "mod", raising=False)
 
 

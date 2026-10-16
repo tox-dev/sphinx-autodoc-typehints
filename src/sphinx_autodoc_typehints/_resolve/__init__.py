@@ -17,7 +17,13 @@ from .generics import (
     specialize,
     type_params_of,
 )
-from .guards import annotation_globals, guard_bound, guarded_names_bound, resolve_type_guarded_imports
+from .guards import (
+    SHADOWED_BY_GUARD,
+    annotation_globals,
+    guard_bound,
+    guarded_names_bound,
+    resolve_type_guarded_imports,
+)
 from .hints import get_all_type_hints, get_descriptor_type_hint, resolve_annotations
 from .overloads import OVERLOADS, resolve_overloads
 from .typed_dict import OPEN, extra_items_type, typed_dict_keys
@@ -25,6 +31,7 @@ from .typed_dict import OPEN, extra_items_type, typed_dict_keys
 __all__ = [
     "OPEN",
     "OVERLOADS",
+    "SHADOWED_BY_GUARD",
     "TYPE_PARAM_KINDS",
     "annotation_globals",
     "bound_type_args",
