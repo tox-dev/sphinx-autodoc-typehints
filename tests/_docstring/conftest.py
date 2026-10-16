@@ -9,9 +9,10 @@ from sphinx_autodoc_typehints._docstring import process_docstring
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from sphinx.config import Config
     from sphinx.testing.util import SphinxTestApp
 
-    from sphinx_autodoc_typehints._types import Documented
+    from sphinx_autodoc_typehints._types import Annotation, Documented
 
 type Process = Callable[[str, str, Documented, list[str]], list[str]]
 
@@ -25,6 +26,10 @@ NONE: Final[str] = r":sphinx_autodoc_typehints_type:`\:py\:obj\:\`None\``"
 # a closer sphinx mark replaces the module's confoverrides whole, so each one repeats the base option
 def without_rtype(**options: bool | str) -> MarkDecorator:
     return mark.sphinx(confoverrides={"typehints_document_rtype": False, **options})
+
+
+def hide_type(_annotation: Annotation, _config: Config) -> str:
+    return ""
 
 
 @fixture
@@ -43,5 +48,6 @@ __all__ = [
     "NONE",
     "STR",
     "Process",
+    "hide_type",
     "without_rtype",
 ]

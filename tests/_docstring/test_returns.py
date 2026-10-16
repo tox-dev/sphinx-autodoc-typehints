@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Annotated, Final
 from pytest import MarkDecorator, fixture, mark, param
 from typing_extensions import Doc
 
-from _docstring.conftest import INT, STR
+from _docstring.conftest import INT, STR, hide_type
 from sphinx_autodoc_typehints._docstring.returns import description_from_doc
 
 if TYPE_CHECKING:
@@ -405,6 +405,11 @@ def test_untyped_yields_entry_takes_the_doc_description(process: Process) -> Non
     assert process("function", "mod.produce", produce, [":Yields:"]) == [":Yields: the numbers"]
 
 
+@mark.sphinx(confoverrides={"typehints_formatter": hide_type})
+def test_yields_entry_stays_untyped_when_a_formatter_hides_the_type(process: Process) -> None:
+    assert process("function", "mod.counts", _counts, [":yields: the numbers"]) == [":yields: the numbers"]
+
+
 def _async_counts() -> typing.AsyncGenerator[int, None]: ...
 
 
@@ -496,6 +501,14 @@ def test_described_none_return_keeps_its_description(process: Process) -> None:
     def returns_described_none() -> Annotated[None, Doc("nothing at all")]: ...
 
     assert process("function", "mod.returns_described_none", returns_described_none, []) == [":return: nothing at all"]
+
+
+@mark.sphinx(confoverrides={"typehints_formatter": hide_type})
+def test_return_type_hidden_by_formatter(process: Process) -> None:
+    def double(value: int) -> int: ...
+
+    lines = ["Summary.", "", ":returns: twice the value"]
+    assert process("function", "mod.double", double, lines.copy()) == lines
 
 
 class _Sized:

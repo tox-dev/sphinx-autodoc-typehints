@@ -69,14 +69,18 @@ def inject_overloads(entry: Entry, obj: Callable[..., object], lines: list[str])
             hint = hints[param.name]
             entries.append(
                 f"**{VARIADIC_STARS.get(param.kind.name, '')}{param.name}**"
-                f"{'' if hint is Parameter.empty else f' ({render(hint)})'}"
+                f"{f' ({typed})' if hint is not Parameter.empty and (typed := render(hint)) else ''}"
                 f"{'' if param.default is param.empty else f' = ``{object_description(param.default)}``'}"
             )
             if param.kind is param.POSITIONAL_ONLY and (
                 at + 1 == len(parameters) or parameters[at + 1].kind is not param.POSITIONAL_ONLY
             ):
                 entries.append("/")
-        returned = "" if (return_hint := hints["return"]) is Signature.empty else f" → {render(return_hint)}"
+        returned = (
+            f" → {return_type}"
+            if (return_hint := hints["return"]) is not Signature.empty and (return_type := render(return_hint))
+            else ""
+        )
         listed.append(f"   * {', '.join(entries) or '()'}{returned}")
     summary_at = summary_end(lines)
     lines[summary_at:summary_at] = [*listed, ""]
@@ -112,12 +116,13 @@ def inject_setter_type(
     resolved = resolved_type_hints(app, name, setter, setter, setter)
     param = parameters[-1]
     accepted = resolved.types.get(param, Parameter.empty)
-    if accepted is Parameter.empty or accepted == getter_hints.get("return", Parameter.empty):
+    if (
+        accepted is Parameter.empty
+        or accepted == getter_hints.get("return", Parameter.empty)
+        or not (accepted_type := as_field_type(as_written(accepted, resolved.written_as.get(param)), app.config))
+    ):
         return
-    lines.extend([
-        "",
-        f":Setter accepts: {as_field_type(as_written(accepted, resolved.written_as.get(param)), app.config)}",
-    ])
+    lines.extend(["", f":Setter accepts: {accepted_type}"])
 
 
 def inject_override(app: Sphinx, what: str, name: str, obj: Callable[..., object], lines: list[str]) -> None:
