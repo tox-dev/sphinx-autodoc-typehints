@@ -2,8 +2,18 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 type IntList = list[int]
 type StringOrInt = str | int
+type Callback = Callable[[Callback], None]
+
+
+def invoke_callback(callback: Callback) -> None:
+    """Invoke a callback.
+
+    :param callback: callback to invoke
+    """
 
 
 def type_alias_func(value: IntList) -> StringOrInt:

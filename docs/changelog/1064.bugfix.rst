@@ -1,0 +1,1 @@
+Stop a Sphinx build from hanging on a recursive type alias inside a ``Callable`` parameter list.
