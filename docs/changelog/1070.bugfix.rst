@@ -1,0 +1,1 @@
+Stop an unchanged incremental build from reporting ``html_static_path`` as changed after the extension adds its stylesheet.
