@@ -24,7 +24,7 @@ repos:
     hooks:
       - id: pyproject-fmt
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.17.0"
+    rev: "v0.17.1"
     hooks:
       - id: ruff-format
       - id: ruff-check
@@ -35,6 +35,15 @@ repos:
       - id: yamlfmt
   - repo: local
     hooks:
+      - id: import-linter
+        name: import-linter
+        # the hook environment does not install the package, so it reads it from the source tree
+        entry: python -c "import sys; sys.path.insert(0, 'src'); from importlinter.cli import lint_imports_command; lint_imports_command()"
+        language: python
+        pass_filenames: false
+        files: ^(src/|pyproject\.toml$)
+        additional_dependencies:
+          - import-linter>=2.15
       - id: mdformat
         name: mdformat
         entry: mdformat --wrap 120
@@ -44,7 +53,7 @@ repos:
           - mdformat-gfm>=1
           - mdformat-ruff>=0.1.3
   - repo: https://github.com/zizmorcore/zizmor-pre-commit
-    rev: v1.30.1
+    rev: v1.31.0
     hooks:
       - id: zizmor
   - repo: meta

@@ -22,7 +22,7 @@ class Closed(ExtensionsTypedDict, closed=True):
 
 
 class ClosedChild(Closed):
-    """Inherits being closed."""
+    """Inherits closed=True from its base."""
 
 
 class Reopened(ExtensionsTypedDict, closed=False):
@@ -33,7 +33,7 @@ class Extra(ExtensionsTypedDict, extra_items=int):
     """
     Typed extra items.
 
-    :Extra items: counts, documented by hand
+    :Extra items: integer counts documented by hand
     """
 
 
@@ -60,7 +60,7 @@ class Outline(Shape):
 
 
 class Tile(Square, Outline):
-    """Reads each key from the first base in the MRO declaring it."""
+    """Reads the keys from the first base in the MRO declaring each."""
 
 
 class Plain:
@@ -118,7 +118,7 @@ def draw(**kwargs: Unpack[Square]) -> None:
 
 
 class Raising:
-    """Metadata that cannot be compared."""
+    """Metadata whose comparison raises."""
 
     __hash__ = None
 
@@ -141,14 +141,14 @@ class Ambiguous:
 
 
 class Measured(TypedDict):
-    """Keys with metadata that cannot be compared."""
+    """Keys with metadata that breaks comparison."""
 
     width: Annotated[int, Raising()]
     height: Annotated[int, Ambiguous()]
 
 
 class Box(Measured):
-    """Inherits keys with metadata that cannot be compared."""
+    """Inherits keys with metadata that breaks comparison."""
 
     depth: float
 
@@ -179,7 +179,7 @@ class Root(TypedDict):
 
 Diamond = Root
 for level in range(10):
-    # each level is a diamond over the one below, so a base is reached along 2**level paths
+    # each level is a diamond over the one below, so 2**level paths lead to a base
     Diamond = type(Root)(
         f"Diamond{level}",
         (type(Root)(f"Left{level}", (Diamond,), {}), type(Root)(f"Right{level}", (Diamond,), {})),
@@ -196,7 +196,7 @@ def nest(**kwargs: Unpack[Diamond]) -> None:
 
 
 class Unstated:
-    """Leaves a TypedDict neither closed nor open, counting how often that is asked."""
+    """Leaves a TypedDict neither closed nor open, counting each lookup of that state."""
 
     asked: ClassVar[int] = 0
 
@@ -206,7 +206,7 @@ class Unstated:
 
 Spread = Root
 for level in range(10):
-    # each level is a diamond over the one below, so a base is reached along 2**level paths
+    # each level is a diamond over the one below, so 2**level paths lead to a base
     sides = [type(Root)(f"Spread{side}{level}", (Spread,), {}) for side in ("Left", "Right")]
     Spread = type(Root)("Spread", tuple(sides), {"__module__": __name__, "__doc__": "A diamond of diamonds."})
     for spread in (*sides, Spread):

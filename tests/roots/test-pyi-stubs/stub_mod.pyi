@@ -1,4 +1,4 @@
-import sys
+import sys  # the stub reader evaluates version guards with only sys in scope
 from collections.abc import Callable, Sequence
 from typing import overload
 

@@ -42,6 +42,7 @@ dynamic = [
 ]
 dependencies = [
   "sphinx>=9.1",
+  "typing-extensions>=4.16; python_version<'3.15'",
 ]
 urls.Changelog = "https://github.com/tox-dev/sphinx-autodoc-typehints/releases"
 urls.Homepage = "https://github.com/tox-dev/sphinx-autodoc-typehints"
@@ -50,7 +51,6 @@ urls.Tracker = "https://github.com/tox-dev/sphinx-autodoc-typehints/issues"
 
 [dependency-groups]
 dev = [
-  { include-group = "docs" },
   { include-group = "lint" },
   { include-group = "pkg-meta" },
   { include-group = "test" },
@@ -65,24 +65,21 @@ test = [
   "numpydoc>=1.11",
   "pytest>=9.1.1",
   "pytest-cov>=7.1",
+  "pytest-randomly>=5",
   "sphobjinv>=2.4",
   "typing-extensions>=4.16",
 ]
 type = [
-  "ty<0.0.25,>=0.0.24",
-  { include-group = "docs" },
+  "ty<0.0.89,>=0.0.88",
   { include-group = "test" },
 ]
-docs = [
-  "furo>=2025.12.19",
-]
 lint = [
-  "pre-commit-uv>=4.3",
+  "pre-commit-uv>=4.4",
 ]
 pkg-meta = [
   "check-wheel-contents>=0.6.3",
   "twine>=7",
-  "uv>=0.12.22",
+  "uv>=0.13.1",
 ]
 
 [tool.hatch]
@@ -98,7 +95,6 @@ lint.select = [
   "ALL",
 ]
 lint.ignore = [
-  "any-type",                                  # allow Any as type annotation
   "CPY",                                       # No copyright statements
   "DOC",                                       # no sphinx support
   "hardcoded-bind-all-interfaces",             # Possible binding to all interface
@@ -106,14 +102,14 @@ lint.ignore = [
   "missing-trailing-comma",                    # Conflict with formatter
   "multi-line-summary-first-line",             # `multi-line-summary-first-line` (D212) and `multi-line-summary-second-line` (D213) are incompatible
   "non-empty-init-module",                     # `__init__` module should only contain docstrings and re-exports
+  "relative-imports",                          # intra-package imports climb at most two levels, deeper ones stay absolute
   "single-line-implicit-string-concatenation", # Conflict with formatter
 ]
-lint.per-file-ignores."src/sphinx_autodoc_typehints/patches.py" = [
+lint.per-file-ignores."src/sphinx_autodoc_typehints/_patches/*.py" = [
   "private-member-access", # the module exists to monkeypatch docutils and napoleon internals
 ]
 lint.per-file-ignores."tests/**/*.py" = [
   "assert",                               # asserts allowed in tests
-  "class-as-data-structure",              # test fixture classes intentionally use plain __init__ without dataclass
   "D",                                    # don't care about documentation in tests
   "FBT",                                  # don't care about booleans as positional arguments in tests
   "implicit-namespace-package",           # no implicit namespace
@@ -124,9 +120,13 @@ lint.per-file-ignores."tests/**/*.py" = [
   "non-pep604-annotation-optional",       # we test for old Optional syntax
   "non-pep604-annotation-union",          # we test for old Union syntax
   "pytest-fixture-autouse",               # shared setup fixtures are meant to apply to every test
+  "pytest-incorrect-pytest-import",       # names come from pytest like from any other module
   "subprocess-without-shell-equals-true", # `subprocess` call: check for execution of untrusted input
   "too-many-arguments",                   # any number of arguments in tests
   "too-many-positional-arguments",        # any number of arguments in tests
+]
+lint.per-file-ignores."tests/roots/**/*.py" = [
+  "any-type", # the modules under test annotate with Any to check how it renders
 ]
 lint.per-file-ignores."tests/roots/test-attrs/attrs_lazy_mod.py" = [
   "missing-required-import",               # intentionally omits `from __future__ import annotations` to keep annotations lazy
@@ -142,6 +142,14 @@ lint.per-file-ignores."tests/roots/test-integration/mod_forward_ref.py" = [
   "missing-required-import", # intentionally omits `from __future__ import annotations` to test forward references
   "no-self-use",             # method must be instance method to test class forward refs
 ]
+lint.per-file-ignores."tests/roots/test-public-api/public_module.py" = [
+  "ANN",                                       # a type comment stands in for the annotations
+  "lambda-assignment",                         # the lambda's source line holds a second statement
+  "multiple-statements-on-one-line-semicolon", # the source of the lambda then parses to two nodes
+  "no-self-use",                               # a method of a class local to a function
+  "undefined-name",                            # the forward reference the warning reports
+  "unused-import",                             # the guarded import that fails to run
+]
 lint.per-file-ignores."tests/roots/test-pyi-stubs/stub_mod.py" = [
   "ANN",                     # intentionally has no type annotations to simulate a C extension
   "missing-required-import", # intentionally omits `from __future__ import annotations`
@@ -155,16 +163,15 @@ lint.per-file-ignores."tests/roots/test-pyi-stubs/stub_mod.pyi" = [
 lint.per-file-ignores."tests/roots/test-unexecutable-guard/demo_unexecutable_guard.py" = [
   "non-pep695-generic-function", # the legacy TypeVar spelling is what the guard cannot execute
 ]
-lint.per-file-ignores."tests/test_resolver/test_type_comments.py" = [
-  "missing-type-function-argument", # type comment fixtures intentionally omit annotations
-  "unused-function-argument",       # type comment fixtures have intentionally unused args
-]
 lint.isort = { known-first-party = [
   "sphinx_autodoc_typehints",
   "tests",
 ], required-imports = [
   "from __future__ import annotations",
 ] }
+# autodoc calls an autodoc-process-signature listener with seven positional arguments
+lint.pylint.max-args = 7
+lint.pylint.max-positional-args = 7
 lint.preview = true
 
 [tool.codespell]
@@ -208,9 +215,25 @@ paths.source = [
   "*/src",
   "*\\src",
 ]
-report.fail_under = 88
+report.fail_under = 100
 report.omit = [
   "tests/roots/*",
 ]
 html.show_contexts = true
 html.skip_covered = false
+
+[tool.importlinter]
+root_package = "sphinx_autodoc_typehints"
+
+[[tool.importlinter.contracts]]
+name = "a layer imports only the layers below it"
+type = "layers"
+containers = [ "sphinx_autodoc_typehints" ]
+layers = [
+  "_extension",
+  "_config : _patches",
+  "_docstring | _signature",
+  "_documented",
+  "_render | _resolve",
+  "_objects : _refs : _state : _warnings : _private_imports : _types",
+]

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-import warnings
+from textwrap import dedent
+from warnings import catch_warnings
 
 from typing_extensions import deprecated
 
@@ -15,13 +16,17 @@ def stale(value: int) -> int:
     return value
 
 
-@deprecated("Use Fresh.\nIt is faster.")
+@deprecated(
+    dedent("""\
+        Use Fresh.
+        It is faster.""")
+)
 class Stale:
     """A stale class."""
 
 
 # subclassing warns, and the tests turn warnings into errors
-with warnings.catch_warnings(action="ignore", category=DeprecationWarning):
+with catch_warnings(action="ignore", category=DeprecationWarning):
 
     class Child(Stale):  # ty: ignore[deprecated]  # the case under test
         """Not deprecated itself."""

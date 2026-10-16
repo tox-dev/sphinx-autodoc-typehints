@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import pathlib
-import sys
+from pathlib import Path
+from sys import path
 
-sys.path.insert(0, str(pathlib.Path(__file__).parent))
+path.insert(0, str(Path(__file__).parent))
 
 master_doc = "index"
 

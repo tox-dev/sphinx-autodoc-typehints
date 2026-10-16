@@ -5,8 +5,8 @@ def function_with_some_defaults_and_without_typehints(x, y=None):  # ruff:ignore
     """
     Function docstring.
 
-    :param x: foo
-    :param y: bar
+    :param x: untyped without a default
+    :param y: untyped with a default
     """
 
 
@@ -14,8 +14,8 @@ def function_with_some_defaults_and_some_typehints(x: int, y=None):  # ruff:igno
     """
     Function docstring.
 
-    :param x: foo
-    :param y: bar
+    :param x: typed without a default
+    :param y: untyped with a default
     """
 
 
@@ -23,8 +23,8 @@ def function_with_some_defaults_and_more_typehints(x: int, y=None) -> str:  # ru
     """
     Function docstring.
 
-    :param x: foo
-    :param y: bar
+    :param x: typed without a default
+    :param y: untyped with a default
     """
 
 
@@ -32,8 +32,8 @@ def function_with_defaults_and_some_typehints(x: int = 0, y=None) -> str:  # ruf
     """
     Function docstring.
 
-    :param x: foo
-    :param y: bar
+    :param x: typed with a default
+    :param y: untyped with a default
     """
 
 
@@ -43,6 +43,6 @@ def function_with_defaults_and_type_information_in_docstring(x, y=0) -> str:  # 
 
     :type x: int
     :type y: int
-    :param x: foo
-    :param y: bar
+    :param x: typed in the docstring
+    :param y: typed in the docstring with a default
     """

@@ -1,151 +1,245 @@
 from __future__ import annotations
 
-import re
-import shutil
-import sys
 from contextlib import suppress
+from importlib import import_module
+from importlib.util import module_from_spec, spec_from_file_location
+from os import sep
 from pathlib import Path
-from textwrap import dedent
-from typing import TYPE_CHECKING
-from unittest.mock import create_autospec, patch
+from shutil import copyfile, copytree, ignore_patterns, rmtree
+from subprocess import CalledProcessError, check_call  # ruff:ignore[suspicious-subprocess-import]  # the C extensions under test need a compiler
+from sys import modules, path, version_info
+from sysconfig import get_config_var, get_path
+from typing import TYPE_CHECKING, Final, Protocol
 from urllib.request import urlopen
 
-import pytest
-from sphinx.application import Sphinx
-from sphinx.config import Config
+from pytest import Config, FixtureRequest, MonkeyPatch, TempPathFactory, fixture, skip
+from sphinx.ext.autodoc.mock import mock
+from sphinx.pycode import ModuleAnalyzer
 from sphobjinv import Inventory
+
+from sphinx_autodoc_typehints._resolve.guards.overlay import SHADOWED_BY_GUARD
+from sphinx_autodoc_typehints._resolve.overloads import OVERLOADS
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
+    from types import ModuleType
 
+    from sphinx.application import Sphinx
     from sphinx.testing.util import SphinxTestApp
 
-pytest_plugins = "sphinx.testing.fixtures"
-collect_ignore = ["roots"]
 
-_SPHINX_EMPHASIS_RE = re.compile(
-    r"""
-    (?<!\*\*)   # not preceded by ** (bold markup)
-    (?<!\*)     # not preceded by * (avoids partial match inside **)
-    \*          # opening *
-    ([^*\s]     # first char: not * or whitespace
-    [^*]*?)     # rest: non-greedy, no * chars
-    \*          # closing *
-    (?!\*)      # not followed by *
-    """,
-    re.VERBOSE,
-)
+pytest_plugins: Final[str] = "sphinx.testing.fixtures"
+collect_ignore: Final[list[str]] = ["roots"]
+
+type MakeModule = Callable[[str, str], ModuleType]
 
 
-def normalize_sphinx_text(text: str) -> str:
-    text = text.replace("\u2013", "--")
-    return _SPHINX_EMPHASIS_RE.sub(r'"\1"', text)
+class BuildText(Protocol):
+    def __call__(self, index: str, output: str = "", **documents: str) -> str: ...
 
 
-def make_sig_app(**overrides: object) -> Sphinx:
-    defaults: dict[str, object] = {
-        "typehints_fully_qualified": False,
-        "simplify_optional_unions": False,
-        "typehints_formatter": None,
-        "typehints_use_signature": False,
-        "typehints_use_signature_return": False,
-        "autodoc_type_aliases": {},
-        "autodoc_mock_imports": [],
-        "python_display_short_literal_types": False,
-        "always_use_bars_union": False,
-        "strip_signature_backslash": False,
-        "typehints_document_overloads": True,
-    }
-    defaults.update(overrides)
-    config = create_autospec(Config, **defaults)  # ty: ignore[invalid-argument-type]
-    config.__getitem__.side_effect = lambda key: getattr(config, key)
-    app = create_autospec(Sphinx, config=config)
-    app.env = None
-    return app
+@fixture(name="make_app")
+def make_app_fixture(make_app: Callable[..., SphinxTestApp]) -> Iterator[Callable[..., SphinxTestApp]]:
+    unfinished: dict[int, SphinxTestApp] = {}
+    confdirs: set[str] = set()
+
+    def finished(app: Sphinx, _exception: Exception | None) -> None:
+        unfinished.pop(id(app), None)
+
+    def make(*args: object, **kwargs: object) -> SphinxTestApp:
+        app = make_app(*args, **kwargs)
+        unfinished[id(app)] = app
+        confdirs.add(f"{app.confdir}{sep}")
+        app.connect("build-finished", finished)
+        return app
+
+    yield make
+    # the extension hides the overloads of each module analyzed while one of its apps builds, and an app counts as
+    # building from its creation, so an app a test leaves unbuilt would hide them for the rest of the session
+    for unfinished_app in list(unfinished.values()):
+        unfinished_app.emit("build-finished", None)
+    # a project's conf.py puts its directory on sys.path and autodoc imports from there, so a later test importing the
+    # same module name would get this copy, which the next build of that project deletes
+    for name in [
+        name
+        for name, module in modules.items()
+        if isinstance(file := getattr(module, "__file__", None), str) and file.startswith(tuple(confdirs))
+    ]:
+        del modules[name]
 
 
-def make_docstring_app(**overrides: object) -> Sphinx:
-    defaults: dict[str, object] = {
-        "autodoc_type_aliases": {},
-        "autodoc_mock_imports": [],
-        "typehints_fully_qualified": False,
-        "simplify_optional_unions": False,
-        "typehints_formatter": None,
-        "typehints_document_rtype": True,
-        "typehints_document_rtype_none": True,
-        "typehints_use_rtype": True,
-        "typehints_defaults": None,
-        "always_document_param_types": False,
-        "python_display_short_literal_types": False,
-        "typehints_document_overloads": True,
-        "typehints_use_signature": False,
-    }
-    defaults.update(overrides)
-    config = create_autospec(Config, **defaults)  # ty: ignore[invalid-argument-type]
-    config.__getitem__.side_effect = lambda key: getattr(config, key)
-    app = create_autospec(Sphinx, config=config)
-    app.env = None
-    return app
+@fixture(autouse=True)
+def _forget_test_imports() -> Iterator[None]:
+    saved_path = path.copy()
+    yield
+    # an app restores on cleanup the sys.path it started with, which runs after the monkeypatch of a test creating the
+    # app undid its own entries, and so puts them back
+    path[:] = saved_path
+    # what the process keeps per module name outlives a module a test unloaded, and holds objects of it that a later
+    # test loading another module under the name would read
+    tracked = {*SHADOWED_BY_GUARD, *OVERLOADS, *(name for kind, name in ModuleAnalyzer.cache if kind == "module")}
+    for name in tracked - modules.keys():
+        SHADOWED_BY_GUARD.pop(name, None)
+        OVERLOADS.pop(name, None)
+        ModuleAnalyzer.cache.pop(("module", name), None)
 
 
-@pytest.fixture(autouse=True, scope="session")
+@fixture(autouse=True, scope="session")
 def _test_python_path() -> Iterator[None]:
     test_path = str(Path(__file__).parent)
-    sys.path.insert(0, test_path)
+    path.insert(0, test_path)
     yield
-    sys.path.remove(test_path)
+    path.remove(test_path)
 
 
-@pytest.fixture(scope="session")
-def wide_text_output() -> Iterator[None]:
-    with patch("sphinx.writers.text.MAXWIDTH", 2000):
-        yield
+@fixture
+def wide_text_output(monkeypatch: MonkeyPatch) -> None:
+    monkeypatch.setattr("sphinx.writers.text.MAXWIDTH", 2000)
 
 
-@pytest.fixture(scope="session")
-def inv(pytestconfig: pytest.Config) -> Inventory:
-    cache_path = f"python{sys.version_info.major}.{sys.version_info.minor}/objects.inv"
-    assert pytestconfig.cache is not None
-    if (
-        inv_dict := pytestconfig.cache.get(cache_path, None)
+@fixture(scope="session")
+def inv(pytestconfig: Config) -> Inventory:
+    cache_path = f"python{version_info.major}.{version_info.minor}/objects.inv"
+    # the cache provider is absent under -p no:cacheprovider
+    if (cache := getattr(pytestconfig, "cache", None)) is None or (
+        inv_dict := cache.get(cache_path, None)
     ) is None:  # pragma: no cover -- network fetch, CI has cache
-        url = f"https://docs.python.org/{sys.version_info.major}.{sys.version_info.minor}/objects.inv"
-        # sphobjinv downloads without a timeout, so a stalled connection would hang the whole run
-        with urlopen(url, timeout=30) as response:
-            inv_dict = Inventory(zlib=response.read()).json_dict()  # ty: ignore[unknown-argument]
-        pytestconfig.cache.set(cache_path, inv_dict)
-    return Inventory(inv_dict)  # ty: ignore[too-many-positional-arguments]
+        url = f"https://docs.python.org/{version_info.major}.{version_info.minor}/objects.inv"
+        try:
+            # sphobjinv downloads without a timeout, so a stalled connection would hang the whole run
+            with urlopen(url, timeout=30) as response:
+                inv_dict = Inventory(
+                    zlib=response.read()  # ty: ignore[unknown-argument]  # https://github.com/astral-sh/ty/issues/2404
+                ).json_dict()
+        except OSError as exc:
+            skip(f"the Python inventory is neither cached nor downloadable from {url}: {exc}")
+        if cache is not None:
+            cache.set(cache_path, inv_dict)
+    return Inventory(
+        inv_dict  # ty: ignore[too-many-positional-arguments]  # https://github.com/astral-sh/ty/issues/2404
+    )
 
 
-@pytest.fixture(autouse=True)
-def _remove_sphinx_projects(request: pytest.FixtureRequest, sphinx_test_tempdir: Path) -> None:
+@fixture(autouse=True)
+def _remove_sphinx_projects(request: FixtureRequest, sphinx_test_tempdir: Path) -> None:
     if not request.node.get_closest_marker("sphinx"):
         return
     for entry in sphinx_test_tempdir.iterdir():
         with suppress(PermissionError):
             if entry.is_dir() and Path(entry, "_build").exists():
-                shutil.rmtree(str(entry))
+                rmtree(str(entry))
 
 
-@pytest.fixture
+@fixture
+def mocked_object() -> Callable[..., object]:
+    with mock(["mocked_dependency"]):
+        return import_module("mocked_dependency").Thing
+
+
+@fixture
+def make_module(tmp_path: Path, monkeypatch: MonkeyPatch) -> MakeModule:
+    monkeypatch.syspath_prepend(tmp_path)
+
+    def make(name: str, source: str) -> ModuleType:
+        (module_path := tmp_path / f"{name}.py").write_text(source)
+        spec = spec_from_file_location(name, module_path)
+        assert spec is not None
+        assert spec.loader is not None
+        module = module_from_spec(spec)
+        # registered before it runs, as a module importing itself or a dataclass in it looks itself up there
+        monkeypatch.setitem(modules, name, module)
+        spec.loader.exec_module(module)
+        return module
+
+    return make
+
+
+@fixture
+def fresh_mod(monkeypatch: MonkeyPatch) -> None:
+    # several testroots and the README examples name their module mod, so forget what the process keeps about the mod
+    # an earlier test imported
+    monkeypatch.delitem(modules, "mod", raising=False)
+    monkeypatch.delitem(ModuleAnalyzer.cache, ("module", "mod"), raising=False)
+    monkeypatch.delitem(SHADOWED_BY_GUARD, "mod", raising=False)
+    monkeypatch.delitem(OVERLOADS, "mod", raising=False)
+
+
+@fixture
 def rootdir() -> Path:
-    return Path(str(Path(__file__).parent) or ".").absolute() / "roots"
+    return Path(__file__).parent / "roots"
 
 
-@pytest.fixture
-def write_rst(app: SphinxTestApp) -> Callable[[str], None]:
+@fixture
+def build_text(app: SphinxTestApp, write_rst: Callable[[str], None]) -> BuildText:
+    def build(index: str, output: str = "", **documents: str) -> str:
+        write_rst(index)
+        for name, text in documents.items():
+            (Path(app.srcdir) / f"{name}.rst").write_text(text)
+        app.build()
+        return (Path(app.outdir) / output if output else next(Path(app.outdir).glob("index.*"))).read_text()
+
+    return build
+
+
+@fixture(name="write_rst")
+def write_rst_fixture(app: SphinxTestApp) -> Callable[[str], None]:
     def _write(content: str) -> None:
         for rst_file in Path(app.srcdir).glob("*.rst"):
             rst_file.unlink()
-        (Path(app.srcdir) / "index.rst").write_text(dedent(content))
+        (Path(app.srcdir) / "index.rst").write_text(content)
 
     return _write
 
 
-def pytest_ignore_collect(collection_path: Path, config: pytest.Config) -> bool | None:  # ruff:ignore[unused-function-argument]
-    version_re = re.compile(r"_py(\d)(\d)\.py$")
-    if match := version_re.search(collection_path.name):
-        version = tuple(int(x) for x in match.groups())
-        if sys.version_info < version:  # ty: ignore[unsupported-operator]
-            return True
-    return None
+_STUB_ROOT: Final[Path] = Path(__file__).parent / "roots" / "test-pyi-stubs"
+
+
+@fixture(scope="session")
+def c_ext_mod(tmp_path_factory: TempPathFactory) -> Iterator[ModuleType]:
+    build_dir = tmp_path_factory.mktemp("c_ext")
+    _compile(_STUB_ROOT / "c_ext_mod.c", build_dir / "c_ext_mod")
+    copyfile(_STUB_ROOT / "c_ext_mod.pyi", build_dir / "c_ext_mod.pyi")
+    yield _import_from(build_dir, "c_ext_mod")
+    del modules["c_ext_mod"]
+
+
+# a PyO3 extension registers a submodule with no file of its own, whose stub sits in the package (discussion #698)
+@fixture(scope="session")
+def native_pkg(tmp_path_factory: TempPathFactory) -> Iterator[ModuleType]:
+    build_dir = tmp_path_factory.mktemp("native_pkg_root")
+    copytree(_STUB_ROOT / "native_pkg", build_dir / "native_pkg", ignore=ignore_patterns("*.c"))
+    _compile(_STUB_ROOT / "native_pkg" / "_native.c", build_dir / "native_pkg" / "_native")
+    yield _import_from(build_dir, "native_pkg")
+    for name in [name for name in modules if name.partition(".")[0] == "native_pkg"]:
+        del modules[name]
+
+
+def _compile(source: Path, target: Path) -> None:
+    if not (linker := get_config_var("LDSHARED")):  # pragma: no cover  # reached only without a C toolchain
+        skip("no C compiler available")
+    command = [
+        *linker.split(),
+        f"-I{get_path('include')}",
+        *(get_config_var("CFLAGS") or "").split(),
+        "-o",
+        f"{target}{get_config_var('EXT_SUFFIX')}",
+        str(source),
+    ]
+    try:
+        check_call(command)
+    except (CalledProcessError, FileNotFoundError):  # pragma: no cover  # reached only without a C toolchain
+        skip("C extension compilation failed")
+
+
+def _import_from(directory: Path, name: str) -> ModuleType:
+    path.insert(0, str(directory))
+    try:
+        return import_module(name)
+    finally:
+        path.remove(str(directory))
+
+
+__all__ = [
+    "BuildText",
+    "MakeModule",
+]

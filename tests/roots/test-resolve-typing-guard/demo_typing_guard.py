@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import typing
+import typing  # the typing.TYPE_CHECKING guard spelling is the case under test
 from builtins import ValueError  # handle does not have __module__  # ruff:ignore[builtin-import-shadowing]
 from functools import cmp_to_key  # has __module__ but cannot get module as is builtin
 from typing import TYPE_CHECKING
