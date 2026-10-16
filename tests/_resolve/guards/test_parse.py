@@ -168,6 +168,28 @@ _DECIMAL_GUARD: Final[str] = dedent("""\
         ),
         param(
             dedent("""\
+                import sys
+                from typing import TYPE_CHECKING
+
+                if TYPE_CHECKING and "win32" == sys.platform:
+                    import os
+            """),
+            [],
+            id="compound-reversed-platform-comparison",
+        ),
+        param(
+            dedent("""\
+                import sys
+                from typing import TYPE_CHECKING
+
+                if TYPE_CHECKING and "win32" == sys.platform == "linux":
+                    import os
+            """),
+            [],
+            id="compound-chained-platform-comparison",
+        ),
+        param(
+            dedent("""\
                 from typing import TYPE_CHECKING
 
                 if not TYPE_CHECKING or 0:
