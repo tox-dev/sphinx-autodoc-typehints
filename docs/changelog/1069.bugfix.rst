@@ -1,0 +1,1 @@
+Reread documents when ``typehints_formatter`` changes in an incremental build, so their rendered types update without ``sphinx-build -E``.
