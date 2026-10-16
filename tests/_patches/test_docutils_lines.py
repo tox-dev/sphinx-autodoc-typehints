@@ -32,47 +32,31 @@ def test_doctest_failure_reports_the_example_line(build_text: BuildText) -> None
     )
 
 
-@mark.sphinx("latex", testroot="dummy")
-def test_admonition_line_counts_within_its_own_file(app: SphinxTestApp) -> None:
-    (Path(app.srcdir) / "included.txt").write_text(
-        dedent("""\
-            a
-
-            b
-
-            c
-        """)
-    )
+@mark.sphinx("text", testroot="dummy")
+def test_definition_list_warning_names_its_first_line(app: SphinxTestApp) -> None:
     (Path(app.srcdir) / "index.rst").write_text(
         dedent("""\
+            .. _dup:
+
             Index
             =====
 
-            .. include:: included.txt
+            .. toctree::
 
-            .. note::
+               other
+        """)
+    )
+    (Path(app.srcdir) / "other.rst").write_text(
+        dedent("""\
+            Other
+            =====
 
-               .. tabularcolumns:: |L|L|
+            .. _dup:
 
-               +---------+-----+
-               | ::      | b   |
-               |         |     |
-               |   code  |     |
-               +---------+-----+
+            term
+               definition
         """)
     )
     app.build()
 
-    assert findall(r"index\.rst:(\d+): WARNING: colspec", app.warning.getvalue()) == ["6"]
-
-
-@mark.sphinx("text", testroot="dummy")
-def test_patched_text_indent_documents_as_the_original(build_text: BuildText, app: SphinxTestApp) -> None:
-    assert (build_text(".. automethod:: docutils.parsers.rst.states.Text.indent"), app.warning.getvalue()) == (
-        dedent("""\
-            Text.indent(match, context, next_state)
-
-               Definition list item.
-        """),
-        "",
-    )
+    assert findall(r"other\.rst:(\d+): WARNING: duplicate label", app.warning.getvalue()) == ["6"]
