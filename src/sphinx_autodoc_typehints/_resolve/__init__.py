@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from .aliases import type_alias_namespace, written_type_alias
 from .attributes import get_body_annotations, get_instance_var_annotations
-from .backfill import stub_path
+from .backfill import STUB_FILES, stub_path
 from .evaluate import resolve_string_annotations
 from .generics import (
     TYPE_PARAM_KINDS,
@@ -28,6 +28,13 @@ from .hints import get_all_type_hints, get_descriptor_type_hint, resolve_annotat
 from .overloads import OVERLOADS, resolve_overloads
 from .typed_dict import OPEN, extra_items_type, typed_dict_keys
 
+
+def forget_reads() -> None:
+    """Drop what the last build read from the stub files and the loaded modules, which may have changed since."""
+    SHADOWED_BY_GUARD.clear()
+    STUB_FILES.clear()
+
+
 __all__ = [
     "OPEN",
     "OVERLOADS",
@@ -37,6 +44,7 @@ __all__ = [
     "bound_type_args",
     "declared_type_params",
     "extra_items_type",
+    "forget_reads",
     "get_all_type_hints",
     "get_body_annotations",
     "get_descriptor_type_hint",

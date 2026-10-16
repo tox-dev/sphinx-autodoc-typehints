@@ -106,13 +106,18 @@ class _AnnotationsPicker(VariableCommentPicker):
 
 def names_read(source: str) -> Iterator[str]:  # pragma: >=3.14 cover
     """Yield the names the annotation `source` reads, none when it does not parse."""
+    yield from _names_in(source)
+
+
+@cache
+def _names_in(source: str) -> tuple[str, ...]:  # pragma: >=3.14 cover
     try:
         # as annotationlib compiles `*Ts`, the starred annotation of `*args`
         tree = parse(f"({source},)[0]" if source.lstrip().startswith("*") else source, mode="eval")
     except SyntaxError:
         # the source prints a value it holds no code for, such as a lambda in `Annotated` metadata, by its repr
-        return
-    yield from (node.id for node in walk(tree) if isinstance(node, Name))
+        return ()
+    return tuple(node.id for node in walk(tree) if isinstance(node, Name))
 
 
 def annotations_as_written(owner: Documented) -> dict[str, Annotation | str]:  # pragma: >=3.14 cover

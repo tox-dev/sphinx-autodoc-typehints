@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from .context import stub_context
 from .extract import find_ast_node, stub_annotations
-from .find import parse_stub_ast, stub_path
+from .find import STUB_FILES, parse_stub_ast, stub_path
 
 __all__ = [
+    "STUB_FILES",
     "find_ast_node",
     "parse_stub_ast",
     "stub_annotations",

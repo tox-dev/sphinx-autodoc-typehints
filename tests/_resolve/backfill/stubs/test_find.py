@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 
 from pytest import MonkeyPatch, fixture, mark, param
 
+from sphinx_autodoc_typehints._resolve import forget_reads
 from sphinx_autodoc_typehints._resolve.backfill.stubs.find import (
     find_stub_owner,
     live_statements,
@@ -26,6 +27,27 @@ if TYPE_CHECKING:
 
 def test_stub_path_of_a_module_with_a_stub_beside_it(stub_mod: ModuleType) -> None:
     assert stub_path(stub_mod.greet) == Path(str(stub_mod.__file__)).with_suffix(".pyi")
+
+
+def test_stub_path_misses_a_stub_added_while_a_build_reads(tmp_path: Path) -> None:
+    module = ModuleType("_late")
+    module.__file__ = str(tmp_path / "_late.py")
+    forget_reads()
+    assert stub_path(module) is None
+    (tmp_path / "_late.pyi").write_text("def f() -> None: ...")
+
+    assert stub_path(module) is None
+
+
+def test_stub_path_finds_a_stub_added_before_the_next_build(tmp_path: Path) -> None:
+    module = ModuleType("_later")
+    module.__file__ = str(tmp_path / "_later.py")
+    forget_reads()
+    assert stub_path(module) is None
+    (tmp_path / "_later.pyi").write_text("def f() -> None: ...")
+    forget_reads()
+
+    assert stub_path(module) == tmp_path / "_later.pyi"
 
 
 @mark.parametrize(

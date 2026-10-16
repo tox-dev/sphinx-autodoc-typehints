@@ -31,12 +31,11 @@ def type_combined_field_entry(
     parentheses right after the name, which a type from the annotation follows too. Return whether the entry has a type
     now, `False` when the docstring lists no such entry.
     """
+    if not (entries := list(_combined_field_entries(lines))):
+        return False
     names = "|".join(re.escape(f"{prefix}{arg_name}") for prefix in ("", "\\*", "\\*\\*"))
     entry = re.compile(rf"^(?::[^:]+: +|\s+)(?:\* )?\*\*(?:{names})\*\*(?P<typed> \()?")
-    found = next(
-        ((at, match) for at in _combined_field_entries(lines) if (match := entry.match(lines[at]))),
-        None,
-    )
+    found = next(((at, match) for at in entries if (match := entry.match(lines[at]))), None)
     if found is None:
         return False
     at, match = found
