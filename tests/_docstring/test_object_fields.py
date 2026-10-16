@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import cache, cached_property, partial
 from inspect import getattr_static
 from textwrap import dedent
-from typing import TYPE_CHECKING, Final, overload, override
+from typing import TYPE_CHECKING, Annotated, Final, overload, override
 
 from pytest import MarkDecorator, mark, param
 
@@ -470,6 +470,20 @@ def _set_int(self: object, new: int) -> None: ...
 def _set_int_or_str(self: object, new: int | str) -> None: ...
 
 
+class _Ambiguous:
+    __hash__ = object.__hash__
+
+    def __eq__(self, other: object) -> bool:
+        msg = "metadata cannot be compared"
+        raise ValueError(msg)
+
+
+def _get_ambiguous(self: object) -> Annotated[int, _Ambiguous()]: ...
+
+
+def _set_ambiguous(self: object, new: Annotated[int, _Ambiguous()]) -> None: ...
+
+
 class _Unreadable:
     __signature__ = "unreadable"
 
@@ -502,6 +516,12 @@ class _Unreadable:
             id="docstring-states-it",
         ),
         param(property(_get_int, _set_int), ["Summary."], ["Summary."], id="same-type"),
+        param(
+            property(_get_ambiguous, _set_ambiguous),
+            ["Summary."],
+            ["Summary.", "", f":Setter accepts: {INT}"],
+            id="metadata-equality-raises",
+        ),
         param(property(_get_int, lambda _holder, _new_value: None), ["Summary."], ["Summary."], id="untyped-setter"),
         param(property(_get_int), ["Summary."], ["Summary."], id="no-setter"),
         param(
