@@ -1,8 +1,8 @@
 """
 Foundation record of the state the event handlers share.
 
-Most of it lives in the environment's `current_document` for the document being read; the alias choices live in an
-environment attribute, so the cached environment keeps them.
+Most of it lives in the environment's `current_document` for the document being read; the alias choices of each read
+document move to an environment attribute, so the cached environment keeps them.
 """
 
 from __future__ import annotations
@@ -16,8 +16,9 @@ if TYPE_CHECKING:
 
 _DOCUMENTED: Final[str] = "sphinx_autodoc_typehints_documented"
 _TYPES_DOCUMENTED: Final[str] = "sphinx_autodoc_typehints_types_documented"
+_ALIAS_CHOICES: Final[str] = "sphinx_autodoc_typehints_alias_choices"
 # an environment attribute rather than current_document, so the pickled environment keeps the choices across builds
-_ALIAS_CHOICES: Final[str] = "_typehints_alias_choices"
+_DOCUMENT_ALIAS_CHOICES: Final[str] = "_typehints_alias_choices"
 
 
 def note_documented(env: BuildEnvironment, name: str) -> None:
@@ -70,22 +71,28 @@ def class_docstrings(env: BuildEnvironment) -> dict[str, tuple[Options | None, l
 
 
 def alias_choices(env: BuildEnvironment) -> dict[str, tuple[str, ...]]:
-    """Return the alias choices recorded on the environment, adding the record on first use."""
-    if (choices := getattr(env, _ALIAS_CHOICES, None)) is None:
+    """Hold the alias choices recorded while reading the current document until `doctree-read` files them."""
+    return _record(env, _ALIAS_CHOICES, dict[str, tuple[str, ...]]())
+
+
+def document_alias_choices(env: BuildEnvironment) -> dict[str, dict[str, tuple[str, ...]]]:
+    """Map each document to the alias choices recorded while reading it, adding the record on first use."""
+    if (choices := getattr(env, _DOCUMENT_ALIAS_CHOICES, None)) is None:
         choices = {}
-        setattr(env, _ALIAS_CHOICES, choices)
+        setattr(env, _DOCUMENT_ALIAS_CHOICES, choices)
     return choices
 
 
-def recorded_alias_choices(env: BuildEnvironment) -> dict[str, tuple[str, ...]]:
-    """Return the alias choices an environment recorded, without adding a record to one holding none."""
-    return getattr(env, _ALIAS_CHOICES, None) or {}
+def recorded_alias_choices(env: BuildEnvironment, docname: str) -> dict[str, tuple[str, ...]]:
+    """Return the alias choices recorded for `docname`, without adding a record to an environment holding none."""
+    return (getattr(env, _DOCUMENT_ALIAS_CHOICES, None) or {}).get(docname, {})
 
 
 __all__ = [
     "add_signature_lines",
     "alias_choices",
     "class_docstrings",
+    "document_alias_choices",
     "is_documented",
     "note_documented",
     "note_type_documented",

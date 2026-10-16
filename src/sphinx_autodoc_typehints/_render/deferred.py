@@ -14,17 +14,20 @@ from weakref import WeakValueDictionary
 
 from docutils import nodes
 from sphinx import addnodes
+from sphinx.environment.collectors import EnvironmentCollector
 from sphinx.errors import NoUri
 from sphinx.transforms.post_transforms import SphinxPostTransform
 from sphinx.util import logging
 from sphinx.util.rst import default_role
 
 from .._private_imports import sphinx_domains
-from .._state import alias_choices, recorded_alias_choices
+from .._state import alias_choices, document_alias_choices, recorded_alias_choices
 from .context import render_context
 from .rst import parse, unescape
 
 if TYPE_CHECKING:
+    from collections.abc import Set as AbstractSet
+
     from docutils.nodes import Node
     from docutils.parsers.rst import states
     from sphinx.application import Sphinx
@@ -93,9 +96,28 @@ def defer_alias_choice(config: Config, linked: str, expanded: str, *, objtype: s
     return f":{ALIAS_CHOICE_ROLE}:`{key}`"
 
 
-def merge_alias_choices(_app: Sphinx, env: BuildEnvironment, _docnames: list[str], other: BuildEnvironment) -> None:
-    if worker_choices := recorded_alias_choices(other):
-        alias_choices(env).update(worker_choices)
+class AliasChoiceCollector(EnvironmentCollector):
+    """File the choices recorded while reading a document under it, so rereading or removing it replaces them."""
+
+    @override
+    def process_doc(self, app: Sphinx, doctree: nodes.document) -> None:
+        del doctree
+        if choices := alias_choices(app.env):
+            document_alias_choices(app.env)[app.env.docname] = dict(choices)
+
+    @override
+    def clear_doc(self, app: Sphinx, env: BuildEnvironment, docname: str) -> None:
+        del app
+        document_alias_choices(env).pop(docname, None)
+
+    @override
+    def merge_other(
+        self, app: Sphinx, env: BuildEnvironment, docnames: AbstractSet[str], other: BuildEnvironment
+    ) -> None:
+        del app
+        document_alias_choices(env).update({
+            docname: choices for docname in docnames if (choices := recorded_alias_choices(other, docname))
+        })
 
 
 def note_builder(app: Sphinx) -> None:
@@ -113,7 +135,7 @@ class DeferAliasChoice(SphinxPostTransform):
 
     @override
     def run(self, **kwargs: object) -> None:
-        choices = recorded_alias_choices(self.env)
+        choices = recorded_alias_choices(self.env, self.env.docname)
         pending = self._markers(self.document)
         while pending:
             node = pending.pop()
@@ -190,9 +212,9 @@ class DeferAliasChoice(SphinxPostTransform):
 
 __all__ = [
     "ALIAS_CHOICE_ROLE",
+    "AliasChoiceCollector",
     "DeferAliasChoice",
     "alias_choice_role",
     "defer_alias_choice",
-    "merge_alias_choices",
     "note_builder",
 ]
