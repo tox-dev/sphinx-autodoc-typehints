@@ -1,0 +1,2 @@
+Link an enum member inside ``Literal`` to its enum when the member has no entry of its own, such as a member without a
+docstring under ``:members:``, instead of rendering it unlinked with a ``nitpicky`` warning.
