@@ -7,6 +7,22 @@
 .. towncrier release notes start
 
 ********************
+ 3.15.0 (2026-10-16)
+********************
+
+- Allow projects to show selected ``Annotated`` metadata in rendered types with ``typehints_annotated_metadata``. :pr:`1071`
+- Process method signatures of classes defined inside functions when the module exports the class under a name autodoc can import. :pr:`1072`
+- Let ``typehints_formatter`` receive whether a type appears in a parameter, return, attribute or base when ``typehints_formatter_pass_context`` is enabled. :pr:`1073`
+- Reread documents when ``typehints_formatter`` changes in an incremental build, so their rendered types update without ``sphinx-build -E``. :pr:`1069`
+- Stop an unchanged incremental build from reporting ``html_static_path`` as changed after the extension adds its stylesheet. :pr:`1070`
+- Document inherited special methods of a generic subclass without raising ``Cannot subscript already-subscripted typing.Generic``. :pr:`1074`
+- Show a property setter's type when ``Annotated`` metadata raises during comparison with the getter type, instead of failing the build. :pr:`1076`
+- Keep the description in a hand-written ``:Returns:`` field instead of interpreting it as a numpydoc return type. :pr:`1077`
+- Skip imports under ``if TYPE_CHECKING and False`` instead of resolving types the branch never defines. :pr:`1078`
+- Advertise Sphinx, autodoc and type hints in the PyPI keywords instead of unrelated virtual environment terms, and add
+  classifiers for documentation, OS independence and the package's type annotations. :pr:`1068`
+
+********************
  3.14.0 (2026-10-16)
 ********************
 

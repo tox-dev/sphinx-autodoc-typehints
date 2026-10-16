@@ -1,1 +1,0 @@
-Let ``typehints_formatter`` receive whether a type appears in a parameter, return, attribute or base when ``typehints_formatter_pass_context`` is enabled.

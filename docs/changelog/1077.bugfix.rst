@@ -1,1 +1,0 @@
-Keep the description in a hand-written ``:Returns:`` field instead of interpreting it as a numpydoc return type.

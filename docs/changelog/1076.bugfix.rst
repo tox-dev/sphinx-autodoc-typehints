@@ -1,1 +1,0 @@
-Show a property setter's type when ``Annotated`` metadata raises during comparison with the getter type, instead of failing the build.

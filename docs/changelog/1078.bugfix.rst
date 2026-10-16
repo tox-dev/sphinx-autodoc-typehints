@@ -1,1 +1,0 @@
-Skip imports under ``if TYPE_CHECKING and False`` instead of resolving types the branch never defines.

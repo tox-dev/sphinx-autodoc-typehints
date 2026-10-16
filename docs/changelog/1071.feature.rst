@@ -1,1 +1,0 @@
-Allow projects to show selected ``Annotated`` metadata in rendered types with ``typehints_annotated_metadata``.
