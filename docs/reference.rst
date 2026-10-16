@@ -63,6 +63,7 @@ to an option without a *Rebuild* field leaves the cached documents as they are.
 
 .. confval:: typehints_formatter
     :default: ``None``
+    :rebuild: ``env``
 
     Called with each annotation and the Sphinx config, it returns the reST to show, or ``None`` to render the
     annotation as the extension would without it. An empty string hides the type: docstring fields leave it out, a
