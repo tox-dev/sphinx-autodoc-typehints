@@ -1,0 +1,2 @@
+Link an alias, whether a ``type`` statement or a module-level ``Count = int``, used by an ``automodule`` member when
+its ``py:type`` comes later on the page, instead of expanding it to its value.
