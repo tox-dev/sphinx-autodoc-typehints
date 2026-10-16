@@ -402,6 +402,12 @@ def test_format_annotation_always_use_bars_union(
             rf":py:data:`~typing.Literal`\ \[:{ENUM_MEMBER_ROLE}:`SomeEnum.VALUE <{__name__}.SomeEnum.VALUE>`]",
             id="Literal-enum",
         ),
+        param(
+            "Literal",
+            (None, True, False, b"raw"),
+            r":py:data:`~typing.Literal`\ \[:py:obj:`None`, :py:data:`True`, :py:data:`False`, ``b'raw'``]",
+            id="Literal-constants",
+        ),
         param("Self", None, ":py:data:`~typing.Self`", id="Self"),
         param("Never", None, ":py:data:`~typing.Never`", id="Never"),
         param("LiteralString", None, ":py:data:`~typing.LiteralString`", id="LiteralString"),
@@ -530,6 +536,7 @@ def test_format_annotation_formatter(
         param(Literal["a", "b"], {}, "``'a'`` | ``'b'``", id="values"),
         param(Literal, {}, ":py:data:`~typing.Literal`", id="bare"),
         param(Literal["`"], {}, r":literal:`\'\`\'`", id="backtick"),
+        param(Literal[True], {}, ":py:data:`True`", id="constant"),
         param(
             Literal[OtherEnum.VALUE],
             {"typehints_fully_qualified": True},

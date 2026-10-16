@@ -473,6 +473,11 @@ def _literal(reference: _Reference) -> _Frame:
             else:
                 # a ~ would keep only the member name, and members of different enums would read the same
                 literal_parts.append(f":{ENUM_MEMBER_ROLE}:`{member} <{module}.{member}>`")
+        elif arg is None:
+            literal_parts.append(":py:obj:`None`")
+        elif isinstance(arg, bool):
+            # the Python docs list both as data on their constants page
+            literal_parts.append(f":py:data:`{arg}`")
         else:
             # an inline literal cannot hold a backtick, the literal role takes it escaped
             literal_parts.append(f":literal:`{rst.escape(text)}`" if "`" in (text := repr(arg)) else f"``{text}``")

@@ -1,0 +1,2 @@
+Link ``None``, ``True`` and ``False`` inside ``Literal[...]`` to the Python docs, the same way ``None`` links outside
+it, instead of rendering them as plain text.
