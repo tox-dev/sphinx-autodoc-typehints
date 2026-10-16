@@ -33,6 +33,7 @@ if TYPE_CHECKING:
 ALIAS_CHOICE_ROLE: Final[str] = "sphinx_autodoc_typehints_alias"
 _ALIAS_CHOICE_KEY: Final[str] = "sphinx_autodoc_typehints_alias_key"
 _DEFAULT_DOMAIN_KEY: Final[str] = "sphinx_autodoc_typehints_default_domain"
+_REF_CONTEXT_KEY: Final[str] = "sphinx_autodoc_typehints_ref_context"
 
 
 def alias_choice_role(
@@ -51,8 +52,11 @@ def alias_choice_role(
     node.source, node.line = inliner.reporter.get_source_and_line(lineno)
     # the renderings hold roles written for this spot, such as a formatter's :class:, which the write phase parses
     # outside any document, so it needs the domain they would have resolved in here
-    if (domain := inliner.document.settings.env.current_document.default_domain) is not None:
+    env = inliner.document.settings.env
+    if (domain := env.current_document.default_domain) is not None:
         node[_DEFAULT_DOMAIN_KEY] = domain.name
+    # and the module and class an `automodule` or a class body set, which the Python roles resolve a name within
+    node[_REF_CONTEXT_KEY] = {key: env.ref_context.get(key) for key in ("py:module", "py:class")}
     return [node], []
 
 
@@ -107,10 +111,13 @@ class DeferAliasChoice(SphinxPostTransform):
             doc = self._parse(node, linked)
             # the target is the first reference, and the type arguments after it resolve, or not, like any other
             target = next(doc.findall(addnodes.pending_xref))
-            # a role resolves to whatever object has the name, as :py:type: does to a class
-            documented = self.env.domains.python_domain.objects.get(target["reftarget"])
+            # a role resolves to whatever object has the name, as :py:type: does to a class, looking in the module and
+            # class it was written in
+            documented = self.env.domains.python_domain.find_obj(
+                self.env, target.get("py:module"), target.get("py:class"), target["reftarget"], None
+            )
             resolved: Node | None = None
-            if not objtypes or getattr(documented, "objtype", None) in objtypes:
+            if not objtypes or any(entry.objtype in objtypes for _, entry in documented):
                 contnode = target.children[0].deepcopy() if target.children else nodes.literal(text=target["reftarget"])
                 with suppress(NoUri):
                     resolved = self.env.domains[target["refdomain"]].resolve_xref(
@@ -144,11 +151,15 @@ class DeferAliasChoice(SphinxPostTransform):
         current = self.env.current_document
         default_domain = current.default_domain
         current.default_domain = self.env.domains.get(marker.get(_DEFAULT_DOMAIN_KEY, ""))
+        ref_context = self.env.ref_context.copy()
+        self.env.ref_context.update(marker.get(_REF_CONTEXT_KEY, {}))
         try:
             with sphinx_domains(self.env):
                 doc = parse(rst, self.env)
         finally:
             current.default_domain = default_domain
+            self.env.ref_context.clear()
+            self.env.ref_context.update(ref_context)
         for message in doc.findall(nodes.system_message):
             if message["level"] >= doc.settings.report_level:
                 logging.getLogger(__name__).log(

@@ -313,6 +313,62 @@ _TYPE_ALIAS_FUNC_EXPANDED: Final[str] = dedent("""\
         ),
         param(
             dedent("""\
+                .. automodule:: render_generic
+                   :members: pair_func
+
+                .. py:type:: render_generic.Pair
+            """),
+            {},
+            "",
+            dedent("""\
+                Generic and recursive PEP 695 aliases.
+
+                render_generic.pair_func(value)
+
+                   Take a pair.
+
+                   Parameters:
+                      **value** ("Pair"["int"]) -- a pair
+
+                   Return type:
+                      "None"
+
+                type render_generic.Pair
+                """),
+            id="automodule-member-later-on-the-page",
+            marks=mark.sphinx("text", testroot="render-types"),
+        ),
+        param(
+            dedent("""\
+                .. automodule:: mod_eager
+                   :members: count_eager
+
+                .. py:type:: mod_eager.Count
+            """),
+            {},
+            "index.txt",
+            dedent("""\
+                Module without deferred annotations to test the globals-scanning path.
+
+                mod_eager.count_eager(amount, limit)
+
+                   Count up to a limit.
+
+                   Parameters:
+                      * **amount** ("Count") -- The amount
+
+                      * **limit** ("int") -- The limit
+
+                   Return type:
+                      "None"
+
+                type mod_eager.Count
+            """),
+            id="automodule-member-written-alias-later-on-the-page",
+            marks=mark.sphinx("text", testroot="integration"),
+        ),
+        param(
+            dedent("""\
                 .. autofunction:: render_nested.nested_func
 
                 .. toctree::
