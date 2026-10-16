@@ -1,0 +1,1 @@
+Honor ``autodoc_use_type_comments = False`` when reading types from a function's ``# type:`` comment.

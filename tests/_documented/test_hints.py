@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from io import StringIO
 
-    from conftest import BuildText
+    from conftest import BuildText, MakeModule
     from sphinx.testing.util import SphinxTestApp
 
     from sphinx_autodoc_typehints._objects import QualifiedCallable
@@ -198,3 +198,31 @@ def test_resolved_type_hints_of_a_namedtuple(
     build_text: BuildText, warning: StringIO, rst: str, expected: str, warnings: list[str]
 ) -> None:
     assert (build_text(rst), strip_colors(warning.getvalue()).splitlines()) == (expected, warnings)
+
+
+@mark.parametrize(
+    "use_type_comments",
+    [
+        param(True, marks=mark.sphinx(confoverrides={"autodoc_use_type_comments": True}), id="enabled"),
+        param(False, marks=mark.sphinx(confoverrides={"autodoc_use_type_comments": False}), id="disabled"),
+    ],
+)
+def test_resolved_type_hints_respect_type_comment_setting(
+    build_text: BuildText, make_module: MakeModule, use_type_comments: bool
+) -> None:
+    make_module(
+        "commented",
+        dedent("""\
+            def convert(value):  # type: (int) -> str
+                '''Convert a value.
+
+                :param value: the input
+                '''
+                return str(value)
+        """),
+    )
+    text = build_text(".. autofunction:: commented.convert\n")
+    assert ('**value** ("int")' in text, 'Return type:\n      "str"' in text) == (
+        use_type_comments,
+        use_type_comments,
+    )

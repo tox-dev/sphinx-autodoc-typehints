@@ -381,8 +381,8 @@ links to that entry. Without the entry the annotation expands to the type it sta
 
 .. live-example::
 
-    # the defaults cover this
     extensions = ["sphinx.ext.autodoc", "sphinx_autodoc_typehints"]
+    autodoc_use_type_comments = True
     ---
     type Vector = list[float]
     """Coordinates along each axis."""
@@ -605,6 +605,9 @@ syntax from before Python 3 supported annotations everywhere.
         :param factor: the factor
         """
         return value * factor
+
+Set :confval:`autodoc_use_type_comments` to ``True`` to include these types. When it is ``False``, the extension leaves
+type comments out of the rendered fields; annotations and ``.pyi`` stub types still work.
 
 The per-argument form, a ``# type:`` comment after each parameter, works too, and the comment may leave out ``self`` or
 ``cls``. A comment that doesn't parse warns under ``sphinx_autodoc_typehints.comment``.
