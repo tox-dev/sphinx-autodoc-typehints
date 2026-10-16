@@ -390,7 +390,10 @@ def _annotated(reference: _Reference) -> _Frame:
         selected = [
             value_markup(repr(item))
             for item in metadata
-            if isinstance(item, reference.config.typehints_annotated_metadata)
+            if any(
+                f"{kind.__module__}.{kind.__qualname__}" in reference.config.typehints_annotated_metadata
+                for kind in type(item).__mro__
+            )
         ]
         yield _Rendered(
             f":py:data:`~typing.Annotated`\\ \\[{rendered}, {', '.join(selected)}]" if selected else rendered

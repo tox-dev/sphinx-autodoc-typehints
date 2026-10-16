@@ -66,11 +66,15 @@ def validate_config(app: Sphinx, _env: BuildEnvironment, _docnames: list[str]) -
         msg = f"typehints_formatter needs to be callable or `None`, not {formatter}"
         raise ConfigError(msg)
 
-    if not isinstance(metadata := app.config.typehints_annotated_metadata, tuple) or not all(
+
+def cache_annotated_metadata(_app: Sphinx, config: Config) -> None:
+    """Store stable names instead of unpickleable classes in the Sphinx config."""
+    if not isinstance(metadata := config.typehints_annotated_metadata, tuple) or not all(
         isinstance(item, type) for item in metadata
     ):
         msg = "typehints_annotated_metadata needs a tuple of types"
         raise ConfigError(msg)
+    config.typehints_annotated_metadata = tuple(f"{item.__module__}.{item.__qualname__}" for item in metadata)
 
 
 def store_type_mapping(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> None:
@@ -120,6 +124,7 @@ class _FixupModuleName(_CachedCallable):
 
 __all__ = [
     "OPTIONS",
+    "cache_annotated_metadata",
     "cache_fixup_module_name",
     "cache_formatter",
     "store_type_mapping",
