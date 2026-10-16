@@ -1,4 +1,4 @@
-"""Foundation module importing the private names the extension reads from its dependencies and the standard library."""
+"""Foundation module importing the private and undocumented names the extension reads from its dependencies."""
 
 from __future__ import annotations
 
@@ -15,10 +15,9 @@ from sphinx.domains.python._annotations import (  # ruff:ignore[import-private-n
 from sphinx.domains.python._annotations import (  # ruff:ignore[import-private-name]  # Sphinx has no public parser
     _parse_type_list as parse_type_list,
 )
-from sphinx.locale import _ as translate  # ruff:ignore[import-private-name]  # Sphinx's own translations
-from sphinx.util.typing import (
-    _INVALID_BUILTIN_CLASSES as INVALID_BUILTIN_CLASSES,  # ruff:ignore[import-private-name]  # no public name
-)
+from sphinx.pycode.parser import VariableCommentPicker  # undocumented, yet the only reader of `#:` comments
+from sphinx.util.docutils import sphinx_domains  # undocumented, yet the only way to parse reST with Sphinx's roles
+from sphinx.util.logging import suppress_logging  # undocumented, yet the only way to silence a trial parse
 
 try:
     from sphinx.ext.autodoc._dynamic._signatures import (
@@ -35,9 +34,10 @@ BUILTIN_DIRECTIVES: Final[frozenset[str]] = frozenset(
 __all__ = [
     "BUILTIN_DIRECTIVES",
     "HAS_DEFAULT_FACTORY",
-    "INVALID_BUILTIN_CLASSES",
     "METACLASS_CALL_BLACKLIST",
+    "VariableCommentPicker",
     "parse_annotation",
     "parse_type_list",
-    "translate",
+    "sphinx_domains",
+    "suppress_logging",
 ]

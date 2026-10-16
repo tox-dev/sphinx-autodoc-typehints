@@ -5,7 +5,6 @@ from __future__ import annotations
 from inspect import Parameter, Signature, isclass, isfunction, ismethod
 from typing import TYPE_CHECKING
 
-from sphinx.util import logging
 from sphinx.util.inspect import is_builtin_class_method, safe_getattr, stringify_signature
 from sphinx.util.inspect import signature as sphinx_signature
 
@@ -26,7 +25,7 @@ from .._objects import (
     declared_signature,
     prefix_of,
 )
-from .._private_imports import METACLASS_CALL_BLACKLIST
+from .._private_imports import METACLASS_CALL_BLACKLIST, suppress_logging
 from .._resolve import bound_type_args
 from .._state import add_signature_lines, note_documented, written_signatures
 from .._warnings import warn
@@ -141,7 +140,7 @@ def _shown_types(
     if not (app.config.typehints_use_signature or app.config.typehints_use_signature_return):
         return {}, overloads
     # the docstring of the same object resolves these hints too, and warns about any that fail there
-    with logging.suppress_logging():
+    with suppress_logging():
         hints = resolved_type_hints(app, entry.name, entry.obj, callee, annotated)
     # a kept type reads as its field does: the same resolution, aliases, fixups and formatter, written as Python
     with render_scope(app, prefix_of(entry.name), **hints.scope, signature=True):

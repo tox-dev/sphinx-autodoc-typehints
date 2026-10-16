@@ -6,9 +6,8 @@ from typing import TYPE_CHECKING, Final
 
 from docutils import nodes
 from sphinx import addnodes
+from sphinx.locale import _  # ruff:ignore[import-private-name]  # Sphinx documents it as public
 from sphinx.util.docutils import SphinxDirective
-
-from .._private_imports import translate
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -40,7 +39,7 @@ class DeprecatedDirective(SphinxDirective):
     has_content = True
 
     def run(self) -> list[Node]:
-        label = nodes.inline("", translate("Deprecated") + ": ", classes=["versionmodified", "deprecated"])
+        label = nodes.inline("", _("Deprecated") + ": ", classes=["versionmodified", "deprecated"])
         node = addnodes.versionmodified(type="deprecated")
         node += nodes.paragraph("", "", label, nodes.Text("\n".join(self.content)), translatable=False)
         self.set_source_info(node)

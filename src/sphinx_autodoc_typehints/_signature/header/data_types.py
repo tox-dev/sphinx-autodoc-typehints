@@ -6,12 +6,11 @@ from inspect import getattr_static
 from typing import TYPE_CHECKING, Final
 
 from sphinx import addnodes
-from sphinx.util import logging
 from sphinx.util.inspect import safe_getattr
 
 from sphinx_autodoc_typehints._documented import render_scope
 from sphinx_autodoc_typehints._objects import object_at, prefix_of, property_getter
-from sphinx_autodoc_typehints._private_imports import parse_annotation
+from sphinx_autodoc_typehints._private_imports import parse_annotation, suppress_logging
 from sphinx_autodoc_typehints._refs import WrittenTypeAlias
 from sphinx_autodoc_typehints._render import as_signature_type
 from sphinx_autodoc_typehints._resolve import (
@@ -92,7 +91,7 @@ def _hint(app: Sphinx, module: str, fullname: str, objtype: str) -> Hint | Writt
     owner = object_at(module, path)
     name = f"{module}.{fullname}"
     # the header's own resolution reports nothing, the docstring of the same object warns about what fails there
-    with logging.suppress_logging():
+    with suppress_logging():
         if objtype == "property":
             # a class property is a classmethod wrapping the property, which Python before 3.13 runs on class access
             if isinstance(static := getattr_static(owner, attribute, None), classmethod):

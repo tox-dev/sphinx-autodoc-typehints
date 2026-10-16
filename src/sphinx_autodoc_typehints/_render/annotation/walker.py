@@ -31,9 +31,9 @@ from typing import (
 
 from sphinx.ext.autodoc.mock import ismock
 from sphinx.util.inspect import TypeAliasForwardRef
+from sphinx.util.typing import is_invalid_builtin_class
 
 from sphinx_autodoc_typehints._objects import alias_lookup_names
-from sphinx_autodoc_typehints._private_imports import INVALID_BUILTIN_CLASSES
 from sphinx_autodoc_typehints._refs import MyTypeAliasForwardRef, WrittenTypeAlias, is_type_alias, split_arguments
 from sphinx_autodoc_typehints._types import sentinel
 
@@ -285,8 +285,9 @@ def _class_reference(annotation: Hint | NewType | None, config: Config, *, short
     except ValueError:
         yield _Rendered(annotation.__qualname__ if isclass(annotation) else str(annotation).strip("'"))
     else:
-        # where the docs place a class Python defines elsewhere, such as pathlib.Path living in pathlib._local from 3.13
-        if documented := INVALID_BUILTIN_CLASSES.get((module, class_name)):
+        # where the docs place a class Python defines elsewhere, such as pathlib.Path living in pathlib._local from
+        # 3.13; the types module names its own classes, which Sphinx would turn from FunctionType into LambdaType
+        if module != "types" and (documented := is_invalid_builtin_class(annotation)):
             module, _, class_name = documented.rpartition(".")
         module = fixup_module_name(config, module)
         # typing_extensions backports names to older Pythons, and the Python docs list a backported name under typing

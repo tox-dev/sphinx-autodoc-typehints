@@ -13,6 +13,7 @@ from threading import local
 from types import EllipsisType, FrameType, FunctionType, ModuleType, NotImplementedType, TracebackType, UnionType
 from typing import IO, TYPE_CHECKING, Annotated, AnyStr, Final, ForwardRef, Literal, NewType, TypeVar
 from warnings import catch_warnings
+from weakref import WeakSet
 
 import typing_extensions  # passed as a library and compared by identity
 from pytest import mark, param, skip
@@ -89,6 +90,7 @@ _CASES: Final[list[ParameterSet]] = [
     param(int, ":py:class:`int`", id="int"),
     param(StringIO, ":py:class:`~io.StringIO`", id="StringIO"),
     param(local, ":py:class:`~_thread._local`", id="defined-in-a-private-module"),
+    param(WeakSet[int], r":py:class:`~weakref.WeakSet`\ \[:py:class:`int`]", id="subscripted-documented-elsewhere"),
     param(EllipsisType, f":py:{_CLASS_SINCE_313_ROLE}:`~types.EllipsisType`", id="EllipsisType"),
     param(FunctionType, f":py:{_CLASS_SINCE_313_ROLE}:`~types.FunctionType`", id="FunctionType"),
     param(FrameType, f":py:{_CLASS_SINCE_313_ROLE}:`~types.FrameType`", id="FrameType"),

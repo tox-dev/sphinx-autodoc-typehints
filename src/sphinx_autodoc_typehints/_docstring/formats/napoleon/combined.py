@@ -6,7 +6,8 @@ import re  # a from-import of compile would shadow the builtin
 from itertools import accumulate
 from typing import TYPE_CHECKING, Literal
 
-from sphinx_autodoc_typehints._private_imports import translate
+from sphinx.locale import _  # ruff:ignore[import-private-name]  # Sphinx documents it as public
+
 from sphinx_autodoc_typehints._render import as_field_type
 
 from ..base import format_default, last_paragraph_end, line_indent
@@ -76,7 +77,7 @@ def type_combined_field_entry(
 
 # the same `**name** -- text` markup in a code example, an overload or a returned value's name is no parameter entry
 def _combined_field_entries(lines: list[str]) -> Iterator[int]:
-    headings = tuple(f":{translate(label)}:" for label in ("Parameters", "Keyword Arguments", "Other Parameters"))
+    headings = tuple(f":{_(label)}:" for label in ("Parameters", "Keyword Arguments", "Other Parameters"))
     in_field, bullet_indent = False, None
     for at, line in enumerate(lines):
         if line.startswith(headings):

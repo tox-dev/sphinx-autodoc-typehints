@@ -18,8 +18,8 @@ from warnings import catch_warnings, simplefilter
 
 from sphinx.errors import PycodeError
 from sphinx.pycode import ModuleAnalyzer
-from sphinx.pycode.parser import VariableCommentPicker
 
+from .._private_imports import VariableCommentPicker
 from .._types import frozendict
 
 if version_info >= (3, 14):  # pragma: >=3.14 cover
