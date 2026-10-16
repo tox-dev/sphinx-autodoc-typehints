@@ -42,6 +42,38 @@ def test_type_params_bound_by_the_documenting_subclass_return(
     assert lines[lines.index("   Return type:") + 1].strip() == return_type
 
 
+@mark.sphinx("text", testroot="type-params")
+def test_generic_subclass_inherited_special_members_build(
+    build_text: BuildText, make_module: Callable[[str], ModuleType]
+) -> None:
+    module = make_module(
+        dedent('''\
+            from typing import Generic, TypeVar
+
+            T = TypeVar("T")
+
+            class Base(Generic[T]):
+                """A generic base class."""
+
+                def get(self) -> T:
+                    """Return a value."""
+
+            class Derived(Base[T]):
+                """A subclass passing the type variable on."""
+            '''),
+    )
+    output = build_text(
+        dedent(f"""\
+            .. autoclass:: {module.__name__}.Derived
+               :members:
+               :inherited-members:
+               :special-members:
+            """)
+    )
+    assert "Derived" in output
+    assert "__class_getitem__" in output
+
+
 @mark.parametrize(
     ("rst", "expected"),
     [
@@ -152,6 +184,8 @@ def generic_module_fixture(make_module: Callable[[str], ModuleType]) -> ModuleTy
 
             class StrRelay(Relay[str]): ...
 
+            class Derived(Legacy[T]): ...
+
             class Variadic(Generic[*Ts]): ...
 
             def pick[K](key: K) -> K: ...
@@ -177,6 +211,8 @@ def test_declared_type_params_of_a_method_documented_under_a_subclass(generic_mo
         param("IntBox", "value", {"U": int}, id="annotated-only"),
         param("StrRelay", "get", {"U": str}, id="through-two-bases"),
         param("Overriding", "get", {}, id="defined-by-the-class"),
+        param("Derived", "__class_getitem__", {}, id="inherited-generic-class-getitem"),
+        param("Derived", "__init_subclass__", {}, id="inherited-generic-init-subclass"),
         param("pick", "get", {}, id="no-class"),
     ],
 )

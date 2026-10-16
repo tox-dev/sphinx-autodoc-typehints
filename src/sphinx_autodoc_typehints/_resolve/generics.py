@@ -95,7 +95,7 @@ def bound_type_args(documenting: Documented, attribute: str) -> dict[TypeParam, 
             break
     else:
         return {}
-    if definer is documenting:
+    if definer is documenting or not getattr(definer, "__parameters__", ()):
         return {}
     return type_arguments(definer, _parametrized(documenting, definer))
 
