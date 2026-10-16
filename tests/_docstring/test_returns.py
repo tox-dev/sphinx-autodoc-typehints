@@ -372,6 +372,39 @@ def test_yields_entry_gets_the_yielded_type(process: Process, lines: list[str], 
     assert process("function", "mod.counts", _counts, lines) == expected
 
 
+def _documented_counts() -> Annotated[Iterator[int], Doc("the numbers")]: ...
+
+
+@mark.parametrize(
+    ("lines", "expected"),
+    [
+        param([":Yields:"], [f":Yields: {INT} -- the numbers"], id="empty"),
+        param(
+            [":Yields:", ":param limit: where to stop"],
+            [f":Yields: {INT} -- the numbers", ":param limit: where to stop"],
+            id="empty-before-a-field",
+        ),
+        param([":Yields: int"], [":Yields: int -- the numbers"], id="type-only"),
+        param([":Yields: *int*"], [":Yields: *int* -- the numbers"], id="type-only-by-napoleon"),
+        param([":yields: the integers"], [f":yields: {INT} -- the integers"], id="own-description"),
+        param([":Yields: *int* -- the integers"], [":Yields: *int* -- the integers"], id="typed-own-description"),
+        param(
+            [":yields:", "    - one", "    - two"],
+            [f":yields: {INT} --", "", "    - one", "    - two"],
+            id="own-description-on-the-next-line",
+        ),
+    ],
+)
+def test_yields_entry_takes_the_doc_description(process: Process, lines: list[str], expected: list[str]) -> None:
+    assert process("function", "mod.counts", _documented_counts, lines) == expected
+
+
+def test_untyped_yields_entry_takes_the_doc_description(process: Process) -> None:
+    def produce() -> Annotated[Iterator, Doc("the numbers")]: ...
+
+    assert process("function", "mod.produce", produce, [":Yields:"]) == [":Yields: the numbers"]
+
+
 def _async_counts() -> typing.AsyncGenerator[int, None]: ...
 
 
