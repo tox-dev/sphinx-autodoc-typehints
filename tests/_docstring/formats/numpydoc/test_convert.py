@@ -183,6 +183,7 @@ pytestmark: Final[MarkDecorator] = mark.sphinx("text", testroot="dummy")
             ["", "A normal docstring.", "", ":param x: The x value.", ":type x: int"],
             id="field-list",
         ),
+        param([":Returns:", "    The result."], [":Returns:", "    The result."], id="manual-returns-field"),
     ],
 )
 def test_convert_to_field_list(lines: list[str], expected: list[str]) -> None:
@@ -195,6 +196,7 @@ def test_convert_to_field_list(lines: list[str], expected: list[str]) -> None:
     [
         param([":Parameters:", "", "    **x** : int"], True, id="bold-parameter"),
         param([":Returns:", "    int"], True, id="plain-return"),
+        param([":Returns:", "    The result."], False, id="manual-return-description"),
         param([":Parameters:", "    x : int"], False, id="plain-parameter"),
         param([":Notes:", "    **x** : int"], False, id="other-field"),
         param([":Returns:"], False, id="empty"),
@@ -287,6 +289,24 @@ def test_is_numpydoc_section(lines: list[str], expected: bool) -> None:
 @mark.sphinx("text", testroot="numpydoc")
 def test_numpydoc_docstring_keeps_its_types(build_numpydoc: Callable[[str], str], name: str, expected: str) -> None:
     assert build_numpydoc(name) == expected
+
+
+@mark.sphinx("text", testroot="numpydoc")
+def test_manual_returns_field_keeps_its_description(build_text: BuildText, make_module: MakeModule) -> None:
+    make_module(
+        "manual_return",
+        dedent('''\
+            def answer() -> int:
+                """Return a value.
+
+                :Returns:
+                    The result.
+                """
+                return 1
+        '''),
+    )
+    output = build_text(".. autofunction:: manual_return.answer")
+    assert "The result." in output
 
 
 @fixture(name="build_numpydoc")
