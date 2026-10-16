@@ -293,6 +293,27 @@ apart; editing it re-reads every document on the next incremental build. A chang
 data it reads, goes unseen, so run ``sphinx-build -E`` after one. A :func:`functools.partial` or a callable instance has
 no source to compare, so each build re-reads every document; assign a plain function to keep builds incremental.
 
+**********************************
+ Show selected Annotated metadata
+**********************************
+
+:data:`~typing.Annotated` metadata is hidden by default. To show values of particular metadata types, set
+:confval:`typehints_annotated_metadata` to a tuple of those types. In this example, the string ``"pixels"`` appears
+beside ``int``; the ``range`` value stays hidden.
+
+.. live-example::
+
+    typehints_annotated_metadata = (str,)
+    ---
+    from typing import Annotated
+
+
+    def resize(width: Annotated[int, "pixels", range(0, 1)]) -> None:
+        """Resize.
+
+        :param width: the new width
+        """
+
 **************************
  Write a custom formatter
 **************************

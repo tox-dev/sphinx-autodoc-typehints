@@ -243,14 +243,13 @@ strings. An API that runs SQL or shell commands uses it to reject text a user ty
 =============
 
 :data:`~typing.Annotated`, :pep:`593`, attaches extra values to a type, such as validation rules for a library to read.
-Type checkers see only the first argument. By default the extension also drops the metadata. Set
-:confval:`typehints_annotated_metadata` to show values of selected metadata types; the example shows the string
-``"pixels"`` but leaves out the ``range`` value. ``Annotated`` exists on every Python the extension supports.
+Type checkers see only the first argument. By default the extension also drops the metadata; see
+:ref:`how-to:Show selected Annotated metadata` to display values of selected metadata types. ``Annotated`` exists on
+every Python the extension supports.
 
 .. live-example::
 
     extensions = ["sphinx.ext.autodoc", "sphinx_autodoc_typehints"]
-    typehints_annotated_metadata = (str,)
     ---
     from typing import Annotated
 

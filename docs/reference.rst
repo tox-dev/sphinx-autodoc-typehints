@@ -90,7 +90,7 @@ to an option without a *Rebuild* field leaves the cached documents as they are.
     A tuple of metadata classes to show in :data:`~typing.Annotated` types. The default ``()`` hides metadata.
     ``(str,)`` shows string metadata, such as ``Annotated[int, 'pixels']``; ``(str, range)`` also shows ``range``
     values. You can include your own metadata class. Matching uses :func:`isinstance`, and selected values render with
-    their Python ``repr``. :class:`~typing_extensions.Doc` still supplies descriptions independently of this setting.
+    their Python ``repr``. ``Doc`` still supplies descriptions independently of this setting.
 
 .. confval:: typehints_fully_qualified
     :default: ``False``
