@@ -125,7 +125,8 @@ class LiveExample(SphinxDirective):
             picker["examples"].append((conf, source))
             at = len(picker["examples"]) - 1
             # the controls open in the corner of the page they change, so a reader sees each choice take effect
-            described = selector(picker["options"], _highlight(conf), picker["descriptions"], picker["reference"], at)
+            # the link to the reference resolves once the page's builder is known, see `_fill_picker`
+            described = selector(picker["options"], _highlight(conf), picker["descriptions"], _marker("reference"), at)
             rendered = (
                 '<div class="lep-box"><details class="lep-details"><summary><span class="lep-toggle">conf.py</span>'
                 '<span class="lep-hint">These options apply to every example on this page.</span></summary>'
@@ -178,7 +179,7 @@ class LiveExamplePicker(SphinxDirective):
         self.env.current_document[_PICKER] = {
             "options": options,
             "descriptions": descriptions,
-            "reference": self.env.app.builder.get_relative_uri(self.env.docname, reference),
+            "reference": reference,
             "examples": [],
         }
         return [raw("", _marker("picker"), format="html")]
@@ -227,8 +228,9 @@ def _fill_picker(app: Sphinx, doctree: document) -> None:
         f'<script type="application/json" id="live-example-picker">{dumps(about).replace("</", "<\\/")}</script>'
         f'<script src="{static}live-example-picker.js" defer></script>'
     )
+    reference = app.builder.get_relative_uri(app.env.docname, picker["reference"])
     for node in doctree.findall(raw):
-        text = node.astext()
+        text = node.astext().replace(_marker("reference"), reference)
         if text == _marker("picker"):
             text, node["live_example_data"] = panel, str(stored)
         for at, mapping in enumerate(variants.examples):
