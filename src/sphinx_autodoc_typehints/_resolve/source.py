@@ -121,7 +121,12 @@ def annotations_as_written(owner: Documented) -> dict[str, Annotation | str]:  #
 
     The values include what code added to the annotations after evaluating them, as attrs does for its fields.
     """
-    stored = dict(getattr(owner, "__annotations__", None) or {})
+    try:
+        stored = dict(getattr(owner, "__annotations__", None) or {})
+    except NameError:
+        # the values evaluate in the module globals, which lack a name only the `TYPE_CHECKING` block binds; that
+        # leaves nothing cached for code to have added to
+        stored = {}
     if getattr(owner, "__annotate__", None) is not None:
         return stored | get_annotations(owner, format=Format.STRING)
     if not holds_values(owner) or (tree := parsed_source(owner)) is None:

@@ -618,7 +618,7 @@ def test_process_signature_of_the_members_napoleon_looks_up(
 def test_process_signature_of_a_generic_function_annotated_with_guarded_names(  # pragma: >=3.14 cover
     build_text: BuildText, warning: StringIO, make_module: MakeModule
 ) -> None:
-    module = make_module(
+    make_module(
         "guarded_generic",
         dedent("""\
             import functools
@@ -649,11 +649,5 @@ def test_process_signature_of_a_generic_function_annotated_with_guarded_names(  
                Return type:
                   "Callable"[["Callable"["P", "R"]], "Callable"["P", "R"]]
         """),
-        [
-            (
-                f"{module.__file__}:7: WARNING: Cannot resolve forward reference in type annotations of "
-                "\"guarded_generic.decorate\" (module guarded_generic): name 'Callable' is not defined "
-                "[sphinx_autodoc_typehints.forward_reference]"
-            )
-        ],
+        [],
     )

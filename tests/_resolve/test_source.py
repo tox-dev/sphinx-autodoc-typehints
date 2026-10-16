@@ -160,6 +160,7 @@ def test_names_read(source: str, expected: list[str]) -> None:
     ("owner", "expected"),
     [
         param("func", {"value": "Decimal", "return": "None"}, id="lazy"),
+        param("guarded", {"value": "Path", "return": "None"}, id="lazy-unbound-at-runtime"),
         param("Stored", {"count": int}, id="stored-without-source"),
     ],
 )
@@ -169,8 +170,14 @@ def test_annotations_as_written(  # pragma: >=3.14 cover
     module = make_module(
         dedent("""\
             from decimal import Decimal
+            from typing import TYPE_CHECKING
+
+            if TYPE_CHECKING:
+                from pathlib import Path
 
             def func(value: Decimal) -> None: ...
+
+            def guarded(value: Path) -> None: ...
 
             Stored = type("Stored", (), {"__annotations__": {"count": int}})
         """)
