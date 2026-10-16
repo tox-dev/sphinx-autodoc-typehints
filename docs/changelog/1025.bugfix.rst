@@ -1,0 +1,2 @@
+Documenting a function typed only by its stub or by type comments no longer writes those types into the function's
+``__annotations__``, so the object reads the same after a build as before it.

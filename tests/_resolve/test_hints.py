@@ -3,11 +3,10 @@ from __future__ import annotations
 from array import array
 from collections.abc import Callable, Sequence
 from decimal import Decimal
-from importlib import import_module
 from operator import attrgetter
 from sys import version_info
 from textwrap import dedent
-from typing import TYPE_CHECKING, TypeAliasType, TypeVar, Union, get_args, get_origin, no_type_check
+from typing import TYPE_CHECKING, Final, TypeAliasType, TypeVar, Union, get_args, get_origin, no_type_check
 
 from pytest import FixtureRequest, fixture, mark, param
 
@@ -19,6 +18,7 @@ if TYPE_CHECKING:
     from pathlib import Path
     from types import FunctionType, GetSetDescriptorType, MemberDescriptorType, ModuleType
 
+    from _pytest.mark import ParameterSet
     from conftest import BuildText
 
     from _resolve.conftest import AsWritten, MakeStubbedModule
@@ -491,29 +491,41 @@ def test_get_all_type_hints_reads_a_stub_type_parameter_again(make_stubbed_modul
     ] * 2
 
 
-def test_resolve_annotations_reads_the_types_an_earlier_stub_backfill_stored(module_dir: Path) -> None:
-    (package := module_dir / "stubpkg").mkdir()
-    (package / "__init__.py").write_text("")
-    (package / "types.py").write_text("class MyType: ...")
-    (package / "mod.py").write_text(
+# the stub imports `Decimal` where the runtime module does not, so only its namespace resolves the name
+_BACKFILLED: Final[list[ParameterSet]] = [
+    param("def load(path): ...", "from decimal import Decimal\ndef load(path: Decimal) -> None: ...", id="stub"),
+    param(
         dedent("""\
-            class Klass:
-                def method(self, x): ...
-        """)
-    )
-    (package / "mod.pyi").write_text(
-        dedent("""\
-            from stubpkg.types import MyType
-            class Klass:
-                def method(self, x: MyType) -> None: ...
-        """)
-    )
-    method = import_module("stubpkg.mod").Klass.method
-    get_all_type_hints([], method, "stubpkg.mod.Klass.method", {})
-    assert resolve_annotations([], method, "another.Klass.method", {}) == {
-        "x": import_module("stubpkg.types").MyType,
-        "return": type(None),
-    }
+            from decimal import Decimal
+            def load(path):
+                # type: (Decimal) -> None
+                ...
+        """),
+        "",
+        id="type-comment",
+    ),
+]
+
+
+@mark.parametrize(("runtime", "stub"), _BACKFILLED)
+def test_get_all_type_hints_leaves_the_runtime_annotations_of_a_backfilled_object(
+    make_stubbed_module: MakeStubbedModule, runtime: str, stub: str
+) -> None:
+    load = make_stubbed_module(runtime, stub).load
+    hints = get_all_type_hints([], load, "mod.load", {})
+    assert (hints, load.__annotations__) == ({"path": Decimal, "return": type(None)}, {})
+
+
+@mark.parametrize(("runtime", "stub"), _BACKFILLED)
+def test_get_all_type_hints_resolves_a_backfilled_object_again_without_warning(
+    make_stubbed_module: MakeStubbedModule,
+    logged_warnings: Callable[[], list[tuple[str, ...]]],
+    runtime: str,
+    stub: str,
+) -> None:
+    load = make_stubbed_module(runtime, stub).load
+    calls = [get_all_type_hints([], load, "mod.load", {}) for _ in range(2)]
+    assert (calls, logged_warnings()) == ([{"path": Decimal, "return": type(None)}] * 2, [])
 
 
 @mark.parametrize(
