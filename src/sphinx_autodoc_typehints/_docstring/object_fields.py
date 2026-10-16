@@ -116,13 +116,15 @@ def inject_setter_type(
     resolved = resolved_type_hints(app, name, setter, setter, setter)
     param = parameters[-1]
     accepted = resolved.types.get(param, Parameter.empty)
-    if (
-        accepted is Parameter.empty
-        or accepted == getter_hints.get("return", Parameter.empty)
-        or not (
-            accepted_type := as_field_type(
-                as_written(accepted, resolved.written_as.get(param)), app.config, kind="parameter"
-            )
+    if accepted is Parameter.empty:
+        return
+    try:
+        matches_getter = accepted == getter_hints.get("return", Parameter.empty)
+    except Exception:  # ruff:ignore[blind-except]  # annotation metadata may define arbitrary equality
+        matches_getter = False
+    if matches_getter is True or not (
+        accepted_type := as_field_type(
+            as_written(accepted, resolved.written_as.get(param)), app.config, kind="parameter"
         )
     ):
         return
