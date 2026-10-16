@@ -134,8 +134,10 @@ writes into field lists first, then types them as it types Sphinx-style fields. 
 ``a, b : int``, splits into one per name, and a type the docstring writes stays for a parameter without an annotation.
 A ``:Parameters:`` field list written by hand, as docutils writes its own docstrings, stays as written, since numpydoc
 sets each parameter name in bold and the extension takes a field without that markup for one written by hand.
-A hand-written ``:Returns:`` field with a prose description stays as written too; use a NumPy ``Returns`` section when
-the first indented line names a type.
+A hand-written ``:Returns:`` field with a prose description stays as written too, including a single word such as
+``Result``. Numpydoc gives a NumPy ``Returns`` entry a second, more-indented description line, or ``..`` when it has no
+description; the extension uses that line to distinguish its entries from hand-written fields. Types such as
+``str or bytes`` then receive the same treatment as ``str``.
 
 **************************
  Document every parameter

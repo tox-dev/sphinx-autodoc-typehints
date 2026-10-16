@@ -82,6 +82,11 @@ pytestmark: Final[MarkDecorator] = mark.sphinx("text", testroot="dummy")
             [":rtype: str", ":returns: A greeting.", ""],
             id="unnamed-return",
         ),
+        param(
+            [":Returns:", "", "    str or bytes", "        The payload.", ""],
+            [":rtype: str or bytes", ":returns: The payload.", ""],
+            id="multiword-return",
+        ),
         param([":Returns:", "", "    str", "        ..", ""], [":rtype: str", ""], id="unnamed-return-undescribed"),
         param(
             [
@@ -184,6 +189,7 @@ pytestmark: Final[MarkDecorator] = mark.sphinx("text", testroot="dummy")
             id="field-list",
         ),
         param([":Returns:", "    The result."], [":Returns:", "    The result."], id="manual-returns-field"),
+        param([":Returns:", "    Result"], [":Returns:", "    Result"], id="manual-returns-single-word"),
     ],
 )
 def test_convert_to_field_list(lines: list[str], expected: list[str]) -> None:
@@ -195,7 +201,9 @@ def test_convert_to_field_list(lines: list[str], expected: list[str]) -> None:
     ("lines", "expected"),
     [
         param([":Parameters:", "", "    **x** : int"], True, id="bold-parameter"),
-        param([":Returns:", "    int"], True, id="plain-return"),
+        param([":Returns:", "    int", "        .."], True, id="plain-return"),
+        param([":Returns:", "    str or bytes", "        The result."], True, id="multiword-return"),
+        param([":Returns:", "    Result"], False, id="manual-single-word-description"),
         param([":Returns:", "    The result."], False, id="manual-return-description"),
         param([":Parameters:", "    x : int"], False, id="plain-parameter"),
         param([":Notes:", "    **x** : int"], False, id="other-field"),
@@ -307,6 +315,27 @@ def test_manual_returns_field_keeps_its_description(build_text: BuildText, make_
     )
     output = build_text(".. autofunction:: manual_return.answer")
     assert "The result." in output
+
+
+@mark.sphinx("text", testroot="numpydoc")
+def test_numpydoc_multiword_return_type_keeps_the_description(build_text: BuildText, make_module: MakeModule) -> None:
+    make_module(
+        "multiword_return",
+        dedent('''\
+            def answer() -> str | bytes:
+                """Return a value.
+
+                Returns
+                -------
+                str or bytes
+                    The payload.
+                """
+                return "value"
+        '''),
+    )
+    output = build_text(".. autofunction:: multiword_return.answer")
+    assert "The payload." in output
+    assert "str or bytes" not in output
 
 
 @fixture(name="build_numpydoc")
