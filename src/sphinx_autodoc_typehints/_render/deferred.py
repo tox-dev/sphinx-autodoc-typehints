@@ -17,9 +17,9 @@ from sphinx import addnodes
 from sphinx.errors import NoUri
 from sphinx.transforms.post_transforms import SphinxPostTransform
 from sphinx.util import logging
-from sphinx.util.docutils import sphinx_domains
 from sphinx.util.rst import default_role
 
+from .._private_imports import sphinx_domains
 from .._state import alias_choices, recorded_alias_choices
 from .context import render_context
 from .rst import parse, unescape

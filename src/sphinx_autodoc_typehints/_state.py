@@ -1,7 +1,7 @@
 """
 Foundation record of the state the event handlers share.
 
-Most of it lives in the environment's `temp_data` for the document being read; the alias choices live in an
+Most of it lives in the environment's `current_document` for the document being read; the alias choices live in an
 environment attribute, so the cached environment keeps them.
 """
 
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 _DOCUMENTED: Final[str] = "sphinx_autodoc_typehints_documented"
 _TYPES_DOCUMENTED: Final[str] = "sphinx_autodoc_typehints_types_documented"
-# an attribute of the environment rather than temp_data, so the pickled environment keeps the choices across builds
+# an environment attribute rather than current_document, so the pickled environment keeps the choices across builds
 _ALIAS_CHOICES: Final[str] = "_typehints_alias_choices"
 
 
@@ -32,12 +32,12 @@ def is_documented(env: BuildEnvironment, name: str) -> bool:
     autodoc already looked such a name up, so looking it up again runs no package `__getattr__` autodoc did not run;
     looking up a name written by hand could import, raise, or rename what autodoc documents later.
     """
-    return name in (env.temp_data.get(_DOCUMENTED) or ())
+    return name in (env.current_document.get(_DOCUMENTED) or ())
 
 
 def _record[Record](env: BuildEnvironment, key: str, empty: Record) -> Record:
-    if (record := env.temp_data.get(key)) is None:
-        record = env.temp_data[key] = empty
+    if (record := env.current_document.get(key)) is None:
+        record = env.current_document[key] = empty
     return record
 
 
@@ -57,11 +57,11 @@ def signature_lines(env: BuildEnvironment) -> dict[str, list[str]]:
 
 
 def note_type_documented(env: BuildEnvironment) -> None:
-    env.temp_data[_TYPES_DOCUMENTED] = types_documented(env) + 1
+    env.current_document[_TYPES_DOCUMENTED] = types_documented(env) + 1
 
 
 def types_documented(env: BuildEnvironment) -> int:
-    return env.temp_data.get(_TYPES_DOCUMENTED) or 0
+    return env.current_document.get(_TYPES_DOCUMENTED) or 0
 
 
 def class_docstrings(env: BuildEnvironment) -> dict[str, tuple[Options | None, list[str]]]:

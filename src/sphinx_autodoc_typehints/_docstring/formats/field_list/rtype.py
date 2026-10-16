@@ -10,9 +10,8 @@ from typing import TYPE_CHECKING
 
 from docutils import nodes
 from docutils.parsers.rst import Directive, directives
-from sphinx.util import logging
 
-from sphinx_autodoc_typehints._private_imports import BUILTIN_DIRECTIVES
+from sphinx_autodoc_typehints._private_imports import BUILTIN_DIRECTIVES, suppress_logging
 from sphinx_autodoc_typehints._render import parse
 
 if TYPE_CHECKING:
@@ -40,7 +39,7 @@ def safe_parse(inputstr: str, env: BuildEnvironment) -> nodes.document:
     # then leaves out, imported ones among them, so Sphinx's log stays quiet here as `parse` keeps docutils' stream
     directives.directive = safe_lookup  # ty: ignore[invalid-assignment]  # https://github.com/astral-sh/ty/issues/3962
     try:
-        with logging.suppress_logging():
+        with suppress_logging():
             return parse(inputstr, env)
     finally:
         directives.directive = original_lookup
