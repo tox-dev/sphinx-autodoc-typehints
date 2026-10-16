@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from importlib.metadata import version
 from pickle import loads  # ruff:ignore[suspicious-pickle-import]  # loads only a literal payload
 from typing import TYPE_CHECKING
 
@@ -11,8 +12,12 @@ if TYPE_CHECKING:
     from sphinx.testing.util import SphinxTestApp
 
 
-def test_package_exports_only_setup() -> None:
-    assert sphinx_autodoc_typehints.__all__ == ["setup"]
+def test_package_exports_setup_and_version() -> None:
+    assert sphinx_autodoc_typehints.__all__ == ["__version__", "setup"]
+
+
+def test_package_version_matches_the_installed_distribution() -> None:
+    assert sphinx_autodoc_typehints.__version__ == version("sphinx-autodoc-typehints")
 
 
 def fixup(module: str) -> str:
