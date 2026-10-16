@@ -34,6 +34,7 @@ from sphinx import __display_version__
 from sphinx.ext.intersphinx import InventoryAdapter
 from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
+from sphinx.util.osutil import relative_uri
 
 from sphinx_autodoc_typehints import __file__ as extension_init
 
@@ -178,7 +179,8 @@ class LiveExamplePicker(SphinxDirective):
         self.env.current_document[_PICKER] = {
             "options": options,
             "descriptions": descriptions,
-            "reference": self.env.app.builder.get_relative_uri(self.env.docname, reference),
+            # the HTML builders name a page `<docname>.html`, and `env.app` is gone in Sphinx 11
+            "reference": relative_uri(f"{self.env.docname}.html", f"{reference}.html"),
             "examples": [],
         }
         return [raw("", _marker("picker"), format="html")]
