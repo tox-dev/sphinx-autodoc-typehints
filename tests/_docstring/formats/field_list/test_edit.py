@@ -11,6 +11,7 @@ from sphinx_autodoc_typehints._docstring.formats.field_list import (
     FieldListFormat,
     write_rtype,
 )
+from sphinx_autodoc_typehints._docstring.formats.field_list.rtype import RTYPE_MARKER
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -123,53 +124,24 @@ def test_has_return_description(lines: list[str], expected: bool) -> None:
         param(
             ["Summary.", "", ":param x: the x", "", "Closing."],
             True,
-            InsertIndexInfo(insert_index=3, found_param=True),
+            InsertIndexInfo(insert_index=5, deferred=True),
             ["Summary.", "", ":param x: the x", "", "Closing."],
             id="param-field-list",
         ),
         param(
-            ["Summary.", "", ":param x: the x"],
-            True,
-            InsertIndexInfo(insert_index=3, found_param=True),
-            ["Summary.", "", ":param x: the x"],
-            id="param-field-list-last",
-        ),
-        param(
             [":var x: some variable"],
             True,
-            InsertIndexInfo(insert_index=1),
+            InsertIndexInfo(insert_index=1, deferred=True),
             [":var x: some variable"],
             id="field-list-without-params",
         ),
         param(
-            ["Summary.", "", ".. note::", "", "   Important note"],
+            ["Summary.", "", "More."],
             True,
-            InsertIndexInfo(insert_index=5),
-            ["Summary.", "", ".. note::", "", "   Important note"],
-            id="directive-on-its-own-line",
+            InsertIndexInfo(insert_index=3, deferred=True),
+            ["Summary.", "", "More."],
+            id="text",
         ),
-        param(
-            ["Summary.", "", ".. rubric:: Notes", "", "More."],
-            True,
-            InsertIndexInfo(insert_index=2, found_directive=True),
-            ["Summary.", "", ".. rubric:: Notes", "", "More."],
-            id="rubric",
-        ),
-        param(
-            [":param x: the x", "", ".. rubric:: Notes"],
-            True,
-            InsertIndexInfo(insert_index=1, found_param=True),
-            [":param x: the x", "", ".. rubric:: Notes"],
-            id="param-field-list-before-a-rubric",
-        ),
-        param(
-            ["Summary.", "", ">>> run()", "1"],
-            True,
-            InsertIndexInfo(insert_index=2, found_directive=True),
-            ["Summary.", "", ">>> run()", "1"],
-            id="doctest-block",
-        ),
-        param(["Summary.", "", "More."], True, InsertIndexInfo(insert_index=3), ["Summary.", "", "More."], id="text"),
     ],
 )
 def test_get_rtype_insert_info(
@@ -187,27 +159,21 @@ def test_get_rtype_insert_info(
     ("lines", "info", "use_rtype", "expected"),
     [
         param(
-            ["A paragraph.", ".. note:: hi"],
-            InsertIndexInfo(insert_index=1, found_directive=True),
+            ["A paragraph."],
+            InsertIndexInfo(insert_index=1, deferred=True),
             True,
-            ["A paragraph.", "", ":rtype: str", "", ".. note:: hi"],
-            id="before-a-directive",
+            ["A paragraph.", "", f":{RTYPE_MARKER}: str"],
+            id="marked-after-text",
         ),
+        param(
+            ["A paragraph.", ""],
+            InsertIndexInfo(insert_index=2, deferred=True),
+            False,
+            ["A paragraph.", "", f":{RTYPE_MARKER}: str"],
+            id="marked-after-a-blank-line",
+        ),
+        param([], InsertIndexInfo(insert_index=0, deferred=True), True, [f":{RTYPE_MARKER}: str"], id="marked-alone"),
         param(["", ""], InsertIndexInfo(insert_index=1), True, ["", ":rtype: str", ""], id="after-a-blank-line"),
-        param(
-            ["Summary.", "", ":param x: the x", "", "Closing."],
-            InsertIndexInfo(insert_index=3, found_param=True),
-            True,
-            ["Summary.", "", ":param x: the x", "", ":rtype: str", "", "Closing."],
-            id="after-the-params",
-        ),
-        param(
-            [":param x: the x", "", ".. rubric:: Notes"],
-            InsertIndexInfo(insert_index=2, found_param=True),
-            True,
-            [":param x: the x", "", ":rtype: str", "", ".. rubric:: Notes"],
-            id="after-the-params-before-a-rubric",
-        ),
         param(
             [":returns: it"],
             InsertIndexInfo(insert_index=0, found_return=True),
@@ -404,7 +370,7 @@ _CONVERTED: Final[list[str]] = [":param x: The x value.", ":type x: int", ""]
         param(
             lambda fmt, field_lines, sphinx_app: fmt.get_rtype_insert_info(sphinx_app, field_lines),
             list(_PARAMETERS),
-            (InsertIndexInfo(insert_index=3, found_param=True), _CONVERTED),
+            (InsertIndexInfo(insert_index=3, deferred=True), _CONVERTED),
             id="get-rtype-insert-info",
         ),
     ],

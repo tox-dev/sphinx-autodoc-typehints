@@ -1,19 +1,10 @@
 from __future__ import annotations
 
 from pathlib import Path
-from textwrap import dedent
-from typing import TYPE_CHECKING, Final
+from textwrap import dedent, indent
+from typing import TYPE_CHECKING, Final, Protocol
 
-from docutils import nodes
-from docutils.parsers.rst import Directive
-from pytest import CaptureFixture, MarkDecorator, mark, param
-
-from _docstring.conftest import INT
-from sphinx_autodoc_typehints._docstring.formats.field_list.rtype import (
-    SphinxDirectivePlaceholder,
-    node_line_no,
-    safe_parse,
-)
+from pytest import MarkDecorator, fixture, mark, param
 
 if TYPE_CHECKING:
     from io import StringIO
@@ -21,96 +12,209 @@ if TYPE_CHECKING:
     from conftest import BuildText, MakeModule
     from sphinx.testing.util import SphinxTestApp
 
-    from _docstring.conftest import Process
-
 pytestmark: Final[MarkDecorator] = mark.sphinx("text", testroot="dummy")
 
 
-def _with_line(node: nodes.Element, line: int) -> nodes.Element:
-    node.line = line
-    return node
+class Document(Protocol):
+    def __call__(self, docstring: str) -> str: ...
+
+
+@fixture(name="document")
+def document_fixture(make_module: MakeModule, build_text: BuildText) -> Document:
+    def build(docstring: str) -> str:
+        source = 'def documented(x: int) -> int:\n    """\n' + indent(dedent(docstring), "    ") + '    """\n'
+        make_module("rtype_placed", source)
+        return build_text(".. autofunction:: rtype_placed.documented")
+
+    return build
+
+
+def test_rtype_joins_the_params_before_a_table(document: Document) -> None:
+    assert document("""\
+        Summary.
+
+        :param x: the x
+
+        =  =
+        a  b
+        =  =
+        """) == dedent("""\
+        rtype_placed.documented(x)
+
+           Summary.
+
+           Parameters:
+              **x** ("int") -- the x
+
+           Return type:
+              "int"
+
+           +---+---+
+           | a | b |
+           +---+---+
+        """)
+
+
+def test_rtype_joins_a_param_followed_by_a_block_without_a_blank_line(document: Document) -> None:
+    assert document("""\
+        Summary.
+
+        :param x: the x
+        * one
+        """) == dedent("""\
+        rtype_placed.documented(x)
+
+           Summary.
+
+           Parameters:
+              **x** ("int") -- the x
+
+           Return type:
+              "int"
+
+           * one
+        """)
+
+
+def test_rtype_joins_the_first_list_of_params(document: Document) -> None:
+    assert document("""\
+        Summary.
+
+        :raises ValueError: bad
+
+        Text.
+
+        :param x: the x
+        """) == dedent("""\
+        rtype_placed.documented(x)
+
+           Summary.
+
+           Raises:
+              **ValueError** -- bad
+
+           Text.
+
+           Parameters:
+              **x** ("int") -- the x
+
+           Return type:
+              "int"
+        """)
+
+
+def test_rtype_joins_a_field_list_without_params(document: Document) -> None:
+    assert document("""\
+        Summary.
+
+        :raises ValueError: bad
+
+        .. note:: careful
+        """) == dedent("""\
+        rtype_placed.documented(x)
+
+           Summary.
+
+           Raises:
+              **ValueError** -- bad
+
+           Return type:
+              "int"
+
+           Note:
+
+             careful
+        """)
 
 
 @mark.parametrize(
-    ("node", "expected"),
+    "block",
     [
-        param(_with_line(nodes.paragraph(), 3), 3, id="own-line"),
-        param(nodes.section("", nodes.title(), _with_line(nodes.paragraph(), 5)), None, id="past-the-first-child"),
-        param(nodes.section("", _with_line(nodes.paragraph(), 5), nodes.paragraph()), 5, id="first-child"),
-        param(nodes.section(), None, id="no-line"),
+        param("* one\n* two", id="bullets"),
+        param(".. note:: careful", id="note"),
+        param(">>> 1 + 1\n2", id="doctest"),
+        param("term\n    definition", id="definition-list"),
+        param(".. rubric:: Examples\n\nUsage.", id="rubric"),
     ],
 )
-def test_node_line_no(node: nodes.Element, expected: int | None) -> None:
-    assert node_line_no(node) == expected
+def test_rtype_ends_a_docstring_without_a_field_list(document: Document, block: str) -> None:
+    text = document(f"Summary.\n\n{block}\n")
+    assert text.rstrip().endswith('Return type:\n      "int"')
 
 
-def test_safe_parse_stands_in_for_a_directive_only_sphinx_knows(app: SphinxTestApp) -> None:
-    doc = safe_parse(
-        dedent("""\
-            Summary.
+def test_rtype_ends_a_docstring_after_a_section(document: Document) -> None:
+    text = document("""\
+        Summary.
 
-            .. versionadded:: 1.0
+        Title
+        =====
 
-            .. note:: careful"""),
-        app.env,
-    )
-    assert [(type(node), node.line) for node in doc.children] == [
-        (nodes.paragraph, 1),
-        (SphinxDirectivePlaceholder, 3),
-        (nodes.note, 5),
-    ]
+        Body.
+        """)
+    assert text.rstrip().endswith('Body.\n\n   Return type:\n      "int"')
 
 
-def test_safe_parse_runs_no_directive_only_sphinx_knows(
-    app: SphinxTestApp, build_text: BuildText, make_module: MakeModule
-) -> None:
-    executions: list[str] = []
+def test_rtype_leaves_no_marker_after_a_section_with_params(document: Document) -> None:
+    text = document("""\
+        Summary.
 
-    class Tracking(Directive):
-        has_content = True
+        :param x: the x
 
-        def run(self) -> list[nodes.Node]:
-            executions.append(self.content[0])
-            return []
+        Title
+        =====
 
-    app.add_directive("tracking-directive", Tracking)
-    make_module(
-        "rtype_tracked",
-        dedent("""\
-            def tracked(x: int) -> int:
-                \"""
-                Do something.
-
-                :param x: A number.
-
-                .. tracking-directive::
-
-                    unique-id-123
-                \"""
-                return x
-        """),
-    )
-    build_text(".. autofunction:: rtype_tracked.tracked")
-    assert executions == ["unique-id-123"]
+        Body.
+        """)
+    assert (text.index("Return type:") < text.index("Title"), "sphinx_autodoc_typehints_rtype" in text) == (True, False)
 
 
-def test_safe_parse_of_a_broken_docstring_stays_quiet(process: Process, capsys: CaptureFixture[str]) -> None:
-    def broken() -> int: ...
+def test_rtype_keeps_the_line_of_a_warning_after_the_params(document: Document, warning: StringIO) -> None:
+    document("""\
+        Summary.
 
-    lines = ["Behaves like this:", "- a list item", "    an unexpected indent"]
-    assert (process("function", "mod.broken", broken, lines), capsys.readouterr().err) == (
-        ["Behaves like this:", "- a list item", "    an unexpected indent", "", f":rtype: {INT}"],
-        "",
-    )
+        :param x: the x
+
+        .. nonexistent-directive:: arg
+        """)
+    assert "docstring of rtype_placed.documented:6: ERROR: Unknown directive type" in warning.getvalue()
 
 
 @mark.sphinx("text", testroot="intersphinx-external-role")
-def test_safe_parse_keeps_the_intersphinx_roles(app: SphinxTestApp, warning: StringIO) -> None:
+def test_rtype_keeps_the_intersphinx_roles(app: SphinxTestApp, warning: StringIO) -> None:
     app.build()
     assert (warning.getvalue(), (Path(app.outdir) / "index.txt").read_text().count("the demo docs")) == ("", 2)
 
 
 @mark.sphinx("text", testroot="intersphinx-missing-inventory")
-def test_safe_parse_leaves_reporting_to_the_real_parse(app: SphinxTestApp, warning: StringIO) -> None:
+def test_rtype_reports_a_missing_inventory_once(app: SphinxTestApp, warning: StringIO) -> None:
     app.build()
     assert warning.getvalue().count("inventory for external cross-reference not found") == 1
+
+
+def test_rtype_leaves_the_fields_written_after_it_in_place(make_module: MakeModule, build_text: BuildText) -> None:
+    make_module(
+        "rtype_override",
+        dedent('''\
+            from typing import override
+
+
+            class Base:
+                def run(self) -> int:
+                    return 1
+
+
+            class Child(Base):
+                @override
+                def run(self) -> int:
+                    """
+                    Summary.
+
+                    :raises ValueError: bad
+
+                    Text.
+                    """
+                    return 2
+        '''),
+    )
+    text = build_text(".. automethod:: rtype_override.Child.run")
+    assert text.index("Return type:") < text.index("Text.") < text.index("Overrides:")

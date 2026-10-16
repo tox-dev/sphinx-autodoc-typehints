@@ -8,7 +8,12 @@ packages those two build on.
 from __future__ import annotations
 
 from .deprecation import DEPRECATED_DIRECTIVE, DeprecatedDirective
-from .formats import mark_numpy_returns, note_attributes_before_napoleon, take_over_napoleon_attr_annotations
+from .formats import (
+    mark_numpy_returns,
+    note_attributes_before_napoleon,
+    place_rtype,
+    take_over_napoleon_attr_annotations,
+)
 from .handler import process_docstring
 
 __all__ = [
@@ -16,6 +21,7 @@ __all__ = [
     "DeprecatedDirective",
     "mark_numpy_returns",
     "note_attributes_before_napoleon",
+    "place_rtype",
     "process_docstring",
     "take_over_napoleon_attr_annotations",
 ]

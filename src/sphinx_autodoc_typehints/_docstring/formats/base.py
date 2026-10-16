@@ -21,10 +21,9 @@ class InsertIndexInfo:
     """Where the return type goes, and which field or block of the docstring sits there."""
 
     insert_index: int
-    found_param: bool = False
     found_return: bool = False
-    found_directive: bool = False
     found_rtype: bool = False
+    deferred: bool = False
 
 
 def format_default(app: Sphinx, default: object, *, annotated: bool) -> str | None:

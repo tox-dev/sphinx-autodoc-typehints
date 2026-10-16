@@ -457,7 +457,7 @@ def test_override_outside_an_importable_class_links_nothing(process: Process) ->
     assert process("method", "missing_module.Child.run", _OverrideChild.run, ["Summary."]) == [
         "Summary.",
         "",
-        f":rtype: {STR}",
+        f":sphinx_autodoc_typehints_rtype: {STR}",
     ]
 
 
