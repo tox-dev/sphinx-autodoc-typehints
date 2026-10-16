@@ -434,6 +434,11 @@ def _param_spec_component(reference: _Reference) -> _Frame:
         yield _Rendered(_variable_name(annotation.__origin__, reference.config, suffix))
 
 
+def _star(reference: _Reference) -> _Frame:
+    # escaped, the star is no emphasis, and the escaped space lets the markup after it start
+    yield _Rendered(f"\\*\\ {(yield reference.args[0])}")
+
+
 def _optional(reference: _Reference) -> None:  # pragma: <3.14 cover
     reference.args = tuple(x for x in reference.args if x is not type(None))
 
@@ -500,6 +505,15 @@ _SPECIAL_FORMS: Final[tuple[tuple[Callable[[_Reference], bool], Callable[[_Refer
     (lambda ref: ref.full_name == "typing.Annotated", _annotated),
     (lambda ref: ref.full_name in {"typing.TypeVar", "typing.ParamSpec", "typing.TypeVarTuple"}, _type_variable),
     (lambda ref: ref.full_name in {"typing.ParamSpecArgs", "typing.ParamSpecKwargs"}, _param_spec_component),
+    # PEP 646 writes these with a star, while a TypedDict for `**kwargs` (PEP 692) has only the `Unpack` spelling
+    (
+        lambda ref: (
+            ref.full_name == "typing.Unpack"
+            and len(ref.args) == 1
+            and (isinstance(ref.args[0], TypeVarTuple) or get_origin(ref.args[0]) is tuple)
+        ),
+        _star,
+    ),
     (lambda ref: ref.full_name == "typing.Optional", _optional),
     (lambda ref: ref.full_name in {"typing.Union", "types.UnionType"} and type(None) in ref.args, _union_with_none),
     (

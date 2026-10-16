@@ -75,6 +75,10 @@ class Proto(typing_extensions.Protocol): ...
 class GenericProto[Element](typing_extensions.Protocol): ...
 
 
+class Options(typing.TypedDict):
+    verbose: bool
+
+
 class Metaclass(type): ...
 
 
@@ -155,9 +159,18 @@ _CASES: Final[list[ParameterSet]] = [
     param(typing.Tuple[int,], r":py:data:`~typing.Tuple`\ \[:py:class:`int`]", id="Tuple-int"),
     param(
         tuple[int, *tuple[str, ...]],
-        r":py:class:`tuple`\ \[:py:class:`int`, :py:data:`~typing.Unpack`\ \[:py:class:`tuple`\ \[:py:class:`str`,"
-        r" :py:data:`...<Ellipsis>`]]]",
+        r":py:class:`tuple`\ \[:py:class:`int`, \*\ :py:class:`tuple`\ \[:py:class:`str`, :py:data:`...<Ellipsis>`]]",
         id="tuple-unpacked-tuple",
+    ),
+    param(
+        tuple[int, *StdItems],
+        r":py:class:`tuple`\ \[:py:class:`int`, \*\ ``StdItems``]",
+        id="tuple-unpacked-TypeVarTuple",
+    ),
+    param(
+        typing.Unpack[Options],
+        rf":py:data:`~typing.Unpack`\ \[:py:class:`~{__name__}.Options`]",
+        id="Unpack-TypedDict",
     ),
     param(typing.Union, f":py:{_UNION_ROLE}:`~typing.Union`", id="Union"),
     param(UnionType, f":py:{_UNION_ROLE}:`~typing.Union`", id="UnionType"),
@@ -406,9 +419,8 @@ def test_format_annotation_always_use_bars_union(
         param("TypeForm", int, r":py:data:`~typing.TypeForm`\ \[:py:class:`int`]", id="TypeForm"),
         param("Doc", None, ":py:class:`~typing.Doc`", id="Doc"),
         param("TypedDict", None, ":py:class:`~typing.TypedDict`", id="TypedDict"),
-        param(
-            "Unpack", tuple[int], r":py:data:`~typing.Unpack`\ \[:py:class:`tuple`\ \[:py:class:`int`]]", id="Unpack"
-        ),
+        param("Unpack", tuple[int], r"\*\ :py:class:`tuple`\ \[:py:class:`int`]", id="Unpack-tuple"),
+        param("Unpack", Items, r"\*\ ``Items``", id="Unpack-TypeVarTuple"),
         param(
             "Concatenate",
             (int, ...),
@@ -632,6 +644,21 @@ def test_format_annotation_type_variable_links_to_its_entry(build_text: BuildTex
         findall(r'href="([^"]*)"[^>]*><code class="xref py py-obj[^"]*"><span class="pre">Bounded<', html)
         == ["#dummy_module.Bounded"] * 2
     )
+
+
+@mark.sphinx("text", testroot="type-params")
+def test_format_annotation_unpacked_type_variable_reads_as_starred(build_text: BuildText) -> None:
+    assert build_text(".. autofunction:: type_params_module.variadic") == dedent("""\
+        type_params_module.variadic[*Ts, **P](*args)
+
+           Take variadic type parameters.
+
+           Parameters:
+              **args** (*"Ts") -- the values
+
+           Return type:
+              "None"
+        """)
 
 
 @mark.sphinx("text", testroot="type-params")
