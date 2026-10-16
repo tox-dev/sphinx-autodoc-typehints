@@ -172,6 +172,36 @@ def test_instance_variable_takes_its_type_from_init(
     assert process("class", "attributes_ivars.Ivars", ivars, lines) == expected
 
 
+@mark.parametrize(
+    "base",
+    [
+        param("class Base[T]:", id="pep-695"),
+        param("class Base(Generic[T]):", id="generic"),
+    ],
+)
+def test_instance_variable_from_the_init_of_a_generic_base_reads_as_the_subclass_binds_it(
+    process: Process, make_module: MakeModule, base: str
+) -> None:
+    source = dedent("""\
+        from typing import Generic, TypeVar
+
+        T = TypeVar("T")
+
+
+        {base}
+            def __init__(self, value: T) -> None:
+                self.value: T = value
+
+
+        class Child(Base[int]): ...
+    """).format(base=base)
+    child = make_module("attributes_generic_init", source).Child
+    assert process("class", "attributes_generic_init.Child", child, [":ivar value: the value"]) == [
+        f":vartype value: {INT}",
+        ":ivar value: the value",
+    ]
+
+
 @fixture(name="ivars")
 def ivars_fixture(make_module: MakeModule) -> type:
     return make_module(

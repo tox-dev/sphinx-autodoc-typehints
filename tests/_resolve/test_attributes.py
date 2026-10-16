@@ -120,8 +120,23 @@ def instance_module_fixture(make_module: Callable[[str], ModuleType]) -> ModuleT
             class NoInit: ...
 
             Generated = type("Generated", (), {"__init__": lambda self: None})
+
+            class Box[T]:
+                def __init__(self, item: T) -> None:
+                    self.item: T = item
+
+            class IntBox(Box[int]): ...
         """)
     )
+
+
+@mark.parametrize("owner", [param("Box", id="defining"), param("IntBox", id="inheriting")])
+def test_get_instance_var_annotations_resolves_a_type_parameter_of_the_class_defining_init(
+    instance_module: ModuleType, owner: str
+) -> None:
+    assert get_instance_var_annotations(getattr(instance_module, owner)) == {
+        "item": instance_module.Box.__type_params__[0]
+    }
 
 
 @mark.parametrize(

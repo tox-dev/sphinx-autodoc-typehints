@@ -68,7 +68,10 @@ def class_attribute_annotations(
         attribute: specialize(hint, arguments) if (arguments := bound_type_args(cls, attribute)) else hint
         for attribute, hint in get_body_annotations(cls).items()
     }
+    # one an inherited `__init__` assigns reads as `cls` binds the base defining it
     assigned = get_instance_var_annotations(cls)
+    if arguments := bound_type_args(cls, "__init__"):
+        assigned = {attribute: specialize(hint, arguments) for attribute, hint in assigned.items()}
     # an assignment in __init__ is the more specific declaration of the two; with napoleon_attr_annotations off,
     # napoleon's :ivar: fields still take its type for backward compatibility, while its attribute entries stay untyped
     return _without_napoleon_entries(body, written) | assigned, _without_napoleon_entries(body | assigned, written)
