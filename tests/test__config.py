@@ -166,8 +166,11 @@ def test_always_document_param_types_change_rereads_sources(
         """)
 
 
-@mark.sphinx("text", testroot="dummy", confoverrides={"typehints_formatter": lambda _annotation, _config: "Formatted"})
-def test_formatter_keeps_the_config_cacheable(build_text: BuildText, app: SphinxTestApp) -> None:
+@mark.sphinx(
+    "text",
+    testroot="dummy",
+    confoverrides={"typehints_formatter": lambda _annotation, _config: "Formatted"},
+    exception_on_warning=True,
+)
+def test_formatter_keeps_the_config_cacheable(build_text: BuildText) -> None:
     build_text(".. autofunction:: dummy_module.undocumented_function")
-
-    assert not app.warning.getvalue()

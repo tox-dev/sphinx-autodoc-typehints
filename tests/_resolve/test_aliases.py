@@ -14,7 +14,6 @@ from sphinx_autodoc_typehints._resolve.aliases import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from io import StringIO
     from types import ModuleType
 
     from conftest import BuildText
@@ -413,6 +412,8 @@ def _special_formatter(annotation: Annotation, _config: Config) -> str | None:
         ),
     ],
 )
-@mark.sphinx("text", testroot="integration", confoverrides={"typehints_formatter": _special_formatter})
-def test_build_renders_an_alias_as_written(build_text: BuildText, warning: StringIO, index: str, expected: str) -> None:
-    assert (build_text(index), warning.getvalue()) == (expected, "")
+@mark.sphinx(
+    "text", testroot="integration", confoverrides={"typehints_formatter": _special_formatter}, exception_on_warning=True
+)
+def test_build_renders_an_alias_as_written(build_text: BuildText, index: str, expected: str) -> None:
+    assert build_text(index) == expected

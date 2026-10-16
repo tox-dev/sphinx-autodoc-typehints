@@ -6,7 +6,7 @@ from sys import version_info
 from textwrap import dedent
 from typing import TYPE_CHECKING, Final
 
-from pytest import mark, param
+from pytest import MarkDecorator, mark, param
 from sphinx.errors import NoUri
 
 from sphinx_autodoc_typehints._render import ALIAS_CHOICE_ROLE, annotation_state
@@ -24,6 +24,11 @@ if TYPE_CHECKING:
     from sphinx.testing.util import SphinxTestApp
 
     from sphinx_autodoc_typehints._types import Annotation
+
+# the workers fork from a process pytest-xdist already runs threads in
+_FORKS_WORKERS: Final[MarkDecorator] = mark.filterwarnings(
+    "ignore:This process .* is multi-threaded, use of fork:DeprecationWarning"
+)
 
 
 def test_defer_alias_choice_in_a_signature_links(config: Config) -> None:
@@ -196,7 +201,7 @@ _TYPE_ALIAS_FUNC_EXPANDED: Final[str] = dedent("""\
                 type mod_eager.Count
             """),
             id="later-on-the-page",
-            marks=mark.sphinx("text", testroot="integration", parallel=2),
+            marks=[mark.sphinx("text", testroot="integration", parallel=2), _FORKS_WORKERS],
         ),
         param(
             dedent("""\
@@ -224,7 +229,7 @@ _TYPE_ALIAS_FUNC_EXPANDED: Final[str] = dedent("""\
                 * "mod_eager.Count"
             """),
             id="later-document",
-            marks=mark.sphinx("text", testroot="integration", parallel=2),
+            marks=[mark.sphinx("text", testroot="integration", parallel=2), _FORKS_WORKERS],
         ),
         param(
             dedent("""\
@@ -263,7 +268,7 @@ _TYPE_ALIAS_FUNC_EXPANDED: Final[str] = dedent("""\
                       "None"
             """),
             id="parallel-read",
-            marks=mark.sphinx("text", testroot="integration", parallel=2),
+            marks=[mark.sphinx("text", testroot="integration", parallel=2), _FORKS_WORKERS],
         ),
         param(
             dedent("""\
@@ -435,29 +440,28 @@ _TYPE_ALIAS_FUNC_EXPANDED: Final[str] = dedent("""\
         ),
     ],
 )
+@mark.sphinx(exception_on_warning=True)
 def test_deferred_alias_links(
-    build_text: BuildText, warning: StringIO, index: str, documents: dict[str, str], output: str, expected: str
+    build_text: BuildText, index: str, documents: dict[str, str], output: str, expected: str
 ) -> None:
-    assert (build_text(index, output=output, **documents), warning.getvalue()) == (expected, "")
+    assert build_text(index, output=output, **documents) == expected
 
 
-@mark.sphinx("text", testroot="render-types", confoverrides={"primary_domain": None})
-def test_deferred_alias_without_a_default_domain_expands(build_text: BuildText, warning: StringIO) -> None:
+@mark.sphinx("text", testroot="render-types", confoverrides={"primary_domain": None}, exception_on_warning=True)
+def test_deferred_alias_without_a_default_domain_expands(build_text: BuildText) -> None:
     text = build_text(".. autofunction:: render_pep695.type_alias_func")
-    assert (text, warning.getvalue()) == (_TYPE_ALIAS_FUNC_EXPANDED, "")
+    assert text == _TYPE_ALIAS_FUNC_EXPANDED
 
 
-@mark.sphinx("text", testroot="render-types")
-def test_deferred_alias_a_handler_leaves_without_a_target_expands(
-    app: SphinxTestApp, build_text: BuildText, warning: StringIO
-) -> None:
+@mark.sphinx("text", testroot="render-types", exception_on_warning=True)
+def test_deferred_alias_a_handler_leaves_without_a_target_expands(app: SphinxTestApp, build_text: BuildText) -> None:
     def no_uri(_app: Sphinx, _env: BuildEnvironment, node: nodes.Element, _contnode: nodes.TextElement) -> None:
         if node["reftarget"] == "render_pep695.IntList":
             raise NoUri
 
     app.connect("missing-reference", no_uri)
     text = build_text(".. autofunction:: render_pep695.type_alias_func")
-    assert (text, warning.getvalue()) == (_TYPE_ALIAS_FUNC_EXPANDED, "")
+    assert text == _TYPE_ALIAS_FUNC_EXPANDED
 
 
 @mark.sphinx("man", testroot="render-types")
@@ -499,6 +503,7 @@ def test_alias_choice_collector_drops_choices_a_reread_document_no_longer_has(
     assert document_alias_choices(app.env) == {}
 
 
+@_FORKS_WORKERS
 @mark.sphinx("text", testroot="render-types", parallel=2)
 def test_alias_choice_collector_merges_documents_read_in_workers(build_text: BuildText, app: SphinxTestApp) -> None:
     names = [f"doc{number}" for number in range(8)]

@@ -167,11 +167,13 @@ def test_overloads_rendered_in_signature(build_text: BuildText, rst: str, expect
     assert build_text(rst) == expected
 
 
+@mark.sphinx("dummy")
 def test_overload_signature_cross_references_types(overloaded_doctree: nodes.document) -> None:
     second = list(overloaded_doctree.findall(addnodes.desc_signature))[1]
     assert [xref["reftarget"] for xref in second.findall(addnodes.pending_xref)] == ["str", "dummy_module.MyNamedTuple"]
 
 
+@mark.sphinx("dummy")
 def test_overload_signature_targets_only_the_first_line(overloaded_doctree: nodes.document) -> None:
     assert [signature["ids"] for signature in overloaded_doctree.findall(addnodes.desc_signature)] == [
         ["dummy_module.overloaded"],

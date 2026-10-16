@@ -1,18 +1,18 @@
 from __future__ import annotations
 
-from contextlib import suppress
 from importlib import import_module
 from importlib.util import module_from_spec, spec_from_file_location
+from logging import getLogger
 from os import sep
 from pathlib import Path
-from shutil import copyfile, copytree, ignore_patterns, rmtree
+from shutil import copyfile, copytree, ignore_patterns
 from subprocess import CalledProcessError, check_call  # ruff:ignore[suspicious-subprocess-import]  # the C extensions under test need a compiler
 from sys import modules, path, version_info
 from sysconfig import get_config_var, get_path
 from typing import TYPE_CHECKING, Final, Protocol
 from urllib.request import urlopen
 
-from pytest import Config, FixtureRequest, MonkeyPatch, TempPathFactory, fixture, skip
+from pytest import Config, MonkeyPatch, TempPathFactory, fixture, skip
 from sphinx.ext.autodoc.mock import mock
 from sphinx.pycode import ModuleAnalyzer
 from sphobjinv import Inventory
@@ -47,6 +47,9 @@ def make_app_fixture(make_app: Callable[..., SphinxTestApp]) -> Iterator[Callabl
         return app
 
     yield make
+    # Sphinx leaves the handlers of the last app on its logger, and one raising on warnings would fail a later test that
+    # logs one without building an app
+    getLogger("sphinx").handlers.clear()
     # a project's conf.py puts its directory on sys.path and autodoc imports from there, so a later test importing the
     # same module name would get this copy, which the next build of that project deletes
     for name in [
@@ -66,11 +69,11 @@ def _forget_test_imports() -> Iterator[None]:
     path[:] = saved_path
     # what the process keeps per module name outlives a module a test unloaded, and holds objects of it that a later
     # test loading another module under the name would read
-    tracked = {*SHADOWED_BY_GUARD, *OVERLOADS, *(name for kind, name in ModuleAnalyzer.cache if kind == "module")}
-    for name in tracked - modules.keys():
+    for name in {*SHADOWED_BY_GUARD, *OVERLOADS} - modules.keys():
         SHADOWED_BY_GUARD.pop(name, None)
         OVERLOADS.pop(name, None)
-        ModuleAnalyzer.cache.pop(("module", name), None)
+    # an app clears this on cleanup, which the tests building no app never reach
+    ModuleAnalyzer.cache.clear()
 
 
 @fixture(autouse=True, scope="session")
@@ -109,14 +112,9 @@ def inv(pytestconfig: Config) -> Inventory:
     )
 
 
-@fixture(autouse=True)
-def _remove_sphinx_projects(request: FixtureRequest, sphinx_test_tempdir: Path) -> None:
-    if not request.node.get_closest_marker("sphinx"):
-        return
-    for entry in sphinx_test_tempdir.iterdir():
-        with suppress(PermissionError):
-            if entry.is_dir() and Path(entry, "_build").exists():
-                rmtree(str(entry))
+@fixture
+def sphinx_test_tempdir(tmp_path: Path) -> Path:
+    return tmp_path
 
 
 @fixture
@@ -147,7 +145,6 @@ def make_module(tmp_path: Path, monkeypatch: MonkeyPatch) -> MakeModule:
 def fresh_mod(monkeypatch: MonkeyPatch) -> None:
     # several testroots name their module mod, so forget what the process keeps about the mod an earlier test imported
     monkeypatch.delitem(modules, "mod", raising=False)
-    monkeypatch.delitem(ModuleAnalyzer.cache, ("module", "mod"), raising=False)
     monkeypatch.delitem(OVERLOADS, "mod", raising=False)
 
 

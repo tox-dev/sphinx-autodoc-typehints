@@ -195,6 +195,7 @@ def test_header_type_reads_a_lazy_annotation_as_guarded(  # pragma: >=3.14 cover
         ),
     ],
 )
+@mark.sphinx("dummy")
 def test_header_type_links_its_names(build_doctree: BuildDoctree, rst: str, expected: list[str]) -> None:
     signature = list(build_doctree(rst).findall(addnodes.desc_signature))[-1]
     assert [ref["reftarget"] for ref in signature.findall(addnodes.pending_xref)] == expected

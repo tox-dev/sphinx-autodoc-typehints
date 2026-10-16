@@ -139,6 +139,7 @@ def test_type_params_not_read_for_a_written_out_signature(build_text: BuildText,
     assert build_text(rst).splitlines()[-1] == header
 
 
+@mark.sphinx("dummy")
 def test_type_params_defaults_cross_reference(build_doctree: BuildDoctree) -> None:
     assert [
         xref["reftarget"]
