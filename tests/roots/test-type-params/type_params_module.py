@@ -71,6 +71,15 @@ class Rejected[T: Rejecting[int]]:
 
 type Pairs[K] = dict[K, K]
 
+
+def takes_pairs(value: Pairs) -> None:
+    """
+    Take pairs.
+
+    :param value: the pairs
+    """
+
+
 type RejectedAlias = Rejecting[int]
 
 
@@ -86,6 +95,15 @@ D = TypeVar("D", default=int)
 DP = ParamSpec("DP", default=[int, str])
 # what ``*tuple[int, ...]`` evaluates to, a spelling a default can take only from 3.13 on
 DTs = TypeVarTuple("DTs", default=next(iter(tuple[int, ...])))
+
+
+def relay(*args: DP.args, **kwargs: DP.kwargs) -> None:
+    """
+    Relay the arguments.
+
+    :param args: positional
+    :param kwargs: keyword
+    """
 
 
 class Legacy(Generic[D, DP, *DTs]):

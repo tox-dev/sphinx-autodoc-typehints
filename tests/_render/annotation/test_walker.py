@@ -37,15 +37,9 @@ Out_co = TypeVar("Out_co", covariant=True)
 In_contra = TypeVar("In_contra", contravariant=True)
 Constrained = TypeVar("Constrained", str, int)
 Bounded = TypeVar("Bounded", bound=str)
-ForwardBounded = TypeVar("ForwardBounded", bound="Plain")
 UserName = NewType("UserName", str)
 _MISSING: Final[typing_extensions.Sentinel] = typing_extensions.Sentinel("_MISSING")
 Params = typing_extensions.ParamSpec("Params")
-# typing_extensions takes a variance and a bound for a ParamSpec, which the typing spec leaves out
-Params_co = typing_extensions.ParamSpec("Params_co", covariant=True)
-Params_contra = typing_extensions.ParamSpec("Params_contra", contravariant=True)
-BoundParams = typing_extensions.ParamSpec("BoundParams", bound=str)  # ty: ignore[invalid-paramspec]  # under test
-DefaultParams = typing_extensions.ParamSpec("DefaultParams", default=[int, str])
 DefaultItem = typing_extensions.TypeVar("DefaultItem", bound=int, default=bool)
 Items = typing_extensions.TypeVarTuple("Items")
 StdItems = typing.TypeVarTuple("StdItems")
@@ -109,25 +103,21 @@ _CASES: Final[list[ParameterSet]] = [
     param(typing.Type[Plain], rf":py:class:`~typing.Type`\ \[:py:class:`~{__name__}.Plain`]", id="typing-Plain"),
     param(typing.Any, ":py:data:`~typing.Any`", id="Any"),
     param(AnyStr, ":py:data:`~typing.AnyStr`", id="AnyStr"),
-    param(
-        typing.Generic[Item], r":py:class:`~typing.Generic`\ \[:py:class:`~typing.TypeVar`\ \(``Item``)]", id="Generic"
-    ),
+    param(typing.Generic[Item], r":py:class:`~typing.Generic`\ \[``Item``]", id="Generic"),
     param(Mapping, ":py:class:`~collections.abc.Mapping`", id="Mapping"),
     param(
         Mapping[Item, int],
-        r":py:class:`~collections.abc.Mapping`\ \[:py:class:`~typing.TypeVar`\ \(``Item``), :py:class:`int`]",
+        r":py:class:`~collections.abc.Mapping`\ \[``Item``, :py:class:`int`]",
         id="Mapping-Item-int",
     ),
     param(
         Mapping[str, In_contra],
-        r":py:class:`~collections.abc.Mapping`\ \[:py:class:`str`, :py:class:`~typing.TypeVar`\ \("
-        r"``In_contra``, contravariant=\ True)]",
+        r":py:class:`~collections.abc.Mapping`\ \[:py:class:`str`, ``In_contra``]",
         id="Mapping-str-contravariant",
     ),
     param(
         Mapping[Item, Out_co],
-        r":py:class:`~collections.abc.Mapping`\ \[:py:class:`~typing.TypeVar`\ \(``Item``), "
-        r":py:class:`~typing.TypeVar`\ \(``Out_co``, covariant=\ True)]",
+        r":py:class:`~collections.abc.Mapping`\ \[``Item``, ``Out_co``]",
         id="Mapping-Item-covariant",
     ),
     param(
@@ -138,7 +128,7 @@ _CASES: Final[list[ParameterSet]] = [
     param(typing.Dict, ":py:class:`~typing.Dict`", id="Dict"),
     param(
         typing.Dict[Item, int],
-        r":py:class:`~typing.Dict`\ \[:py:class:`~typing.TypeVar`\ \(``Item``), :py:class:`int`]",
+        r":py:class:`~typing.Dict`\ \[``Item``, :py:class:`int`]",
         id="Dict-Item-int",
     ),
     param(
@@ -206,7 +196,7 @@ _CASES: Final[list[ParameterSet]] = [
     ),
     param(
         type[Item] | UnionType,
-        rf":py:class:`type`\ \[:py:class:`~typing.TypeVar`\ \(``Item``)] | :py:{_UNION_ROLE}:`~typing.Union`",
+        rf":py:class:`type`\ \[``Item``] | :py:{_UNION_ROLE}:`~typing.Union`",
         id="type-or-UnionType",
     ),
     param(
@@ -245,19 +235,18 @@ _CASES: Final[list[ParameterSet]] = [
     ),
     param(
         Callable[[Item], Item],
-        r":py:class:`~collections.abc.Callable`\ \[\[:py:class:`~typing.TypeVar`\ \(``Item``)],"
-        r" :py:class:`~typing.TypeVar`\ \(``Item``)]",
+        r":py:class:`~collections.abc.Callable`\ \[\[``Item``], ``Item``]",
         id="Callable-Item-Item",
     ),
     param(
         Callable[Params, int],
-        r":py:class:`~collections.abc.Callable`\ \[:py:class:`~typing.ParamSpec`\ \(``Params``), :py:class:`int`]",
+        r":py:class:`~collections.abc.Callable`\ \[``Params``, :py:class:`int`]",
         id="Callable-ParamSpec-int",
     ),
     param(
         Callable[typing_extensions.Concatenate[str, Params], int],
         r":py:class:`~collections.abc.Callable`\ \[:py:data:`~typing.Concatenate`\ \[:py:class:`str`, "
-        r":py:class:`~typing.ParamSpec`\ \(``Params``)], :py:class:`int`]",
+        r"``Params``], :py:class:`int`]",
         id="Callable-Concatenate-int",
     ),
     param(
@@ -284,56 +273,19 @@ _CASES: Final[list[ParameterSet]] = [
         r":py:class:`~dataclasses.InitVar`\ \[:py:class:`list`\ \[:py:class:`int`]]",
         id="InitVar",
     ),
-    param(Item, r":py:class:`~typing.TypeVar`\ \(``Item``)", id="TypeVar"),
+    param(Item, r"``Item``", id="TypeVar"),
     param(TypeVar, ":py:class:`~typing.TypeVar`", id="TypeVar-class"),
     param(typing.ParamSpec, ":py:class:`~typing.ParamSpec`", id="ParamSpec-class"),
     param(typing.ParamSpecArgs, f":py:{_CLASS_SINCE_313_ROLE}:`~typing.ParamSpecArgs`", id="ParamSpecArgs-class"),
     param(typing.ParamSpecKwargs, f":py:{_CLASS_SINCE_313_ROLE}:`~typing.ParamSpecKwargs`", id="ParamSpecKwargs-class"),
-    param(Out_co, r":py:class:`~typing.TypeVar`\ \(``Out_co``, covariant=\ True)", id="TypeVar-covariant"),
-    param(
-        In_contra, r":py:class:`~typing.TypeVar`\ \(``In_contra``, contravariant=\ True)", id="TypeVar-contravariant"
-    ),
-    param(
-        Constrained,
-        r":py:class:`~typing.TypeVar`\ \(``Constrained``, :py:class:`str`, :py:class:`int`)",
-        id="TypeVar-constrained",
-    ),
-    param(Bounded, r":py:class:`~typing.TypeVar`\ \(``Bounded``, bound=\ :py:class:`str`)", id="TypeVar-bound"),
-    param(
-        ForwardBounded,
-        r":py:class:`~typing.TypeVar`\ \(``ForwardBounded``, bound=\ Plain)",
-        id="TypeVar-forward-bound",
-    ),
-    param(Params, r":py:class:`~typing.ParamSpec`\ \(``Params``)", id="ParamSpec"),
-    param(Params.args, rf":py:{_CLASS_SINCE_313_ROLE}:`~typing.ParamSpecArgs`\ \(``Params``)", id="ParamSpec-args"),
-    param(
-        Params.kwargs,
-        rf":py:{_CLASS_SINCE_313_ROLE}:`~typing.ParamSpecKwargs`\ \(``Params``)",
-        id="ParamSpec-kwargs",
-    ),
-    param(Params_co, r":py:class:`~typing.ParamSpec`\ \(``Params_co``, covariant=\ True)", id="ParamSpec-covariant"),
-    param(
-        Params_contra,
-        r":py:class:`~typing.ParamSpec`\ \(``Params_contra``, contravariant=\ True)",
-        id="ParamSpec-contravariant",
-    ),
-    param(
-        BoundParams,
-        r":py:class:`~typing.ParamSpec`\ \(``BoundParams``, bound=\ :py:class:`str`)",
-        id="ParamSpec-bound",
-    ),
-    param(
-        DefaultParams,
-        r":py:class:`~typing.ParamSpec`\ \(``DefaultParams``, default=\ \[:py:class:`int`, :py:class:`str`])",
-        id="ParamSpec-default",
-    ),
-    param(
-        DefaultItem,
-        r":py:class:`~typing.TypeVar`\ \(``DefaultItem``, bound=\ :py:class:`int`, default=\ :py:class:`bool`)",
-        id="TypeVar-default",
-    ),
-    param(Items, r":py:class:`~typing.TypeVarTuple`\ \(``Items``)", id="TypeVarTuple"),
-    param(StdItems, r":py:class:`~typing.TypeVarTuple`\ \(``StdItems``)", id="TypeVarTuple-stdlib"),
+    param(Constrained, r"``Constrained``", id="TypeVar-constrained"),
+    param(Bounded, r"``Bounded``", id="TypeVar-bound"),
+    param(Params, r"``Params``", id="ParamSpec"),
+    param(Params.args, r"``Params.args``", id="ParamSpec-args"),
+    param(Params.kwargs, r"``Params.kwargs``", id="ParamSpec-kwargs"),
+    param(DefaultItem, r"``DefaultItem``", id="TypeVar-default"),
+    param(Items, r"``Items``", id="TypeVarTuple"),
+    param(StdItems, r"``StdItems``", id="TypeVarTuple-stdlib"),
     param(Annotated[int, "metadata"], r":py:class:`int`", id="Annotated"),
     param(typing.Required[int], r":py:data:`~typing.Required`\ \[:py:class:`int`]", id="Required"),
     param(typing.NotRequired[int], r":py:data:`~typing.NotRequired`\ \[:py:class:`int`]", id="NotRequired"),
@@ -614,7 +566,7 @@ def test_format_annotation_forward_alias_documented_so_far(app: SphinxTestApp, b
 
 
 @mark.sphinx("text", testroot="dummy")
-def test_format_annotation_type_variable_parameter_follows_its_equals_sign(build_text: BuildText) -> None:
+def test_format_annotation_type_variable_reads_as_its_name(build_text: BuildText) -> None:
     assert build_text(".. autofunction:: dummy_module.bounded") == (
         dedent("""\
             dummy_module.bounded(value)
@@ -622,12 +574,65 @@ def test_format_annotation_type_variable_parameter_follows_its_equals_sign(build
                Take a bounded type parameter.
 
                Parameters:
-                  **value** ("TypeVar"("Bounded", bound="int")) -- the value
+                  **value** ("Bounded") -- the value
 
                Return type:
-                  "TypeVar"("Bounded", bound="int")
+                  "Bounded"
         """)
     )
+
+
+@mark.parametrize("directive", [param("py:class", id="class"), param("py:data", id="data")])
+@mark.sphinx("html", testroot="dummy")
+def test_format_annotation_type_variable_links_to_its_entry(build_text: BuildText, directive: str) -> None:
+    html = build_text(f".. {directive}:: dummy_module.Bounded\n\n.. autofunction:: dummy_module.bounded")
+    assert (
+        findall(r'href="([^"]*)"[^>]*><code class="xref py py-obj[^"]*"><span class="pre">Bounded<', html)
+        == ["#dummy_module.Bounded"] * 2
+    )
+
+
+@mark.sphinx("text", testroot="type-params")
+def test_format_annotation_param_spec_component_reads_as_written(build_text: BuildText) -> None:
+    assert build_text(".. autofunction:: type_params_module.relay") == dedent("""\
+        type_params_module.relay(*args, **kwargs)
+
+           Relay the arguments.
+
+           Parameters:
+              * **args** ("DP.args") -- positional
+
+              * **kwargs** ("DP.kwargs") -- keyword
+
+           Return type:
+              "None"
+        """)
+
+
+@mark.parametrize(
+    "shown",
+    [
+        param("DP", marks=mark.sphinx("html", testroot="type-params"), id="short"),
+        param(
+            "type_params_module.DP",
+            marks=mark.sphinx("html", testroot="type-params", confoverrides={"typehints_fully_qualified": True}),
+            id="fully-qualified",
+        ),
+    ],
+)
+def test_format_annotation_param_spec_component_links_to_its_entry(build_text: BuildText, shown: str) -> None:
+    html = build_text(".. py:data:: type_params_module.DP\n\n.. autofunction:: type_params_module.relay")
+    assert findall(r'href="#type_params_module\.DP"[^>]*><code[^>]*><span class="pre">([^<]*)<', html) == [
+        f"{shown}.args",
+        f"{shown}.kwargs",
+    ]
+
+
+@mark.sphinx("html", testroot="type-params")
+def test_format_annotation_alias_type_parameter_skips_a_namesake_entry(build_text: BuildText) -> None:
+    # Python gives a PEP 695 parameter `typing` as its module
+    html = build_text(".. py:data:: typing.K\n\n.. autofunction:: type_params_module.takes_pairs")
+    assert 'title="typing.K"' not in html
 
 
 @mark.parametrize(

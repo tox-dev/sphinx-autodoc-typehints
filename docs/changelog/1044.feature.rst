@@ -1,0 +1,4 @@
+Render a module-level ``TypeVar``, ``ParamSpec`` or ``TypeVarTuple`` in docstring fields by its name, as a PEP 695
+type parameter renders, instead of as a ``TypeVar(B, bound=Sized)`` call, and ``P.args`` as written instead of
+``ParamSpecArgs(P)``; the name links to the variable's own entry, which shows its bound or constraints, when the docs
+document it.

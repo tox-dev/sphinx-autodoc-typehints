@@ -114,12 +114,12 @@ def test_fixup_module_name_unchanged_keeps_environment(
     "expected",
     [
         param(
-            '"typing.TypeVar"',
+            '"dummy_module.Bounded"',
             marks=mark.sphinx("text", testroot="dummy", confoverrides={"autodoc_typehints_format": "fully-qualified"}),
             id="follows-autodoc",
         ),
         param(
-            '"TypeVar"',
+            '"Bounded"',
             marks=mark.sphinx(
                 "text",
                 testroot="dummy",
@@ -131,16 +131,18 @@ def test_fixup_module_name_unchanged_keeps_environment(
 )
 @mark.usefixtures("wide_text_output")
 def test_fully_qualified_defaults_to_autodoc_typehints_format(build_text: BuildText, expected: str) -> None:
-    assert build_text(".. autofunction:: dummy_module.bounded") == dedent(f"""\
+    assert build_text(".. py:data:: dummy_module.Bounded\n\n.. autofunction:: dummy_module.bounded") == dedent(f"""\
+        dummy_module.Bounded
+
         dummy_module.bounded(value)
 
            Take a bounded type parameter.
 
            Parameters:
-              **value** ({expected}("Bounded", bound="int")) -- the value
+              **value** ({expected}) -- the value
 
            Return type:
-              {expected}("Bounded", bound="int")
+              {expected}
         """)
 
 

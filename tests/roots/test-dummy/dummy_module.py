@@ -248,7 +248,7 @@ def takes_configured_alias(x: ConfiguredAlias) -> None:
 Bounded = TypeVar("Bounded", bound=int)
 
 
-# a module-level type variable shows in full, as no signature declares it
+# a module-level type variable no signature declares
 def bounded(value: Bounded) -> Bounded:  # ruff:ignore[non-pep695-generic-function]
     """
     Take a bounded type parameter.

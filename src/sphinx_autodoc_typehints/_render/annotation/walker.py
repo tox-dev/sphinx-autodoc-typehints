@@ -10,7 +10,7 @@ import typing  # probed at runtime for names typing_extensions backports
 from dataclasses import dataclass
 from enum import Enum
 from re import fullmatch, sub
-from sys import version_info
+from sys import modules, version_info
 from types import GenericAlias
 from typing import (
     TYPE_CHECKING,
@@ -386,27 +386,27 @@ def _type_variable(reference: _Reference) -> _Frame:
     # the class itself, as typing.TypeVar, renders as any class does
     if not isinstance(annotation := reference.annotation, TypeVar | ParamSpec | TypeVarTuple):
         return
-    config = reference.config
-    if annotation in (context := render_context(config)).declared_type_params:
+    if annotation in render_context(reference.config).declared_type_params:
         # the signature lists it with its bound, constraints and default already
         yield _Rendered(f"``{annotation.__name__}``")
-    elif context.signature:
-        # a signature names a module-level one by its defining module, as Python writes it
-        module = fixup_module_name(config, annotation.__module__)
-        yield _Rendered(f":py:class:`{name_prefix(config)}{module}.{annotation.__name__}`")
     else:
-        # typing.TypeVarTuple has neither a bound nor a variance, only the typing_extensions backport adds them
-        fields = type_param_fields(annotation, lambda dunder: getattr(annotation, f"__{dunder}__", None))
-        params: dict[str, str | bool] = {}
-        if "bound" in fields:
-            params["bound"] = yield fields["bound"]
-        params |= {kind: True for kind in ("covariant", "contravariant") if getattr(annotation, f"__{kind}__", None)}
-        if "default" in fields:
-            params["default"] = yield fields["default"]
-        # the escaped space lets a role follow the = without a visible gap
-        keywords = "".join(f", {k}=\\ {v}" for k, v in params.items())
-        reference.args_format = f"\\(``{annotation.__name__}``{', {}' if reference.args else ''}{keywords})"
-        reference.formatted_args = None if reference.args else reference.args_format
+        yield _Rendered(_variable_name(annotation, reference.config))
+
+
+def _variable_name(param: TypeParam, config: Config, suffix: str = "") -> str:
+    plain = f"``{param.__name__}{suffix}``"
+    # a PEP 695 parameter has no entry of its own, and the `typing` it names as its module documents others
+    if getattr(modules.get(param.__module__), param.__name__, None) is not param:
+        return plain
+    # a module-level one reads as a PEP 695 parameter does, its own entry showing the bound and constraints, and
+    # :py:obj: matches that entry whether autodoc documents it as a class or as data
+    target = f"{fixup_module_name(config, param.__module__)}.{param.__name__}"
+    if suffix:
+        shown = target if config.typehints_fully_qualified else param.__name__
+        linked = f":py:obj:`{shown}{suffix} <{target}>`"
+    else:
+        linked = f":py:obj:`{name_prefix(config)}{target}`"
+    return defer_alias_choice(config, linked, plain) or plain
 
 
 def type_param_fields[Value](param: TypeParam, read: Callable[[str], Value]) -> dict[str, Value]:
@@ -429,7 +429,8 @@ def _param_spec_component(reference: _Reference) -> _Frame:
         # its repr is the P.args form a signature writes
         yield _Rendered(f"``{annotation!r}``")
     else:
-        reference.formatted_args = f"\\(``{annotation.__origin__.__name__}``)"
+        suffix = ".args" if isinstance(annotation, ParamSpecArgs) else ".kwargs"
+        yield _Rendered(_variable_name(annotation.__origin__, reference.config, suffix))
 
 
 def _optional(reference: _Reference) -> None:  # pragma: <3.14 cover
