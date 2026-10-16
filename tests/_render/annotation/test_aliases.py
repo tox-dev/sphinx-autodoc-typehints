@@ -102,6 +102,13 @@ def test_format_annotation_alias_that_cannot_expand_names_itself(config: Config,
     assert format_annotation(alias, config) == f":py:type:`~{__name__}.{alias.__name__}`"
 
 
+@mark.sphinx("text", testroot="render-types")
+def test_recursive_callable_alias_builds(build_text: BuildText) -> None:
+    result = build_text(".. autofunction:: render_pep695.invoke_callback")
+    assert '"Callback"' in result
+    assert '"Callable"' in result
+
+
 @mark.parametrize(
     ("documented", "expected"),
     [

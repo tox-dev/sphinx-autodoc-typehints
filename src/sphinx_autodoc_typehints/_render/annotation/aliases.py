@@ -34,7 +34,7 @@ def reaches_itself(alias: TypeAliasType) -> bool:
             if id(inner) not in seen:
                 seen.add(id(inner))
                 pending.append(inner.__value__)
-        pending.extend(get_args(node))
+        pending.extend(node if isinstance(node, list | tuple) else get_args(node))
     return False
 
 

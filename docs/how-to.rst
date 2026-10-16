@@ -351,8 +351,9 @@ links to the target it names when the docs document that target; otherwise the n
 may be a display string too.
 
 A recursive alias, ``type Json = dict[str, Json] | list[Json] | str``, renders its self-reference as a link to its
-name. A generic alias used with arguments, ``Pairs[int]``, expands with the arguments in place, or shows by name when
-they don't fit its parameters.
+name. This also works when the alias appears in a callable's parameter list, such as
+``type Callback = Callable[[Callback], None]``. A generic alias used with arguments, ``Pairs[int]``, expands with the
+arguments in place, or shows by name when they don't fit its parameters.
 
 .. _kwargs-unpack:
 
