@@ -222,7 +222,8 @@ table evaluates the annotations in this namespace:
       - ``Literal["a", "b"]``
       - ``Literal['a', 'b']``
       -
-    * - :data:`~typing.Literal` of an :class:`~enum.Enum` member, linked
+    * - :data:`~typing.Literal` of an :class:`~enum.Enum` member, linked to the member, or to its enum when the member
+        has no entry
       - ``Literal[Color.RED]``
       - ``Literal[Color.RED]``
       -

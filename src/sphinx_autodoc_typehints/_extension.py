@@ -26,7 +26,16 @@ from ._patches import (
     patch_overload_capture,
     patch_signature_lines,
 )
-from ._render import ALIAS_CHOICE_ROLE, DeferAliasChoice, alias_choice_role, merge_alias_choices, unescape
+from ._render import (
+    ALIAS_CHOICE_ROLE,
+    ENUM_MEMBER_ROLE,
+    DeferAliasChoice,
+    alias_choice_role,
+    enum_member_role,
+    link_enum_member_owner,
+    merge_alias_choices,
+    unescape,
+)
 from ._resolve import SHADOWED_BY_GUARD
 from ._signature import add_type_params, process_signature, render_header_types
 from .version import __version__
@@ -43,10 +52,13 @@ def setup(app: Sphinx) -> dict[str, bool | str]:
         app.add_config_value(option.name, option.default, option.rebuild, option.types)
     app.add_role("sphinx_autodoc_typehints_type", sphinx_autodoc_typehints_type_role)
     app.add_role(ALIAS_CHOICE_ROLE, alias_choice_role)
+    app.add_role(ENUM_MEMBER_ROLE, enum_member_role)
     app.add_directive(DEPRECATED_DIRECTIVE, DeprecatedDirective)
     app.add_post_transform(DeferAliasChoice)
     app.connect("config-inited", cache_fixup_module_name)
     app.connect("env-merge-info", merge_alias_choices)
+    # after intersphinx, at the default priority, had its chance to link the member itself
+    app.connect("missing-reference", link_enum_member_owner, priority=900)
     app.connect("env-before-read-docs", validate_config)
     app.connect("env-before-read-docs", store_type_mapping)
     app.connect("autodoc-process-signature", process_signature)

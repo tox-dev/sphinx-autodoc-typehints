@@ -18,11 +18,13 @@ from .annotation import (
 )
 from .context import ScopeExtras, TypeParamScope, annotation_state, render_context
 from .deferred import ALIAS_CHOICE_ROLE, DeferAliasChoice, alias_choice_role, merge_alias_choices
+from .enum_member import ENUM_MEMBER_ROLE, enum_member_role, link_enum_member_owner
 from .intersphinx import keep_type_mapping
 from .rst import parse, unescape
 
 __all__ = [
     "ALIAS_CHOICE_ROLE",
+    "ENUM_MEMBER_ROLE",
     "DeferAliasChoice",
     "ScopeExtras",
     "TypeParamScope",
@@ -31,9 +33,11 @@ __all__ = [
     "annotation_state",
     "as_field_type",
     "as_signature_type",
+    "enum_member_role",
     "fixup_module_name",
     "format_annotation",
     "keep_type_mapping",
+    "link_enum_member_owner",
     "merge_alias_choices",
     "parse",
     "render_context",

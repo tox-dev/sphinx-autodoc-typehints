@@ -39,6 +39,7 @@ from sphinx_autodoc_typehints._types import sentinel
 
 from ..context import render_context
 from ..deferred import defer_alias_choice
+from ..enum_member import ENUM_MEMBER_ROLE
 from ..intersphinx import inventory, type_mapping
 from .aliases import (
     alias_crossref,
@@ -466,12 +467,12 @@ def _literal(reference: _Reference) -> _Frame:
             module = fixup_module_name(reference.config, (enum_cls := type(arg)).__module__)
             member = f"{enum_cls.__qualname__}.{arg.name}"
             if not module:
-                literal_parts.append(f":py:attr:`{member}`")
+                literal_parts.append(f":{ENUM_MEMBER_ROLE}:`{member}`")
             elif reference.fully_qualified:
-                literal_parts.append(f":py:attr:`{module}.{member}`")
+                literal_parts.append(f":{ENUM_MEMBER_ROLE}:`{module}.{member}`")
             else:
                 # a ~ would keep only the member name, and members of different enums would read the same
-                literal_parts.append(f":py:attr:`{member} <{module}.{member}>`")
+                literal_parts.append(f":{ENUM_MEMBER_ROLE}:`{member} <{module}.{member}>`")
         else:
             # an inline literal cannot hold a backtick, the literal role takes it escaped
             literal_parts.append(f":literal:`{rst.escape(text)}`" if "`" in (text := repr(arg)) else f"``{text}``")

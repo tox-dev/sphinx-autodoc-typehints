@@ -19,7 +19,7 @@ from pytest import mark, param, skip
 from sphinx.util.inspect import TypeAliasForwardRef
 
 from sphinx_autodoc_typehints._refs import MyTypeAliasForwardRef, WrittenTypeAlias
-from sphinx_autodoc_typehints._render import annotation_state, format_annotation
+from sphinx_autodoc_typehints._render import ENUM_MEMBER_ROLE, annotation_state, format_annotation
 
 if TYPE_CHECKING:
     from _pytest.mark import ParameterSet
@@ -399,7 +399,7 @@ def test_format_annotation_always_use_bars_union(
         param(
             "Literal",
             (SomeEnum.VALUE,),
-            rf":py:data:`~typing.Literal`\ \[:py:attr:`SomeEnum.VALUE <{__name__}.SomeEnum.VALUE>`]",
+            rf":py:data:`~typing.Literal`\ \[:{ENUM_MEMBER_ROLE}:`SomeEnum.VALUE <{__name__}.SomeEnum.VALUE>`]",
             id="Literal-enum",
         ),
         param("Self", None, ":py:data:`~typing.Self`", id="Self"),
@@ -533,13 +533,13 @@ def test_format_annotation_formatter(
         param(
             Literal[OtherEnum.VALUE],
             {"typehints_fully_qualified": True},
-            f":py:attr:`{__name__}.OtherEnum.VALUE`",
+            f":{ENUM_MEMBER_ROLE}:`{__name__}.OtherEnum.VALUE`",
             id="enum-member-fully-qualified",
         ),
         param(
             Literal[SomeEnum.VALUE],
             {"typehints_fixup_module_name": lambda module: "" if module == __name__ else module},
-            ":py:attr:`SomeEnum.VALUE`",
+            f":{ENUM_MEMBER_ROLE}:`SomeEnum.VALUE`",
             id="enum-member-without-module",
         ),
     ],
