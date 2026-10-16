@@ -1,0 +1,3 @@
+Render the ``Bases:`` line of a class documented with ``:show-inheritance:`` as a docstring field renders a type, so a
+generic base such as ``Mapping[str, int]`` follows ``typehints_fully_qualified``, ``typehints_fixup_module_name`` and
+``typehints_formatter``, and a PEP 695 base such as ``Stack[T]`` keeps its argument where Sphinx left it off.
