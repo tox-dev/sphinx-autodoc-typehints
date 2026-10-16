@@ -11,6 +11,7 @@ from ast import (
     Attribute,
     BoolOp,
     ClassDef,
+    Constant,
     FunctionDef,
     If,
     Import,
@@ -22,6 +23,7 @@ from ast import (
     iter_child_nodes,
     parse,
     stmt,
+    walk,
 )
 from functools import cache
 from inspect import getsource
@@ -77,13 +79,21 @@ def guarded_statements(module_code: str) -> tuple[tuple[stmt, ...], tuple[Syntax
     return tuple(
         statement
         for node in nodes
-        if isinstance(node, If) and (holds := _holds_when_type_checking(node.test)) is not None
+        if isinstance(node, If)
+        and any(
+            (isinstance(part, Name) and part.id == "TYPE_CHECKING")
+            or (isinstance(part, Attribute) and part.attr == "TYPE_CHECKING")
+            for part in walk(node.test)
+        )
+        and (holds := _holds_when_type_checking(node.test)) is not None
         for statement in (node.body if holds else node.orelse)
     ), tuple(errors)
 
 
 # `None` when `TYPE_CHECKING` plays no part in the test
 def _holds_when_type_checking(test: expr) -> bool | None:
+    if isinstance(test, Constant) and isinstance(test.value, bool):
+        return test.value
     # a bare name or from any alias the module gives typing
     if (isinstance(test, Name) and test.id == "TYPE_CHECKING") or (
         isinstance(test, Attribute) and test.attr == "TYPE_CHECKING"
@@ -91,7 +101,7 @@ def _holds_when_type_checking(test: expr) -> bool | None:
         return True
     if isinstance(test, UnaryOp) and isinstance(test.op, Not):
         return None if (operand := _holds_when_type_checking(test.operand)) is None else not operand
-    # the other operands of a boolean test are runtime conditions, so they cannot decide the outcome either way
+    # unknown runtime operands cannot overturn a decisive constant or TYPE_CHECKING operand
     if isinstance(test, BoolOp) and (
         known := [held for value in test.values if (held := _holds_when_type_checking(value)) is not None]
     ):
