@@ -17,7 +17,7 @@ from .annotation import (
     unstar,
 )
 from .context import ScopeExtras, TypeParamScope, annotation_state, render_context
-from .deferred import ALIAS_CHOICE_ROLE, DeferAliasChoice, alias_choice_role, merge_alias_choices
+from .deferred import ALIAS_CHOICE_ROLE, DeferAliasChoice, alias_choice_role, merge_alias_choices, note_builder
 from .enum_member import ENUM_MEMBER_ROLE, enum_member_role, link_enum_member_owner
 from .intersphinx import keep_type_mapping
 from .rst import parse, unescape
@@ -53,6 +53,7 @@ __all__ = [
     "keep_type_mapping",
     "link_enum_member_owner",
     "merge_alias_choices",
+    "note_builder",
     "parse",
     "render_context",
     "type_param_fields",

@@ -39,6 +39,7 @@ from ._render import (
     enum_member_role,
     link_enum_member_owner,
     merge_alias_choices,
+    note_builder,
     unescape,
     value_role,
 )
@@ -66,6 +67,7 @@ def setup(app: Sphinx) -> dict[str, bool | str]:
     app.add_post_transform(DeferAliasChoice)
     app.connect("config-inited", cache_fixup_module_name)
     app.connect("builder-inited", add_value_stylesheet)
+    app.connect("builder-inited", note_builder)
     app.connect("env-merge-info", merge_alias_choices)
     # after intersphinx, at the default priority, had its chance to link the member itself
     app.connect("missing-reference", link_enum_member_owner, priority=900)

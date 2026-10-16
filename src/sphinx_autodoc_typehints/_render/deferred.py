@@ -10,6 +10,7 @@ from __future__ import annotations
 from contextlib import suppress
 from hashlib import blake2s
 from typing import TYPE_CHECKING, Final, override
+from weakref import WeakValueDictionary
 
 from docutils import nodes
 from sphinx import addnodes
@@ -27,6 +28,7 @@ if TYPE_CHECKING:
     from docutils.nodes import Node
     from docutils.parsers.rst import states
     from sphinx.application import Sphinx
+    from sphinx.builders import Builder
     from sphinx.config import Config
     from sphinx.environment import BuildEnvironment
 
@@ -36,6 +38,10 @@ _ALIAS_CHOICE_KEY: Final[str] = "sphinx_autodoc_typehints_alias_key"
 _DEFAULT_DOMAIN_KEY: Final[str] = "sphinx_autodoc_typehints_default_domain"
 _DEFAULT_ROLE_KEY: Final[str] = "sphinx_autodoc_typehints_default_role"
 _REF_CONTEXT_KEY: Final[str] = "sphinx_autodoc_typehints_ref_context"
+# a post-transform reaches the builder only through the deprecated `app` or the private `env._app`, so each app's
+# builder is kept by the id of its environment; the builder holds that environment, so the entry goes before the id can
+# be reused, and an attribute on the environment would end up in its pickle
+_BUILDERS: Final[WeakValueDictionary[int, Builder]] = WeakValueDictionary()
 
 
 def alias_choice_role(
@@ -92,6 +98,10 @@ def merge_alias_choices(_app: Sphinx, env: BuildEnvironment, _docnames: list[str
         alias_choices(env).update(worker_choices)
 
 
+def note_builder(app: Sphinx) -> None:
+    _BUILDERS[id(app.env)] = app.builder
+
+
 class DeferAliasChoice(SphinxPostTransform):
     """
     Replace every alias marker once the domain and the inventories can answer for every document.
@@ -127,14 +137,14 @@ class DeferAliasChoice(SphinxPostTransform):
                     resolved = self.env.domains[target["refdomain"]].resolve_xref(
                         self.env,
                         target["refdoc"],
-                        self.app.builder,
+                        _BUILDERS[id(self.env)],
                         target["reftype"],
                         target["reftarget"],
                         target,
                         contnode,
                     )
                     if resolved is None:  # give `missing-reference` handlers (e.g. qualname overrides) their say
-                        resolved = self.app.emit_firstresult(
+                        resolved = self.env.events.emit_firstresult(
                             "missing-reference", self.env, target, contnode, allowed_exceptions=(NoUri,)
                         )
             if resolved is not None:
@@ -184,4 +194,5 @@ __all__ = [
     "alias_choice_role",
     "defer_alias_choice",
     "merge_alias_choices",
+    "note_builder",
 ]
