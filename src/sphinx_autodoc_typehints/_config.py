@@ -45,7 +45,7 @@ OPTIONS: Final[tuple[Option, ...]] = (
     Option(name="typehints_defaults", default=None, rebuild="env"),
     Option(name="simplify_optional_unions", default=True, rebuild="env"),
     Option(name="always_use_bars_union", default=False, rebuild="env"),
-    Option(name="typehints_formatter", default=None, rebuild=""),
+    Option(name="typehints_formatter", default=None, rebuild="env"),
     Option(name="typehints_document_overloads", default=True, rebuild="env"),
     Option(name="typehints_use_signature", default=False, rebuild="env"),
     Option(name="typehints_use_signature_return", default=False, rebuild="env"),
@@ -75,11 +75,17 @@ def cache_fixup_module_name(_app: Sphinx, config: Config) -> None:
         config.typehints_fixup_module_name = _FixupModuleName(function)
 
 
+def cache_formatter(_app: Sphinx, config: Config) -> None:
+    """Keep the formatter comparable across incremental builds."""
+    if (function := config.typehints_formatter) is not None and callable(function):
+        config.typehints_formatter = _CachedCallable(function)
+
+
 # Sphinx can't pickle a function into its cached environment, so the source tells whether it changed between builds
-class _FixupModuleName:
+class _CachedCallable[**P, R]:
     __hash__ = None
 
-    def __init__(self, function: Callable[[str], str]) -> None:
+    def __init__(self, function: Callable[P, R]) -> None:
         self._function = function
         try:
             self._source = getsource(function)
@@ -87,11 +93,11 @@ class _FixupModuleName:
             # with no source to compare, the repr carries the object's id, so every build counts as a change
             self._source = repr(function)
 
-    def __call__(self, module: str) -> str:
-        return self._function(module)
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
+        return self._function(*args, **kwargs)
 
     def __eq__(self, other: object) -> bool:
-        return isinstance(other, _FixupModuleName) and self._source == other._source
+        return isinstance(other, _CachedCallable) and self._source == other._source
 
     def __repr__(self) -> str:
         return self._source
@@ -100,9 +106,14 @@ class _FixupModuleName:
         return {"_source": self._source}
 
 
+class _FixupModuleName(_CachedCallable):
+    pass
+
+
 __all__ = [
     "OPTIONS",
     "cache_fixup_module_name",
+    "cache_formatter",
     "store_type_mapping",
     "validate_config",
 ]

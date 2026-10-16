@@ -308,9 +308,8 @@ such as ``:class:`bool```.
 
 With :confval:`typehints_use_signature` or :confval:`typehints_use_signature_return`, the formatter decides the types
 kept in the signature too, where a role becomes the name it refers to, so ``:class:`bool``` turns into ``bool``.
-The extension registers :confval:`typehints_formatter` with an empty rebuild value, so Sphinx keeps its cached
-documents when the formatter changes; run ``sphinx-build -E`` after editing it. A value that is not callable stops the
-build with a :class:`~sphinx.errors.ConfigError`.
+Changing the formatter rereads the documents in an incremental build. A value that is not callable stops the build
+with a :class:`~sphinx.errors.ConfigError`.
 
 *******************
  Link type aliases

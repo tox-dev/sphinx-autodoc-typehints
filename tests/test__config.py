@@ -27,7 +27,7 @@ def test_setup_registers_the_documented_options(app: SphinxTestApp) -> None:
         "typehints_document_rtype": (True, "env", frozenset()),
         "typehints_document_rtype_none": (True, "env", frozenset()),
         "typehints_fixup_module_name": (None, "env", frozenset()),
-        "typehints_formatter": (None, "", frozenset()),
+        "typehints_formatter": (None, "env", frozenset()),
         "typehints_fully_qualified": (False, "env", frozenset({bool})),
         "typehints_use_rtype": (True, "env", frozenset()),
         "typehints_use_signature": (False, "env", frozenset()),
@@ -174,3 +174,34 @@ def test_always_document_param_types_change_rereads_sources(
 )
 def test_formatter_keeps_the_config_cacheable(build_text: BuildText) -> None:
     build_text(".. autofunction:: dummy_module.undocumented_function")
+
+
+def _format_first(_annotation: object, _config: object) -> str:
+    return "First"
+
+
+def _format_second(_annotation: object, _config: object) -> str:
+    return "Second"
+
+
+@mark.sphinx("text", testroot="dummy", confoverrides={"typehints_formatter": _format_first})
+def test_formatter_change_rereads_documents(
+    build_text: BuildText, app: SphinxTestApp, make_app: Callable[..., SphinxTestApp]
+) -> None:
+    build_text(".. autofunction:: dummy_module.undocumented_function")
+    make_app("text", srcdir=app.srcdir, confoverrides={"typehints_formatter": _format_second}).build()
+
+    output = (Path(app.outdir) / "index.txt").read_text()
+    assert "Second" in output
+    assert "First" not in output
+
+
+@mark.sphinx("text", testroot="dummy", confoverrides={"typehints_formatter": _format_first})
+def test_formatter_unchanged_keeps_environment(
+    build_text: BuildText, app: SphinxTestApp, make_app: Callable[..., SphinxTestApp]
+) -> None:
+    build_text(".. autofunction:: dummy_module.undocumented_function")
+    rebuilt = make_app("text", srcdir=app.srcdir, confoverrides={"typehints_formatter": _format_first})
+    rebuilt.build()
+
+    assert "typehints_formatter" not in rebuilt.status.getvalue()
