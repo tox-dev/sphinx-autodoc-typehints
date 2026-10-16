@@ -4,6 +4,7 @@ from collections.abc import Callable
 from dataclasses import InitVar
 from importlib.machinery import ModuleSpec
 from re import Match, Pattern, escape, findall
+from sys import version_info
 from textwrap import dedent
 from types import CodeType, CoroutineType, FunctionType, ModuleType
 from typing import (  # ruff:ignore[deprecated-import]  # the legacy aliases are under test
@@ -12,19 +13,20 @@ from typing import (  # ruff:ignore[deprecated-import]  # the legacy aliases are
     Any,
     AnyStr,
     ClassVar,
+    ContextManager,
     Dict,
     Final,
+    Generator,
     Generic,
     Literal,
     NewType,
     Protocol,
     Tuple,
-    TypeVar,
     Union,
 )
 
 from pytest import mark, param, raises
-from typing_extensions import ParamSpec
+from typing_extensions import ParamSpec, TypeVar
 
 from sphinx_autodoc_typehints._render import fixup_module_name
 from sphinx_autodoc_typehints._render.annotation.names import (
@@ -45,16 +47,23 @@ if TYPE_CHECKING:
 Item = TypeVar("Item")
 UserName = NewType("UserName", str)
 Params = ParamSpec("Params")
+Key = TypeVar("Key")
+Value = TypeVar("Value", default=str)
 
 
 class Plain:
     class Inner: ...
+
+    class Pair(Generic[Key, Value]): ...
 
 
 class Box[Content]: ...
 
 
 class StrBox(Box[str]): ...
+
+
+class Pair(Generic[Key, Value]): ...
 
 
 class Proto(Protocol): ...
@@ -125,6 +134,38 @@ _NAMES: Final[list[tuple[str, object, str, str, tuple[object, ...]]]] = [
     ("GenericProto-int", GenericProto[int], __name__, "GenericProto", (int,)),
     ("Inner", Plain.Inner, __name__, "Plain.Inner", ()),
 ]
+
+
+_FILLED_IN_FROM_313: Final = version_info >= (3, 13)
+
+
+@mark.parametrize(
+    ("annotation", "module", "class_name", "args"),
+    [
+        param(ContextManager[None], "typing", "ContextManager", (type(None),), id="typing-alias-default"),
+        param(
+            Generator[int, None, None],
+            "typing",
+            "Generator",
+            (int,) if _FILLED_IN_FROM_313 else (int, type(None), type(None)),
+            id="typing-alias-default-written",
+        ),
+        param(
+            Generator[int, str, None],
+            "typing",
+            "Generator",
+            (int, str) if _FILLED_IN_FROM_313 else (int, str, type(None)),
+            id="typing-alias-default-after-argument",
+        ),
+        param(Pair[int], __name__, "Pair", (int,), id="class-default"),
+        param(Pair[int, str], __name__, "Pair", (int,), id="class-default-written"),
+        param(Plain.Pair[int], __name__, "Plain.Pair", (int,), id="nested-class-default"),
+    ],
+)
+def test_get_annotation_args_omits_trailing_defaults(
+    annotation: Hint, module: str, class_name: str, args: tuple[RenderNode, ...]
+) -> None:
+    assert get_annotation_args(annotation, module, class_name) == args
 
 
 @mark.parametrize(

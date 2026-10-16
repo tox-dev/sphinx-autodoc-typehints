@@ -338,6 +338,10 @@ in the signature, and ``P.args`` renders as ``P.args``. A type variable defined 
 constraints, and so does ``P`` in ``P.args``. A ``Doc(...)`` in :data:`~typing.Annotated` metadata becomes the
 parameter's description. Sphinx's :confval:`python_display_short_literal_types` renders ``Literal["a", "b"]`` as
 ``'a' | 'b'``. A class from a module in :confval:`autodoc_mock_imports`, subscripted or not, renders by its name.
+Trailing arguments equal to their type parameter's :pep:`696` default are left out, so ``typing.ContextManager[None]``
+renders as written, though from Python 3.13 it carries its second argument's default. An argument written out that
+equals its default goes too, ``Generator[int, None, None]`` rendering as ``Generator[int]``, as type checkers read the
+two the same.
 
 The same rendering applies to the header autodoc writes for data, an attribute or a property, so
 ``count: Annotated[int, ...]`` shows as ``count: int`` there. A header written by hand, such as ``.. py:data:: demo.x``
