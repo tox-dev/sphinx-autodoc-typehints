@@ -15,7 +15,6 @@ from _docstring.conftest import INT, STR
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from io import StringIO
     from types import ModuleType
 
     from conftest import BuildText, MakeModule
@@ -470,11 +469,9 @@ def test_attrs_class_whose_annotations_fail_documents_its_fields_untyped(  # pra
         ),
     ],
 )
-@mark.sphinx("text", testroot="attrs")
-def test_build_documents_the_fields_of_an_attrs_class(
-    build_text: BuildText, warning: StringIO, rst: str, expected: str
-) -> None:
-    assert (build_text(rst), warning.getvalue()) == (expected, "")
+@mark.sphinx("text", testroot="attrs", exception_on_warning=True)
+def test_build_documents_the_fields_of_an_attrs_class(build_text: BuildText, rst: str, expected: str) -> None:
+    assert build_text(rst) == expected
 
 
 def test_instance_variable_of_a_class_whose_init_a_mock_decorates_stays_as_written(

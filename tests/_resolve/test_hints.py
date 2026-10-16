@@ -14,7 +14,6 @@ from sphinx_autodoc_typehints._refs import MyTypeAliasForwardRef
 from sphinx_autodoc_typehints._resolve import get_all_type_hints, get_descriptor_type_hint, resolve_annotations
 
 if TYPE_CHECKING:
-    from io import StringIO
     from pathlib import Path
     from types import FunctionType, GetSetDescriptorType, MemberDescriptorType, ModuleType
 
@@ -723,10 +722,10 @@ def slotted(make_stubbed_module: MakeStubbedModule) -> ModuleType:
         ),
     ],
 )
+@mark.sphinx(exception_on_warning=True)
 def test_build_documents_the_types_of_a_stub_or_a_string(
     request: FixtureRequest,
     build_text: BuildText,
-    warning: StringIO,
     fixture_name: str | None,
     rst: str,
     expected: str,
@@ -734,7 +733,7 @@ def test_build_documents_the_types_of_a_stub_or_a_string(
     # pytest.param cannot carry usefixtures, so each case names the fixture importing its module
     if fixture_name is not None:
         request.getfixturevalue(fixture_name)
-    assert (build_text(rst), warning.getvalue()) == (expected, "")
+    assert build_text(rst) == expected
 
 
 @mark.skipif(version_info < (3, 14), reason="eager annotations fail at import instead")
@@ -755,9 +754,11 @@ def test_get_all_type_hints_keeps_an_attrs_field_naming_nothing(  # pragma: >=3.
 
 # subscripting a class that is no generic raises on evaluation (#712)
 @mark.skipif(version_info < (3, 14), reason="eager annotations fail at import instead")
-@mark.sphinx("text", testroot="integration", confoverrides={"always_document_param_types": True})
+@mark.sphinx(
+    "text", testroot="integration", confoverrides={"always_document_param_types": True}, exception_on_warning=True
+)
 def test_build_shows_the_source_of_an_annotation_whose_evaluation_raises(  # pragma: >=3.14 cover
-    build_text: BuildText, warning: StringIO, make_module: Callable[[str], ModuleType]
+    build_text: BuildText, make_module: Callable[[str], ModuleType]
 ) -> None:
     module = make_module(
         dedent("""\
@@ -769,7 +770,7 @@ def test_build_shows_the_source_of_an_annotation_whose_evaluation_raises(  # pra
                 \"\"\"Stub.\"\"\"
         """)
     )
-    assert (build_text(f".. autofunction:: {module.__name__}.add_node_between_nodes"), warning.getvalue()) == (
+    assert (build_text(f".. autofunction:: {module.__name__}.add_node_between_nodes")) == (
         dedent(f"""\
             {module.__name__}.add_node_between_nodes(g)
 
@@ -780,6 +781,5 @@ def test_build_shows_the_source_of_an_annotation_whose_evaluation_raises(  # pra
 
                Return type:
                   "None"
-        """),
-        "",
+        """)
     )

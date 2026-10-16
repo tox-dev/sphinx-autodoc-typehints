@@ -14,7 +14,6 @@ from sphinx_autodoc_typehints._render.annotation.aliases import alias_name_refer
 if TYPE_CHECKING:
     from collections.abc import Callable
     from decimal import Decimal
-    from io import StringIO
     from pathlib import Path
     from types import ModuleType
 
@@ -342,9 +341,9 @@ def test_format_annotation_alias(config: Config, annotation: Annotation, expecte
         ),
     ],
 )
-@mark.sphinx("text", testroot="render-types")
-def test_pep695_alias_in_a_docstring(build_text: BuildText, warning: StringIO, index: str, expected: str) -> None:
-    assert (build_text(index), warning.getvalue()) == (expected, "")
+@mark.sphinx("text", testroot="render-types", exception_on_warning=True)
+def test_pep695_alias_in_a_docstring(build_text: BuildText, index: str, expected: str) -> None:
+    assert build_text(index) == expected
 
 
 @mark.parametrize(
@@ -363,11 +362,11 @@ def test_pep695_alias_in_a_docstring(build_text: BuildText, warning: StringIO, i
         ),
     ],
 )
-@mark.sphinx("text", testroot="render-types")
+@mark.sphinx("text", testroot="render-types", exception_on_warning=True)
 def test_pep695_recursive_alias_refers_to_itself(
-    build_text: BuildText, warning: StringIO, function: str, description: str, expected: str
+    build_text: BuildText, function: str, description: str, expected: str
 ) -> None:
-    assert (build_text(f".. autofunction:: render_generic.{function}"), warning.getvalue()) == (
+    assert (build_text(f".. autofunction:: render_generic.{function}")) == (
         dedent("""\
             render_generic.{}(some_param)
 
@@ -378,8 +377,7 @@ def test_pep695_recursive_alias_refers_to_itself(
 
                Return type:
                   "None"
-            """).format(function, description, expected),
-        "",
+            """).format(function, description, expected)
     )
 
 
@@ -398,10 +396,10 @@ def test_pep695_recursive_alias_refers_to_itself(
         ),
     ],
 )
-@mark.sphinx("text", testroot="render-types", confoverrides={"nitpicky": True})
-def test_pep695_generic_alias(build_text: BuildText, warning: StringIO, index: str, expected: str) -> None:
+@mark.sphinx("text", testroot="render-types", confoverrides={"nitpicky": True}, exception_on_warning=True)
+def test_pep695_generic_alias(build_text: BuildText, index: str, expected: str) -> None:
     text = build_text(index)
-    assert (text[text.index("render_generic.pair_func") :], warning.getvalue()) == (
+    assert (text[text.index("render_generic.pair_func") :]) == (
         dedent(f"""\
             render_generic.pair_func(value)
 
@@ -412,8 +410,7 @@ def test_pep695_generic_alias(build_text: BuildText, warning: StringIO, index: s
 
                Return type:
                   "None"
-            """),
-        "",
+            """)
     )
 
 
@@ -431,11 +428,11 @@ def test_pep695_generic_alias(build_text: BuildText, warning: StringIO, index: s
         ),
     ],
 )
-@mark.sphinx("text", testroot="render-types")
+@mark.sphinx("text", testroot="render-types", exception_on_warning=True)
 def test_pep695_alias_value_needs_a_guarded_import(
-    build_text: BuildText, warning: StringIO, function: str, summary: str, field: str
+    build_text: BuildText, function: str, summary: str, field: str
 ) -> None:
-    assert (build_text(f".. autofunction:: render_guard.api.{function}"), warning.getvalue()) == (
+    assert (build_text(f".. autofunction:: render_guard.api.{function}")) == (
         dedent("""\
             render_guard.api.{}(value)
 
@@ -446,6 +443,5 @@ def test_pep695_alias_value_needs_a_guarded_import(
 
                Return type:
                   "None"
-            """).format(function, summary, field),
-        "",
+            """).format(function, summary, field)
     )

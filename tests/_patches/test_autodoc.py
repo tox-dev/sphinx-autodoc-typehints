@@ -76,11 +76,9 @@ def test_overloads_stay_visible_beside_an_app_with_the_extension_never_built(
         ),
     ],
 )
-@mark.sphinx("text", testroot="dummy")
-def test_patched_method_documents_as_the_original(
-    build_text: BuildText, app: SphinxTestApp, method: str, expected: str
-) -> None:
-    assert (build_text(f".. automethod:: {method}"), app.warning.getvalue()) == (expected, "")
+@mark.sphinx("text", testroot="dummy", exception_on_warning=True)
+def test_patched_method_documents_as_the_original(build_text: BuildText, method: str, expected: str) -> None:
+    assert build_text(f".. automethod:: {method}") == expected
 
 
 @mark.sphinx("text", testroot="dummy")

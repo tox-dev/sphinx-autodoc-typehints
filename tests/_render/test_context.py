@@ -9,8 +9,6 @@ from sphinx_autodoc_typehints._render import annotation_state, render_context
 from sphinx_autodoc_typehints._render.context import RenderContext
 
 if TYPE_CHECKING:
-    from io import StringIO
-
     from conftest import BuildText
     from sphinx.config import Config
 
@@ -49,11 +47,9 @@ def test_annotation_state_restores_the_default_on_error(config: Config) -> None:
 
 
 # regression test for #750
-@mark.sphinx("text", testroot="reentrant-formatter")
-def test_render_context_survives_a_formatter_documenting_another_object(
-    build_text: BuildText, warning: StringIO
-) -> None:
-    assert (build_text(".. autofunction:: demo_reentrant.outer"), warning.getvalue()) == (
+@mark.sphinx("text", testroot="reentrant-formatter", exception_on_warning=True)
+def test_render_context_survives_a_formatter_documenting_another_object(build_text: BuildText) -> None:
+    assert (build_text(".. autofunction:: demo_reentrant.outer")) == (
         dedent("""\
             demo_reentrant.outer(flag)
 
@@ -67,6 +63,5 @@ def test_render_context_survives_a_formatter_documenting_another_object(
 
                Returns:
                   it
-        """),
-        "",
+        """)
     )

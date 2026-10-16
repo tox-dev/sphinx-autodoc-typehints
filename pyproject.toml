@@ -67,6 +67,7 @@ test = [
   "pytest>=9.1.1",
   "pytest-cov>=7.1",
   "pytest-randomly>=5",
+  "pytest-xdist>=3.8",
   "sphinx-design>=0.7",
   "sphobjinv>=2.4",
   "typing-extensions>=4.16",

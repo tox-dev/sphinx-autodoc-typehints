@@ -11,7 +11,6 @@ from sphinx_autodoc_typehints._docstring.parameters import escape_trailing_under
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from io import StringIO
     from types import FunctionType
 
     from conftest import BuildText
@@ -455,7 +454,8 @@ def test_unpacked_kwargs_keys_get_their_types(
         ),
     ],
 )
-def test_always_document_param_types(build_text: BuildText, warning: StringIO, expected: str) -> None:
+@mark.sphinx(exception_on_warning=True)
+def test_always_document_param_types(build_text: BuildText, expected: str) -> None:
     text = build_text(
         dedent("""\
             .. autofunction:: dummy_module.undocumented_function
@@ -465,7 +465,7 @@ def test_always_document_param_types(build_text: BuildText, warning: StringIO, e
                 :special-members: __init__
         """)
     )
-    assert (text, warning.getvalue()) == (expected, "")
+    assert text == expected
 
 
 @mark.sphinx(confoverrides={"always_document_param_types": True, "typehints_defaults": "braces-after"})
