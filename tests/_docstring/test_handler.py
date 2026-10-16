@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from functools import cmp_to_key, partial, update_wrapper, wraps
+from functools import cached_property, cmp_to_key, partial, update_wrapper, wraps
 from inspect import Parameter, Signature, signature
 from os import utime
 from pathlib import Path
@@ -205,6 +205,29 @@ def test_wrapper_lists_the_parameters_it_states(process: Process) -> None:
         ":param count:",
         "",
         f":rtype: {BOOL}",
+    ]
+
+
+class _DeprecatedGetters:
+    @property
+    @deprecated("use size_v2")
+    def plain(self) -> int: ...
+
+    @cached_property
+    @deprecated("use size_v2")
+    def cached(self) -> int: ...
+
+
+@mark.parametrize("member", [param("plain", id="property"), param("cached", id="cached-property")])
+def test_process_docstring_marks_a_deprecated_property_getter(process: Process, member: str) -> None:
+    prop = vars(_DeprecatedGetters)[member]
+    assert process("property", f"mod._DeprecatedGetters.{member}", prop, ["Size."]) == [
+        "Size.",
+        "",
+        ".. sphinx_autodoc_typehints_deprecated::",
+        "",
+        "   use size_v2",
+        "",
     ]
 
 
