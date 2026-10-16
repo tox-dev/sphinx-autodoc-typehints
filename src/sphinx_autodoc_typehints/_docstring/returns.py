@@ -48,7 +48,7 @@ def inject_rtype(entry: Entry, lines: list[str], fmt: FieldListFormat, hints: Re
         ):
             # asked first, as it turns numpydoc's sections into the fields the Yields entry is read from
             described = fmt.has_return_description(lines)
-            _type_yields(produced, app, lines)
+            _type_yields(produced, description_from_doc(type_hints["return"]), app, lines)
             # the Yields section covers what it produces, leaving the value its return statement gives, the R of
             # Generator[Y, S, R], for a Returns section that describes it
             match get_args(produced) if get_origin(produced) is Generator else ():
@@ -74,18 +74,25 @@ def _unannotated(annotation: Hint) -> Hint:
     return get_args(annotation)[0] if get_origin(annotation) is Annotated else annotation
 
 
-def _type_yields(annotation: Hint, app: Sphinx, lines: list[str]) -> None:
+def _type_yields(annotation: Hint, description: str | None, app: Sphinx, lines: list[str]) -> None:
     # found again, as reading the return description above may have converted the sections before it
     at = next(at for at, line in enumerate(lines) if line.startswith(_YIELDS_FIELDS))
     _, field, text = lines[at].split(":", 2)
     text = text.strip()
+    args = get_args(annotation)
+    following = next((line for line in lines[at + 1 :] if line.strip()), "")
+    # the `Doc` describes what is yielded only where the entry holds at most a type, with no description inline or on
+    # the indented lines below it
+    if description and not following[:1].isspace() and (not text or (reads_as_type(text) and " -- " not in text)):
+        typed = text or (as_field_type(args[0], app.config) if args else "")
+        lines[at] = f":{field}: {typed} -- {description}" if typed else f":{field}: {description}"
+        return
     # the text before -- or the whole entry may already be a type, as numpydoc writes an entry holding the type alone,
     # and a bullet, which starts one of several entries, reads as one too
-    if not (args := get_args(annotation)) or (text and reads_as_type(text)):
+    if not args or (text and reads_as_type(text)):
         return
     # numpydoc lists several yielded values as typed bullets under an empty entry
-    following = next((stripped for line in lines[at + 1 :] if (stripped := line.strip())), "")
-    if not text and following.startswith("* ") and reads_as_type(following[2:]):
+    if not text and (bullet := following.strip()).startswith("* ") and reads_as_type(bullet[2:]):
         return
     formatted = as_field_type(args[0], app.config)
     if text:
