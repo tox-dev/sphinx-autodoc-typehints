@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated, ClassVar, Generic, NotRequired, Required, TypedDict, TypeVar, Unpack
+from typing import Annotated, ClassVar, Generic, Literal, NotRequired, Required, TypedDict, TypeVar, Unpack
 
 from typing_extensions import Doc, ReadOnly
 from typing_extensions import TypedDict as ExtensionsTypedDict
@@ -39,6 +39,10 @@ class Extra(ExtensionsTypedDict, extra_items=int):
 
 class ExtraUnstated(ExtensionsTypedDict, extra_items=int):
     """Typed extra items."""
+
+
+class ExtraLiteral(ExtensionsTypedDict, extra_items=Literal["a", "b"]):
+    """Literal extra items."""
 
 
 class Shape(ExtensionsTypedDict):
