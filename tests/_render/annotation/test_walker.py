@@ -52,6 +52,7 @@ StdItems = typing.TypeVarTuple("StdItems")
 RecList = typing.Union[int, typing.List["RecList"]]
 MutualRecA = typing.Union[bool, typing.List["MutualRecB"]]
 MutualRecB = typing.Union[str, typing.List["MutualRecA"]]
+NoModule = type("NoModule", (), {"__module__": None})
 
 
 class SomeEnum(Enum):
@@ -100,6 +101,7 @@ _CASES: Final[list[ParameterSet]] = [
     param(type(None), ":py:obj:`None`", id="NoneType"),
     param(Ellipsis, ":py:data:`...<Ellipsis>`", id="Ellipsis"),
     param(ForwardRef("SomeClass"), "SomeClass", id="ForwardRef"),
+    param(NoModule, "NoModule", id="class-without-module"),
     param((), "()", id="empty-tuple"),
     param((int,), "(:py:class:`int`, )", id="one-tuple"),
     param((int, str), "(:py:class:`int`, :py:class:`str`)", id="tuple"),
