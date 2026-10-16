@@ -10,12 +10,11 @@ the :doc:`reference` lists the options.
  The event flow
 ****************
 
-On a rendered page the signature lists the parameter names alone, and each field below it carries a type. The
-extension produces that at four points of a build. Sphinx announces each step of a build as an :doc:`event
-<sphinx:extdev/event_callbacks>`, and an extension registers functions to run on the ones it cares about. Autodoc adds
-events of its own around each object it documents, and the extension changes the signature and the docstring there.
-For each object, Sphinx calls the extension at three points. Once every document is read, a post-transform, a pass
-over the parsed documents before Sphinx writes them out, makes the last choice:
+On a rendered page the signature lists the parameter names alone, and each field below it carries a type. Sphinx
+announces each step of a build as an :doc:`event <sphinx:extdev/event_callbacks>`, and an extension registers functions
+to run on the ones it cares about. Autodoc adds events around each object it documents. This extension changes the
+signature, base classes and docstring there, then handles the parsed description. Once every document is read, a
+post-transform chooses whether to link each documented alias or expand it:
 
 .. list-table::
     :header-rows: 1
@@ -25,10 +24,12 @@ over the parsed documents before Sphinx writes them out, makes the last choice:
       - What the extension does
     * - :event:`autodoc-process-signature`
       - strip the annotations from the signature, keep them with :confval:`typehints_use_signature`
+    * - :event:`autodoc-process-bases`
+      - render the base classes shown by ``:show-inheritance:`` as field types
     * - :event:`autodoc-process-docstring`
       - evaluate the annotations, write the types into the docstring's fields
     * - :event:`object-description-transform`
-      - add the type parameters after the name, render the header's type again
+      - add type parameters after the name, render the header's type and place the return type field
     * - post-transform
       - choose between each type alias and the type it stands for
 
@@ -45,12 +46,14 @@ over the parsed documents before Sphinx writes them out, makes the last choice:
         Note over sphinx_autodoc,extension_handlers: for each documented object
         sphinx_autodoc->>+extension_handlers: autodoc-process-signature
         extension_handlers-->>-sphinx_autodoc: signature without types, or one line per overload
+        sphinx_autodoc->>+extension_handlers: autodoc-process-bases
+        extension_handlers-->>-sphinx_autodoc: bases rendered as types
         sphinx_autodoc->>sphinx_docstrings: autodoc-process-docstring
         sphinx_docstrings-->>sphinx_autodoc: Google and NumPy sections as reST fields
         sphinx_autodoc->>+extension_handlers: autodoc-process-docstring
         extension_handlers-->>-sphinx_autodoc: fields with the types, defaults and overloads
         sphinx_autodoc->>+extension_handlers: object-description-transform
-        extension_handlers-->>-sphinx_autodoc: header with type parameters and the data's type
+        extension_handlers-->>-sphinx_autodoc: header types and return type field
         Note over sphinx_autodoc,extension_handlers: after every document is read
         sphinx_autodoc->>+extension_handlers: post-transform
         extension_handlers-->>-sphinx_autodoc: link to the alias or its expanded value

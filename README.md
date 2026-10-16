@@ -27,21 +27,90 @@ pip install sphinx-autodoc-typehints
 extensions = ["sphinx.ext.autodoc", "sphinx_autodoc_typehints"]
 ```
 
-## Why not Sphinx's built-in autodoc_typehints?
+## Why not Sphinx's built-in `autodoc_typehints`?
 
-Sphinx's `autodoc_typehints = "description"` already moves annotations into the parameter and return fields, links them,
-and works with napoleon docstrings and type comments. This extension adds:
+Sphinx's
+[`autodoc_typehints = "description"`](https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#confval-autodoc_typehints)
+already moves annotations into the parameter and return fields, links them, and works with napoleon docstrings and type
+comments. If your annotations resolve at runtime and you use Sphinx fields or napoleon, that setting may be enough.
 
-- names imported under `if TYPE_CHECKING:` link to their real module (`decimal.Decimal`, not a bare `Decimal`)
-- types from `.pyi` stubs for functions that carry no annotations, such as those of a C extension
-- `**kwargs: Unpack[TypedDict]` keyword fields typed from the `TypedDict` entries
-- numpydoc `Parameters` sections typed in place, rather than repeated in a second list
-- `@overload` signatures in an `Overloads` field, and default values next to the types
-- `@deprecated` notices, `@override` links and property setter types
+<details>
+<summary>Show example code and configuration</summary>
+
+The same `demo.py` below renders differently with each option. It uses `typing-extensions` for `Doc`. Both builds use
+`.. automodule:: demo` with `:members:`. The left adds `typehints_defaults = "braces"` and
+`always_document_param_types = True` to the configuration above; the right loads only `sphinx.ext.autodoc` with
+`autodoc_typehints = "description"`.
+
+```python
+from __future__ import annotations
+
+from typing import Annotated, Literal, NotRequired, TypedDict, Unpack, overload
+
+from typing_extensions import Doc
+
+
+class Options(TypedDict):
+    """Optional controls for a request."""
+
+    retries: NotRequired[int]
+    trace: NotRequired[bool]
+
+
+@overload
+def fetch(path: str, *, mode: Literal["text"], **options: Unpack[Options]) -> str: ...
+
+
+@overload
+def fetch(path: str, *, mode: Literal["bytes"], **options: Unpack[Options]) -> bytes: ...
+
+
+def fetch(
+    path: Annotated[str, Doc("resource path")],
+    *,
+    mode: Literal["text", "bytes"] = "text",
+    **options: Unpack[Options],
+) -> str | bytes:
+    """Fetch a resource.
+
+    :keyword retries: attempts after a failure
+    :keyword trace: log each request
+    """
+    return "" if mode == "text" else b""
+```
+
+</details>
+
+![This extension puts overloads in a field, types the retries and trace keywords, and turns Annotated Doc into a path description. Built-in Sphinx keeps the overloads in signatures and leaves those keyword descriptions untyped.](docs/_static/sphinx-comparison.png)
+
+The
+[live TypedDict example](https://sphinx-autodoc-typehints.readthedocs.io/en/latest/concepts.html#keyword-arguments-from-a-typeddict)
+lets you change the configuration and inspect its output. See the examples for each difference:
+
+- [Names imported under `if TYPE_CHECKING:`](https://sphinx-autodoc-typehints.readthedocs.io/en/latest/typing.html#type-checking-imports)
+  link to their real module (`decimal.Decimal`, not a bare `Decimal`).
+- [Types from `.pyi` stubs](https://sphinx-autodoc-typehints.readthedocs.io/en/latest/how-to.html#pyi-stubs) fill in
+  functions that carry no annotations, such as those of a C extension.
+- [`**kwargs: Unpack[TypedDict]`](https://sphinx-autodoc-typehints.readthedocs.io/en/latest/typing.html#kwargs-typed-with-unpack)
+  gets keyword fields typed from the `TypedDict` entries.
+- [`Annotated[..., Doc(...)]`](https://sphinx-autodoc-typehints.readthedocs.io/en/latest/typing.html#doc) puts
+  descriptions from annotations into the parameter fields.
+- [numpydoc `Parameters` sections](https://sphinx-autodoc-typehints.readthedocs.io/en/latest/how-to.html#use-with-numpydoc)
+  get types in place, rather than in a second list.
+- [`@overload` variants](https://sphinx-autodoc-typehints.readthedocs.io/en/latest/typing.html#overload) get an
+  `Overloads` field, and
+  [default values](https://sphinx-autodoc-typehints.readthedocs.io/en/latest/how-to.html#show-default-values) appear
+  next to the types.
+- [`@deprecated` notices](https://sphinx-autodoc-typehints.readthedocs.io/en/latest/typing.html#deprecated),
+  [`@override` links](https://sphinx-autodoc-typehints.readthedocs.io/en/latest/typing.html#override), and
+  [property setter types](https://sphinx-autodoc-typehints.readthedocs.io/en/latest/reference.html#property-setters) add
+  details beyond parameter types.
 
 The
 [full comparison](https://sphinx-autodoc-typehints.readthedocs.io/en/latest/concepts.html#compared-with-sphinx-s-built-in-type-hints)
-lists the differences, and every example in the docs shows the module rendered both ways.
+lists the differences, and the live examples show each module rendered both ways.
 
-The [documentation](https://sphinx-autodoc-typehints.readthedocs.io/en/latest/) has a tutorial, how-to guides and the
-option reference; [CONTRIBUTING.md](CONTRIBUTING.md) explains how to work on the extension.
+The [typing features gallery](https://sphinx-autodoc-typehints.readthedocs.io/en/latest/typing.html) shows source and
+rendered output for each construct. The [documentation](https://sphinx-autodoc-typehints.readthedocs.io/en/latest/) also
+has a tutorial, how-to guides and the option reference; [CONTRIBUTING.md](CONTRIBUTING.md) explains how to work on the
+extension.
