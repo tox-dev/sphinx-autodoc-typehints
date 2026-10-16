@@ -13,6 +13,7 @@ from .._objects import (
     constructor_name,
     declared_signature,
     prefix_of,
+    property_getter,
 )
 from .._render import add_type_css_class, as_field_type, format_annotation
 from .._resolve import (
@@ -55,7 +56,7 @@ def process_docstring(
 ) -> None:
     """Add the types of the object autodoc documents as `name` to its docstring `lines`."""
     written = WRITTEN_BEFORE_NAPOLEON.pop(id(lines), None)
-    documented = obj.fget if isinstance(obj, property) else obj
+    documented = property_getter(obj) or obj
     # a stub supplies the types of what it describes, so editing it has to reread the pages documenting them
     if (stub := stub_path(documented, name)) is not None:
         app.env.note_dependency(str(stub))

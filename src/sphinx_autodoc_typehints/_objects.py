@@ -6,7 +6,7 @@ They unwrap callables, pick the constructor a signature comes from, and find wha
 
 from __future__ import annotations
 
-from functools import partial, partialmethod
+from functools import cached_property, partial, partialmethod
 from inspect import Signature, getfile, getmodule, getsourcefile, getsourcelines, isclass, isroutine, unwrap
 from sys import modules
 from types import CodeType, FrameType, FunctionType, MethodType, ModuleType, TracebackType
@@ -76,6 +76,13 @@ def declared_signature(obj: Documented) -> Signature | None:
     """Return the signature an object states in `__signature__`, as a pydantic model does, which callers go by."""
     # a property computing it may raise anything, as a metaclass's does for a class it cannot describe yet
     return signature if isinstance(signature := safe_getattr(obj, "__signature__", None), Signature) else None
+
+
+def property_getter(member: Documented) -> Callable[..., object] | None:
+    """Return the getter of a `property` or a `functools.cached_property`, `None` for any other member."""
+    if isinstance(member, cached_property):
+        return member.func
+    return member.fget if isinstance(member, property) else None
 
 
 def constructor_name(cls: type) -> Literal["__new__", "__init__"]:
@@ -184,5 +191,6 @@ __all__ = [
     "is_attrs_class",
     "object_at",
     "prefix_of",
+    "property_getter",
     "stored_name",
 ]

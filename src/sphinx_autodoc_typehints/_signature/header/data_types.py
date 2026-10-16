@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from functools import cached_property
 from inspect import getattr_static
 from typing import TYPE_CHECKING, Final
 
@@ -11,7 +10,7 @@ from sphinx.util import logging
 from sphinx.util.inspect import safe_getattr
 
 from sphinx_autodoc_typehints._documented import render_scope
-from sphinx_autodoc_typehints._objects import object_at, prefix_of
+from sphinx_autodoc_typehints._objects import object_at, prefix_of, property_getter
 from sphinx_autodoc_typehints._private_imports import parse_annotation
 from sphinx_autodoc_typehints._refs import WrittenTypeAlias
 from sphinx_autodoc_typehints._render import as_signature_type
@@ -93,11 +92,11 @@ def _hint(app: Sphinx, module: str, fullname: str, objtype: str) -> Hint | Writt
             else:
                 # a descriptor may hand out the property only on class access
                 member = safe_getattr(owner, attribute, None)
-            if isinstance(member, cached_property):
-                getter = member.func
-            else:
-                getter = member.fget if isinstance(member, property) else None
-            hint = _MISSING if getter is None else _resolved_hints(app, getter, name).get("return", _MISSING)
+            hint = (
+                _MISSING
+                if (getter := property_getter(member)) is None
+                else _resolved_hints(app, getter, name).get("return", _MISSING)
+            )
         else:
             # the document being read is a new object each time, so neither an earlier document nor build matches
             if (resolved := _RESOLVED.get(document := app.env.current_document)) is None:

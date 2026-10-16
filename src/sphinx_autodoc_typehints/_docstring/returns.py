@@ -27,6 +27,7 @@ def inject_rtype(entry: Entry, lines: list[str], fmt: FieldListFormat, hints: Re
     if (
         isclass(entry.obj)
         or isdatadescriptor(entry.obj)
+        or entry.what == "property"
         or entry.documents_init
         or not app.config.typehints_document_rtype
     ):
