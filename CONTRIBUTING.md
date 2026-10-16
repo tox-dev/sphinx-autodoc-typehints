@@ -59,7 +59,7 @@ pointing up fails `tox r -e fix`.
 flowchart TB
     extension["_extension<br/>setup, event wiring"]
     config["_config<br/>options, validation"]
-    patches["_patches<br/>autodoc, napoleon, docutils patches"]
+    patches["_patches<br/>autodoc, docutils patches"]
     docstring["_docstring<br/>docstring fields"]
     signature["_signature<br/>signatures and headers"]
     documented["_documented<br/>the documented object"]
@@ -100,7 +100,7 @@ every module opens with a docstring stating what it owns.
 | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `_extension.py`       | `setup`: registers the options, the roles, the directive and the post-transform, connects the event handlers and installs the patches                                                                                |
 | `_config.py`          | The configuration options and their validation                                                                                                                                                                       |
-| `_patches/`           | Monkeypatches to autodoc, to napoleon and to docutils                                                                                                                                                                |
+| `_patches/`           | Monkeypatches to autodoc and to docutils                                                                                                                                                                             |
 | `_docstring/`         | The `autodoc-process-docstring` handler, which writes the fields of parameters, of the return value, of attributes and the rest                                                                                      |
 | `_docstring/formats/` | One subpackage per docstring style the extension edits, `field_list` (reST field lists), `napoleon` output and `numpydoc` sections                                                                                   |
 | `_signature/`         | The `autodoc-process-signature` handler, and `header/`, which rewrites the overload lines, type parameters and data type of the header Sphinx builds                                                                 |
