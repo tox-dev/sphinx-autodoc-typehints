@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 from ast import (
     AST,
     And,
@@ -11,13 +12,16 @@ from ast import (
     Attribute,
     BoolOp,
     ClassDef,
+    Compare,
     Constant,
+    Eq,
     FunctionDef,
     If,
     Import,
     ImportFrom,
     Name,
     Not,
+    NotEq,
     UnaryOp,
     expr,
     iter_child_nodes,
@@ -92,8 +96,8 @@ def guarded_statements(module_code: str) -> tuple[tuple[stmt, ...], tuple[Syntax
 
 # `None` when `TYPE_CHECKING` plays no part in the test
 def _holds_when_type_checking(test: expr) -> bool | None:
-    if isinstance(test, Constant) and isinstance(test.value, bool):
-        return test.value
+    if isinstance(test, Constant):
+        return bool(test.value)
     # a bare name or from any alias the module gives typing
     if (isinstance(test, Name) and test.id == "TYPE_CHECKING") or (
         isinstance(test, Attribute) and test.attr == "TYPE_CHECKING"
@@ -101,12 +105,30 @@ def _holds_when_type_checking(test: expr) -> bool | None:
         return True
     if isinstance(test, UnaryOp) and isinstance(test.op, Not):
         return None if (operand := _holds_when_type_checking(test.operand)) is None else not operand
-    # unknown runtime operands cannot overturn a decisive constant or TYPE_CHECKING operand
-    if isinstance(test, BoolOp) and (
-        known := [held for value in test.values if (held := _holds_when_type_checking(value)) is not None]
-    ):
-        return all(known) if isinstance(test.op, And) else any(known)
+    if isinstance(test, Compare):
+        return _platform_comparison(test)
+    if isinstance(test, BoolOp):
+        values = [_holds_when_type_checking(value) for value in test.values]
+        if isinstance(test.op, And):
+            holds = False if False in values else True if all(value is True for value in values) else None
+        else:
+            holds = True if True in values else False if all(value is False for value in values) else None
+        return holds
     return None
+
+
+def _platform_comparison(test: Compare) -> bool | None:
+    if len(test.ops) != 1 or len(test.comparators) != 1:
+        return None
+    if not isinstance(test.left, Attribute) or not isinstance(test.left.value, Name):
+        return None
+    if test.left.value.id != "sys" or test.left.attr != "platform":
+        return None
+    if not isinstance(test.comparators[0], Constant) or not isinstance(test.comparators[0].value, str):
+        return None
+    if isinstance(test.ops[0], Eq):
+        return sys.platform == test.comparators[0].value
+    return sys.platform != test.comparators[0].value if isinstance(test.ops[0], NotEq) else None
 
 
 def defined_names(node: AST) -> Iterator[str]:

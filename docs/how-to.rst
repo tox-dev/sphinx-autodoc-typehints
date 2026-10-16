@@ -546,7 +546,9 @@ branch of ``if not TYPE_CHECKING:``, or joins the test to others with ``and`` or
 type checker does, so with ``else: ArrayLike = Any`` they show the guarded ``ArrayLike``. The module itself stays as it
 is at runtime. The fallback stays for your code and for autodoc, and a name only the block binds, such as a
 :class:`~typing.Protocol` defined there, doesn't become a member :rst:dir:`automodule` lists.
-An ``and False`` guard skips its body even when ``TYPE_CHECKING`` is true.
+An ``and False`` or ``and 0`` guard skips its body even when ``TYPE_CHECKING`` is true. A comparison of
+``sys.platform`` with a string follows the build platform. If another operand cannot be determined without running
+module code, the extension leaves that guard alone.
 
 When the block imports a dependency the docs environment lacks, the extension mocks it the way
 :confval:`autodoc_mock_imports` would, so its types still render as references; install it when you want those

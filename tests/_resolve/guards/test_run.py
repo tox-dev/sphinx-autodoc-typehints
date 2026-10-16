@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from csv import Error
+from datetime import date
 from decimal import Decimal
 from importlib import import_module
 from pathlib import Path
-from sys import modules, version_info
+from sys import modules, platform, version_info
 from textwrap import dedent, indent
 from typing import TYPE_CHECKING, Final, Protocol, get_overloads
 
@@ -83,6 +84,25 @@ def test_resolve_type_guarded_imports_skips_a_false_compound_guard(make_module: 
     )
     resolve_type_guarded_imports([], module.consume)
     assert "Ghost" not in guarded_names(module.consume)
+
+
+def test_resolve_type_guarded_imports_uses_the_build_platform(make_module: Callable[[str], ModuleType]) -> None:
+    module = make_module(
+        dedent("""\
+            from __future__ import annotations
+            import sys
+            from typing import TYPE_CHECKING
+
+            if TYPE_CHECKING and sys.platform == "win32":
+                from datetime import date as PlatformType
+            else:
+                from decimal import Decimal as PlatformType
+
+            def consume(value: PlatformType) -> None: ...
+        """)
+    )
+    expected = date if platform == "win32" else Decimal
+    assert get_all_type_hints([], module.consume, "mod.consume", {})["value"] is expected
 
 
 def test_resolve_type_guarded_imports_skips_an_instance_but_not_its_class(
