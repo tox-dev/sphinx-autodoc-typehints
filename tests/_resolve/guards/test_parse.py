@@ -121,6 +121,101 @@ _DECIMAL_GUARD: Final[str] = dedent("""\
             dedent("""\
                 from typing import TYPE_CHECKING
 
+                if TYPE_CHECKING and 0:
+                    import os
+                else:
+                    import sys
+            """),
+            ["import sys"],
+            id="compound-and-zero",
+        ),
+        param(
+            dedent("""\
+                import sys
+                from typing import TYPE_CHECKING
+
+                if TYPE_CHECKING and sys.platform == "win32":
+                    import os
+                else:
+                    import decimal
+            """),
+            ["import os"] if sys.platform == "win32" else ["import decimal"],
+            id="compound-and-platform",
+        ),
+        param(
+            dedent("""\
+                import sys
+                from typing import TYPE_CHECKING
+
+                if TYPE_CHECKING and sys.platform != "win32":
+                    import os
+                else:
+                    import decimal
+            """),
+            ["import decimal"] if sys.platform == "win32" else ["import os"],
+            id="compound-and-other-platform",
+        ),
+        param(
+            dedent("""\
+                import sys
+                from typing import TYPE_CHECKING
+
+                if TYPE_CHECKING and sys.platform in {"win32", "linux"}:
+                    import os
+            """),
+            [],
+            id="compound-unsupported-platform-test",
+        ),
+        param(
+            dedent("""\
+                import sys
+                from typing import TYPE_CHECKING
+
+                if TYPE_CHECKING and "win32" == sys.platform:
+                    import os
+            """),
+            [],
+            id="compound-reversed-platform-comparison",
+        ),
+        param(
+            dedent("""\
+                import sys
+                from typing import TYPE_CHECKING
+
+                if TYPE_CHECKING and "win32" == sys.platform == "linux":
+                    import os
+            """),
+            [],
+            id="compound-chained-platform-comparison",
+        ),
+        param(
+            dedent("""\
+                from typing import TYPE_CHECKING
+
+                if not TYPE_CHECKING or 0:
+                    import os
+                else:
+                    import decimal
+            """),
+            ["import decimal"],
+            id="compound-or-false",
+        ),
+        param(
+            dedent("""\
+                from typing import TYPE_CHECKING
+
+                if TYPE_CHECKING and condition():
+                    import os
+                else:
+                    import decimal
+            """),
+            [],
+            id="compound-and-unknown",
+        ),
+        param(
+            dedent("""\
+                from typing import TYPE_CHECKING
+
                 if TYPE_CHECKING and False:
                     import os
                 else:
