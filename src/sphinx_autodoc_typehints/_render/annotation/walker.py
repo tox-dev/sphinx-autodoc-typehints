@@ -30,7 +30,6 @@ from typing import (
 )
 
 from sphinx.ext.autodoc.mock import ismock
-from sphinx.util import rst
 from sphinx.util.inspect import TypeAliasForwardRef
 
 from sphinx_autodoc_typehints._objects import alias_lookup_names
@@ -42,6 +41,7 @@ from ..context import render_context
 from ..deferred import defer_alias_choice
 from ..enum_member import ENUM_MEMBER_ROLE
 from ..intersphinx import inventory, mapped_name
+from ..value import CONSTANT_ROLE, value_markup
 from .aliases import (
     alias_crossref,
     alias_name_reference,
@@ -147,7 +147,7 @@ def _atom(annotation: RenderNode, config: Config) -> str | None:
     if isinstance(annotation, ForwardRef):
         return annotation.__forward_arg__
     if annotation is None or annotation is type(None):
-        return ":py:obj:`None`"
+        return f":{CONSTANT_ROLE}:`None`"
     if annotation is Ellipsis:
         return ":py:data:`...<Ellipsis>`"
     # a PEP 661 sentinel stands for itself, so the reference names it in its defining module rather than by its type
@@ -475,14 +475,10 @@ def _literal(reference: _Reference) -> _Frame:
             else:
                 # a ~ would keep only the member name, and members of different enums would read the same
                 literal_parts.append(f":{ENUM_MEMBER_ROLE}:`{member} <{module}.{member}>`")
-        elif arg is None:
-            literal_parts.append(":py:obj:`None`")
-        elif isinstance(arg, bool):
-            # the Python docs list both as data on their constants page
-            literal_parts.append(f":py:data:`{arg}`")
+        elif arg is None or isinstance(arg, bool):
+            literal_parts.append(f":{CONSTANT_ROLE}:`{arg}`")
         else:
-            # an inline literal cannot hold a backtick, the literal role takes it escaped
-            literal_parts.append(f":literal:`{rst.escape(text)}`" if "`" in (text := repr(arg)) else f"``{text}``")
+            literal_parts.append(value_markup(repr(arg)))
     if reference.short_literals:
         yield _Rendered(" | ".join(literal_parts))
     else:

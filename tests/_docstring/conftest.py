@@ -20,7 +20,7 @@ INT: Final[str] = r":sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``"
 STR: Final[str] = r":sphinx_autodoc_typehints_type:`\:py\:class\:\`str\``"
 FLOAT: Final[str] = r":sphinx_autodoc_typehints_type:`\:py\:class\:\`float\``"
 BOOL: Final[str] = r":sphinx_autodoc_typehints_type:`\:py\:class\:\`bool\``"
-NONE: Final[str] = r":sphinx_autodoc_typehints_type:`\:py\:obj\:\`None\``"
+NONE: Final[str] = r":sphinx_autodoc_typehints_type:`\:sphinx\_autodoc\_typehints\_constant\:\`None\``"
 
 
 # a closer sphinx mark replaces the module's confoverrides whole, so each one repeats the base option

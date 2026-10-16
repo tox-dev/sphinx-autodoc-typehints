@@ -18,12 +18,12 @@ pytestmark: Final[MarkDecorator] = mark.sphinx("text", testroot="dummy")
 @mark.parametrize(
     ("defaults", "annotated", "expected"),
     [
-        param("comma", True, ", default: ``1``", id="comma-after-a-type"),
-        param("braces", True, " (default: ``1``)", id="braces-after-a-type"),
-        param("braces-after", True, " (default: ``1``)", id="braces-after-after-a-type"),
-        param("comma", False, "default: ``1``", id="comma-alone"),
-        param("braces", False, "default: ``1``", id="braces-alone"),
-        param("braces-after", False, " (default: ``1``)", id="braces-after-alone"),
+        param("comma", True, ", default: :sphinx_autodoc_typehints_value:`1`", id="comma-after-a-type"),
+        param("braces", True, " (default: :sphinx_autodoc_typehints_value:`1`)", id="braces-after-a-type"),
+        param("braces-after", True, " (default: :sphinx_autodoc_typehints_value:`1`)", id="braces-after-after-a-type"),
+        param("comma", False, "default: :sphinx_autodoc_typehints_value:`1`", id="comma-alone"),
+        param("braces", False, "default: :sphinx_autodoc_typehints_value:`1`", id="braces-alone"),
+        param("braces-after", False, " (default: :sphinx_autodoc_typehints_value:`1`)", id="braces-after-alone"),
     ],
 )
 def test_format_default_by_style(app: SphinxTestApp, defaults: str, annotated: bool, expected: str) -> None:
@@ -55,12 +55,12 @@ class _MultiLineRepr:
         param(_Mode.FAST, "_Mode.FAST", id="enum-member"),
         param(frozenset({"gamma", "alpha", "beta"}), "frozenset({'alpha', 'beta', 'gamma'})", id="frozenset"),
         param(_MultiLineRepr(), "MultiLine(   a=1, )", id="multi-line-repr"),
-        param("x\\y", r"'x\\y'", id="backslash"),
+        param("x\\y", r"'x\\\\y'", id="backslash"),
     ],
 )
 def test_format_default_describes_it_like_the_signature(app: SphinxTestApp, default: object, expected: str) -> None:
     app.config.typehints_defaults = "comma"
-    assert format_default(app, default, annotated=True) == f", default: ``{expected}``"
+    assert format_default(app, default, annotated=True) == f", default: :sphinx_autodoc_typehints_value:`{expected}`"
 
 
 @mark.parametrize(

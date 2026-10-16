@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING
 
 from sphinx.util.inspect import object_description
 
+from sphinx_autodoc_typehints._render import value_markup
+
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
 
@@ -29,11 +31,11 @@ def format_default(app: Sphinx, default: object, *, annotated: bool) -> str | No
     """Describe a default the way `typehints_defaults` asks, after a type when `annotated` or on its own."""
     if default is Parameter.empty:
         return None
-    formatted = object_description(default)
+    formatted = value_markup(object_description(default))
     style = app.config.typehints_defaults
     if style.startswith("braces") if annotated else style == "braces-after":
-        return f" (default: ``{formatted}``)"
-    return f"{', ' if annotated else ''}default: ``{formatted}``"
+        return f" (default: {formatted})"
+    return f"{', ' if annotated else ''}default: {formatted}"
 
 
 def last_paragraph_end(lines: list[str], at: int) -> int:

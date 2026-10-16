@@ -329,6 +329,14 @@ The same rendering applies to the header autodoc writes for data, an attribute o
 with a ``:type:`` option, keeps its type as written. Each type the extension adds sits in an inline element with the
 CSS class ``sphinx_autodoc_typehints-type``, for a theme or stylesheet to target.
 
+A value the extension writes, such as ``'fill'`` of ``Literal["fill", 1, None]``, a default, or ``None`` in ``int |
+None`` or a return type, takes the colors of the project's :confval:`pygments_style`, and of ``pygments_dark_style`` for
+a theme such as furo that has one, the way a code block does. Each value sits in an inline element with the CSS classes
+``highlight`` and ``sphinx_autodoc_typehints-value``, and each of its tokens carries the Pygments class a code block
+would give it, as ``s1`` for a string or ``kc`` for ``None``. The stylesheet ``sphinx_autodoc_typehints.css`` the
+extension adds keeps the block background, border and padding of ``.highlight`` off these values and sets no color of
+its own.
+
 *****************
  Object features
 *****************

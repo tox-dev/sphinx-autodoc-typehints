@@ -28,13 +28,19 @@ from ._patches import (
 )
 from ._render import (
     ALIAS_CHOICE_ROLE,
+    CONSTANT_ROLE,
     ENUM_MEMBER_ROLE,
+    VALUE_ROLE,
+    VALUE_STYLESHEET,
     DeferAliasChoice,
+    add_value_stylesheet,
     alias_choice_role,
+    constant_role,
     enum_member_role,
     link_enum_member_owner,
     merge_alias_choices,
     unescape,
+    value_role,
 )
 from ._resolve import SHADOWED_BY_GUARD
 from ._signature import add_type_params, process_signature, render_header_types
@@ -53,9 +59,13 @@ def setup(app: Sphinx) -> dict[str, bool | str]:
     app.add_role("sphinx_autodoc_typehints_type", sphinx_autodoc_typehints_type_role)
     app.add_role(ALIAS_CHOICE_ROLE, alias_choice_role)
     app.add_role(ENUM_MEMBER_ROLE, enum_member_role)
+    app.add_role(VALUE_ROLE, value_role)
+    app.add_role(CONSTANT_ROLE, constant_role)
+    app.add_css_file(VALUE_STYLESHEET)
     app.add_directive(DEPRECATED_DIRECTIVE, DeprecatedDirective)
     app.add_post_transform(DeferAliasChoice)
     app.connect("config-inited", cache_fixup_module_name)
+    app.connect("builder-inited", add_value_stylesheet)
     app.connect("env-merge-info", merge_alias_choices)
     # after intersphinx, at the default priority, had its chance to link the member itself
     app.connect("missing-reference", link_enum_member_owner, priority=900)

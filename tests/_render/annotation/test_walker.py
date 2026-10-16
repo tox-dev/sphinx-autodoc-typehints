@@ -91,8 +91,8 @@ _CASES: Final[list[ParameterSet]] = [
     param(ModuleType, ":py:class:`~types.ModuleType`", id="ModuleType"),
     param(NotImplementedType, f":py:{_CLASS_SINCE_313_ROLE}:`~types.NotImplementedType`", id="NotImplementedType"),
     param(TracebackType, ":py:class:`~types.TracebackType`", id="TracebackType"),
-    param(None, ":py:obj:`None`", id="None"),
-    param(type(None), ":py:obj:`None`", id="NoneType"),
+    param(None, ":sphinx_autodoc_typehints_constant:`None`", id="None"),
+    param(type(None), ":sphinx_autodoc_typehints_constant:`None`", id="NoneType"),
     param(Ellipsis, ":py:data:`...<Ellipsis>`", id="Ellipsis"),
     param(ForwardRef("SomeClass"), "SomeClass", id="ForwardRef"),
     param(NoModule, "NoModule", id="class-without-module"),
@@ -170,9 +170,12 @@ _CASES: Final[list[ParameterSet]] = [
     ),
     param(
         typing.Union[str, bool, None],
-        ":py:class:`str` | :py:class:`bool` | :py:obj:`None`"
+        ":py:class:`str` | :py:class:`bool` | :sphinx_autodoc_typehints_constant:`None`"
         if version_info >= (3, 14)
-        else r":py:data:`~typing.Union`\ \[:py:class:`str`, :py:class:`bool`, :py:obj:`None`]",
+        else (
+            r":py:data:`~typing.Union`\ \[:py:class:`str`, :py:class:`bool`, "
+            r":sphinx_autodoc_typehints_constant:`None`]"
+        ),
         id="Union-str-bool-None",
     ),
     param(
@@ -184,16 +187,19 @@ _CASES: Final[list[ParameterSet]] = [
     ),
     param(
         typing.Optional[str],
-        ":py:class:`str` | :py:obj:`None`"
+        ":py:class:`str` | :sphinx_autodoc_typehints_constant:`None`"
         if version_info >= (3, 14)
         else r":py:data:`~typing.Optional`\ \[:py:class:`str`]",
         id="Optional-str",
     ),
     param(
         typing.Optional[str | bool],
-        ":py:class:`str` | :py:class:`bool` | :py:obj:`None`"
+        ":py:class:`str` | :py:class:`bool` | :sphinx_autodoc_typehints_constant:`None`"
         if version_info >= (3, 14)
-        else r":py:data:`~typing.Union`\ \[:py:class:`str`, :py:class:`bool`, :py:obj:`None`]",
+        else (
+            r":py:data:`~typing.Union`\ \[:py:class:`str`, :py:class:`bool`, "
+            r":sphinx_autodoc_typehints_constant:`None`]"
+        ),
         id="Optional-str-or-bool",
     ),
     param(
@@ -232,7 +238,10 @@ _CASES: Final[list[ParameterSet]] = [
     ),
     param(
         Callable[[int, str], None],
-        r":py:class:`~collections.abc.Callable`\ \[\[:py:class:`int`, :py:class:`str`], :py:obj:`None`]",
+        (
+            r":py:class:`~collections.abc.Callable`\ \[\[:py:class:`int`, :py:class:`str`], "
+            r":sphinx_autodoc_typehints_constant:`None`]"
+        ),
         id="Callable-int-str-None",
     ),
     param(
@@ -319,13 +328,25 @@ def test_format_annotation_unsimplified_optional_union(
     ("annotation", "expected"),
     [
         param(int | float, ":py:class:`int` | :py:class:`float`", id="bars"),
-        param(int | float | None, ":py:class:`int` | :py:class:`float` | :py:obj:`None`", id="bars-None"),
+        param(
+            int | float | None,
+            ":py:class:`int` | :py:class:`float` | :sphinx_autodoc_typehints_constant:`None`",
+            id="bars-None",
+        ),
         param(typing.Union[int, float], ":py:class:`int` | :py:class:`float`", id="Union"),
-        param(typing.Union[int, float, None], ":py:class:`int` | :py:class:`float` | :py:obj:`None`", id="Union-None"),
-        param(typing.Optional[int | float], ":py:class:`int` | :py:class:`float` | :py:obj:`None`", id="Optional-bars"),
+        param(
+            typing.Union[int, float, None],
+            ":py:class:`int` | :py:class:`float` | :sphinx_autodoc_typehints_constant:`None`",
+            id="Union-None",
+        ),
+        param(
+            typing.Optional[int | float],
+            ":py:class:`int` | :py:class:`float` | :sphinx_autodoc_typehints_constant:`None`",
+            id="Optional-bars",
+        ),
         param(
             typing.Optional[typing.Union[int, float]],
-            ":py:class:`int` | :py:class:`float` | :py:obj:`None`",
+            ":py:class:`int` | :py:class:`float` | :sphinx_autodoc_typehints_constant:`None`",
             id="Optional-Union",
         ),
         param(
@@ -349,7 +370,15 @@ def test_format_annotation_always_use_bars_union(
         param("ClassVar", int, r":py:data:`~typing.ClassVar`\ \[:py:class:`int`]", id="ClassVar"),
         param("NoReturn", None, ":py:data:`~typing.NoReturn`", id="NoReturn"),
         param("Literal", None, ":py:data:`~typing.Literal`", id="Literal-bare"),
-        param("Literal", ("a", 1), r":py:data:`~typing.Literal`\ \[``'a'``, ``1``]", id="Literal"),
+        param(
+            "Literal",
+            ("a", 1),
+            (
+                r":py:data:`~typing.Literal`\ \[:sphinx_autodoc_typehints_value:`'a'`, "
+                r":sphinx_autodoc_typehints_value:`1`]"
+            ),
+            id="Literal",
+        ),
         param(
             "Literal",
             (SomeEnum.VALUE,),
@@ -359,7 +388,11 @@ def test_format_annotation_always_use_bars_union(
         param(
             "Literal",
             (None, True, False, b"raw"),
-            r":py:data:`~typing.Literal`\ \[:py:obj:`None`, :py:data:`True`, :py:data:`False`, ``b'raw'``]",
+            (
+                r":py:data:`~typing.Literal`\ \[:sphinx_autodoc_typehints_constant:`None`, "
+                r":sphinx_autodoc_typehints_constant:`True`, :sphinx_autodoc_typehints_constant:`False`, "
+                r":sphinx_autodoc_typehints_value:`b'raw'`]"
+            ),
             id="Literal-constants",
         ),
         param("Self", None, ":py:data:`~typing.Self`", id="Self"),
@@ -487,10 +520,15 @@ def test_format_annotation_formatter(
 @mark.parametrize(
     ("annotation", "overrides", "expected"),
     [
-        param(Literal["a", "b"], {}, "``'a'`` | ``'b'``", id="values"),
+        param(
+            Literal["a", "b"],
+            {},
+            ":sphinx_autodoc_typehints_value:`'a'` | :sphinx_autodoc_typehints_value:`'b'`",
+            id="values",
+        ),
         param(Literal, {}, ":py:data:`~typing.Literal`", id="bare"),
-        param(Literal["`"], {}, r":literal:`\'\`\'`", id="backtick"),
-        param(Literal[True], {}, ":py:data:`True`", id="constant"),
+        param(Literal["`"], {}, r":sphinx_autodoc_typehints_value:`'\`'`", id="backtick"),
+        param(Literal[True], {}, ":sphinx_autodoc_typehints_constant:`True`", id="constant"),
         param(
             Literal[OtherEnum.VALUE],
             {"typehints_fully_qualified": True},
@@ -517,8 +555,8 @@ def test_format_annotation_short_literals(
 @mark.parametrize(
     ("make_union", "expected"),
     [
-        param(lambda alias: alias | None, "Json | :py:obj:`None`", id="alias-or-None"),
-        param(lambda alias: None | alias, ":py:obj:`None` | Json", id="None-or-alias"),
+        param(lambda alias: alias | None, "Json | :sphinx_autodoc_typehints_constant:`None`", id="alias-or-None"),
+        param(lambda alias: None | alias, ":sphinx_autodoc_typehints_constant:`None` | Json", id="None-or-alias"),
         param(lambda alias: int | alias, ":py:class:`int` | Json", id="type-or-alias"),
         param(lambda alias: alias | alias, "Json", id="same-alias-twice"),
     ],
@@ -535,7 +573,9 @@ def test_format_annotation_alias_union_leaves_optional_alone(config: Config) -> 
     format_annotation(alias | None, config)
     optional_alias = typing.Optional[alias]  # ty: ignore[invalid-type-form]  # the cached Optional is under test
     assert format_annotation(optional_alias, config) == (
-        "Json | :py:obj:`None`" if version_info >= (3, 14) else r":py:data:`~typing.Optional`\ \[Json]"
+        "Json | :sphinx_autodoc_typehints_constant:`None`"
+        if version_info >= (3, 14)
+        else r":py:data:`~typing.Optional`\ \[Json]"
     )
 
 
