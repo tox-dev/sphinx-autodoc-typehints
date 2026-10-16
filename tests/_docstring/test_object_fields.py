@@ -567,6 +567,19 @@ def test_typed_dict_extra_items(build_text: BuildText, cls: str, expected: str) 
     assert build_text(f".. autoclass:: typed_dict_module.{cls}") == expected
 
 
+@mark.sphinx("text", testroot="typed-dict", confoverrides={"python_display_short_literal_types": True})
+def test_typed_dict_extra_items_short_literal(build_text: BuildText) -> None:
+    expected = dedent("""\
+        class typed_dict_module.ExtraLiteral
+
+           Literal extra items.
+
+           Extra items:
+              "'a'" | "'b'"
+    """)
+    assert build_text(".. autoclass:: typed_dict_module.ExtraLiteral") == expected
+
+
 @mark.parametrize(
     ("index", "expected"),
     [

@@ -14,7 +14,7 @@ from .._objects import (
     declared_signature,
     prefix_of,
 )
-from .._render import add_type_css_class, as_field_type, format_annotation
+from .._render import as_field_type
 from .._resolve import (
     OPEN,
     extra_items_type,
@@ -138,7 +138,7 @@ def _type_callable(
         if (extra := extra_items_type(entry.obj, set())) is not OPEN and not any(
             line.startswith(":Extra items:") for line in lines
         ):
-            lines.extend(["", f":Extra items: {add_type_css_class(format_annotation(extra, app.config))}"])
+            lines.extend(["", f":Extra items: {as_field_type(extra, app.config)}"])
         inject_setter_type(app, entry.name, entry.obj, hints.types, lines)
         inject_override(app, entry.what, entry.name, declared, lines)
 
