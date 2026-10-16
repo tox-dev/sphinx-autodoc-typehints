@@ -36,6 +36,9 @@ def note_attributes_before_napoleon(
     `napoleon_attr_annotations = False` asks for napoleon's entries to stay untyped, while reST written by hand still
     takes its types from the annotations.
     """
+    # an entry outlives its docstring when a handler between this one and `process_docstring` raises, and a later line
+    # list allocated at the same address would then read it as its own
+    WRITTEN_BEFORE_NAPOLEON.clear()
     if not getattr(app.config, "napoleon_attr_annotations", True):
         WRITTEN_BEFORE_NAPOLEON[id(lines)] = frozenset(documented_attributes(lines))
 
