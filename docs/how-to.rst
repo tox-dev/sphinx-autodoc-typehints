@@ -426,7 +426,7 @@ Each overload reads like its signature, with its ``/`` and ``*`` markers, the st
 its defaults as written; an overload taking nothing shows as ``()``. The field leaves out ``self`` and ``cls`` and goes
 right after the summary paragraph, so :doc:`autosummary <sphinx:usage/extensions/autosummary>` still picks the summary
 up. A function documented through its overloads gets no return type, as each overload states its own. A class lists
-the overloads of its :meth:`~object.__init__` or :meth:`~object.__new__`.
+the overloads of its :meth:`~object.__init__` or :meth:`~object.__new__`, whichever directive documents it.
 
 Write ``:no-overloads:`` in a docstring to drop the field for that function alone; the extension strips the marker
 from the output, also with :confval:`typehints_document_overloads` off.
