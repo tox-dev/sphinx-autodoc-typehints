@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from textwrap import dedent
 from typing import TYPE_CHECKING, Final
 
@@ -9,6 +10,8 @@ from _docstring.conftest import INT
 from sphinx_autodoc_typehints._docstring import note_attributes_before_napoleon, process_docstring
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from conftest import BuildText, MakeModule
     from sphinx.testing.util import SphinxTestApp
 
@@ -127,7 +130,7 @@ def test_napoleon_attributes_without_attr_annotations(build_text: BuildText, dir
 
 
 def test_napoleon_attributes_noted_for_a_failed_docstring_stay_out_of_the_next(
-    app: SphinxTestApp, make_module: MakeModule
+    app: SphinxTestApp, make_app: Callable[..., SphinxTestApp], make_module: MakeModule
 ) -> None:
     ledger = make_module(
         "noted_ledger",
@@ -140,8 +143,56 @@ def test_napoleon_attributes_noted_for_a_failed_docstring_stay_out_of_the_next(
     # the same list stands in for a later one python allocates where the failed docstring's list was freed
     lines = ["Ledger docstring."]
     note_attributes_before_napoleon(app, "class", "noted_ledger.Ledger", ledger, None, lines)
-    app.config.napoleon_attr_annotations = True
+    typed = make_app(srcdir=app.srcdir)
     lines[:] = [".. attribute:: amount", "", "   how much", ""]
-    note_attributes_before_napoleon(app, "class", "noted_ledger.Ledger", ledger, None, lines)
-    process_docstring(app, "class", "noted_ledger.Ledger", ledger, None, lines)
+    note_attributes_before_napoleon(typed, "class", "noted_ledger.Ledger", ledger, None, lines)
+    process_docstring(typed, "class", "noted_ledger.Ledger", ledger, None, lines)
     assert lines == [".. attribute:: amount", "", "   how much", "", f"   :type: {INT}", ""]
+
+
+@mark.parametrize(
+    ("cls", "expected"),
+    [
+        param(
+            "GoogleAttributes",
+            dedent("""\
+                class dummy_module.GoogleAttributes
+
+                   Class docstring.
+
+                   count
+
+                      the count
+
+                      Type:
+                         "int"
+            """),
+            id="attribute-typed-by-the-extension",
+        ),
+        param(
+            "NumpyParameterShadowedByAttribute",
+            dedent("""\
+                class dummy_module.NumpyParameterShadowedByAttribute(count)
+
+                   Class docstring.
+
+                   Parameters:
+                      **count** ("int") -- the count
+            """),
+            id="parameter-not-typed-as-attribute",
+        ),
+    ],
+)
+@mark.sphinx("text", testroot="dummy", confoverrides={})
+def test_napoleon_attributes_typed_from_annotations(build_text: BuildText, cls: str, expected: str) -> None:
+    assert build_text(f".. autoclass:: dummy_module.{cls}") == expected
+
+
+@mark.sphinx("text", testroot="dummy", confoverrides={})
+def test_napoleon_attr_annotations_turned_off_re_reads_the_document(
+    app: SphinxTestApp, build_text: BuildText, make_app: Callable[..., SphinxTestApp]
+) -> None:
+    build_text(".. autoclass:: dummy_module.GoogleAttributes")
+    untyped = make_app("text", srcdir=app.srcdir, confoverrides={"napoleon_attr_annotations": False})
+    untyped.build()
+    assert "Type:" not in (Path(untyped.outdir) / "index.txt").read_text()
