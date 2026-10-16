@@ -80,7 +80,8 @@ text, so set :confval:`typehints_use_rtype = False <typehints_use_rtype>` as wel
 Turning :confval:`napoleon_use_param` or :confval:`napoleon_use_keyword` off makes napoleon list the parameters or the
 keyword arguments in one combined field, and the types go in parentheses after each name. A type the docstring writes
 there stays. The types napoleon's ``Attributes`` section would read from annotations come from this extension, see
-:ref:`reference:Attributes`.
+:ref:`reference:Attributes`. ``napoleon_attr_annotations`` remains available at its configured boolean value to other
+extensions.
 
 *******************
  Use with numpydoc

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from .attributes import WRITTEN_BEFORE_NAPOLEON, note_attributes_before_napoleon, take_over_napoleon_attr_annotations
+from .attributes import WRITTEN_BEFORE_NAPOLEON, note_attributes_before_napoleon
 from .combined import add_combined_field_entry, type_combined_field_entry
 from .returns import mark_numpy_returns
 from .typed import reads_as_type
@@ -13,6 +13,5 @@ __all__ = [
     "mark_numpy_returns",
     "note_attributes_before_napoleon",
     "reads_as_type",
-    "take_over_napoleon_attr_annotations",
     "type_combined_field_entry",
 ]

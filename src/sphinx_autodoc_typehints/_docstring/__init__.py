@@ -12,7 +12,6 @@ from .formats import (
     mark_numpy_returns,
     note_attributes_before_napoleon,
     place_rtype,
-    take_over_napoleon_attr_annotations,
 )
 from .handler import process_docstring
 
@@ -23,5 +22,4 @@ __all__ = [
     "note_attributes_before_napoleon",
     "place_rtype",
     "process_docstring",
-    "take_over_napoleon_attr_annotations",
 ]
