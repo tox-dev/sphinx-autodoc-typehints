@@ -40,7 +40,7 @@ from sphinx_autodoc_typehints._types import sentinel
 from ..context import render_context
 from ..deferred import defer_alias_choice
 from ..enum_member import ENUM_MEMBER_ROLE
-from ..intersphinx import inventory, type_mapping
+from ..intersphinx import inventory, mapped_name
 from .aliases import (
     alias_crossref,
     alias_name_reference,
@@ -293,7 +293,7 @@ def _class_reference(annotation: Hint | NewType | None, config: Config, *, short
             module = "typing"
         internal_path = f"{module}.{class_name}"
         local_path: str | None = None
-        if mapped := type_mapping(config).get(internal_path):
+        if mapped := mapped_name(config, internal_path):
             local_path = internal_path
             module, _, class_name = mapped.rpartition(".")
         full_name = f"{module}.{class_name}" if module != "builtins" else class_name

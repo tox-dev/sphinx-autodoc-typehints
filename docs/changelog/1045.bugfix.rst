@@ -1,0 +1,2 @@
+Stop importing every module an intersphinx inventory lists at the start of the build; the extension now imports only
+the modules that list a class an annotation names, so mapping the numpy or torch inventory no longer imports them.

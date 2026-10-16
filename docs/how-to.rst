@@ -552,6 +552,11 @@ use. :class:`threading.local` reports its module as ``_thread._local``, and :cla
 <sphinx:usage/extensions/intersphinx>` and the extension maps each runtime path to the documented one, read from the
 inventories intersphinx loads.
 
+The extension imports a module an inventory lists only when an annotation names a class an entry in that module shares
+its name with, so mapping the inventory of a large library such as numpy doesn't import the library. A class the docs
+list under another name, such as ``threading.local`` for ``_thread._local``, maps once its documented module is
+imported, which the code annotating with it has usually done already.
+
 .. code-block:: python
 
     # load intersphinx so the extension can read the documented paths
