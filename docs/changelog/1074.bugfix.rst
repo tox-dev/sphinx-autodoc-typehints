@@ -1,0 +1,1 @@
+Document inherited special methods of a generic subclass without raising ``Cannot subscript already-subscripted typing.Generic``.
