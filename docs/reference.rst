@@ -164,6 +164,7 @@ table evaluates the annotations in this namespace:
         Optional,
         ParamSpec,
         TypeVar,
+        TypedDict,
         TypeVarTuple,
         Union,
         Unpack,
@@ -179,6 +180,12 @@ table evaluates the annotations in this namespace:
     UserId = NewType("UserId", int)
     Color = Enum("Color", "RED GREEN")
     MISSING = Sentinel("MISSING")
+
+
+    class Options(TypedDict):
+        verbose: bool
+
+
     type Vector = list[float]
     type Pairs[K] = dict[K, K]
 
@@ -261,11 +268,19 @@ table evaluates the annotations in this namespace:
       -
     * - :class:`~typing.TypeVarTuple`
       - ``tuple[*Ts]``
-      - ``tuple[Unpack[Ts]]``
+      - ``tuple[*Ts]``
       -
-    * - :data:`~typing.Unpack`
+    * - :data:`~typing.Unpack` of a :class:`~typing.TypeVarTuple`, the same object as ``*Ts``
       - ``Unpack[Ts]``
-      - ``Unpack[Ts]``
+      - ``*Ts``
+      -
+    * - unpacked tuple
+      - ``tuple[int, *tuple[str, ...]]``
+      - ``tuple[int, *tuple[str, ...]]``
+      -
+    * - :data:`~typing.Unpack` of a :class:`~typing.TypedDict`, for ``**kwargs``, which has no star form
+      - ``Unpack[Options]``
+      - ``Unpack[Options]``
       -
     * - :class:`~typing.NewType`, with the type it wraps
       - ``UserId``

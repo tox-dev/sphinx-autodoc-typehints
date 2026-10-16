@@ -22,7 +22,11 @@ def constrained[T: (int, str)](value: T) -> T:
 
 
 def variadic[*Ts, **P](*args: *Ts) -> None:
-    """Take variadic type parameters."""
+    """
+    Take variadic type parameters.
+
+    :param args: the values
+    """
 
 
 def forward[**P](call: Callable[P, None], *args: P.args, **kwargs: P.kwargs) -> None:
