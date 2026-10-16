@@ -1,0 +1,1 @@
+Advertise Sphinx, autodoc and type hints in the PyPI keywords instead of unrelated virtual environment terms.
