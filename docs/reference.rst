@@ -65,7 +65,9 @@ to an option without a *Rebuild* field leaves the cached documents as they are.
     :default: ``None``
 
     Called with each annotation and the Sphinx config, it returns the reST to show, or ``None`` to render the
-    annotation as the extension would without it. See :ref:`how-to:Write a custom formatter`.
+    annotation as the extension would without it. An empty string hides the type: docstring fields leave it out, a
+    field that holds only the type, such as ``Return type``, is dropped, and signatures and headers show the name
+    without an annotation. See :ref:`how-to:Write a custom formatter`.
 
     The ``annotation`` a formatter receives is a class or :mod:`typing` construct, a :class:`~typing.NewType`, a
     :class:`~typing.TypeAliasType`, a :class:`~typing.ForwardRef` or a string for an annotation that failed to

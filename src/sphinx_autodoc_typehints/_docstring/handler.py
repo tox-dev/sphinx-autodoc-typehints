@@ -136,10 +136,12 @@ def _type_callable(
         inject_ivar_types(ivar_annotations, app, lines)
         inject_attribute_types(attribute_annotations, app, lines)
         # `closed=True` means the same as `extra_items=Never` (PEP 728), so both show as an `Extra items` type
-        if (extra := extra_items_type(entry.obj, set())) is not OPEN and not any(
-            line.startswith(":Extra items:") for line in lines
+        if (
+            (extra := extra_items_type(entry.obj, set())) is not OPEN
+            and not any(line.startswith(":Extra items:") for line in lines)
+            and (extra_type := as_field_type(extra, app.config))
         ):
-            lines.extend(["", f":Extra items: {as_field_type(extra, app.config)}"])
+            lines.extend(["", f":Extra items: {extra_type}"])
         inject_setter_type(app, entry.name, entry.obj, hints.types, lines)
         inject_override(app, entry.what, entry.name, declared, lines)
 

@@ -9,6 +9,7 @@ from sphinx_autodoc_typehints._render import add_type_css_class
     ("type_rst", "expected"),
     [
         param("int", ":sphinx_autodoc_typehints_type:`int`", id="text"),
+        param("", "", id="empty-stays-empty"),
         param(":py:class:`int`", r":sphinx_autodoc_typehints_type:`\:py\:class\:\`int\``", id="escapes-the-markup"),
     ],
 )

@@ -4,6 +4,7 @@ from inspect import Parameter, signature
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from _docstring.conftest import hide_type
 from pytest import mark, param
 
 from sphinx_autodoc_typehints._signature.text import directive_text, names_other_parameters, signature_type
@@ -56,3 +57,8 @@ def test_directive_text_escapes_backslashes_only_for_stripping(app: SphinxTestAp
 @mark.sphinx("text", testroot="dummy")
 def test_signature_type(app: SphinxTestApp, hint: type, expected: str | type[Parameter.empty]) -> None:
     assert signature_type(app, hint) == expected
+
+
+@mark.sphinx("text", testroot="dummy", confoverrides={"typehints_formatter": hide_type})
+def test_signature_type_hidden_by_formatter(app: SphinxTestApp) -> None:
+    assert signature_type(app, Path) is Parameter.empty

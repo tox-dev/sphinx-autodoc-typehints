@@ -74,6 +74,10 @@ def render_header_types(app: Sphinx, domain: str, objtype: str, contentnode: add
         ):
             with render_scope(app, prefix_of(f"{module}.{fullname}"), signature=True):
                 text = as_signature_type(hint, app.config)
+            # a type a formatter hides takes its ": " separator along, leaving `attr = 1`
+            if not text:
+                signode.remove(typed)
+                continue
             # the children after the ": " separator are the type
             del typed[2:]
             typed.extend(parse_annotation(text, app.env))

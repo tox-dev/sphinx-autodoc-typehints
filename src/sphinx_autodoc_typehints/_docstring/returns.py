@@ -65,8 +65,11 @@ def inject_rtype(entry: Entry, lines: list[str], fmt: FieldListFormat, hints: Re
         return
 
     info = fmt.get_rtype_insert_info(app, lines)
-    formatted_annotation = as_field_type(as_written(type_hints["return"], hints.written_as.get("return")), app.config)
-    write_rtype(lines, formatted_annotation, info, use_rtype=app.config.typehints_use_rtype)
+    # a formatter hides the type by rendering it empty, which leaves the field nothing to hold
+    if formatted_annotation := as_field_type(
+        as_written(type_hints["return"], hints.written_as.get("return")), app.config
+    ):
+        write_rtype(lines, formatted_annotation, info, use_rtype=app.config.typehints_use_rtype)
 
 
 def _unannotated(annotation: Hint) -> Hint:
@@ -94,7 +97,8 @@ def _type_yields(annotation: Hint, description: str | None, app: Sphinx, lines: 
     # numpydoc lists several yielded values as typed bullets under an empty entry
     if not text and (bullet := following.strip()).startswith("* ") and reads_as_type(bullet[2:]):
         return
-    formatted = as_field_type(args[0], app.config)
+    if not (formatted := as_field_type(args[0], app.config)):
+        return
     if text:
         lines[at] = f":{field}: {formatted} -- {text}"
     else:

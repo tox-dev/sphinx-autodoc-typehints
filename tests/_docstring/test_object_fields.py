@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Final, overload, override
 
 from pytest import MarkDecorator, mark, param
 
-from _docstring.conftest import BOOL, INT, NONE, STR
+from _docstring.conftest import BOOL, INT, NONE, STR, hide_type
 from sphinx_autodoc_typehints._docstring.object_fields import inject_overloads, summary_end
 from sphinx_autodoc_typehints._documented import Entry
 
@@ -141,6 +141,13 @@ def test_inject_overloads_lists_them(
 ) -> None:
     has_overloads = inject_overloads(Entry(app, "function", f"{__name__}.{func.__name__}", func), func, lines)
     assert (has_overloads, lines) == (True, expected)
+
+
+@mark.sphinx(confoverrides={"typehints_formatter": hide_type})
+def test_inject_overloads_leaves_out_types_a_formatter_hides(app: SphinxTestApp) -> None:
+    lines: list[str] = []
+    inject_overloads(Entry(app, "function", f"{__name__}._pick", _pick), _pick, lines)
+    assert lines == ["", ":Overloads:", "   * **value**", "   * **value**", ""]
 
 
 @mark.parametrize(
@@ -519,6 +526,11 @@ def test_property_shows_the_type_its_setter_accepts(
     assert process("property", f"{__name__}.Holder.value", prop, lines) == expected
 
 
+@mark.sphinx(confoverrides={"typehints_formatter": hide_type})
+def test_property_setter_type_hidden_by_formatter(process: Process) -> None:
+    assert process("property", "mod.Holder.value", property(_get_int, _set_int_or_str), ["Summary."]) == ["Summary."]
+
+
 @mark.parametrize(
     ("cls", "expected"),
     [
@@ -606,6 +618,16 @@ def test_typed_dict_extra_items_short_literal(build_text: BuildText) -> None:
               "'a'" | "'b'"
     """)
     assert build_text(".. autoclass:: typed_dict_module.ExtraLiteral") == expected
+
+
+@mark.sphinx("text", testroot="typed-dict", confoverrides={"typehints_formatter": hide_type})
+def test_typed_dict_extra_items_hidden_by_formatter(build_text: BuildText) -> None:
+    expected = dedent("""\
+        class typed_dict_module.ExtraUnstated
+
+           Typed extra items.
+    """)
+    assert build_text(".. autoclass:: typed_dict_module.ExtraUnstated") == expected
 
 
 @mark.parametrize(

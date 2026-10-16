@@ -7,6 +7,7 @@ from sys import version_info
 from textwrap import dedent
 from typing import TYPE_CHECKING, Final
 
+from _docstring.conftest import hide_type
 from pytest import MarkDecorator, fixture, mark, param
 from sphinx import addnodes
 
@@ -117,6 +118,18 @@ _ALIASED: Final[MarkDecorator] = mark.sphinx(confoverrides={"autodoc_type_aliase
     ],
 )
 def test_header_type_renders_like_a_field(build_text: BuildText, rst: str, expected: str) -> None:
+    assert build_text(rst).splitlines()[0] == expected
+
+
+@mark.parametrize(
+    ("rst", "expected"),
+    [
+        param(".. autodata:: header_module.LIMIT", "header_module.LIMIT = 3", id="data"),
+        param(".. autoproperty:: header_module.Account.total", "property Account.total", id="property"),
+    ],
+)
+@mark.sphinx("text", testroot="headers", confoverrides={"typehints_formatter": hide_type})
+def test_header_type_hidden_by_formatter(build_text: BuildText, rst: str, expected: str) -> None:
     assert build_text(rst).splitlines()[0] == expected
 
 

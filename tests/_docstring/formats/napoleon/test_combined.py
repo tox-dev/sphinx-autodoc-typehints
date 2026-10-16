@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Final
 
 from pytest import MarkDecorator, mark, param
 
-from _docstring.conftest import FLOAT, INT, STR, without_rtype
+from _docstring.conftest import FLOAT, INT, STR, hide_type, without_rtype
 
 if TYPE_CHECKING:
     from _docstring.conftest import Process
@@ -153,6 +153,14 @@ def test_combined_field_entry_of_an_unannotated_parameter_stays_untyped(process:
     assert process("function", "mod.unannotated", lambda first="x": first, [":Parameters: **first** -- the first"]) == [
         ":Parameters: **first** -- the first"
     ]
+
+
+@mark.sphinx(confoverrides={"typehints_formatter": hide_type})
+def test_combined_field_entry_stays_untyped_when_a_formatter_hides_the_type(process: Process) -> None:
+    def documented(first: int) -> None: ...
+
+    lines = [":Parameters: **first** -- the first"]
+    assert process("function", "mod.documented", documented, lines.copy()) == lines
 
 
 @mark.parametrize(

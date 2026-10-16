@@ -1,0 +1,3 @@
+A :confval:`typehints_formatter` that returns an empty string now hides the type instead of showing raw
+``:sphinx_autodoc_typehints_type:`` text in docstring fields or an empty annotation such as ``attr:  = 1`` in headers and
+signatures, and drops the ``Return type``, ``Extra items`` and ``Setter accepts`` fields it empties.
