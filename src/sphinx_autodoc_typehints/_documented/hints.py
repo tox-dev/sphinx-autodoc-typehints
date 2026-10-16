@@ -37,9 +37,11 @@ def resolved_type_hints(
     return, a type parameter a subclass binds) looks through an alias; only rendering names the alias.
     """
     localns, written_as = type_alias_namespace(app.config["autodoc_type_aliases"], annotated, prefix_of(name), app.env)
-    # namedtuple builds __new__ without builtins, so forward references resolve only via the class (#657)
-    namedtuple_new = isclass(original_obj) and isfunction(obj) and obj.__module__.startswith("namedtuple_")
-    owner = original_obj if namedtuple_new else annotated
+    documenting, attribute = documenting_class(name, original_obj)
+    # namedtuple builds __new__ without builtins, so forward references resolve only via the class (#657), which a
+    # `__new__` documented on its own reaches through its name (#992)
+    namedtuple_new = isclass(documenting) and isfunction(obj) and obj.__module__.startswith("namedtuple_")
+    owner = documenting if namedtuple_new else annotated
     type_hints = get_all_type_hints(app.config.autodoc_mock_imports, owner, name, localns)
     if (stated_signature := declared_signature(original_obj)) is not None:
         # the parameters it lists, such as a pydantic model's fields, may be ones no annotation of the constructor names
@@ -49,7 +51,6 @@ def resolved_type_hints(
             for key, annotation in (stated | {"return": stated_signature.return_annotation}).items()
             if annotation is not stated_signature.empty
         }
-    documenting, attribute = documenting_class(name, original_obj)
     if arguments := bound_type_args(documenting, attribute):
         type_hints = {key: specialize(hint, arguments) for key, hint in type_hints.items()}
     return ResolvedHints(
