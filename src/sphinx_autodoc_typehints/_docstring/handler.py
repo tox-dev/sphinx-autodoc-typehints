@@ -83,7 +83,7 @@ def process_docstring(
         ):
             # rendered with the state a parameter's type gets, so aliases and the inventory's roles apply here too
             with render_scope(app, prefix_of(name)):
-                lines.extend(["", f":type: {as_field_type(hint, app.config)}"])
+                lines.extend(["", f":type: {as_field_type(hint, app.config, kind='attribute')}"])
     else:
         _type_callable(Entry(app, what, name, obj), documented, options, lines, written)
 

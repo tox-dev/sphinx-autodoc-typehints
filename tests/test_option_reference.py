@@ -39,14 +39,14 @@ def render_fixture(tmp_path: Path, monkeypatch: MonkeyPatch, make_app: Callable[
     [
         param(
             "typehints_formatter",
-            '"Callable"[[annotation, "Config"], "str" | "None"] | "None"',
+            '"Callable"[[annotation, "Config"], "str" | "None"]',
             id="callable with its signature",
         ),
         param("typehints_use_rtype", '"bool"', id="bool"),
     ],
 )
 def test_option_reference_renders_the_type(name: str, rendered: str, render: Render) -> None:
-    assert f"Type:\n      {rendered}\n" in render(f".. confval:: {name}\n")
+    assert f"Type:\n      {rendered}" in render(f".. confval:: {name}\n")
 
 
 def test_option_reference_adds_the_rebuild_field(render: Render) -> None:

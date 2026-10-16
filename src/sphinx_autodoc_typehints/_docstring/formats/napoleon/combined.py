@@ -44,7 +44,7 @@ def type_combined_field_entry(
         type_end = next((match.end() + offset for offset, depth in enumerate(depths) if not depth), None)
     elif annotation is None:
         return False
-    elif not (field_type := as_field_type(annotation, app.config)):
+    elif not (field_type := as_field_type(annotation, app.config, kind="parameter")):
         # a type a formatter hides leaves the entry as written, with no parentheses for a default to join
         return True
     else:

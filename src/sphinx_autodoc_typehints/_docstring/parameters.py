@@ -165,7 +165,9 @@ class _Fields:
         else:
             # napoleon gives keyword arguments a field of their own, which reads paramtype but not type
             type_field = "paramtype" if self.lines[at].startswith((":keyword ", ":kwarg ", ":kwparam ")) else "type"
-            type_annotation = f":{type_field} {doc_name}: {as_field_type(param.shown, self.app.config)}"
+            type_annotation = (
+                f":{type_field} {doc_name}: {as_field_type(param.shown, self.app.config, kind='parameter')}"
+            )
         # a braces-after default goes on the :param: line, so append it while at still points there
         if self.app.config.typehints_defaults and (
             formatted_default := format_default(

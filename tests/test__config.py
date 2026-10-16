@@ -28,6 +28,7 @@ def test_setup_registers_the_documented_options(app: SphinxTestApp) -> None:
         "typehints_document_rtype_none": (True, "env", frozenset()),
         "typehints_fixup_module_name": (None, "env", frozenset()),
         "typehints_formatter": (None, "env", frozenset()),
+        "typehints_formatter_pass_context": (False, "env", frozenset({bool})),
         "typehints_fully_qualified": (False, "env", frozenset({bool})),
         "typehints_use_rtype": (True, "env", frozenset()),
         "typehints_use_signature": (False, "env", frozenset()),

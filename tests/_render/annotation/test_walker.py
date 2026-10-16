@@ -24,7 +24,7 @@ from sphinx_autodoc_typehints._render import ENUM_MEMBER_ROLE, annotation_state,
 
 if TYPE_CHECKING:
     from _pytest.mark import ParameterSet
-    from conftest import BuildText
+    from conftest import BuildText, MakeModule
     from sphinx.config import Config
     from sphinx.testing.util import SphinxTestApp
     from sphobjinv import Inventory
@@ -809,3 +809,66 @@ def test_format_annotation_formatter_replaces_the_types_it_formats_in_a_build(
            Return type:
               {value}
         """)
+
+
+def _format_by_kind(annotation: object, _config: object, kind: str) -> str | None:
+    return kind.upper() if annotation is int or kind == "base" else None
+
+
+@mark.parametrize(
+    ("directive", "expected"),
+    [
+        param(".. autofunction:: context_demo.take", "PARAMETER", id="parameter"),
+        param(".. autofunction:: context_demo.give", "RETURN", id="return"),
+        param(".. autoattribute:: context_demo.Child.value", "ATTRIBUTE", id="attribute"),
+        param(".. autoclass:: context_demo.Child\n   :show-inheritance:", "BASE", id="base"),
+    ],
+)
+@mark.sphinx(
+    "text",
+    testroot="render-types",
+    confoverrides={"typehints_formatter": _format_by_kind, "typehints_formatter_pass_context": True},
+)
+def test_formatter_receives_type_location(
+    build_text: BuildText, make_module: MakeModule, directive: str, expected: str
+) -> None:
+    make_module(
+        "context_demo",
+        dedent('''\
+            class Base: ...
+
+
+            class Child(Base):
+                value: int = 1
+
+
+            def take(value: int) -> None:
+                """Take.
+
+                :param value: the value
+                """
+
+
+            def give() -> int:
+                """Give."""
+            '''),
+    )
+
+    assert expected in build_text(directive)
+
+
+@mark.sphinx(
+    "text",
+    testroot="public-api",
+    confoverrides={
+        "typehints_formatter": _format_by_kind,
+        "typehints_formatter_pass_context": True,
+        "typehints_use_signature": True,
+        "typehints_use_signature_return": True,
+    },
+)
+def test_formatter_receives_type_location_in_signature(build_text: BuildText) -> None:
+    output = build_text(".. autofunction:: public_module.count")
+
+    assert "value: PARAMETER" in output
+    assert "-> RETURN" in output

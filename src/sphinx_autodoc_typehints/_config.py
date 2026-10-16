@@ -46,6 +46,7 @@ OPTIONS: Final[tuple[Option, ...]] = (
     Option(name="simplify_optional_unions", default=True, rebuild="env"),
     Option(name="always_use_bars_union", default=False, rebuild="env"),
     Option(name="typehints_formatter", default=None, rebuild="env"),
+    Option(name="typehints_formatter_pass_context", default=False, rebuild="env", types=(bool,)),
     Option(name="typehints_document_overloads", default=True, rebuild="env"),
     Option(name="typehints_use_signature", default=False, rebuild="env"),
     Option(name="typehints_use_signature_return", default=False, rebuild="env"),

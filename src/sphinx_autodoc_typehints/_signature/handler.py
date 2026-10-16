@@ -145,15 +145,23 @@ def _shown_types(
     # a kept type reads as its field does: the same resolution, aliases, fixups and formatter, written as Python
     with render_scope(app, prefix_of(entry.name), **hints.scope, signature=True):
         shown = {
-            key: signature_type(app, as_written(hint, hints.written_as.get(key))) for key, hint in hints.types.items()
+            key: signature_type(
+                app, as_written(hint, hints.written_as.get(key)), kind="return" if key == "return" else "parameter"
+            )
+            for key, hint in hints.types.items()
         }
         arguments = bound_type_args(*documenting_class(entry.name, entry.obj))
         typed = typed_overloads(app, entry.name, callee, overloads, overload_skip(entry), arguments)
         return shown, [
             overload.replace(
-                parameters=[param.replace(annotation=signature_type(app, types[param.name])) for param in params],
+                parameters=[
+                    param.replace(annotation=signature_type(app, types[param.name], kind="parameter"))
+                    for param in params
+                ],
                 # the overloads of a class drop the return as its signature does
-                return_annotation=Signature.empty if isclass(entry.obj) else signature_type(app, types["return"]),
+                return_annotation=Signature.empty
+                if isclass(entry.obj)
+                else signature_type(app, types["return"], kind="return"),
             )
             for overload, (params, types) in zip(overloads, typed, strict=True)
         ]
