@@ -17,6 +17,7 @@ from sphinx.errors import NoUri
 from sphinx.transforms.post_transforms import SphinxPostTransform
 from sphinx.util import logging
 from sphinx.util.docutils import sphinx_domains
+from sphinx.util.rst import default_role
 
 from .._state import alias_choices, recorded_alias_choices
 from .context import render_context
@@ -33,6 +34,7 @@ if TYPE_CHECKING:
 ALIAS_CHOICE_ROLE: Final[str] = "sphinx_autodoc_typehints_alias"
 _ALIAS_CHOICE_KEY: Final[str] = "sphinx_autodoc_typehints_alias_key"
 _DEFAULT_DOMAIN_KEY: Final[str] = "sphinx_autodoc_typehints_default_domain"
+_DEFAULT_ROLE_KEY: Final[str] = "sphinx_autodoc_typehints_default_role"
 _REF_CONTEXT_KEY: Final[str] = "sphinx_autodoc_typehints_ref_context"
 
 
@@ -55,6 +57,8 @@ def alias_choice_role(
     env = inliner.document.settings.env
     if (domain := env.current_document.default_domain) is not None:
         node[_DEFAULT_DOMAIN_KEY] = domain.name
+    # and the role bare backticks, as a formatter may write, get from `default_role` or a `default-role` directive
+    node[_DEFAULT_ROLE_KEY] = env.current_document.default_role
     # and the module and class an `automodule` or a class body set, which the Python roles resolve a name within
     node[_REF_CONTEXT_KEY] = {key: env.ref_context.get(key) for key in ("py:module", "py:class")}
     return [node], []
@@ -149,15 +153,17 @@ class DeferAliasChoice(SphinxPostTransform):
 
     def _parse(self, marker: nodes.Element, rst: str) -> nodes.document:
         current = self.env.current_document
-        default_domain = current.default_domain
+        default_domain, role = current.default_domain, current.default_role
         current.default_domain = self.env.domains.get(marker.get(_DEFAULT_DOMAIN_KEY, ""))
+        current.default_role = marker.get(_DEFAULT_ROLE_KEY, "")
         ref_context = self.env.ref_context.copy()
         self.env.ref_context.update(marker.get(_REF_CONTEXT_KEY, {}))
         try:
-            with sphinx_domains(self.env):
+            with sphinx_domains(self.env), default_role(self.env.docname, current.default_role):
                 doc = parse(rst, self.env)
         finally:
             current.default_domain = default_domain
+            current.default_role = role
             self.env.ref_context.clear()
             self.env.ref_context.update(ref_context)
         for message in doc.findall(nodes.system_message):

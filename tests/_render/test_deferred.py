@@ -113,6 +113,39 @@ def test_deferred_alias_value_keeps_the_roles_a_formatter_writes(build_text: Bui
     assert lines[lines.index("   Parameters:") + 1] == f"      **user_id** ({rendered}) -- The user identifier"
 
 
+def _int_as_bare_bool(annotation: Annotation, _config: Config) -> str | None:
+    return "`bool`" if annotation is int else None
+
+
+@mark.parametrize(
+    "index",
+    [
+        param(
+            ".. autofunction:: mod_eager.get_user_eager",
+            id="configured",
+            marks=mark.sphinx(
+                "text",
+                testroot="integration",
+                confoverrides={"typehints_formatter": _int_as_bare_bool, "default_role": "py:class"},
+            ),
+        ),
+        param(
+            ".. default-role:: py:class\n\n.. autofunction:: mod_eager.get_user_eager",
+            id="document",
+            marks=mark.sphinx(
+                "text",
+                testroot="integration",
+                confoverrides={"typehints_formatter": _int_as_bare_bool, "default_role": "emphasis"},
+            ),
+        ),
+    ],
+)
+def test_deferred_alias_value_keeps_the_default_role(build_text: BuildText, index: str) -> None:
+    lines = build_text(index).splitlines()
+    rendered = '"bool" | "str"' if version_info >= (3, 14) else '"Union"["bool", "str"]'
+    assert lines[lines.index("   Parameters:") + 1] == f"      **user_id** ({rendered}) -- The user identifier"
+
+
 @mark.sphinx("text", testroot="integration", confoverrides={"typehints_formatter": _int_as_unknown_role})
 def test_deferred_alias_value_reports_its_markup_errors_at_the_docstring(
     build_text: BuildText, warning: StringIO
