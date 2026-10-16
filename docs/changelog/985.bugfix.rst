@@ -1,2 +1,0 @@
-Resolve annotations that reach a type through a module alias imported under ``TYPE_CHECKING``, such as
-``_t.UriType`` in requests, instead of dropping the type.

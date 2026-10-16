@@ -1,2 +1,0 @@
-Link pipe unions of mocked types, such as ``Gen[int] | None`` under :confval:`autodoc_mock_imports`, which rendered as
-unlinked text on Python 3.14 or with ``from __future__ import annotations``.

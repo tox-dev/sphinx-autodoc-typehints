@@ -1,2 +1,0 @@
-Render a type parameter that the documented signature declares by its name, such as ``T`` instead of
-``TypeVar(T, bound=int)``, and ``P.args`` and ``P.kwargs`` of a declared ``**P`` as written.

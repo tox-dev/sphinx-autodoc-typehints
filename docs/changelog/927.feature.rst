@@ -1,2 +1,0 @@
-With ``typehints_use_signature = True``, show one typed signature line per ``@overload`` instead of the untyped
-implementation signature and an ``Overloads`` field.

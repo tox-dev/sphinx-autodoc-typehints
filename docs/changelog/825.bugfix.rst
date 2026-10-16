@@ -1,2 +1,0 @@
-Parse type text as inline markup, so list-like text such as an unresolvable ``"* weird"`` annotation stays inline
-instead of producing a list or crashing.

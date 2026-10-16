@@ -1,2 +1,0 @@
-Stop printing docutils errors for docstrings of members left out of the output, such as imported ones
-under ``undoc-members``.

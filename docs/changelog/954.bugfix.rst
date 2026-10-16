@@ -1,1 +1,0 @@
-Stop unwrapping at a Sphinx mock, which cost about two seconds for each mocked object the extension processed.

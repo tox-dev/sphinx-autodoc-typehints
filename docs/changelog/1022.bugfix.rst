@@ -1,2 +1,0 @@
-Document a constructor, property setter or overload decorated by something from ``autodoc_mock_imports`` without
-aborting the build with ``wrapper loop when unwrapping``.

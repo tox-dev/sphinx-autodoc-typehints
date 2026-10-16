@@ -1,2 +1,0 @@
-Mock a module that a ``.pyi`` stub imports with a plain ``import`` but that is not installed, so types like
-``npt.NDArray`` render as cross-references instead of raising a ``forward_reference`` warning.

@@ -1,2 +1,0 @@
-An attribute a generic base annotates in ``__init__`` now shows the type a subclass binds, such as ``int`` for
-``class Child(Base[int])``, in that subclass's ``:ivar:`` fields instead of the bare type parameter.

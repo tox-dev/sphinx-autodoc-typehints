@@ -1,1 +1,0 @@
-Stop warning ``Unparsable type hint comment`` for a lambda assigned with a variable type comment.

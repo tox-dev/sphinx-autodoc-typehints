@@ -1,2 +1,0 @@
-Resolve names imported under ``TYPE_CHECKING`` in attrs class fields, fixing a ``NameError`` crash on Python 3.14 and a
-forward-reference warning on older versions.

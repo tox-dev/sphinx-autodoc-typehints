@@ -1,2 +1,0 @@
-Keep numpydoc parameter descriptions with several paragraphs or a list, shared type lines such as ``x, y : int``, and
-single ``Yields`` entries.

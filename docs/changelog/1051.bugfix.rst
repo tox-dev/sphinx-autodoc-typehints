@@ -1,2 +1,0 @@
-Stop using the deprecated ``SphinxTransform.app`` when choosing between an alias and its value, so builds that run
-Python with ``-W error::PendingDeprecationWarning`` no longer fail, and the extension keeps working on Sphinx 11.

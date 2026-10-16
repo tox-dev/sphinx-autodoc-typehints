@@ -1,2 +1,0 @@
-Warnings that point at a definition list, such as a duplicate label placed before one, now name the line the list
-starts on instead of the line after it.

@@ -1,2 +1,0 @@
-Type ``functools.partial`` objects, ``partialmethod`` and callable instances from the function they call, moving the
-annotations from the signature into the fields.

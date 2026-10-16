@@ -1,2 +1,0 @@
-Link a type an intersphinx inventory lists under both a ``py:class`` and a ``py:data`` name to the class entry on every
-build, instead of a name that changed with ``PYTHONHASHSEED``.

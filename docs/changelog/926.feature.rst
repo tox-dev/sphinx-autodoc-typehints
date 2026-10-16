@@ -1,3 +1,0 @@
-Substitute the type arguments a subclass binds, such as ``int`` for ``T`` under ``class IntStore(Store[int])``, in
-what it inherits from a generic base, covering parameter and return fields, overloads, attribute and property headers,
-``:vartype:`` fields and ``TypedDict`` keys.

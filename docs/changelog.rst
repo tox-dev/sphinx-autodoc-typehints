@@ -6,6 +6,295 @@
 
 .. towncrier release notes start
 
+********************
+ 3.14.0 (2026-10-16)
+********************
+
+- Show the type parameters of PEP 695 functions, classes and type aliases and of ``Generic[T]`` subclasses in their
+  signature, such as ``bounded[T: int](value)`` and ``class Stack[T]``, with bounds, constraints and defaults. :pr:`867`
+- Type the keys of ``**kwargs: Unpack[TypedDict]`` documented as keyword arguments. :pr:`869`
+- Add an ``Overrides`` field linking the base class member a ``@typing.override`` method replaces. :pr:`871`
+- Show ``TypedDict`` keys a caller may omit as ``NotRequired[...]``, and add an ``Extra items`` field for PEP 728
+  ``extra_items`` and ``closed`` classes. :pr:`873`
+- Show the ``@warnings.deprecated`` message as a deprecation notice below the summary. :pr:`874`
+- Render a type parameter that the documented signature declares by its name, such as ``T`` instead of
+  ``TypeVar(T, bound=int)``, and ``P.args`` and ``P.kwargs`` of a declared ``**P`` as written. :pr:`888`
+- Show the return type of a generator with a ``Yields`` section when its docstring has a ``Returns`` section and the
+  third argument of its ``Generator`` annotation is not ``None``. :pr:`889`
+- With :confval:`typehints_use_signature`, render the types kept in the signature the same way as the fields, so stubs,
+  guarded imports, documented aliases, :confval:`typehints_fixup_module_name`, :confval:`typehints_fully_qualified` and
+  :confval:`typehints_formatter` apply to both. :pr:`895`
+- Render PEP 661 sentinels, the Python 3.15 ``sentinel`` builtin and ``typing_extensions.Sentinel``, by their name as a
+  ``py:data`` reference instead of linking a nonexistent ``sentinel`` class. :pr:`912`
+- Type ``:ivar:``, ``:cvar:`` and ``:var:`` fields from class-body and base class annotations, dropping ``ClassVar`` and
+  ``Final`` qualifiers. :pr:`916`
+- Show the yielded type in the ``Yields`` entry of a generator, keeping a type the docstring already states. :pr:`917`
+- With napoleon's ``napoleon_use_ivar = False``, type ``.. attribute::`` entries from ``self.x: T`` annotations in
+  ``__init__`` unless ``napoleon_attr_annotations = False``; a ``:type:`` already in the docstring wins. :pr:`918`
+- Add a ``Setter accepts`` field to a property whose setter annotation differs from the getter's return type. :pr:`919`
+- Substitute the type arguments a subclass binds, such as ``int`` for ``T`` under ``class IntStore(Store[int])``, in
+  what it inherits from a generic base, covering parameter and return fields, overloads, attribute and property headers,
+  ``:vartype:`` fields and ``TypedDict`` keys. :pr:`921`, :pr:`926`, :pr:`938`
+- Show a dataclass or attrs default factory as its call, such as ``list()``, in the signature and fields instead of
+  ``<factory>`` or ``NOTHING``; lambdas, partials and nested functions keep ``<factory>``. :pr:`922`
+- Render the header type of data, attributes and properties the way fields render, so
+  :confval:`typehints_fully_qualified`, :confval:`typehints_formatter` and :confval:`typehints_fixup_module_name` apply
+  there and the header drops ``Annotated`` metadata. :pr:`923`
+- With ``typehints_use_signature = True``, show one typed signature line per ``@overload`` instead of the untyped
+  implementation signature and an ``Overloads`` field. :pr:`927`
+- Render a module-level ``TypeVar``, ``ParamSpec`` or ``TypeVarTuple`` in docstring fields by its name, as a PEP 695
+  type parameter renders, instead of as a ``TypeVar(B, bound=Sized)`` call, and ``P.args`` as written instead of
+  ``ParamSpecArgs(P)``; the name links to the variable's own entry, which shows its bound or constraints, when the docs
+  document it. :pr:`1044`
+- Values in rendered types and defaults, such as ``'fill'`` in ``Literal["fill", 1, None]``, now take the colors of the
+  project's Pygments style in light and dark mode, the way a code block does. :pr:`1046`
+- Render an unpacked ``TypeVarTuple`` or tuple with the PEP 646 star, ``*Ts`` and ``*tuple[int, ...]``, instead of
+  ``Unpack[Ts]``; ``Unpack[TypedDict]`` for ``**kwargs`` keeps its spelling. :pr:`1047`
+- Leave out trailing arguments equal to their type parameter's default, so ``typing.ContextManager[None]`` renders as
+  ``ContextManager[None]`` instead of ``ContextManager[None, bool | None]`` on Python 3.13 and later; a written
+  ``typing.Generator[int, None, None]`` renders as ``Generator[int]``. :pr:`1054`
+- Render the ``Bases:`` line of a class documented with ``:show-inheritance:`` as a docstring field renders a type, so a
+  generic base such as ``Mapping[str, int]`` follows ``typehints_fully_qualified``, ``typehints_fixup_module_name`` and
+  ``typehints_formatter``, and a PEP 695 base such as ``Stack[T]`` keeps its argument where Sphinx left it off. :pr:`1058`
+- Render a string annotation that is not a Python expression, such as ``"a positive float"``, as written with a
+  ``forward_reference`` warning instead of aborting the build. :pr:`789`
+- Load ``sphinx.ext.autodoc`` before connecting to its events, so listing this extension first or omitting autodoc no
+  longer fails with ``Unknown event name``. :pr:`790`
+- Resolve and link the other annotations of a function when Python cannot evaluate one of them, such as Django's
+  ``QuerySet[...]`` without ``django-stubs-ext``, also for a function re-exported with a rewritten ``__module__``, instead
+  of showing them all as plain text. :pr:`791`, :pr:`901`
+- Document a class that defines ``__new__`` from ``__new__``, as ``inspect.signature`` does, and take a ``__new__``-only
+  class's parameter types from ``__new__`` rather than the class body. :pr:`792`
+- Keep numpydoc parameter descriptions with several paragraphs or a list, shared type lines such as ``x, y : int``, and
+  single ``Yields`` entries. :pr:`793`
+- Show ``typehints_defaults = "braces-after"`` defaults on their own parameter when the docstring already has ``:type:``
+  lines or napoleon types. :pr:`794`
+- Merge the return type into ``:returns:`` with ``typehints_use_rtype = False`` when the docstring also has ``:rtype:`` or
+  its ``:returns:`` text starts on the next line. :pr:`795`
+- Type napoleon ``Attributes`` entries from the class, ``__init__`` and module annotations, linked and rendered like
+  other fields with :confval:`typehints_fully_qualified`, type aliases and :confval:`typehints_formatter` applied, unless
+  :confval:`napoleon_attr_annotations` is ``False``. :pr:`796`, :pr:`966`
+- Keep the first parameter of static methods bound through ``staticmethod(func)`` and of name-mangled private static
+  methods. :pr:`797`
+- Link the types in the ``Overloads`` list, leave out ``self`` and ``cls``, and show constructor overloads. :pr:`798`
+- Reread the sources when :confval:`always_document_param_types` changes, so incremental builds pick up the new setting. :pr:`799`
+- Strip the ``:no-overloads:`` marker from the output when :confval:`typehints_document_overloads` is ``False``. :pr:`800`
+- Leave the return annotation off class signatures with ``typehints_use_signature_return = True``. :pr:`801`
+- Show a backslash in a signature default once, as plain Sphinx does, unless :confval:`strip_signature_backslash` is on. :pr:`802`
+- Report ``sphinx.ext.doctest`` failures on the line the example starts on instead of one line late. :pr:`804`
+- Render a ``Callable`` parameterized by a ``ParamSpec`` or ``Concatenate`` as ``Callable[P, int]`` instead of
+  ``Callable[[P], int]``. :pr:`805`
+- Render ``P.args`` and ``P.kwargs`` as ``ParamSpecArgs(P)`` and ``ParamSpecKwargs(P)``, naming the ``ParamSpec`` they
+  belong to. :pr:`806`
+- Show the PEP 696 default of a ``TypeVar`` or ``ParamSpec`` after its bound, as in
+  ``TypeVar(T, bound=int, default=bool)``. :pr:`807`
+- Render a ``ParamSpec`` argument list of a generic as a list, ``Box[[int, str]]``, instead of a tuple. :pr:`808`
+- Render a ``TypeVarTuple`` as ``TypeVarTuple(Ts)`` linking to ``typing.TypeVarTuple``, instead of a broken reference that
+  loses its name. :pr:`809`
+- Fix broken markup and a reference warning for ``Optional[Union[...]]`` with ``simplify_optional_unions = False`` on
+  Python before 3.14. :pr:`810`
+- Render aliases built with ``typing_extensions.TypeAliasType`` like ``type`` statement aliases instead of as the
+  ``TypeAliasType`` class. :pr:`811`
+- Resolve names imported under ``TYPE_CHECKING`` guards written through a module alias, on one line, with a comment at
+  column zero, or at the end of the file. :pr:`813`
+- Resolve the classes, type variables and aliases a class body defines in its method annotations under
+  ``from __future__ import annotations``. :pr:`814`, :pr:`941`
+- Link instance variable types imported under ``TYPE_CHECKING`` regardless of which class Sphinx documents first. :pr:`815`
+- Type keyword arguments documented in a napoleon ``Keyword Args`` section, and stop
+  :confval:`always_document_param_types` listing them again under Parameters. :pr:`816`
+- With ``autoclass_content = "both"``, list each constructor parameter once, including those added through
+  :confval:`always_document_param_types` or ``Doc()``. :pr:`817`, :pr:`925`
+- Read stub definitions inside ``sys.version_info`` and ``sys.platform`` blocks, merge all overload variants of a stub
+  function, and check re-exports. :pr:`818`
+- Link a type documented in this project to its local entry, even when another project's intersphinx inventory re-exports
+  it under a different name. :pr:`819`
+- Use the role the linked inventory documents for ``types`` classes, so references resolve against ``docs.python.org/3``
+  when building on Python 3.12. :pr:`820`
+- Resolve names imported under ``TYPE_CHECKING`` in attrs class fields, fixing a ``NameError`` crash on Python 3.14 and a
+  forward-reference warning on older versions. :pr:`822`
+- Fix an ``AttributeError`` building man pages for projects that document a function taking a ``type`` alias. :pr:`823`
+- Pass the Sphinx config to :confval:`typehints_formatter` when rendering signatures with
+  :confval:`typehints_use_signature` or :confval:`typehints_use_signature_return`. :pr:`824`
+- Parse type text as inline markup, so list-like text such as an unresolvable ``"* weird"`` annotation stays inline
+  instead of producing a list or crashing. :pr:`825`
+- Keep a function's other type hints and warn ``forward_reference`` when an annotation names a missing module attribute,
+  such as ``typing.TypeIs`` on Python 3.12. :pr:`826`
+- Import the submodules a ``.pyi`` stub refers to through ``import pkg.sub`` or ``from . import sub``, so their types are
+  no longer dropped. :pr:`827`
+- Resolve annotations in the module that defines an object, so re-exported objects with a reassigned ``__module__`` find
+  their ``TYPE_CHECKING`` imports. :pr:`828`
+- Show a plain-assignment alias documented with ``.. py:type::`` by name only where the annotation writes that name,
+  whatever order Sphinx reads the entries in, so ``int`` parameters no longer render as an alias of ``int``. :pr:`829`, :pr:`920`
+- Apply documented aliases following Python name lookup, so methods see their module's aliases and unrelated aliases
+  elsewhere in the package no longer replace a type. :pr:`830`
+- Link a ``type`` alias to its own entry, not to a different documented alias with the same name. :pr:`831`
+- Run ``TYPE_CHECKING`` guards written as ``if not TYPE_CHECKING: ... else:`` or combined with ``and``/``or``, so their
+  imports resolve. :pr:`833`
+- Read ``self.x: T`` annotations nested in ``if``, ``try``, ``with``, loop and ``match`` blocks of ``__init__``, and
+  handle a positional-only ``self``. :pr:`834`
+- Strip types from the signature of ``functools.cache`` and ``functools.lru_cache`` decorated functions on Python 3.14. :pr:`835`
+- With ``napoleon_use_param = False`` or ``napoleon_use_keyword = False``, type the entries of napoleon's combined
+  parameter field, add their defaults, and list the parameters the extension adds there instead of in a second list. :pr:`836`, :pr:`886`
+- With :confval:`typehints_defaults`, show the default of a parameter typed only in its docstring, whether through a
+  ``:type:`` line, a ``:param str c:`` field or napoleon's combined parameter field. :pr:`837`, :pr:`884`
+- Keep the annotations in the signatures of ``functools.singledispatch`` implementations, so each registered
+  implementation shows the type it dispatches on. :pr:`838`
+- With :confval:`typehints_defaults`, render defaults the way the signature does, without memory addresses, with enum
+  members by name and with sets in a stable order. :pr:`839`
+- Keep backslashes in ``Literal`` values, so ``Literal["\n"]`` renders as written instead of ``Literal['n']``. :pr:`840`
+- Render ``tuple[()]`` and ``Tuple[()]`` as the empty tuple instead of a bare ``tuple``. :pr:`841`
+- Expand a generic ``type`` alias passed to itself, such as ``Pair[Pair[int]]``, instead of dropping the inner
+  arguments. :pr:`842`
+- Show the enum of a ``Literal`` member, as ``Literal[Color.RED, Light.RED]`` instead of ``Literal[RED, RED]``. :pr:`843`
+- Render subscripted types from :confval:`autodoc_mock_imports` modules, such as ``NDArray[float64]``, instead of a
+  garbled name. :pr:`844`
+- Render ``Literal`` string values that contain backticks without breaking the surrounding markup. :pr:`845`
+- Keep the ``|`` of a union around an :confval:`autodoc_type_aliases` name on Python 3.12 and 3.13 instead of rendering
+  ``Optional`` or ``Union``. :pr:`846`
+- With ``typehints_defaults = "braces-after"``, put the default at the end of the last plain paragraph of the
+  description instead of inside a trailing list, directive or literal block. :pr:`847`
+- Treat numpydoc's ``..`` placeholder as no description, so entries without one render as ``x (int)`` instead of
+  ``x (int) -- ..``. :pr:`848`
+- Keep the numpydoc ``Returns`` description of a function without parameters instead of adding a second one from the
+  return annotation's ``Doc()``. :pr:`849`
+- Keep the text of a napoleon NumPy-style ``Returns`` section that only describes the value. :pr:`850`
+- Replace a multi-line docstring ``:rtype:`` as a whole instead of leaving its continuation lines behind. :pr:`851`
+- With ``typehints_use_rtype = False``, add the return type to a ``:returns:`` description that contains ``--``. :pr:`852`
+- Add parameters documented through :confval:`always_document_param_types` or ``Doc()`` in signature order among the
+  documented ones instead of in a second list at the end of the docstring. :pr:`853`
+- Place the return type before Sphinx directives such as ``versionadded``, ``deprecated`` and ``seealso``, as
+  before docutils directives like ``note``. :pr:`854`
+- Link :confval:`autodoc_type_aliases` targets documented as module data or in a document read later. :pr:`855`
+- Link a documented generic ``type`` alias even when the docs have no entry for its arguments, instead of expanding it. :pr:`856`
+- Link names that only ``typing_extensions`` provides on the running Python, such as ``TypeIs`` on 3.12 and
+  ``Doc``, to ``typing_extensions`` instead of a missing ``typing`` target. :pr:`857`
+- Stop hiding ``@overload`` signatures from other Sphinx apps in the same process that do not load the extension. :pr:`858`
+- Report warnings about admonition content at the right line in documents that use ``.. include::``. :pr:`859`
+- Report an invalid :confval:`typehints_defaults` or :confval:`typehints_formatter` value as a configuration error instead
+  of an extension crash with a traceback. :pr:`860`
+- Stop warning ``Unparsable type hint comment`` for a lambda assigned with a variable type comment. :pr:`861`
+- Keep the name and type of a single numpydoc ``Returns`` entry, rendering ``ratio (float) -- The ratio.``. :pr:`862`
+- Stop printing docutils errors for docstrings of members left out of the output, such as imported ones
+  under ``undoc-members``. :pr:`863`
+- Keep a numpydoc ``Other Parameters`` section under its own heading instead of merging it into ``Parameters``. :pr:`864`
+- Keep the star of an unpacked ``*tuple[...]``, rendering it as ``Unpack[tuple[...]]``. :pr:`865`
+- Render bounded and defaulted type variables as ``TypeVar(T, bound=int)`` without a gap after the ``=``. :pr:`866`
+- Keep the type inside ``InitVar[...]`` instead of rendering a bare ``InitVar``. :pr:`875`
+- Leave ``:param:``, ``:returns:`` and ``:yields:`` lines inside literal blocks and directives alone instead of
+  treating them as the object's fields. :pr:`876`
+- Type ``functools.partial`` objects, ``partialmethod`` and callable instances from the function they call, moving the
+  annotations from the signature into the fields. :pr:`877`
+- Show an annotation whose evaluation raises any exception, including a ``type`` alias whose value raises, as written
+  instead of crashing the build or dropping the object. :pr:`878`, :pr:`897`
+- Stop dropping module data and class attributes that hold an annotated callable with
+  ``list assignment index out of range``. :pr:`879`
+- Drop ``cls`` from the signature of a ``@classmethod`` stacked on another decorator such as ``functools.cache``. :pr:`880`
+- Stop the ``cannot cache unpickleable configuration value`` warning for :confval:`typehints_fixup_module_name`, and
+  re-read the documents only when that function's source changes instead of on every build. :pr:`881`, :pr:`937`
+- Document a class or function that sets ``__signature__``, such as a pydantic model, by that signature with its
+  fields typed. :pr:`883`
+- With ``typehints_use_rtype = False``, keep the inline return type when the docstring had an ``:rtype:`` field. :pr:`885`
+- Leave the location out of warnings about code without a source file, such as the ``__init__`` that dataclasses and
+  attrs generate, instead of pointing at a nonexistent ``<string>.rst``. :pr:`887`
+- Honor ``autodoc_typehints_format = "fully-qualified"``: :confval:`typehints_fully_qualified` defaults to it, so fields,
+  signatures and type parameters show full paths. An explicit :confval:`typehints_fully_qualified` still wins. :pr:`891`
+- Link pipe unions of mocked types, such as ``Gen[int] | None`` under :confval:`autodoc_mock_imports`, which rendered as
+  unlinked text on Python 3.14 or with ``from __future__ import annotations``. :pr:`892`
+- Mock a module that a ``.pyi`` stub imports with a plain ``import`` but that is not installed, so types like
+  ``npt.NDArray`` render as cross-references instead of raising a ``forward_reference`` warning. :pr:`893`
+- Keep a signature written in the directive, such as ``.. autofunction:: mod.f(x, y=3)``, or read from the docstring
+  through :confval:`autodoc_docstring_signature`, when it names other parameters than the object takes, instead of
+  replacing it with the object's own. One made of ``*args`` and ``**kwargs`` alone still gets the object's parameters
+  (:pr:`903`). :pr:`896`
+- Format the stub type of a C attribute (getset or member descriptor) with the intersphinx role and documented ``type``
+  aliases that parameter types use, fixing broken cross-references. :pr:`902`
+- Reread the pages that use a ``.pyi`` stub when the stub changes, so an incremental build picks up the edit. :pr:`905`
+- Place the ``Overloads`` list after a literal block that the summary introduces with ``::``, instead of inside it. :pr:`907`
+- Show the positional-only ``/`` and keyword-only ``*`` markers, defaults and the stars of ``*args`` and ``**kwargs`` in
+  ``Overloads`` entries. :pr:`910`
+- Stop rendering ``bound="None"`` on an unbound ``ParamSpec`` on Python 3.12 and early 3.13 releases. :pr:`911`
+- Show a backslash in a parameter default once in the field instead of doubled, in every :confval:`typehints_defaults`
+  mode. :pr:`913`
+- Fix an ``Explicit markup ends without a blank line`` warning when numpydoc processes a docstring without a
+  ``Parameters`` section and the extension adds parameter types. :pr:`914`
+- Fix a crash on a generator whose return annotation is unhashable, such as
+  ``Annotated[Iterator[int], {"unit": "m"}]``, when its docstring has a ``Yields`` section. :pr:`928`
+- Follow the ``__signature__`` a decorator sets on its wrapper, so the signature and the parameter fields list the
+  parameters callers pass instead of those of the wrapped function; the signature shows types only under
+  :confval:`typehints_use_signature`. :pr:`931`, :pr:`946`
+- Unwrap an ``Annotated`` return annotation before checking it, so an ``Annotated`` generator types its ``Yields`` entry
+  instead of getting a return type, and ``typehints_document_rtype_none = False`` hides ``Annotated[None, ...]``. :pr:`939`
+- Stop unwrapping at a Sphinx mock, which cost about two seconds for each mocked object the extension processed. :pr:`954`
+- Run a module's ``if TYPE_CHECKING:`` block without writing to the module, so the names it defines, such as
+  ``@overload`` stubs or ``Protocol`` classes, no longer replace runtime bindings or show up as module members. :pr:`960`, :pr:`984`
+- Keep the subscript arguments of a class whose ``__class_getitem__`` returns the class itself, such as SQLAlchemy's
+  ``TypeEngine[Any]``, in headers, parameter and return fields, signatures, overloads and ``:ivar:`` types. :pr:`963`
+- Resolve names that two modules' ``if TYPE_CHECKING:`` blocks import from each other to their guarded types,
+  whichever module Sphinx documents first. :pr:`969`
+- Leave hand-written reST field lists, such as docutils' ``:Parameters:`` definition lists, alone instead of converting
+  them as numpydoc output into empty ``:param :`` fields. :pr:`979`
+- Keep the signatures and docstrings of the Sphinx, docutils and napoleon methods the extension patches, so a project
+  documenting those libraries shows their own signatures and docstrings. :pr:`980`
+- Resolve annotations that reach a type through a module alias imported under ``TYPE_CHECKING``, such as
+  ``_t.UriType`` in requests, instead of dropping the type. :pr:`985`
+- Link a class that a ``.pyi`` stub defines to the module the stub describes, such as ``ext.Config``, instead of
+  rendering it as an unresolved bare ``Config`` when the function is documented through a re-export. :pr:`1011`
+- Stop aborting the build on a parameter annotated with the bare ``typing.NewType`` class or ``typing.Annotated``
+  form; the field names it as a reference, as the signature does. :pr:`1013`
+- Overloads of a class documented with ``.. autofunction::`` no longer list ``self`` and ``-> None``, and overloads of a
+  function documented with ``.. autoclass::`` keep their first parameter and return types. :pr:`1014`
+- Link a name in the type of a data, attribute or property header the way the fields do, so the builtin ``type`` no
+  longer links to an unrelated documented attribute such as ``Event.type``. :pr:`1017`
+- Link a type an intersphinx inventory lists under both a ``py:class`` and a ``py:data`` name to the class entry on every
+  build, instead of a name that changed with ``PYTHONHASHSEED``. :pr:`1018`
+- Documenting a ``NamedTuple``'s ``__new__`` on its own, with ``automethod`` or ``:special-members: __new__``, no
+  longer warns that names its fields use, such as ``Path`` or ``int``, are not defined. :pr:`1019`
+- An attribute a generic base annotates in ``__init__`` now shows the type a subclass binds, such as ``int`` for
+  ``class Child(Base[int])``, in that subclass's ``:ivar:`` fields instead of the bare type parameter. :pr:`1020`
+- Document a constructor, property setter or overload decorated by something from ``autodoc_mock_imports`` without
+  aborting the build with ``wrapper loop when unwrapping``. :pr:`1022`
+- Documenting a function typed only by its stub or by type comments no longer writes those types into the function's
+  ``__annotations__``, so the object reads the same after a build as before it. :pr:`1025`
+- A :confval:`typehints_formatter` that returns an empty string now hides the type instead of showing raw
+  ``:sphinx_autodoc_typehints_type:`` text in docstring fields or an empty annotation such as ``attr:  = 1`` in headers and
+  signatures, and drops the ``Return type``, ``Extra items`` and ``Setter accepts`` fields it empties. :pr:`1026`
+- Link an alias, whether a ``type`` statement or a module-level ``Count = int``, used by an ``automodule`` member when
+  its ``py:type`` comes later on the page, instead of expanding it to its value. :pr:`1027`
+- A process running more than one Sphinx build now reads the ``TYPE_CHECKING`` block of each module again in every
+  build, so a module edited and imported again between builds renders its new types. :pr:`1030`
+- Link an enum member inside ``Literal`` to its enum when the member has no entry of its own, such as a member without a
+  docstring under ``:members:``, instead of rendering it unlinked with a ``nitpicky`` warning. :pr:`1035`
+- Link ``None``, ``True`` and ``False`` inside ``Literal[...]`` to the Python docs, the same way ``None`` links outside
+  it, instead of rendering them as plain text. :pr:`1038`
+- A class whose ``__module__`` is ``None`` now renders as its bare name instead of a broken cross-reference to ``None.ClassName``. :pr:`1039`
+- Types a ``typehints_formatter`` writes between bare backticks inside an expanded type alias now use the document's
+  ``default_role``, as they do outside an alias, instead of rendering as italic text. :pr:`1040`
+- Stop importing every module an intersphinx inventory lists at the start of the build; the extension now imports only
+  the modules that list a class an annotation names, so mapping the numpy or torch inventory no longer imports them. :pr:`1045`
+- Stop replacing napoleon's attribute annotation lookup for every Sphinx project in the process; the extension now turns
+  :confval:`napoleon_attr_annotations` off for napoleon in its own project only, so the first build after upgrading
+  re-reads every document once. :pr:`1048`
+- Warnings that point at a definition list, such as a duplicate label placed before one, now name the line the list
+  starts on instead of the line after it. :pr:`1049`
+- Stop using the deprecated ``SphinxTransform.app`` when choosing between an alias and its value, so builds that run
+  Python with ``-W error::PendingDeprecationWarning`` no longer fail, and the extension keeps working on Sphinx 11. :pr:`1051`
+- Type the fields napoleon and numpydoc write when they come after ``sphinx_autodoc_typehints`` in ``extensions``;
+  the order the two are listed in no longer matters. :pr:`1052`
+- Keep the choices between a type alias and its expanded value per document, so removing or editing a document no longer leaves its choices in the cached environment. The first build after upgrading re-reads every document once. :pr:`1059`
+- The return type of a function whose docstring has no `:rtype:` or `:return:` now goes where Sphinx puts the types it
+  adds with `autodoc_typehints = "description"`: after the last field of the first list with parameters, else of the last
+  field list, else in a new list at the end of the docstring. It no longer sits before a definition list, a doctest block,
+  a rubric or a section, nor below a table that follows the parameters, and a warning from a docstring reports its own
+  line rather than one counting the lines added above it. :pr:`1060`
+- Stop a Sphinx build from hanging on a recursive type alias inside a ``Callable`` parameter list. :pr:`1064`
+- Keep a submodule's type binding when a documented alias in its parent package has the same name. :pr:`1065`
+- Keep ``napoleon_attr_annotations`` at its configured boolean value for other Sphinx extensions. :pr:`1067`
+- Publish the documentation on Read the Docs, with tutorials, how-to guides, a reference and every example rendered live
+  by the extension. :pr:`1007`
+- Add a typing features gallery that renders every public name of :mod:`typing` with the extension, with controls in each example's ``conf.py`` tab that switch the options it renders with. :pr:`1029`
+- Compare both rendered outputs in the README, link the typing examples, and correct the event and return-field descriptions. :pr:`1066`
+- Depend on ``typing-extensions>=4.16`` on Python versions before 3.15. :pr:`986`
+
 *********************
  3.13.10 (2026-10-13)
 *********************

@@ -1,2 +1,0 @@
-Document a class that defines ``__new__`` from ``__new__``, as ``inspect.signature`` does, and take a ``__new__``-only
-class's parameter types from ``__new__`` rather than the class body.

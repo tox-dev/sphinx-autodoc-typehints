@@ -1,2 +1,0 @@
-Load ``sphinx.ext.autodoc`` before connecting to its events, so listing this extension first or omitting autodoc no
-longer fails with ``Unknown event name``.

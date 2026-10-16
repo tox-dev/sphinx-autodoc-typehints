@@ -1,1 +1,0 @@
-Keep the star of an unpacked ``*tuple[...]``, rendering it as ``Unpack[tuple[...]]``.

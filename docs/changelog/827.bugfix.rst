@@ -1,2 +1,0 @@
-Import the submodules a ``.pyi`` stub refers to through ``import pkg.sub`` or ``from . import sub``, so their types are
-no longer dropped.

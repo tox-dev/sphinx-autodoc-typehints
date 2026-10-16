@@ -1,2 +1,0 @@
-Render PEP 661 sentinels, the Python 3.15 ``sentinel`` builtin and ``typing_extensions.Sentinel``, by their name as a
-``py:data`` reference instead of linking a nonexistent ``sentinel`` class.

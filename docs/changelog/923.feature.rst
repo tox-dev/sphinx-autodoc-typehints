@@ -1,3 +1,0 @@
-Render the header type of data, attributes and properties the way fields render, so
-:confval:`typehints_fully_qualified`, :confval:`typehints_formatter` and :confval:`typehints_fixup_module_name` apply
-there and the header drops ``Annotated`` metadata.

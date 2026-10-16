@@ -1,1 +1,0 @@
-Show the ``@warnings.deprecated`` message as a deprecation notice below the summary.

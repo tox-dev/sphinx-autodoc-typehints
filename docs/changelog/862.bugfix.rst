@@ -1,1 +1,0 @@
-Keep the name and type of a single numpydoc ``Returns`` entry, rendering ``ratio (float) -- The ratio.``.

@@ -1,1 +1,0 @@
-Fix an ``AttributeError`` building man pages for projects that document a function taking a ``type`` alias.

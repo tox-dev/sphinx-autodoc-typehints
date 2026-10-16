@@ -1,2 +1,0 @@
-Apply documented aliases following Python name lookup, so methods see their module's aliases and unrelated aliases
-elsewhere in the package no longer replace a type.

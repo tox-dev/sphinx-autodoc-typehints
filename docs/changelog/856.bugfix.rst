@@ -1,1 +1,0 @@
-Link a documented generic ``type`` alias even when the docs have no entry for its arguments, instead of expanding it.

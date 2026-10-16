@@ -1,2 +1,0 @@
-Keep the signatures and docstrings of the Sphinx, docutils and napoleon methods the extension patches, so a project
-documenting those libraries shows their own signatures and docstrings.

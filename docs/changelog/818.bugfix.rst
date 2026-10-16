@@ -1,2 +1,0 @@
-Read stub definitions inside ``sys.version_info`` and ``sys.platform`` blocks, merge all overload variants of a stub
-function, and check re-exports.

@@ -1,2 +1,0 @@
-Stop dropping module data and class attributes that hold an annotated callable with
-``list assignment index out of range``.

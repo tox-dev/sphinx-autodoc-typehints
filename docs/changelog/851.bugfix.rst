@@ -1,1 +1,0 @@
-Replace a multi-line docstring ``:rtype:`` as a whole instead of leaving its continuation lines behind.

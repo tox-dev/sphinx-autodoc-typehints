@@ -1,1 +1,0 @@
-Reread the sources when :confval:`always_document_param_types` changes, so incremental builds pick up the new setting.

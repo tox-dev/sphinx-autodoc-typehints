@@ -1,2 +1,0 @@
-Keep a function's other type hints and warn ``forward_reference`` when an annotation names a missing module attribute,
-such as ``typing.TypeIs`` on Python 3.12.

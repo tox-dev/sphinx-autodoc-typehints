@@ -1,2 +1,0 @@
-Merge the return type into ``:returns:`` with ``typehints_use_rtype = False`` when the docstring also has ``:rtype:`` or
-its ``:returns:`` text starts on the next line.

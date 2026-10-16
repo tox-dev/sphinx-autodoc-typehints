@@ -1,2 +1,0 @@
-With ``typehints_defaults = "braces-after"``, put the default at the end of the last plain paragraph of the
-description instead of inside a trailing list, directive or literal block.

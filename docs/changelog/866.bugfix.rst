@@ -1,1 +1,0 @@
-Render bounded and defaulted type variables as ``TypeVar(T, bound=int)`` without a gap after the ``=``.

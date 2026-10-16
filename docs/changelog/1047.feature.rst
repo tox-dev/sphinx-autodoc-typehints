@@ -1,2 +1,0 @@
-Render an unpacked ``TypeVarTuple`` or tuple with the PEP 646 star, ``*Ts`` and ``*tuple[int, ...]``, instead of
-``Unpack[Ts]``; ``Unpack[TypedDict]`` for ``**kwargs`` keeps its spelling.

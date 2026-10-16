@@ -1,2 +1,0 @@
-Stop aborting the build on a parameter annotated with the bare ``typing.NewType`` class or ``typing.Annotated``
-form; the field names it as a reference, as the signature does.

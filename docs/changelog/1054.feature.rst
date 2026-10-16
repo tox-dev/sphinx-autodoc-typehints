@@ -1,3 +1,0 @@
-Leave out trailing arguments equal to their type parameter's default, so ``typing.ContextManager[None]`` renders as
-``ContextManager[None]`` instead of ``ContextManager[None, bool | None]`` on Python 3.13 and later; a written
-``typing.Generator[int, None, None]`` renders as ``Generator[int]``.

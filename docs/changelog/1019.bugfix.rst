@@ -1,2 +1,0 @@
-Documenting a ``NamedTuple``'s ``__new__`` on its own, with ``automethod`` or ``:special-members: __new__``, no
-longer warns that names its fields use, such as ``Path`` or ``int``, are not defined.

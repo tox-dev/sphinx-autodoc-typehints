@@ -1,1 +1,0 @@
-Show the enum of a ``Literal`` member, as ``Literal[Color.RED, Light.RED]`` instead of ``Literal[RED, RED]``.

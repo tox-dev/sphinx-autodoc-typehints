@@ -1,1 +1,0 @@
-Type the keys of ``**kwargs: Unpack[TypedDict]`` documented as keyword arguments.

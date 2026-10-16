@@ -1,2 +1,0 @@
-With :confval:`typehints_defaults`, show the default of a parameter typed only in its docstring, whether through a
-``:type:`` line, a ``:param str c:`` field or napoleon's combined parameter field.

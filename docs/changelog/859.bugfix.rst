@@ -1,1 +1,0 @@
-Report warnings about admonition content at the right line in documents that use ``.. include::``.

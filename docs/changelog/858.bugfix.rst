@@ -1,1 +1,0 @@
-Stop hiding ``@overload`` signatures from other Sphinx apps in the same process that do not load the extension.

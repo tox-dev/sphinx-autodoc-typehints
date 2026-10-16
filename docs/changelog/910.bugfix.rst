@@ -1,2 +1,0 @@
-Show the positional-only ``/`` and keyword-only ``*`` markers, defaults and the stars of ``*args`` and ``**kwargs`` in
-``Overloads`` entries.

@@ -1,1 +1,0 @@
-Link instance variable types imported under ``TYPE_CHECKING`` regardless of which class Sphinx documents first.

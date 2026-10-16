@@ -1,1 +1,0 @@
-Stop rendering ``bound="None"`` on an unbound ``ParamSpec`` on Python 3.12 and early 3.13 releases.

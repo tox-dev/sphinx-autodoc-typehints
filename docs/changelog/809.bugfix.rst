@@ -1,2 +1,0 @@
-Render a ``TypeVarTuple`` as ``TypeVarTuple(Ts)`` linking to ``typing.TypeVarTuple``, instead of a broken reference that
-loses its name.

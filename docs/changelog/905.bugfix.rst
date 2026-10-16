@@ -1,1 +1,0 @@
-Reread the pages that use a ``.pyi`` stub when the stub changes, so an incremental build picks up the edit.

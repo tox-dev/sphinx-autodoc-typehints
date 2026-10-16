@@ -1,2 +1,0 @@
-Show ``typehints_defaults = "braces-after"`` defaults on their own parameter when the docstring already has ``:type:``
-lines or napoleon types.

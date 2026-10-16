@@ -1,2 +1,0 @@
-Place the return type before Sphinx directives such as ``versionadded``, ``deprecated`` and ``seealso``, as
-before docutils directives like ``note``.

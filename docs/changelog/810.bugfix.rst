@@ -1,2 +1,0 @@
-Fix broken markup and a reference warning for ``Optional[Union[...]]`` with ``simplify_optional_unions = False`` on
-Python before 3.14.

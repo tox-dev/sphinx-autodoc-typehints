@@ -1,2 +1,0 @@
-Keep the annotations in the signatures of ``functools.singledispatch`` implementations, so each registered
-implementation shows the type it dispatches on.

@@ -1,1 +1,0 @@
-Keep a submodule's type binding when a documented alias in its parent package has the same name.

@@ -1,4 +1,0 @@
-Keep a signature written in the directive, such as ``.. autofunction:: mod.f(x, y=3)``, or read from the docstring
-through :confval:`autodoc_docstring_signature`, when it names other parameters than the object takes, instead of
-replacing it with the object's own. One made of ``*args`` and ``**kwargs`` alone still gets the object's parameters
-(:pr:`903`).

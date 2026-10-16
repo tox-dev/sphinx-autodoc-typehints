@@ -1,2 +1,0 @@
-Link names that only ``typing_extensions`` provides on the running Python, such as ``TypeIs`` on 3.12 and
-``Doc``, to ``typing_extensions`` instead of a missing ``typing`` target.

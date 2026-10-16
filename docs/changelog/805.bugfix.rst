@@ -1,2 +1,0 @@
-Render a ``Callable`` parameterized by a ``ParamSpec`` or ``Concatenate`` as ``Callable[P, int]`` instead of
-``Callable[[P], int]``.

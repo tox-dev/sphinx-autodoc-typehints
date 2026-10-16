@@ -1,2 +1,0 @@
-Render subscripted types from :confval:`autodoc_mock_imports` modules, such as ``NDArray[float64]``, instead of a
-garbled name.

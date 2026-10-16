@@ -1,1 +1,0 @@
-Link a ``type`` alias to its own entry, not to a different documented alias with the same name.

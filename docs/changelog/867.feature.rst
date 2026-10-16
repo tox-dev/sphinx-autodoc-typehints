@@ -1,2 +1,0 @@
-Show the type parameters of PEP 695 functions, classes and type aliases and of ``Generic[T]`` subclasses in their
-signature, such as ``bounded[T: int](value)`` and ``class Stack[T]``, with bounds, constraints and defaults.

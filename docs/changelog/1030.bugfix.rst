@@ -1,2 +1,0 @@
-A process running more than one Sphinx build now reads the ``TYPE_CHECKING`` block of each module again in every
-build, so a module edited and imported again between builds renders its new types.

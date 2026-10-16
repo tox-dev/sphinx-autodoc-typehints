@@ -1,2 +1,0 @@
-Resolve annotations in the module that defines an object, so re-exported objects with a reassigned ``__module__`` find
-their ``TYPE_CHECKING`` imports.

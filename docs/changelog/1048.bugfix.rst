@@ -1,3 +1,0 @@
-Stop replacing napoleon's attribute annotation lookup for every Sphinx project in the process; the extension now turns
-:confval:`napoleon_attr_annotations` off for napoleon in its own project only, so the first build after upgrading
-re-reads every document once.

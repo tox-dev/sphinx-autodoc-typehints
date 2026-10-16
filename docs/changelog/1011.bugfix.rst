@@ -1,2 +1,0 @@
-Link a class that a ``.pyi`` stub defines to the module the stub describes, such as ``ext.Config``, instead of
-rendering it as an unresolved bare ``Config`` when the function is documented through a re-export.

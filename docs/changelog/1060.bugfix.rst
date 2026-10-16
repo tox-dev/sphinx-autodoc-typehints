@@ -1,5 +1,0 @@
-The return type of a function whose docstring has no `:rtype:` or `:return:` now goes where Sphinx puts the types it
-adds with `autodoc_typehints = "description"`: after the last field of the first list with parameters, else of the last
-field list, else in a new list at the end of the docstring. It no longer sits before a definition list, a doctest block,
-a rubric or a section, nor below a table that follows the parameters, and a warning from a docstring reports its own
-line rather than one counting the lines added above it.

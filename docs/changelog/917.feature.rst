@@ -1,1 +1,0 @@
-Show the yielded type in the ``Yields`` entry of a generator, keeping a type the docstring already states.

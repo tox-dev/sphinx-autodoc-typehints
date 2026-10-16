@@ -1,2 +1,0 @@
-Types a ``typehints_formatter`` writes between bare backticks inside an expanded type alias now use the document's
-``default_role``, as they do outside an alias, instead of rendering as italic text.

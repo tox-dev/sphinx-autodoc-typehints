@@ -1,2 +1,0 @@
-Expand a generic ``type`` alias passed to itself, such as ``Pair[Pair[int]]``, instead of dropping the inner
-arguments.

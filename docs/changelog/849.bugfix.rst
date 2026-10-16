@@ -1,2 +1,0 @@
-Keep the numpydoc ``Returns`` description of a function without parameters instead of adding a second one from the
-return annotation's ``Doc()``.

@@ -1,2 +1,0 @@
-Type ``:ivar:``, ``:cvar:`` and ``:var:`` fields from class-body and base class annotations, dropping ``ClassVar`` and
-``Final`` qualifiers.
