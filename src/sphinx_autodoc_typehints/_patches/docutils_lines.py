@@ -6,6 +6,8 @@ Placing the `:rtype:` field reads that line number.
 
 from __future__ import annotations
 
+__lazy_modules__ = ["docutils"]
+
 from functools import wraps
 from typing import TYPE_CHECKING
 

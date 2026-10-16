@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = ["contextlib", "importlib"]
+
 from contextlib import suppress
 from dataclasses import dataclass, field
 from importlib import import_module

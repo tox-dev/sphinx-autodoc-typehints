@@ -2,13 +2,27 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "functools",
+    "inspect",
+    "sphinx",
+    "sphinx.util",
+    "sphinx.util.inspect",
+    "sphinx_autodoc_typehints._docstring.parameters",
+    "sphinx_autodoc_typehints._objects",
+    "sphinx_autodoc_typehints._render",
+    "sphinx_autodoc_typehints._resolve",
+    "sphinx_autodoc_typehints._state",
+]
+
 from functools import partial
 from inspect import Parameter, Signature, isclass, signature
 from typing import TYPE_CHECKING
 
 from sphinx.util.inspect import object_description
 
-from .._documented import (
+from sphinx_autodoc_typehints._docstring.parameters import VARIADIC_STARS
+from sphinx_autodoc_typehints._documented import (
     OVERLOADED_KINDS,
     as_written,
     documenting_class,
@@ -16,19 +30,18 @@ from .._documented import (
     resolved_type_hints,
     typed_overloads,
 )
-from .._objects import documented_owner, stored_name, unwrapped
-from .._render import as_field_type, fixup_module_name, value_markup
-from .._resolve import bound_type_args, resolve_overloads
-from .._state import written_signatures
-from .parameters import VARIADIC_STARS
+from sphinx_autodoc_typehints._objects import documented_owner, stored_name, unwrapped
+from sphinx_autodoc_typehints._render import as_field_type, fixup_module_name, value_markup
+from sphinx_autodoc_typehints._resolve import bound_type_args, resolve_overloads
+from sphinx_autodoc_typehints._state import written_signatures
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
 
     from sphinx.application import Sphinx
 
-    from .._documented import Entry
-    from .._types import Documented, Hint
+    from sphinx_autodoc_typehints._documented import Entry
+    from sphinx_autodoc_typehints._types import Documented, Hint
 
 
 def inject_overloads(entry: Entry, obj: Callable[..., object], lines: list[str]) -> bool:

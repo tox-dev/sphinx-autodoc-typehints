@@ -6,6 +6,18 @@ They unwrap callables, pick the constructor a signature comes from, and find wha
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "functools",
+    "inspect",
+    "sphinx",
+    "sphinx.ext",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autodoc.mock",
+    "sphinx.util",
+    "sphinx.util.inspect",
+    "types",
+]
+
 from functools import cached_property, partial, partialmethod
 from inspect import Signature, getfile, getmodule, getsourcefile, getsourcelines, isclass, isroutine, unwrap
 from sys import modules
@@ -21,7 +33,7 @@ if TYPE_CHECKING:
 
     from attrs import AttrsInstance
 
-    from ._types import Documented
+    from sphinx_autodoc_typehints._types import Documented
 
 
 class QualifiedCallable(Protocol):

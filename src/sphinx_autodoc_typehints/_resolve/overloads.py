@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = ["contextlib", "sphinx", "sphinx.errors", "sphinx.pycode"]
+
 from contextlib import suppress
 from typing import TYPE_CHECKING, Final
 

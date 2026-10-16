@@ -34,6 +34,13 @@ To run a single test file while you work, use the interpreter tox created:
 layers with import-linter (see [Architecture](#architecture)). `tox r -e type` type checks the package and the tests
 with [ty](https://github.com/astral-sh/ty).
 
+The `flake8-lazy` hook keeps the `__lazy_modules__` list at the top of each module under `src/` up to date. On Python
+3.15 ([PEP 810](https://peps.python.org/pep-0810/)) the modules it lists load on first use rather than at import, so
+Sphinx does not pay for code paths a project never takes; older Pythons ignore the list. The hook rewrites the list
+itself, so when it fails, review and stage its change. A module whose import has a side effect that must happen at
+import time belongs in `standalone.lazy-exclude-modules` under `[tool.flake8-lazy]` in `pyproject.toml`, with a comment
+saying why.
+
 ### Package Metadata
 
 `tox r -e pkg_meta` builds the sdist and wheel, then checks the long description with twine and the wheel layout with

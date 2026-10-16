@@ -6,12 +6,23 @@ It registers the options, roles, directive, post-transform and event handlers, a
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "docutils",
+    "sphinx_autodoc_typehints._config",
+    "sphinx_autodoc_typehints._docstring",
+    "sphinx_autodoc_typehints._patches",
+    "sphinx_autodoc_typehints._render",
+    "sphinx_autodoc_typehints._resolve",
+    "sphinx_autodoc_typehints._signature",
+    "sphinx_autodoc_typehints.version",
+]
+
 from typing import TYPE_CHECKING
 
 from docutils import nodes
 
-from ._config import OPTIONS, cache_fixup_module_name, store_type_mapping, validate_config
-from ._docstring import (
+from sphinx_autodoc_typehints._config import OPTIONS, cache_fixup_module_name, store_type_mapping, validate_config
+from sphinx_autodoc_typehints._docstring import (
     DEPRECATED_DIRECTIVE,
     DeprecatedDirective,
     mark_numpy_returns,
@@ -19,14 +30,14 @@ from ._docstring import (
     process_docstring,
     take_over_napoleon_attr_annotations,
 )
-from ._patches import (
+from sphinx_autodoc_typehints._patches import (
     BUILDING,
     patch_autodoc_type_hints,
     patch_doctest_line_number,
     patch_overload_capture,
     patch_signature_lines,
 )
-from ._render import (
+from sphinx_autodoc_typehints._render import (
     ALIAS_CHOICE_ROLE,
     CONSTANT_ROLE,
     ENUM_MEMBER_ROLE,
@@ -43,9 +54,9 @@ from ._render import (
     unescape,
     value_role,
 )
-from ._resolve import SHADOWED_BY_GUARD
-from ._signature import add_type_params, process_bases, process_signature, render_header_types
-from .version import __version__
+from sphinx_autodoc_typehints._resolve import SHADOWED_BY_GUARD
+from sphinx_autodoc_typehints._signature import add_type_params, process_bases, process_signature, render_header_types
+from sphinx_autodoc_typehints.version import __version__
 
 if TYPE_CHECKING:
     from docutils.nodes import Node

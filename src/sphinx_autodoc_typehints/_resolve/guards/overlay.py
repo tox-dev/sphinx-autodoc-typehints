@@ -6,6 +6,8 @@ Autodoc lists module members, so the names stay out of the module.
 
 from __future__ import annotations
 
+__lazy_modules__ = ["sphinx_autodoc_typehints._objects", "types"]
+
 from contextlib import contextmanager
 from types import ModuleType
 from typing import TYPE_CHECKING, Final

@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
-from .edit import FieldListFormat, write_rtype
-from .keywords import STAR_PREFIXES, field_keyword_and_argument
+__lazy_modules__ = [
+    "sphinx_autodoc_typehints._docstring.formats.field_list.edit",
+    "sphinx_autodoc_typehints._docstring.formats.field_list.keywords",
+]
+
+from sphinx_autodoc_typehints._docstring.formats.field_list.edit import FieldListFormat, write_rtype
+from sphinx_autodoc_typehints._docstring.formats.field_list.keywords import STAR_PREFIXES, field_keyword_and_argument
 
 __all__ = [
     "STAR_PREFIXES",

@@ -2,22 +2,33 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "inspect",
+    "sphinx",
+    "sphinx.util",
+    "sphinx.util.inspect",
+    "sphinx_autodoc_typehints._docstring.formats",
+    "sphinx_autodoc_typehints._docstring.parameters",
+    "sphinx_autodoc_typehints._documented",
+    "sphinx_autodoc_typehints._state",
+]
+
 from inspect import Signature, isclass
 from typing import TYPE_CHECKING, Literal
 
 from sphinx.util.inspect import getdoc
 
-from .._documented import class_doc_choice
-from .._state import class_docstrings
-from .formats import detect_format
-from .parameters import escape_trailing_underscore
+from sphinx_autodoc_typehints._docstring.formats import detect_format
+from sphinx_autodoc_typehints._docstring.parameters import escape_trailing_underscore
+from sphinx_autodoc_typehints._documented import class_doc_choice
+from sphinx_autodoc_typehints._state import class_docstrings
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
     from sphinx.environment import BuildEnvironment
     from sphinx.ext.autodoc import Options
 
-    from .._types import Documented
+    from sphinx_autodoc_typehints._types import Documented
 
 
 def docstring_part(

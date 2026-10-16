@@ -6,6 +6,15 @@ It reads `X | Y` as a union when the operands are mocks that do not support `|`.
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "annotationlib",
+    "sphinx",
+    "sphinx.util",
+    "sphinx_autodoc_typehints._resolve.guards",
+    "sphinx_autodoc_typehints._resolve.source",
+    "types",
+]
+
 from ast import (
     BinOp,
     BitOr,
@@ -26,8 +35,8 @@ from typing import TYPE_CHECKING, Final, ForwardRef, Union
 
 from sphinx.util import logging
 
-from ..guards import annotation_globals, guarded_names
-from ..source import names_read
+from sphinx_autodoc_typehints._resolve.guards import annotation_globals, guarded_names
+from sphinx_autodoc_typehints._resolve.source import names_read
 
 if version_info >= (3, 14):  # pragma: >=3.14 cover
     from annotationlib import Format, ForwardRef, get_annotations
@@ -35,9 +44,8 @@ if version_info >= (3, 14):  # pragma: >=3.14 cover
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
+    from sphinx_autodoc_typehints._resolve.generics import Subscriptable
     from sphinx_autodoc_typehints._types import Annotation, Documented, Hint
-
-    from ..generics import Subscriptable
 
 
 _UNION: Final[str] = "__sphinx_autodoc_typehints_union__"

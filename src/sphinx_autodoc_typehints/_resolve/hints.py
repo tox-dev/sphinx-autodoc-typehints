@@ -6,17 +6,35 @@ It also types a C data descriptor from the stub of its class.
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "ast",
+    "inspect",
+    "sphinx_autodoc_typehints._refs",
+    "sphinx_autodoc_typehints._resolve.backfill",
+    "sphinx_autodoc_typehints._resolve.evaluate",
+    "sphinx_autodoc_typehints._resolve.generics",
+    "sphinx_autodoc_typehints._resolve.guards",
+    "sphinx_autodoc_typehints._warnings",
+    "types",
+]
+
 from ast import AnnAssign, ClassDef, FunctionDef, If, Name, stmt, unparse
 from inspect import get_annotations, getmodule, isclass, isroutine
 from types import GetSetDescriptorType, MemberDescriptorType, ModuleType
 from typing import TYPE_CHECKING, NewType, ParamSpec, TypeVar, TypeVarTuple, get_origin
 
-from .._refs import is_type_alias
-from .._warnings import warn
-from .backfill import backfill_type_hints, find_ast_node, parse_stub_ast, stub_annotations, stub_context, stub_path
-from .evaluate import resolve_string_annotations, type_hints, unevaluated_annotations
-from .generics import type_params_of
-from .guards import (
+from sphinx_autodoc_typehints._refs import is_type_alias
+from sphinx_autodoc_typehints._resolve.backfill import (
+    backfill_type_hints,
+    find_ast_node,
+    parse_stub_ast,
+    stub_annotations,
+    stub_context,
+    stub_path,
+)
+from sphinx_autodoc_typehints._resolve.evaluate import resolve_string_annotations, type_hints, unevaluated_annotations
+from sphinx_autodoc_typehints._resolve.generics import type_params_of
+from sphinx_autodoc_typehints._resolve.guards import (
     SHADOWED_BY_GUARD,
     annotation_globals,
     guard_binds,
@@ -24,11 +42,12 @@ from .guards import (
     guarded_names,
     resolve_type_guarded_imports,
 )
+from sphinx_autodoc_typehints._warnings import warn
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
 
-    from .._types import Documented, Hint
+    from sphinx_autodoc_typehints._types import Documented, Hint
 
 
 def get_all_type_hints(

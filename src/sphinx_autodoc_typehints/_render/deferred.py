@@ -7,6 +7,20 @@ value.
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "contextlib",
+    "docutils",
+    "hashlib",
+    "sphinx",
+    "sphinx.errors",
+    "sphinx.util",
+    "sphinx.util.rst",
+    "sphinx_autodoc_typehints._private_imports",
+    "sphinx_autodoc_typehints._render.context",
+    "sphinx_autodoc_typehints._render.rst",
+    "sphinx_autodoc_typehints._state",
+]
+
 from contextlib import suppress
 from hashlib import blake2s
 from typing import TYPE_CHECKING, Final, override
@@ -20,10 +34,10 @@ from sphinx.transforms.post_transforms import SphinxPostTransform
 from sphinx.util import logging
 from sphinx.util.rst import default_role
 
-from .._private_imports import sphinx_domains
-from .._state import alias_choices, document_alias_choices, recorded_alias_choices
-from .context import render_context
-from .rst import parse, unescape
+from sphinx_autodoc_typehints._private_imports import sphinx_domains
+from sphinx_autodoc_typehints._render.context import render_context
+from sphinx_autodoc_typehints._render.rst import parse, unescape
+from sphinx_autodoc_typehints._state import alias_choices, document_alias_choices, recorded_alias_choices
 
 if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet

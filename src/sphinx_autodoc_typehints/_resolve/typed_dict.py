@@ -2,6 +2,14 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "annotationlib",
+    "sphinx_autodoc_typehints._resolve.evaluate",
+    "sphinx_autodoc_typehints._resolve.generics",
+    "sphinx_autodoc_typehints._resolve.guards",
+    "types",
+]
+
 import typing  # NoExtraItems exists only on newer Pythons, so it is looked up at runtime
 from sys import modules, version_info
 from types import get_original_bases
@@ -14,10 +22,10 @@ from typing import (
     get_origin,
 )
 
-from .._types import sentinel
-from .evaluate import type_hints
-from .generics import specialize, type_arguments
-from .guards import guarded_names
+from sphinx_autodoc_typehints._resolve.evaluate import type_hints
+from sphinx_autodoc_typehints._resolve.generics import specialize, type_arguments
+from sphinx_autodoc_typehints._resolve.guards import guarded_names
+from sphinx_autodoc_typehints._types import sentinel
 
 if version_info >= (3, 14):  # pragma: >=3.14 cover
     from annotationlib import Format, get_annotations
@@ -26,7 +34,7 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
     from typing import ForwardRef
 
-    from .._types import Annotation, Documented, TypeParam
+    from sphinx_autodoc_typehints._types import Annotation, Documented, TypeParam
 
 
 # no `Final`: ty stops reading an annotated sentinel as a type https://github.com/astral-sh/ty/issues/4737

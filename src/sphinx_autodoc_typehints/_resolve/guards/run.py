@@ -6,6 +6,24 @@ It mocks a dependency the docs environment lacks and records the names the guard
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "ast",
+    "collections",
+    "importlib",
+    "importlib.util",
+    "inspect",
+    "sphinx",
+    "sphinx.ext",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autodoc.mock",
+    "sphinx_autodoc_typehints._objects",
+    "sphinx_autodoc_typehints._refs",
+    "sphinx_autodoc_typehints._resolve.guards.overlay",
+    "sphinx_autodoc_typehints._resolve.guards.parse",
+    "sphinx_autodoc_typehints._warnings",
+    "types",
+]
+
 from ast import AsyncFunctionDef, FunctionDef, Import, ImportFrom, stmt, unparse, walk
 from collections import ChainMap
 from contextlib import contextmanager, suppress
@@ -22,10 +40,9 @@ from sphinx.util import logging
 
 from sphinx_autodoc_typehints._objects import defining_module
 from sphinx_autodoc_typehints._refs import MyTypeAliasForwardRef
+from sphinx_autodoc_typehints._resolve.guards.overlay import SHADOWED_BY_GUARD, guarded_names_bound
+from sphinx_autodoc_typehints._resolve.guards.parse import defined_names, guard_binds, guarded_statements, module_source
 from sphinx_autodoc_typehints._warnings import warn
-
-from .overlay import SHADOWED_BY_GUARD, guarded_names_bound
-from .parse import defined_names, guard_binds, guarded_statements, module_source
 
 if TYPE_CHECKING:
     from collections.abc import Generator

@@ -128,7 +128,6 @@ lint.ignore = [
   "missing-trailing-comma",                    # Conflict with formatter
   "multi-line-summary-first-line",             # `multi-line-summary-first-line` (D212) and `multi-line-summary-second-line` (D213) are incompatible
   "non-empty-init-module",                     # `__init__` module should only contain docstrings and re-exports
-  "relative-imports",                          # intra-package imports climb at most two levels, deeper ones stay absolute
   "single-line-implicit-string-concatenation", # Conflict with formatter
 ]
 lint.per-file-ignores."src/sphinx_autodoc_typehints/_patches/*.py" = [
@@ -152,7 +151,8 @@ lint.per-file-ignores."tests/**/*.py" = [
   "too-many-positional-arguments",        # any number of arguments in tests
 ]
 lint.per-file-ignores."tests/roots/**/*.py" = [
-  "any-type", # the modules under test annotate with Any to check how it renders
+  "any-type",         # the modules under test annotate with Any to check how it renders
+  "relative-imports", # the packages under test import their siblings relatively on purpose
 ]
 lint.per-file-ignores."tests/roots/test-attrs/attrs_lazy_mod.py" = [
   "missing-required-import",               # intentionally omits `from __future__ import annotations` to keep annotations lazy
@@ -189,6 +189,8 @@ lint.per-file-ignores."tests/roots/test-pyi-stubs/stub_mod.pyi" = [
 lint.per-file-ignores."tests/roots/test-unexecutable-guard/demo_unexecutable_guard.py" = [
   "non-pep695-generic-function", # the legacy TypeVar spelling is what the guard cannot execute
 ]
+# flake8-lazy lists modules by absolute name, so a relative import could not be deferred
+lint.flake8-tidy-imports.ban-relative-imports = "all"
 lint.isort = { known-first-party = [
   "sphinx_autodoc_typehints",
   "tests",
@@ -279,3 +281,6 @@ layers = [
   "_render | _resolve",
   "_objects : _refs : _state : _warnings : _private_imports : _types",
 ]
+
+[tool.flake8-lazy]
+standalone.line-length = 120

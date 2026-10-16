@@ -2,21 +2,56 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "inspect",
+    "sphinx",
+    "sphinx.util",
+    "sphinx.util.inspect",
+    "sphinx_autodoc_typehints._docstring.attributes",
+    "sphinx_autodoc_typehints._docstring.class_parts",
+    "sphinx_autodoc_typehints._docstring.deprecation",
+    "sphinx_autodoc_typehints._docstring.formats",
+    "sphinx_autodoc_typehints._docstring.object_fields",
+    "sphinx_autodoc_typehints._docstring.parameters",
+    "sphinx_autodoc_typehints._docstring.returns",
+    "sphinx_autodoc_typehints._documented",
+    "sphinx_autodoc_typehints._objects",
+    "sphinx_autodoc_typehints._render",
+    "sphinx_autodoc_typehints._resolve",
+]
+
 from inspect import isclass, isgetsetdescriptor, ismemberdescriptor, ismodule
 from typing import TYPE_CHECKING
 
 from sphinx.util.inspect import signature as sphinx_signature
 
-from .._documented import Entry, render_scope, resolved_type_hints, show_factory_defaults
-from .._objects import (
+from sphinx_autodoc_typehints._docstring.attributes import (
+    class_attribute_annotations,
+    documented_attributes,
+    inject_attribute_types,
+    inject_ivar_types,
+)
+from sphinx_autodoc_typehints._docstring.class_parts import docstring_part, has_constructor_docstring
+from sphinx_autodoc_typehints._docstring.deprecation import inject_deprecation
+from sphinx_autodoc_typehints._docstring.formats import WRITTEN_BEFORE_NAPOLEON, detect_format
+from sphinx_autodoc_typehints._docstring.object_fields import (
+    inject_overloads,
+    inject_override,
+    inject_setter_type,
+    summary_end,
+)
+from sphinx_autodoc_typehints._docstring.parameters import inject_parameters
+from sphinx_autodoc_typehints._docstring.returns import inject_rtype
+from sphinx_autodoc_typehints._documented import Entry, render_scope, resolved_type_hints, show_factory_defaults
+from sphinx_autodoc_typehints._objects import (
     callable_target,
     constructor_name,
     declared_signature,
     prefix_of,
     property_getter,
 )
-from .._render import as_field_type
-from .._resolve import (
+from sphinx_autodoc_typehints._render import as_field_type
+from sphinx_autodoc_typehints._resolve import (
     OPEN,
     extra_items_type,
     get_body_annotations,
@@ -24,18 +59,6 @@ from .._resolve import (
     resolve_type_guarded_imports,
     stub_path,
 )
-from .attributes import (
-    class_attribute_annotations,
-    documented_attributes,
-    inject_attribute_types,
-    inject_ivar_types,
-)
-from .class_parts import docstring_part, has_constructor_docstring
-from .deprecation import inject_deprecation
-from .formats import WRITTEN_BEFORE_NAPOLEON, detect_format
-from .object_fields import inject_overloads, inject_override, inject_setter_type, summary_end
-from .parameters import inject_parameters
-from .returns import inject_rtype
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -43,7 +66,7 @@ if TYPE_CHECKING:
     from sphinx.application import Sphinx
     from sphinx.ext.autodoc import Options
 
-    from .._types import Documented
+    from sphinx_autodoc_typehints._types import Documented
 
 
 def process_docstring(

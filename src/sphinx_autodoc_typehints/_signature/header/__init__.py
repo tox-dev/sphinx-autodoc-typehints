@@ -2,9 +2,15 @@
 
 from __future__ import annotations
 
-from .data_types import render_header_types
-from .overloads import signature_overloads
-from .type_params import add_type_params
+__lazy_modules__ = [
+    "sphinx_autodoc_typehints._signature.header.data_types",
+    "sphinx_autodoc_typehints._signature.header.overloads",
+    "sphinx_autodoc_typehints._signature.header.type_params",
+]
+
+from sphinx_autodoc_typehints._signature.header.data_types import render_header_types
+from sphinx_autodoc_typehints._signature.header.overloads import signature_overloads
+from sphinx_autodoc_typehints._signature.header.type_params import add_type_params
 
 __all__ = [
     "add_type_params",

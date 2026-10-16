@@ -7,16 +7,20 @@ It also adds a field for a parameter the docstring leaves out when `always_docum
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "inspect",
+    "keyword",
+    "sphinx_autodoc_typehints._docstring.returns",
+    "sphinx_autodoc_typehints._render",
+    "sphinx_autodoc_typehints._resolve",
+]
+
 from dataclasses import dataclass
 from inspect import Parameter, Signature
 from keyword import iskeyword
 from typing import TYPE_CHECKING, Final, Literal, Unpack, get_args, get_origin
 
-from .._documented import as_written
-from .._render import as_field_type
-from .._resolve import typed_dict_keys
-from .._types import frozendict
-from .formats import (
+from sphinx_autodoc_typehints._docstring.formats import (
     STAR_PREFIXES,
     add_combined_field_entry,
     field_keyword_and_argument,
@@ -24,17 +28,21 @@ from .formats import (
     last_paragraph_end,
     type_combined_field_entry,
 )
-from .returns import description_from_doc
+from sphinx_autodoc_typehints._docstring.returns import description_from_doc
+from sphinx_autodoc_typehints._documented import as_written
+from sphinx_autodoc_typehints._render import as_field_type
+from sphinx_autodoc_typehints._resolve import typed_dict_keys
+from sphinx_autodoc_typehints._types import frozendict
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
     from sphinx.application import Sphinx
 
-    from .._documented import ResolvedHints
-    from .._refs import WrittenTypeAlias
-    from .._types import Hint
-    from .formats import FieldListFormat
+    from sphinx_autodoc_typehints._docstring.formats import FieldListFormat
+    from sphinx_autodoc_typehints._documented import ResolvedHints
+    from sphinx_autodoc_typehints._refs import WrittenTypeAlias
+    from sphinx_autodoc_typehints._types import Hint
 
 VARIADIC_STARS: Final[Mapping[str, str]] = frozendict({"VAR_POSITIONAL": "\\*", "VAR_KEYWORD": "\\*\\*"})
 

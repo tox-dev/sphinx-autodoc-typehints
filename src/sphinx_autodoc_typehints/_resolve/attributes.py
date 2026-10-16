@@ -2,6 +2,15 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "ast",
+    "sphinx_autodoc_typehints._objects",
+    "sphinx_autodoc_typehints._resolve.evaluate",
+    "sphinx_autodoc_typehints._resolve.generics",
+    "sphinx_autodoc_typehints._resolve.guards",
+    "sphinx_autodoc_typehints._resolve.source",
+]
+
 from ast import (
     AST,
     AnnAssign,
@@ -16,17 +25,17 @@ from ast import (
 )
 from typing import TYPE_CHECKING, ClassVar, Final, get_args, get_origin
 
-from .._objects import unwrapped
-from .evaluate import evaluate_annotation, type_hints
-from .generics import type_params_of
-from .guards import annotation_globals, guarded_names
-from .source import parsed_source
+from sphinx_autodoc_typehints._objects import unwrapped
+from sphinx_autodoc_typehints._resolve.evaluate import evaluate_annotation, type_hints
+from sphinx_autodoc_typehints._resolve.generics import type_params_of
+from sphinx_autodoc_typehints._resolve.guards import annotation_globals, guarded_names
+from sphinx_autodoc_typehints._resolve.source import parsed_source
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
     from types import ModuleType
 
-    from .._types import Annotation
+    from sphinx_autodoc_typehints._types import Annotation
 
 
 def get_instance_var_annotations(cls: type) -> dict[str, Annotation | str]:

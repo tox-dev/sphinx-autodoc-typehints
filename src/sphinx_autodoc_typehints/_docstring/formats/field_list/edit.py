@@ -2,14 +2,30 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "sphinx_autodoc_typehints._docstring.formats.base",
+    "sphinx_autodoc_typehints._docstring.formats.field_list.keywords",
+    "sphinx_autodoc_typehints._docstring.formats.field_list.rtype",
+    "sphinx_autodoc_typehints._docstring.formats.napoleon",
+    "sphinx_autodoc_typehints._docstring.formats.numpydoc",
+]
+
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 
-from ..base import InsertIndexInfo
-from ..napoleon import reads_as_type
-from ..numpydoc import convert_to_field_list
-from .keywords import PARAM_SYNONYMS, STAR_PREFIXES, field_keyword_and_argument
-from .rtype import SphinxDirectivePlaceholder, node_line_no, safe_parse
+from sphinx_autodoc_typehints._docstring.formats.base import InsertIndexInfo
+from sphinx_autodoc_typehints._docstring.formats.field_list.keywords import (
+    PARAM_SYNONYMS,
+    STAR_PREFIXES,
+    field_keyword_and_argument,
+)
+from sphinx_autodoc_typehints._docstring.formats.field_list.rtype import (
+    SphinxDirectivePlaceholder,
+    node_line_no,
+    safe_parse,
+)
+from sphinx_autodoc_typehints._docstring.formats.napoleon import reads_as_type
+from sphinx_autodoc_typehints._docstring.formats.numpydoc import convert_to_field_list
 
 if TYPE_CHECKING:
     from docutils.nodes import Node

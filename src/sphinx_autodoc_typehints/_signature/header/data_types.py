@@ -2,6 +2,21 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "inspect",
+    "sphinx",
+    "sphinx.util",
+    "sphinx.util.inspect",
+    "sphinx_autodoc_typehints._documented",
+    "sphinx_autodoc_typehints._objects",
+    "sphinx_autodoc_typehints._private_imports",
+    "sphinx_autodoc_typehints._refs",
+    "sphinx_autodoc_typehints._render",
+    "sphinx_autodoc_typehints._resolve",
+    "sphinx_autodoc_typehints._signature.header.lookup",
+    "sphinx_autodoc_typehints._state",
+]
+
 from inspect import getattr_static
 from typing import TYPE_CHECKING, Final
 
@@ -20,10 +35,9 @@ from sphinx_autodoc_typehints._resolve import (
     type_alias_namespace,
     typed_dict_keys,
 )
+from sphinx_autodoc_typehints._signature.header.lookup import documented_signatures
 from sphinx_autodoc_typehints._state import note_type_documented, types_documented
 from sphinx_autodoc_typehints._types import sentinel
-
-from .lookup import documented_signatures
 
 if TYPE_CHECKING:
     from collections.abc import Mapping

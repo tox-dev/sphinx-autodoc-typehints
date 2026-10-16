@@ -6,6 +6,19 @@ It evaluates the source again where a `__class_getitem__` dropped the arguments 
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "annotationlib",
+    "dataclasses",
+    "functools",
+    "inspect",
+    "sphinx_autodoc_typehints._objects",
+    "sphinx_autodoc_typehints._resolve.evaluate.bases",
+    "sphinx_autodoc_typehints._resolve.evaluate.expression",
+    "sphinx_autodoc_typehints._resolve.guards",
+    "sphinx_autodoc_typehints._resolve.source",
+    "types",
+]
+
 from dataclasses import is_dataclass
 from functools import partial
 from inspect import getattr_static, isfunction, isroutine
@@ -14,17 +27,16 @@ from types import GenericAlias, ModuleType
 from typing import TYPE_CHECKING, get_args, get_origin, get_type_hints
 
 from sphinx_autodoc_typehints._objects import defining_module, is_attrs_class, object_at
-
-from ..guards import annotation_globals, guarded_names
-from ..source import (
+from sphinx_autodoc_typehints._resolve.evaluate.bases import base_scopes, declared_hints, hints_of_bases
+from sphinx_autodoc_typehints._resolve.evaluate.expression import evaluate_annotation
+from sphinx_autodoc_typehints._resolve.guards import annotation_globals, guarded_names
+from sphinx_autodoc_typehints._resolve.source import (
     annotations_as_written,
     holds_values,
     names_read,
     source_annotations,
     written_annotations,
 )
-from .bases import base_scopes, declared_hints, hints_of_bases
-from .expression import evaluate_annotation
 
 if version_info >= (3, 14):  # pragma: >=3.14 cover
     from typing import evaluate_forward_ref

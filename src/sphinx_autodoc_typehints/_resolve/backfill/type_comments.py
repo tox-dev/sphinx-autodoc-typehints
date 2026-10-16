@@ -2,6 +2,16 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "ast",
+    "inspect",
+    "sphinx_autodoc_typehints._refs",
+    "sphinx_autodoc_typehints._resolve.source",
+    "sphinx_autodoc_typehints._warnings",
+    "textwrap",
+    "types",
+]
+
 from ast import AsyncFunctionDef, FunctionDef, parse
 from inspect import getsourcelines
 from textwrap import dedent
@@ -9,9 +19,8 @@ from types import ModuleType
 from typing import TYPE_CHECKING
 
 from sphinx_autodoc_typehints._refs import split_arguments
+from sphinx_autodoc_typehints._resolve.source import parameters
 from sphinx_autodoc_typehints._warnings import warn
-
-from ..source import parameters
 
 if TYPE_CHECKING:
     from sphinx_autodoc_typehints._types import Documented

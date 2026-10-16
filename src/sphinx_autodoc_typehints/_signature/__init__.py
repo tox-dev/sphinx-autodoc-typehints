@@ -7,9 +7,15 @@ In the import layering the package sits beside `_docstring` and above the `_docu
 
 from __future__ import annotations
 
-from .bases import process_bases
-from .handler import process_signature
-from .header import add_type_params, render_header_types
+__lazy_modules__ = [
+    "sphinx_autodoc_typehints._signature.bases",
+    "sphinx_autodoc_typehints._signature.handler",
+    "sphinx_autodoc_typehints._signature.header",
+]
+
+from sphinx_autodoc_typehints._signature.bases import process_bases
+from sphinx_autodoc_typehints._signature.handler import process_signature
+from sphinx_autodoc_typehints._signature.header import add_type_params, render_header_types
 
 __all__ = [
     "add_type_params",

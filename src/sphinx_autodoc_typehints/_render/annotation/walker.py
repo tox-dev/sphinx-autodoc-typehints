@@ -6,6 +6,28 @@ It also holds the readers of starred aliases and type parameters that the signat
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "enum",
+    "inspect",
+    "re",
+    "sphinx",
+    "sphinx.ext",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autodoc.mock",
+    "sphinx.util",
+    "sphinx.util.inspect",
+    "sphinx.util.typing",
+    "sphinx_autodoc_typehints._objects",
+    "sphinx_autodoc_typehints._refs",
+    "sphinx_autodoc_typehints._render.annotation.aliases",
+    "sphinx_autodoc_typehints._render.annotation.names",
+    "sphinx_autodoc_typehints._render.deferred",
+    "sphinx_autodoc_typehints._render.enum_member",
+    "sphinx_autodoc_typehints._render.intersphinx",
+    "sphinx_autodoc_typehints._render.value",
+    "types",
+]
+
 import typing  # probed at runtime for names typing_extensions backports
 from dataclasses import dataclass
 from enum import Enum
@@ -35,21 +57,14 @@ from sphinx.util.typing import is_invalid_builtin_class
 
 from sphinx_autodoc_typehints._objects import alias_lookup_names
 from sphinx_autodoc_typehints._refs import MyTypeAliasForwardRef, WrittenTypeAlias, is_type_alias, split_arguments
-from sphinx_autodoc_typehints._types import sentinel
-
-from ..context import render_context
-from ..deferred import defer_alias_choice
-from ..enum_member import ENUM_MEMBER_ROLE
-from ..intersphinx import inventory, mapped_name
-from ..value import CONSTANT_ROLE, value_markup
-from .aliases import (
+from sphinx_autodoc_typehints._render.annotation.aliases import (
     alias_crossref,
     alias_name_reference,
     can_expand_alias,
     reaches_itself,
     underlying_type_alias,
 )
-from .names import (
+from sphinx_autodoc_typehints._render.annotation.names import (
     PYDATA_ANNOTATIONS,
     fixup_module_name,
     get_annotation_args,
@@ -57,6 +72,12 @@ from .names import (
     get_annotation_module,
     name_prefix,
 )
+from sphinx_autodoc_typehints._render.context import render_context
+from sphinx_autodoc_typehints._render.deferred import defer_alias_choice
+from sphinx_autodoc_typehints._render.enum_member import ENUM_MEMBER_ROLE
+from sphinx_autodoc_typehints._render.intersphinx import inventory, mapped_name
+from sphinx_autodoc_typehints._render.value import CONSTANT_ROLE, value_markup
+from sphinx_autodoc_typehints._types import sentinel
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator, Iterable
@@ -64,9 +85,8 @@ if TYPE_CHECKING:
 
     from sphinx.config import Config
 
+    from sphinx_autodoc_typehints._render.context import TypehintsFormatter
     from sphinx_autodoc_typehints._types import Hint, RenderNode, TypeParam
-
-    from ..context import TypehintsFormatter
 
     # yields the annotations nested in a node, receives each one rendered, and yields _Rendered last
     type _Frame = Generator[RenderNode | _Rendered, str, None]

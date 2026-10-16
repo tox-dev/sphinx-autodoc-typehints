@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = ["dataclasses", "sphinx_autodoc_typehints._objects", "sphinx_autodoc_typehints._private_imports"]
+
 from dataclasses import MISSING, fields, is_dataclass
 from typing import TYPE_CHECKING
 
-from .._objects import is_attrs_class
-from .._private_imports import HAS_DEFAULT_FACTORY
+from sphinx_autodoc_typehints._objects import is_attrs_class
+from sphinx_autodoc_typehints._private_imports import HAS_DEFAULT_FACTORY
 
 if TYPE_CHECKING:
     from collections.abc import Callable

@@ -2,12 +2,21 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "inspect",
+    "sphinx_autodoc_typehints._documented.hints",
+    "sphinx_autodoc_typehints._objects",
+    "sphinx_autodoc_typehints._render",
+    "sphinx_autodoc_typehints._resolve",
+]
+
 from inspect import Parameter, Signature, signature
 from typing import TYPE_CHECKING, Final, get_overloads
 
-from .._objects import declared_signature, prefix_of, unwrapped
-from .._render import annotation_state, render_context
-from .._resolve import (
+from sphinx_autodoc_typehints._documented.hints import as_written
+from sphinx_autodoc_typehints._objects import declared_signature, prefix_of, unwrapped
+from sphinx_autodoc_typehints._render import annotation_state, render_context
+from sphinx_autodoc_typehints._resolve import (
     annotation_globals,
     declared_type_params,
     resolve_string_annotations,
@@ -15,15 +24,14 @@ from .._resolve import (
     type_alias_namespace,
     written_type_alias,
 )
-from .hints import as_written
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
 
     from sphinx.application import Sphinx
 
-    from .._refs import WrittenTypeAlias
-    from .._types import Annotation, Hint, TypeParam
+    from sphinx_autodoc_typehints._refs import WrittenTypeAlias
+    from sphinx_autodoc_typehints._types import Annotation, Hint, TypeParam
 
 
 OVERLOADED_KINDS: Final[frozenset[str]] = frozenset({"function", "method", "class", "exception"})

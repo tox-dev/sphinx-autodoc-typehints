@@ -6,6 +6,19 @@ It reads a `def`, a module or class body, and the names an annotation refers to.
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "annotationlib",
+    "ast",
+    "collections",
+    "inspect",
+    "sphinx",
+    "sphinx.errors",
+    "sphinx.pycode",
+    "textwrap",
+    "types",
+    "warnings",
+]
+
 from ast import AST, AnnAssign, AsyncFunctionDef, ClassDef, FunctionDef, Module, Name, arg, parse, unparse, walk
 from collections import defaultdict
 from functools import cache
@@ -19,8 +32,8 @@ from warnings import catch_warnings, simplefilter
 from sphinx.errors import PycodeError
 from sphinx.pycode import ModuleAnalyzer
 
-from .._private_imports import VariableCommentPicker
-from .._types import frozendict
+from sphinx_autodoc_typehints._private_imports import VariableCommentPicker
+from sphinx_autodoc_typehints._types import frozendict
 
 if version_info >= (3, 14):  # pragma: >=3.14 cover
     from annotationlib import Format, get_annotations
@@ -28,7 +41,7 @@ if version_info >= (3, 14):  # pragma: >=3.14 cover
 if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping
 
-    from .._types import Annotation, Documented
+    from sphinx_autodoc_typehints._types import Annotation, Documented
 
 
 def written_annotations(obj: Documented) -> dict[str, str]:

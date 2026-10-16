@@ -6,14 +6,16 @@ Each category is `sphinx_autodoc_typehints.<subtype>`.
 
 from __future__ import annotations
 
+__lazy_modules__ = ["sphinx", "sphinx.util", "sphinx_autodoc_typehints._objects"]
+
 from typing import TYPE_CHECKING, Literal
 
 from sphinx.util import logging
 
-from ._objects import get_obj_location
+from sphinx_autodoc_typehints._objects import get_obj_location
 
 if TYPE_CHECKING:
-    from ._types import Documented
+    from sphinx_autodoc_typehints._types import Documented
 
 type WarningSubtype = Literal["comment", "forward_reference", "guarded_import", "local_function", "multiple_ast_nodes"]
 

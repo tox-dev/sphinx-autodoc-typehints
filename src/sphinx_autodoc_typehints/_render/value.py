@@ -8,6 +8,8 @@ generates for code blocks colors it, in light and dark alike. The extension's st
 
 from __future__ import annotations
 
+__lazy_modules__ = ["docutils", "docutils.utils", "itertools", "operator", "pathlib", "sphinx"]
+
 from itertools import groupby
 from operator import itemgetter
 from pathlib import Path

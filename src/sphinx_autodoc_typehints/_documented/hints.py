@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = ["inspect", "sphinx_autodoc_typehints._resolve"]
+
 from dataclasses import dataclass
 from inspect import isclass, isfunction
 from typing import TYPE_CHECKING
 
-from .._objects import constructor_name, declared_signature, documented_owner, prefix_of
-from .._resolve import (
+from sphinx_autodoc_typehints._objects import constructor_name, declared_signature, documented_owner, prefix_of
+from sphinx_autodoc_typehints._resolve import (
     bound_type_args,
     declared_type_params,
     get_all_type_hints,
@@ -15,17 +17,17 @@ from .._resolve import (
     specialize,
     type_alias_namespace,
 )
-from .._types import frozendict
+from sphinx_autodoc_typehints._types import frozendict
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
     from sphinx.application import Sphinx
 
-    from .._objects import QualifiedCallable
-    from .._refs import WrittenTypeAlias
-    from .._render import TypeParamScope
-    from .._types import Documented, Hint
+    from sphinx_autodoc_typehints._objects import QualifiedCallable
+    from sphinx_autodoc_typehints._refs import WrittenTypeAlias
+    from sphinx_autodoc_typehints._render import TypeParamScope
+    from sphinx_autodoc_typehints._types import Documented, Hint
 
 
 def resolved_type_hints(

@@ -2,18 +2,20 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = ["functools", "sphinx_autodoc_typehints._resolve"]
+
 from functools import partial
 from typing import TYPE_CHECKING, Unpack
 
-from .._render import annotation_state
-from .._resolve import guard_bound
+from sphinx_autodoc_typehints._render import annotation_state
+from sphinx_autodoc_typehints._resolve import guard_bound
 
 if TYPE_CHECKING:
     from contextlib import AbstractContextManager
 
     from sphinx.application import Sphinx
 
-    from .._render import ScopeExtras
+    from sphinx_autodoc_typehints._render import ScopeExtras
 
 
 def render_scope(app: Sphinx, module_prefix: str, **extra: Unpack[ScopeExtras]) -> AbstractContextManager[None]:

@@ -6,14 +6,21 @@ The types come from the annotations of the class or module body and of `__init__
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "contextlib",
+    "sphinx_autodoc_typehints._objects",
+    "sphinx_autodoc_typehints._render",
+    "sphinx_autodoc_typehints._resolve",
+]
+
 import re  # a from-import of compile would shadow the builtin
 from contextlib import suppress
 from textwrap import dedent
 from typing import TYPE_CHECKING, Final
 
-from .._objects import is_attrs_class, unwrapped
-from .._render import as_field_type
-from .._resolve import (
+from sphinx_autodoc_typehints._objects import is_attrs_class, unwrapped
+from sphinx_autodoc_typehints._render import as_field_type
+from sphinx_autodoc_typehints._resolve import (
     bound_type_args,
     get_body_annotations,
     get_instance_var_annotations,
@@ -26,7 +33,7 @@ if TYPE_CHECKING:
 
     from sphinx.application import Sphinx
 
-    from .._types import Annotation
+    from sphinx_autodoc_typehints._types import Annotation
 
 # the lazy type leaves the last token before the closing colon to the name; a line this does not match, such as a bare
 # `:ivar :`, is no field to type and must not crash the parse (#683)

@@ -2,6 +2,20 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "dataclasses",
+    "sphinx",
+    "sphinx.domains",
+    "sphinx.domains.python",
+    "sphinx.domains.python._annotations",
+    "sphinx.pycode",
+    "sphinx.pycode.parser",
+    "sphinx.util",
+    "sphinx.util.docutils",
+    "sphinx.util.logging",
+    "typing",
+]
+
 # ruff:ignore[import-private-name]  # no public name
 from dataclasses import (
     _HAS_DEFAULT_FACTORY as HAS_DEFAULT_FACTORY,  # ty: ignore[unresolved-import]  # typeshed leaves it out

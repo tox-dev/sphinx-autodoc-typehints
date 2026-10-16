@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = ["docutils", "sphinx", "sphinx.locale"]
+
 from typing import TYPE_CHECKING, Final
 
 from docutils import nodes

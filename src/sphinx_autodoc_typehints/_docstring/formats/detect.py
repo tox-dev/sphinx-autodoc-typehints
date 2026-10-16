@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
-from .field_list import FieldListFormat
-from .numpydoc import is_numpydoc_section
+__lazy_modules__ = [
+    "sphinx_autodoc_typehints._docstring.formats.field_list",
+    "sphinx_autodoc_typehints._docstring.formats.numpydoc",
+]
+
+from sphinx_autodoc_typehints._docstring.formats.field_list import FieldListFormat
+from sphinx_autodoc_typehints._docstring.formats.numpydoc import is_numpydoc_section
 
 
 def detect_format(lines: list[str]) -> FieldListFormat:

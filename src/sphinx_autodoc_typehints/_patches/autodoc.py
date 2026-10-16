@@ -6,6 +6,17 @@ They capture overloads, write multi-line signatures, and evaluate annotations wi
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "sphinx",
+    "sphinx.directives",
+    "sphinx.ext",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autodoc._dynamic",
+    "sphinx.pycode",
+    "sphinx_autodoc_typehints._resolve",
+    "sphinx_autodoc_typehints._state",
+]
+
 from functools import lru_cache, wraps
 from typing import TYPE_CHECKING, Final
 
@@ -17,13 +28,13 @@ from sphinx.ext.autodoc._dynamic import (  # ruff:ignore[import-private-name]  #
 from sphinx.pycode import ModuleAnalyzer
 from sphinx.util.typing import get_type_hints
 
-from .._resolve import OVERLOADS, guarded_names_bound
-from .._state import signature_lines
+from sphinx_autodoc_typehints._resolve import OVERLOADS, guarded_names_bound
+from sphinx_autodoc_typehints._state import signature_lines
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
-    from .._types import Annotation, Documented
+    from sphinx_autodoc_typehints._types import Annotation, Documented
 
 
 BUILDING: Final[set[int]] = set()

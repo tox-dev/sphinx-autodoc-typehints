@@ -2,6 +2,16 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "inspect",
+    "itertools",
+    "re",
+    "sphinx",
+    "sphinx.util",
+    "sphinx.util.inspect",
+    "sphinx_autodoc_typehints._render",
+]
+
 from dataclasses import dataclass
 from inspect import Parameter
 from itertools import pairwise

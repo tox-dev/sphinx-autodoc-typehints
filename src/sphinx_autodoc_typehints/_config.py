@@ -6,13 +6,15 @@ It also wraps `typehints_fixup_module_name` so the cached environment can pickle
 
 from __future__ import annotations
 
+__lazy_modules__ = ["inspect", "sphinx", "sphinx.errors", "sphinx_autodoc_typehints._render"]
+
 from dataclasses import dataclass
 from inspect import getsource
 from typing import TYPE_CHECKING, Final, Literal
 
 from sphinx.errors import ConfigError
 
-from ._render import keep_type_mapping
+from sphinx_autodoc_typehints._render import keep_type_mapping
 
 if TYPE_CHECKING:
     from collections.abc import Callable

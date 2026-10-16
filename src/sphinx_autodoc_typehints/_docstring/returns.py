@@ -2,21 +2,23 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = ["collections", "collections.abc", "inspect", "sphinx_autodoc_typehints._render", "types"]
+
 from collections.abc import AsyncGenerator, AsyncIterator, Generator, Iterator
 from inspect import isclass, isdatadescriptor
 from types import NoneType
 from typing import TYPE_CHECKING, Annotated, Final, get_args, get_origin
 
-from .._documented import as_written
-from .._render import as_field_type
-from .formats import reads_as_type, write_rtype
+from sphinx_autodoc_typehints._docstring.formats import reads_as_type, write_rtype
+from sphinx_autodoc_typehints._documented import as_written
+from sphinx_autodoc_typehints._render import as_field_type
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
 
-    from .._documented import Entry, ResolvedHints
-    from .._types import Hint
-    from .formats import FieldListFormat
+    from sphinx_autodoc_typehints._docstring.formats import FieldListFormat
+    from sphinx_autodoc_typehints._documented import Entry, ResolvedHints
+    from sphinx_autodoc_typehints._types import Hint
 
 _YIELDS_FIELDS: Final[tuple[str, ...]] = (":Yields:", ":yields:", ":yield:")
 

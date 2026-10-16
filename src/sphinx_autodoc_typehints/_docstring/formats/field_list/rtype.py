@@ -6,6 +6,8 @@ Directives only Sphinx knows parse as placeholders, which keep their place in th
 
 from __future__ import annotations
 
+__lazy_modules__ = ["sphinx_autodoc_typehints._private_imports", "sphinx_autodoc_typehints._render"]
+
 from typing import TYPE_CHECKING
 
 from docutils import nodes

@@ -7,6 +7,8 @@ document move to an environment attribute, so the cached environment keeps them.
 
 from __future__ import annotations
 
+__lazy_modules__ = ["sphinx", "sphinx.ext", "sphinx.ext.autodoc"]
+
 from typing import TYPE_CHECKING, Final
 
 from sphinx.ext.autodoc import Options

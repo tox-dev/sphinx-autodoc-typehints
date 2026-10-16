@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = ["docutils.frontend", "docutils.utils"]
+
 from typing import TYPE_CHECKING, override
 
 from docutils.frontend import get_default_settings

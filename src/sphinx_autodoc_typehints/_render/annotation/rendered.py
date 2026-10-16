@@ -2,11 +2,17 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "re",
+    "sphinx_autodoc_typehints._render.annotation.markup",
+    "sphinx_autodoc_typehints._render.annotation.walker",
+]
+
 from re import DOTALL, Match, fullmatch, sub
 from typing import TYPE_CHECKING
 
-from .markup import add_type_css_class
-from .walker import format_annotation
+from sphinx_autodoc_typehints._render.annotation.markup import add_type_css_class
+from sphinx_autodoc_typehints._render.annotation.walker import format_annotation
 
 if TYPE_CHECKING:
     from sphinx.config import Config

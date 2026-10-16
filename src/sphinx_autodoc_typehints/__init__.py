@@ -6,10 +6,16 @@ The package root exports `setup`, which `_extension` defines, and the installed 
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "sphinx_autodoc_typehints._config",
+    "sphinx_autodoc_typehints._extension",
+    "sphinx_autodoc_typehints.version",
+]
+
 # a cached environment from an earlier release pickled the fixup function wrapper under the package root
-from ._config import _FixupModuleName as _FixupModuleName
-from ._extension import setup
-from .version import __version__
+from sphinx_autodoc_typehints._config import _FixupModuleName as _FixupModuleName
+from sphinx_autodoc_typehints._extension import setup
+from sphinx_autodoc_typehints.version import __version__
 
 __all__ = [
     "__version__",

@@ -7,7 +7,17 @@ the guard binder.
 
 from __future__ import annotations
 
-from .annotation import (
+__lazy_modules__ = [
+    "sphinx_autodoc_typehints._render.annotation",
+    "sphinx_autodoc_typehints._render.context",
+    "sphinx_autodoc_typehints._render.deferred",
+    "sphinx_autodoc_typehints._render.enum_member",
+    "sphinx_autodoc_typehints._render.intersphinx",
+    "sphinx_autodoc_typehints._render.rst",
+    "sphinx_autodoc_typehints._render.value",
+]
+
+from sphinx_autodoc_typehints._render.annotation import (
     add_type_css_class,
     as_field_type,
     as_signature_type,
@@ -16,12 +26,18 @@ from .annotation import (
     type_param_fields,
     unstar,
 )
-from .context import ScopeExtras, TypeParamScope, annotation_state, render_context
-from .deferred import ALIAS_CHOICE_ROLE, AliasChoiceCollector, DeferAliasChoice, alias_choice_role, note_builder
-from .enum_member import ENUM_MEMBER_ROLE, enum_member_role, link_enum_member_owner
-from .intersphinx import keep_type_mapping
-from .rst import parse, unescape
-from .value import (
+from sphinx_autodoc_typehints._render.context import ScopeExtras, TypeParamScope, annotation_state, render_context
+from sphinx_autodoc_typehints._render.deferred import (
+    ALIAS_CHOICE_ROLE,
+    AliasChoiceCollector,
+    DeferAliasChoice,
+    alias_choice_role,
+    note_builder,
+)
+from sphinx_autodoc_typehints._render.enum_member import ENUM_MEMBER_ROLE, enum_member_role, link_enum_member_owner
+from sphinx_autodoc_typehints._render.intersphinx import keep_type_mapping
+from sphinx_autodoc_typehints._render.rst import parse, unescape
+from sphinx_autodoc_typehints._render.value import (
     CONSTANT_ROLE,
     VALUE_ROLE,
     VALUE_STYLESHEET,

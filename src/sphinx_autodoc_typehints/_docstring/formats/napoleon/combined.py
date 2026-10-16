@@ -2,15 +2,23 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "itertools",
+    "re",
+    "sphinx",
+    "sphinx.locale",
+    "sphinx_autodoc_typehints._docstring.formats.base",
+    "sphinx_autodoc_typehints._render",
+]
+
 import re  # a from-import of compile would shadow the builtin
 from itertools import accumulate
 from typing import TYPE_CHECKING, Literal
 
 from sphinx.locale import _  # ruff:ignore[import-private-name]  # Sphinx documents it as public
 
+from sphinx_autodoc_typehints._docstring.formats.base import format_default, last_paragraph_end, line_indent
 from sphinx_autodoc_typehints._render import as_field_type
-
-from ..base import format_default, last_paragraph_end, line_indent
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

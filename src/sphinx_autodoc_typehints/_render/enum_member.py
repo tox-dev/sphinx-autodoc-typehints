@@ -7,6 +7,8 @@ documented, so a marker role flags the member reference and a `missing-reference
 
 from __future__ import annotations
 
+__lazy_modules__ = ["sphinx"]
+
 from typing import TYPE_CHECKING, Final
 
 from sphinx import addnodes

@@ -2,16 +2,18 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = ["inspect", "sphinx_autodoc_typehints._objects"]
+
 from inspect import getattr_static, isclass
 from typing import TYPE_CHECKING
 
-from .._objects import documented_owner, stored_name
+from sphinx_autodoc_typehints._objects import documented_owner, stored_name
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
     from sphinx.ext.autodoc import Options
 
-    from .entry import Entry
+    from sphinx_autodoc_typehints._documented.entry import Entry
 
 
 def overload_skip(entry: Entry) -> int:

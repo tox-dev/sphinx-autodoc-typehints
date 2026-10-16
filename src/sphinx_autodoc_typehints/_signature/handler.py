@@ -2,13 +2,27 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "inspect",
+    "sphinx",
+    "sphinx.util",
+    "sphinx.util.inspect",
+    "sphinx_autodoc_typehints._documented",
+    "sphinx_autodoc_typehints._private_imports",
+    "sphinx_autodoc_typehints._resolve",
+    "sphinx_autodoc_typehints._signature.header",
+    "sphinx_autodoc_typehints._signature.text",
+    "sphinx_autodoc_typehints._state",
+    "sphinx_autodoc_typehints._warnings",
+]
+
 from inspect import Parameter, Signature, isclass, isfunction, ismethod
 from typing import TYPE_CHECKING
 
 from sphinx.util.inspect import is_builtin_class_method, safe_getattr, stringify_signature
 from sphinx.util.inspect import signature as sphinx_signature
 
-from .._documented import (
+from sphinx_autodoc_typehints._documented import (
     Entry,
     as_written,
     class_member_type,
@@ -19,18 +33,13 @@ from .._documented import (
     show_factory_defaults,
     typed_overloads,
 )
-from .._objects import (
-    callable_target,
-    constructor_name,
-    declared_signature,
-    prefix_of,
-)
-from .._private_imports import METACLASS_CALL_BLACKLIST, suppress_logging
-from .._resolve import bound_type_args
-from .._state import add_signature_lines, note_documented, written_signatures
-from .._warnings import warn
-from .header import signature_overloads
-from .text import directive_text, names_other_parameters, signature_type
+from sphinx_autodoc_typehints._objects import callable_target, constructor_name, declared_signature, prefix_of
+from sphinx_autodoc_typehints._private_imports import METACLASS_CALL_BLACKLIST, suppress_logging
+from sphinx_autodoc_typehints._resolve import bound_type_args
+from sphinx_autodoc_typehints._signature.header import signature_overloads
+from sphinx_autodoc_typehints._signature.text import directive_text, names_other_parameters, signature_type
+from sphinx_autodoc_typehints._state import add_signature_lines, note_documented, written_signatures
+from sphinx_autodoc_typehints._warnings import warn
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -38,8 +47,8 @@ if TYPE_CHECKING:
     from sphinx.application import Sphinx
     from sphinx.ext.autodoc import Options
 
-    from .._objects import QualifiedCallable
-    from .._types import Documented
+    from sphinx_autodoc_typehints._objects import QualifiedCallable
+    from sphinx_autodoc_typehints._types import Documented
 
 
 def process_signature(

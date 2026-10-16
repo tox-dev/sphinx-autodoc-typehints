@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = ["typing"]
+
 from typing import Final
 
 PARAM_SYNONYMS: Final[tuple[str, ...]] = ("param ", "parameter ", "arg ", "argument ", "keyword ", "kwarg ", "kwparam ")

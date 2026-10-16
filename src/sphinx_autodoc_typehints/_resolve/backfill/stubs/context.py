@@ -6,6 +6,19 @@ It holds the stub's imports, its own definitions and the type parameters around 
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "contextlib",
+    "copy",
+    "importlib",
+    "sphinx",
+    "sphinx.ext",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autodoc.mock",
+    "sphinx_autodoc_typehints._refs",
+    "sphinx_autodoc_typehints._resolve.backfill.stubs.extract",
+    "sphinx_autodoc_typehints._resolve.backfill.stubs.find",
+]
+
 import ast  # its TypeVar, ParamSpec and TypeVarTuple nodes clash with the typing ones
 from contextlib import suppress
 from copy import copy
@@ -16,10 +29,15 @@ from typing import TYPE_CHECKING, Final, ParamSpec, TypeVar, TypeVarTuple
 from sphinx.ext.autodoc.mock import mock
 
 from sphinx_autodoc_typehints._refs import MyTypeAliasForwardRef
+from sphinx_autodoc_typehints._resolve.backfill.stubs.extract import find_ast_node
+from sphinx_autodoc_typehints._resolve.backfill.stubs.find import (
+    find_stub_owner,
+    import_module_or_none,
+    parse_stub_ast,
+    resolve_import_from,
+    stub_owner_package,
+)
 from sphinx_autodoc_typehints._types import frozendict
-
-from .extract import find_ast_node
-from .find import find_stub_owner, import_module_or_none, parse_stub_ast, resolve_import_from, stub_owner_package
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping

@@ -6,6 +6,8 @@ The stub sits beside the module, in its package, or in a parent package that re-
 
 from __future__ import annotations
 
+__lazy_modules__ = ["ast", "importlib", "inspect", "pathlib", "sphinx_autodoc_typehints._objects"]
+
 import sys  # the stub guard is evaluated with the module in scope
 from ast import AsyncFunctionDef, ClassDef, Expression, FunctionDef, If, ImportFrom, Module, parse, stmt
 from collections.abc import Iterable

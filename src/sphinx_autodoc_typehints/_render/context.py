@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from sphinx.config import Config
     from sphinx.environment import BuildEnvironment
 
-    from .._types import RenderNode, TypeParam
+    from sphinx_autodoc_typehints._types import RenderNode, TypeParam
 
 
 _ATTRIBUTE: Final[str] = "_typehints_render_context"

@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = ["inspect", "sphinx_autodoc_typehints._resolve.guards"]
+
 from inspect import get_annotations
 from typing import TYPE_CHECKING, get_type_hints
 
-from ..guards import annotation_globals
+from sphinx_autodoc_typehints._resolve.guards import annotation_globals
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Mapping

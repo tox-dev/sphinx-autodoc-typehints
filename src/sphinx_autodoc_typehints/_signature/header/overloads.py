@@ -2,6 +2,15 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "inspect",
+    "sphinx",
+    "sphinx.util",
+    "sphinx.util.inspect",
+    "sphinx_autodoc_typehints._documented",
+    "sphinx_autodoc_typehints._resolve",
+]
+
 from inspect import Signature, isclass
 from typing import TYPE_CHECKING
 

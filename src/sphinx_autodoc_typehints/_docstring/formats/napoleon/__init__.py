@@ -2,10 +2,24 @@
 
 from __future__ import annotations
 
-from .attributes import WRITTEN_BEFORE_NAPOLEON, note_attributes_before_napoleon, take_over_napoleon_attr_annotations
-from .combined import add_combined_field_entry, type_combined_field_entry
-from .returns import mark_numpy_returns
-from .typed import reads_as_type
+__lazy_modules__ = [
+    "sphinx_autodoc_typehints._docstring.formats.napoleon.attributes",
+    "sphinx_autodoc_typehints._docstring.formats.napoleon.combined",
+    "sphinx_autodoc_typehints._docstring.formats.napoleon.returns",
+    "sphinx_autodoc_typehints._docstring.formats.napoleon.typed",
+]
+
+from sphinx_autodoc_typehints._docstring.formats.napoleon.attributes import (
+    WRITTEN_BEFORE_NAPOLEON,
+    note_attributes_before_napoleon,
+    take_over_napoleon_attr_annotations,
+)
+from sphinx_autodoc_typehints._docstring.formats.napoleon.combined import (
+    add_combined_field_entry,
+    type_combined_field_entry,
+)
+from sphinx_autodoc_typehints._docstring.formats.napoleon.returns import mark_numpy_returns
+from sphinx_autodoc_typehints._docstring.formats.napoleon.typed import reads_as_type
 
 __all__ = [
     "WRITTEN_BEFORE_NAPOLEON",

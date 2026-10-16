@@ -7,15 +7,22 @@ fields napoleon writes from Google and NumPy docstrings.
 
 from __future__ import annotations
 
-from .base import format_default, last_paragraph_end
-from .detect import detect_format
-from .field_list import (
+__lazy_modules__ = [
+    "sphinx_autodoc_typehints._docstring.formats.base",
+    "sphinx_autodoc_typehints._docstring.formats.detect",
+    "sphinx_autodoc_typehints._docstring.formats.field_list",
+    "sphinx_autodoc_typehints._docstring.formats.napoleon",
+]
+
+from sphinx_autodoc_typehints._docstring.formats.base import format_default, last_paragraph_end
+from sphinx_autodoc_typehints._docstring.formats.detect import detect_format
+from sphinx_autodoc_typehints._docstring.formats.field_list import (
     STAR_PREFIXES,
     FieldListFormat,
     field_keyword_and_argument,
     write_rtype,
 )
-from .napoleon import (
+from sphinx_autodoc_typehints._docstring.formats.napoleon import (
     WRITTEN_BEFORE_NAPOLEON,
     add_combined_field_entry,
     mark_numpy_returns,

@@ -2,15 +2,22 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "inspect",
+    "sphinx_autodoc_typehints._objects",
+    "sphinx_autodoc_typehints._render.annotation.names",
+    "sphinx_autodoc_typehints._render.context",
+    "types",
+]
+
 from inspect import getmodule
 from sys import modules
 from types import ModuleType
 from typing import TYPE_CHECKING, TypeAliasType, get_args, get_origin
 
 from sphinx_autodoc_typehints._objects import enclosing_scopes
-
-from ..context import render_context
-from .names import fixup_module_name, name_prefix
+from sphinx_autodoc_typehints._render.annotation.names import fixup_module_name, name_prefix
+from sphinx_autodoc_typehints._render.context import render_context
 
 if TYPE_CHECKING:
     from sphinx.config import Config

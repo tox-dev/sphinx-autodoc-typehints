@@ -2,6 +2,20 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "annotationlib",
+    "docutils",
+    "functools",
+    "sphinx",
+    "sphinx.util",
+    "sphinx.util.typing",
+    "sphinx_autodoc_typehints._objects",
+    "sphinx_autodoc_typehints._private_imports",
+    "sphinx_autodoc_typehints._render",
+    "sphinx_autodoc_typehints._resolve",
+    "sphinx_autodoc_typehints._signature.header.lookup",
+]
+
 from functools import partial
 from sys import version_info
 from typing import TYPE_CHECKING, Literal
@@ -14,9 +28,8 @@ from sphinx_autodoc_typehints._objects import object_at
 from sphinx_autodoc_typehints._private_imports import parse_annotation, parse_type_list
 from sphinx_autodoc_typehints._render import type_param_fields, unstar
 from sphinx_autodoc_typehints._resolve import TYPE_PARAM_KINDS, guard_bound, type_params_of
+from sphinx_autodoc_typehints._signature.header.lookup import documented_signatures
 from sphinx_autodoc_typehints._types import sentinel
-
-from .lookup import documented_signatures
 
 if version_info >= (3, 14):  # pragma: >=3.14 cover
     from annotationlib import Format, call_evaluate_function

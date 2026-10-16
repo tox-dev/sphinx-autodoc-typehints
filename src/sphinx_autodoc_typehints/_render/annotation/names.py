@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = ["dataclasses", "inspect"]
+
 import types  # the whole namespace is scanned for public names
 from dataclasses import InitVar
 from inspect import isclass
@@ -25,9 +27,8 @@ if TYPE_CHECKING:
 
     from sphinx.config import Config
 
+    from sphinx_autodoc_typehints._render.context import FixupModuleName
     from sphinx_autodoc_typehints._types import Hint, RenderNode
-
-    from ..context import FixupModuleName
 
 
 PYDATA_ANNOTATIONS: Final[set[tuple[str, str]]] = {

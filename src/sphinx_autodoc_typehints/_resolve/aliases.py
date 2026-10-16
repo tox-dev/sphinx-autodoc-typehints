@@ -7,19 +7,26 @@ They come from `autodoc_type_aliases`, the documented `py:type` entries, and mod
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "sphinx_autodoc_typehints._objects",
+    "sphinx_autodoc_typehints._refs",
+    "sphinx_autodoc_typehints._resolve.guards",
+    "sphinx_autodoc_typehints._resolve.source",
+]
+
 from typing import TYPE_CHECKING
 
-from .._objects import alias_lookup_names, enclosing_scopes
-from .._refs import MyTypeAliasForwardRef, WrittenTypeAlias
-from .guards import annotation_globals
-from .source import written_annotations
+from sphinx_autodoc_typehints._objects import alias_lookup_names, enclosing_scopes
+from sphinx_autodoc_typehints._refs import MyTypeAliasForwardRef, WrittenTypeAlias
+from sphinx_autodoc_typehints._resolve.guards import annotation_globals
+from sphinx_autodoc_typehints._resolve.source import written_annotations
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
     from sphinx.environment import BuildEnvironment
 
-    from .._types import Documented, Hint
+    from sphinx_autodoc_typehints._types import Documented, Hint
 
 
 def type_alias_namespace(

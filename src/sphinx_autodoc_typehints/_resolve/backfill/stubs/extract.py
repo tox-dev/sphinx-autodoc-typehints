@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "ast",
+    "sphinx_autodoc_typehints._resolve.backfill.stubs.find",
+    "sphinx_autodoc_typehints._resolve.source",
+]
+
 from ast import AnnAssign, AsyncFunctionDef, ClassDef, FunctionDef, Name, stmt, unparse
 from typing import TYPE_CHECKING
 
+from sphinx_autodoc_typehints._resolve.backfill.stubs.find import live_statements, parse_stub_ast, stub_path
 from sphinx_autodoc_typehints._resolve.source import function_annotations
-
-from .find import live_statements, parse_stub_ast, stub_path
 
 if TYPE_CHECKING:
     from collections.abc import Callable

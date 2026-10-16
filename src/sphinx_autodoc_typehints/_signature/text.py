@@ -2,18 +2,20 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = ["inspect", "sphinx", "sphinx.util", "sphinx.util.inspect", "sphinx_autodoc_typehints._render"]
+
 from inspect import Parameter
 from typing import TYPE_CHECKING
 
 from sphinx.util.inspect import signature_from_str
 
-from .._render import as_signature_type
+from sphinx_autodoc_typehints._render import as_signature_type
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
 
-    from .._refs import WrittenTypeAlias
-    from .._types import Hint
+    from sphinx_autodoc_typehints._refs import WrittenTypeAlias
+    from sphinx_autodoc_typehints._types import Hint
 
 
 def signature_type(app: Sphinx, hint: Hint | WrittenTypeAlias) -> str | type[Parameter.empty]:

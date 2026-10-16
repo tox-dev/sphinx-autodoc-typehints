@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = ["sphinx", "sphinx_autodoc_typehints._state"]
+
 from typing import TYPE_CHECKING
 
 from sphinx import addnodes
