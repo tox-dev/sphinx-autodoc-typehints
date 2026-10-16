@@ -18,6 +18,7 @@ from inspect import unwrap
 from typing import TYPE_CHECKING, ClassVar, Final, get_args, get_origin
 
 from .evaluate import evaluate_annotation, type_hints
+from .generics import type_params_of
 from .guards import annotation_globals, guarded_names
 from .source import parsed_source
 
@@ -56,10 +57,13 @@ def get_instance_var_annotations(cls: type) -> dict[str, Annotation | str]:
         return {}
     # an inherited or re-exported `__init__` sees the names of the module defining it, not those of the class's
     globalns = annotation_globals(unwrap(init))
+    # the PEP 695 type parameters of the class defining `__init__` live in no module namespace
+    definer = next(base for base in cls.__mro__ if "__init__" in vars(base))
+    localns = {param.__name__: param for param in type_params_of(definer, legacy=False)}
     resolved: dict[str, Annotation | str] = {}
     for attribute, source in raw.items():
         try:
-            resolved[attribute] = evaluate_annotation(source, globalns, {})
+            resolved[attribute] = evaluate_annotation(source, globalns, localns)
         except Exception:  # ruff:ignore[blind-except]  # an annotation runs user code, which may raise anything
             resolved[attribute] = source
     return resolved
