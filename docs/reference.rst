@@ -237,35 +237,35 @@ table evaluates the annotations in this namespace:
       -
     * - :class:`~typing.ParamSpec`
       - ``Callable[P, int]``
-      - ``Callable[ParamSpec(P), int]``
+      - ``Callable[P, int]``
       -
     * - :data:`~typing.Concatenate`
       - ``Callable[Concatenate[int, P], int]``
-      - ``Callable[Concatenate[int, ParamSpec(P)], int]``
+      - ``Callable[Concatenate[int, P], int]``
       -
     * - :class:`~typing.ParamSpec` components
       - ``P.args``
-      - ``ParamSpecArgs(P)``
+      - ``P.args``
       -
     * - :class:`~typing.TypeVar` no signature declares
       - ``T``
-      - ``TypeVar(T)``
+      - ``T``
       -
-    * - :class:`~typing.TypeVar` with a bound
+    * - :class:`~typing.TypeVar` with a bound, which its own entry shows
       - ``B``
-      - ``TypeVar(B, bound=int)``
+      - ``B``
       -
-    * - :class:`~typing.TypeVar` with constraints
+    * - :class:`~typing.TypeVar` with constraints, which its own entry shows
       - ``C``
-      - ``TypeVar(C, str, bytes)``
+      - ``C``
       -
     * - :class:`~typing.TypeVarTuple`
       - ``tuple[*Ts]``
-      - ``tuple[Unpack[TypeVarTuple(Ts)]]``
+      - ``tuple[Unpack[Ts]]``
       -
     * - :data:`~typing.Unpack`
       - ``Unpack[Ts]``
-      - ``Unpack[TypeVarTuple(Ts)]``
+      - ``Unpack[Ts]``
       -
     * - :class:`~typing.NewType`, with the type it wraps
       - ``UserId``
@@ -318,10 +318,11 @@ table evaluates the annotations in this namespace:
 
 A name shows without its module unless :confval:`typehints_fully_qualified` is on. A type parameter a signature
 declares, as ``def first[T: Sized](items: T)`` or ``class Box(Generic[T])`` does, renders by name, ``T``, with its bound
-in the signature; ``P.args`` renders as ``P.args`` when the signature declares ``**P``. A ``Doc(...)`` in
-:data:`~typing.Annotated` metadata becomes the parameter's description. Sphinx's
-:confval:`python_display_short_literal_types` renders ``Literal["a", "b"]`` as ``'a' | 'b'``. A class from a module in
-:confval:`autodoc_mock_imports`, subscripted or not, renders by its name.
+in the signature, and ``P.args`` renders as ``P.args``. A type variable defined at module level, as
+``T = TypeVar("T")``, renders by name too, linked to its own entry when the docs document it, which shows its bound or
+constraints, and so does ``P`` in ``P.args``. A ``Doc(...)`` in :data:`~typing.Annotated` metadata becomes the
+parameter's description. Sphinx's :confval:`python_display_short_literal_types` renders ``Literal["a", "b"]`` as
+``'a' | 'b'``. A class from a module in :confval:`autodoc_mock_imports`, subscripted or not, renders by its name.
 
 The same rendering applies to the header autodoc writes for data, an attribute or a property, so
 ``count: Annotated[int, ...]`` shows as ``count: int`` there. A header written by hand, such as ``.. py:data:: mod.x``

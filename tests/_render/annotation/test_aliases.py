@@ -426,9 +426,7 @@ def test_pep695_generic_alias(build_text: BuildText, warning: StringIO, index: s
         param(
             "bounded",
             "Take an alias with a bounded type parameter.",
-            dedent("""\
-                ("list"["TypeVar"("Element",
-                      bound="Sequence"["str"])]) -- a list of them."""),
+            '("list"["Element"]) -- a list of them.',
             id="type-parameter-bound",
         ),
     ],

@@ -284,7 +284,7 @@ def test_specialize(
                    Use a type variable no signature declares.
 
                    Return type:
-                      "TypeVar"("L")
+                      "L"
             """),
             id="undeclared",
         ),
