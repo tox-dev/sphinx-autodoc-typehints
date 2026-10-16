@@ -1,0 +1,1 @@
+Link the typing examples from the README and correct the event and return-field descriptions.

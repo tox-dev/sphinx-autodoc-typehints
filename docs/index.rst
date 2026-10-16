@@ -11,8 +11,8 @@ state each type once, in the code:
     # conf.py: load autodoc first, then this extension
     extensions = ["sphinx.ext.autodoc", "sphinx_autodoc_typehints"]
 
-Sphinx's own :confval:`autodoc_typehints = "description" <autodoc_typehints>` also moves types into the fields. On top
-of it, this extension links names your code imports only for type checkers, inside an :data:`if TYPE_CHECKING:
+Sphinx's own :confval:`autodoc_typehints = "description" <autodoc_typehints>` also moves types into the fields. This
+extension links names your code imports only for type checkers, inside an :data:`if TYPE_CHECKING:
 <typing.TYPE_CHECKING>` block, and reads types from ``.pyi`` stub files, which hold the annotations of a module whose
 code has none. It documents the :func:`@overload <typing.overload>` variants a function declares for type checkers,
 default values, the keys of ``**kwargs``, and docstrings written for :doc:`numpydoc <numpydoc:index>`.
@@ -55,6 +55,12 @@ Parallel builds, ``sphinx-build -j``, work with the extension loaded.
         **Looking up an option?**
 
         The :doc:`reference` lists the configuration options, the warnings and how each typing construct renders.
+
+    .. grid-item-card::
+
+        **Exploring a typing feature?**
+
+        The :doc:`typing` gallery shows the source and rendered output for each construct, alongside Sphinx's output.
 
     .. grid-item-card::
 

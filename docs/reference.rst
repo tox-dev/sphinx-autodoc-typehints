@@ -572,6 +572,6 @@ or None when missing``, still gets the type. Next to an ``:rtype:`` field, which
 ``:return:`` text counts as a description.
 
 Classes and constructors get no return type, and a property shows its type in its header. An ``:rtype:`` the docstring
-writes, over one line or several, gives way to the annotation. The separate field goes after the parameter fields,
-before the first directive or other block that follows them, or at the end. A return annotation carrying a
-``Doc(...)`` description adds a ``:return:`` field when the docstring has none.
+writes, over one line or several, gives way to the annotation. The separate field joins the first field list with
+parameters; if there is none, it joins the last field list, or appears at the end when there is no field list. A return
+annotation carrying a ``Doc(...)`` description adds a ``:return:`` field when the docstring has none.
