@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     from docutils.parsers.rst import states
     from pygments.token import _TokenType
     from sphinx.application import Sphinx
+    from sphinx.config import Config
 
 VALUE_ROLE: Final[str] = "sphinx_autodoc_typehints_value"
 CONSTANT_ROLE: Final[str] = "sphinx_autodoc_typehints_constant"
@@ -89,7 +90,7 @@ def _token_class(ttype: _TokenType) -> str:
     return next(STANDARD_TYPES[kind] for kind in reversed(ttype.split()) if kind in STANDARD_TYPES)
 
 
-def add_value_stylesheet(app: Sphinx) -> None:
+def add_value_stylesheet(app: Sphinx, _config: Config) -> None:
     """Serve the stylesheet keeping the block layout of `.highlight` off inline values."""
     app.config.html_static_path.append(str(Path(__file__).parents[1] / "_static"))
 

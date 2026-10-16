@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 from pytest import mark, param
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from conftest import BuildText, MakeModule
     from sphinx.testing.util import SphinxTestApp
 
@@ -95,6 +97,17 @@ def test_value_stylesheet_is_served(app: SphinxTestApp, build_text: BuildText) -
     html = build_text("Values\n======\n")
     stylesheet = Path(app.outdir) / "_static" / "sphinx_autodoc_typehints.css"
     assert (stylesheet.is_file(), 'href="_static/sphinx_autodoc_typehints.css' in html) == (True, True)
+
+
+@mark.sphinx("html", testroot="render-types")
+def test_value_stylesheet_keeps_incremental_config_stable(
+    app: SphinxTestApp, build_text: BuildText, make_app: Callable[..., SphinxTestApp]
+) -> None:
+    build_text("Values\n======\n")
+    rebuilt = make_app("html", srcdir=app.srcdir)
+    rebuilt.build()
+
+    assert "html_static_path" not in rebuilt.status.getvalue()
 
 
 @mark.parametrize(

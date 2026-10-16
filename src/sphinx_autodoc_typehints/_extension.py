@@ -68,7 +68,7 @@ def setup(app: Sphinx) -> dict[str, bool | int | str]:
     app.add_env_collector(AliasChoiceCollector)
     app.connect("config-inited", cache_fixup_module_name)
     app.connect("config-inited", cache_formatter)
-    app.connect("builder-inited", add_value_stylesheet)
+    app.connect("config-inited", add_value_stylesheet)
     app.connect("builder-inited", note_builder)
     # after intersphinx, at the default priority, had its chance to link the member itself
     app.connect("missing-reference", link_enum_member_owner, priority=900)
