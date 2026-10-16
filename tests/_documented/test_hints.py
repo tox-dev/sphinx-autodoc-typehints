@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from inspect import Parameter, Signature
-from sys import version_info
 from textwrap import dedent
 from typing import TYPE_CHECKING, Final, NamedTuple
 
@@ -76,6 +75,15 @@ class _StatesSignature:
             id="namedtuple-constructor",
         ),
         param(
+            f"{__name__}._Pair.__new__",
+            _Pair.__new__,
+            _Pair.__new__,
+            ResolvedHints(
+                types={"left": int, "right": _Pair | None}, written_as={}, scope={"declared_type_params": frozenset()}
+            ),
+            id="namedtuple-constructor-documented-on-its-own",
+        ),
+        param(
             "mod._StatesSignature",
             _StatesSignature,
             _StatesSignature.__init__,
@@ -140,17 +148,7 @@ def test_as_written(
 
                       Create new instance of MyNamedTuple(x, y)
             """),
-            # namedtuple defines the __new__ it generates in globals without builtins, where before Python 3.14 the
-            # string annotation naming int fails to evaluate
-            []
-            if version_info >= (3, 14)
-            else [
-                (
-                    "WARNING: Cannot resolve forward reference in type annotations of "
-                    "\"dummy_module.MyNamedTuple.__new__\" (module namedtuple_MyNamedTuple): name 'int' is not defined "
-                    "[sphinx_autodoc_typehints.forward_reference]"
-                )
-            ],
+            [],
             id="constructor",
         ),
         param(
@@ -165,6 +163,16 @@ def test_as_written(
             """),
             [],
             id="field-naming-a-type-of-another-module",
+        ),
+        param(
+            ".. automethod:: dummy_module.MyNamedTupleWithPath.__new__\n",
+            dedent("""\
+                static MyNamedTupleWithPath.__new__(_cls, path, version)
+
+                   Create new instance of MyNamedTupleWithPath(path, version)
+            """),
+            [],
+            id="constructor-documented-on-its-own",
         ),
     ],
 )
