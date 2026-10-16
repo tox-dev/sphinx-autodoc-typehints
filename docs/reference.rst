@@ -453,6 +453,14 @@ member it replaces, in the nearest base class that defines it. A method no base 
 under a subclass with ``:inherited-members:``, the method still links what it overrides in its own class's bases, and
 the link goes through :confval:`typehints_fixup_module_name` like any other.
 
+Base classes
+============
+
+A class documented with ``:show-inheritance:`` lists its bases in a ``Bases:`` line. The extension renders each base as
+it renders a type in a field, so ``Mapping[str, int]`` or ``Stack[T]`` follows :confval:`typehints_fully_qualified`,
+:confval:`typehints_fixup_module_name` and :confval:`typehints_formatter`, and a type alias in a base links as it does
+there. A base Sphinx mocks through :confval:`autodoc_mock_imports` keeps Sphinx's rendering.
+
 Property setters
 ================
 

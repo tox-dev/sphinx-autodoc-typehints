@@ -44,7 +44,7 @@ from ._render import (
     value_role,
 )
 from ._resolve import SHADOWED_BY_GUARD
-from ._signature import add_type_params, process_signature, render_header_types
+from ._signature import add_type_params, process_bases, process_signature, render_header_types
 from .version import __version__
 
 if TYPE_CHECKING:
@@ -76,6 +76,7 @@ def setup(app: Sphinx) -> dict[str, bool | str]:
     app.connect("env-before-read-docs", validate_config)
     app.connect("env-before-read-docs", store_type_mapping)
     app.connect("autodoc-process-signature", process_signature)
+    app.connect("autodoc-process-bases", process_bases)
     # napoleon and numpydoc rewrite the docstring between these, at the default priority of 500; above it the fields
     # they write exist whichever order `extensions` lists them in
     app.connect("autodoc-process-docstring", note_attributes_before_napoleon, priority=499)
