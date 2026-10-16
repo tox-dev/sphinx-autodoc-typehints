@@ -109,6 +109,50 @@ _DECIMAL_GUARD: Final[str] = dedent("""\
         ),
         param(
             dedent("""\
+                from typing import TYPE_CHECKING
+
+                if TYPE_CHECKING and False:
+                    import os
+            """),
+            [],
+            id="compound-and-false",
+        ),
+        param(
+            dedent("""\
+                from typing import TYPE_CHECKING
+
+                if TYPE_CHECKING and False:
+                    import os
+                else:
+                    import sys
+            """),
+            ["import sys"],
+            id="compound-and-false-else",
+        ),
+        param(
+            dedent("""\
+                from typing import TYPE_CHECKING
+
+                if TYPE_CHECKING or True:
+                    import os
+            """),
+            ["import os"],
+            id="compound-or-true",
+        ),
+        param(
+            dedent("""\
+                from typing import TYPE_CHECKING
+
+                if False:
+                    import os
+                if TYPE_CHECKING:
+                    import sys
+            """),
+            ["import sys"],
+            id="unrelated-constant-guard",
+        ),
+        param(
+            dedent("""\
                 import sys
                 from typing import TYPE_CHECKING
 

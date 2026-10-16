@@ -69,6 +69,22 @@ def test_resolve_type_guarded_imports_records_the_guard_of_the_module(
     assert guarded_names(module) == {"Decimal": Decimal}
 
 
+def test_resolve_type_guarded_imports_skips_a_false_compound_guard(make_module: Callable[[str], ModuleType]) -> None:
+    module = make_module(
+        dedent("""\
+            from __future__ import annotations
+            from typing import TYPE_CHECKING
+
+            if TYPE_CHECKING and False:
+                from decimal import Decimal as Ghost
+
+            def consume(value: Ghost) -> None: ...
+        """)
+    )
+    resolve_type_guarded_imports([], module.consume)
+    assert "Ghost" not in guarded_names(module.consume)
+
+
 def test_resolve_type_guarded_imports_skips_an_instance_but_not_its_class(
     make_module: Callable[[str], ModuleType], guarded: Callable[[str, str], str]
 ) -> None:
