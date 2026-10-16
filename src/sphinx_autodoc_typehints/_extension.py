@@ -21,7 +21,7 @@ from ._docstring import (
 from ._patches import (
     BUILDING,
     patch_autodoc_type_hints,
-    patch_line_numbers,
+    patch_doctest_line_number,
     patch_lookup_annotation,
     patch_overload_capture,
     patch_signature_lines,
@@ -88,7 +88,7 @@ def setup(app: Sphinx) -> dict[str, bool | str]:
     app.connect("env-before-read-docs", lambda _sphinx_app, _env, _docnames: SHADOWED_BY_GUARD.clear())
     app.connect("build-finished", lambda sphinx_app, _exception: BUILDING.discard(id(sphinx_app)))
     patch_lookup_annotation()
-    patch_line_numbers()
+    patch_doctest_line_number()
     return {
         "version": __version__,
         "parallel_read_safe": True,

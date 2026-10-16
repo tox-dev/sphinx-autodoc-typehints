@@ -12,6 +12,7 @@ from .keywords import PARAM_SYNONYMS, STAR_PREFIXES, field_keyword_and_argument
 from .rtype import SphinxDirectivePlaceholder, node_line_no, safe_parse
 
 if TYPE_CHECKING:
+    from docutils.nodes import Node
     from sphinx.application import Sphinx
 
 
@@ -103,7 +104,7 @@ class FieldListFormat:
                 continue
 
             at = (
-                max(line_no - 2, 0)
+                max(line_no - _lines_back(next_sibling), 0)
                 if (next_sibling := child.next_node(descend=False, siblings=True))
                 and (line_no := node_line_no(next_sibling))
                 else len(lines)
@@ -111,16 +112,14 @@ class FieldListFormat:
             return InsertIndexInfo(insert_index=at, found_param=True)
 
         for child in doc.children:
-            if (tag := child.tagname) in {
+            if child.tagname in {
                 "literal_block",
                 "paragraph",
                 "field_list",
                 SphinxDirectivePlaceholder.__name__,
             }:
                 continue
-            # a doctest block keeps the offset tuned while docutils gave it the line after its first one
-            offset = 1 if tag == "doctest_block" else 2
-            at = max(line_no - offset, 0) if (line_no := node_line_no(child)) else len(lines)
+            at = max(line_no - _lines_back(child), 0) if (line_no := node_line_no(child)) else len(lines)
             if lines[at - 1]:
                 break
             return InsertIndexInfo(insert_index=at, found_directive=True)
@@ -167,6 +166,11 @@ def write_rtype(
     else:
         # the description starts on the next line, and a block such as a list cannot follow inline text
         lines[insert_index : insert_index + 1] = [f":return: {formatted_annotation} --", ""]
+
+
+def _lines_back(node: Node) -> int:
+    # docutils numbers these blocks from their first line, where the return type goes
+    return 1 if node.tagname in {"definition_list", "doctest_block"} else 2
 
 
 def _field_end(lines: list[str], at: int) -> int:
