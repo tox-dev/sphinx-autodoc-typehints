@@ -55,7 +55,8 @@ def stub_context(
     if (tree := parse_stub_ast(path)) is None:
         return {}, {}, ""
     namespace: dict[str, Documented] = dict(vars(owner_module))
-    resolved: dict[str, Documented] = {}
+    # a class takes its `__module__` from the `__name__` of the globals it runs in, `builtins` when they lack one
+    resolved: dict[str, Documented] = {"__name__": owner_module.__name__}
     unresolved: set[str] = set()
     _resolve_stub_imports_from_body(tree.body, stub_owner_package(owner_module, path), resolved, unresolved)
     _resolve_stub_definitions(tree.body, resolved)
