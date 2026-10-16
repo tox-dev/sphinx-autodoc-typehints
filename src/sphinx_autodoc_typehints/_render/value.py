@@ -10,7 +10,6 @@ from __future__ import annotations
 
 from itertools import groupby
 from operator import itemgetter
-from pathlib import Path
 from typing import TYPE_CHECKING, Final
 
 from docutils import nodes
@@ -24,8 +23,6 @@ if TYPE_CHECKING:
     from docutils.nodes import Node, system_message
     from docutils.parsers.rst import states
     from pygments.token import _TokenType
-    from sphinx.application import Sphinx
-    from sphinx.config import Config
 
 VALUE_ROLE: Final[str] = "sphinx_autodoc_typehints_value"
 CONSTANT_ROLE: Final[str] = "sphinx_autodoc_typehints_constant"
@@ -90,16 +87,10 @@ def _token_class(ttype: _TokenType) -> str:
     return next(STANDARD_TYPES[kind] for kind in reversed(ttype.split()) if kind in STANDARD_TYPES)
 
 
-def add_value_stylesheet(app: Sphinx, _config: Config) -> None:
-    """Serve the stylesheet keeping the block layout of `.highlight` off inline values."""
-    app.config.html_static_path.append(str(Path(__file__).parents[1] / "_static"))
-
-
 __all__ = [
     "CONSTANT_ROLE",
     "VALUE_ROLE",
     "VALUE_STYLESHEET",
-    "add_value_stylesheet",
     "constant_role",
     "value_markup",
     "value_role",
