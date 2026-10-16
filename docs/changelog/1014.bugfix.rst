@@ -1,0 +1,2 @@
+Overloads of a class documented with ``.. autofunction::`` no longer list ``self`` and ``-> None``, and overloads of a
+function documented with ``.. autoclass::`` keep their first parameter and return types.

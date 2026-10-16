@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from inspect import getattr_static
+from inspect import getattr_static, isclass
 from typing import TYPE_CHECKING
 
 from .._objects import documented_owner, stored_name
@@ -11,10 +11,15 @@ if TYPE_CHECKING:
     from sphinx.application import Sphinx
     from sphinx.ext.autodoc import Options
 
+    from .entry import Entry
 
-def overload_skip(what: str, name: str) -> int:
+
+def overload_skip(entry: Entry) -> int:
     """Count the leading parameters to drop from an overload, which lists a method's self or cls as parsed."""
-    return int(what != "function" and (what != "method" or class_member_type(name) is not staticmethod))
+    # a class documents its constructor's overloads whichever directive names it
+    if isclass(entry.obj):
+        return 1
+    return int(entry.what == "method" and class_member_type(entry.name) is not staticmethod)
 
 
 def class_member_type(name: str) -> type | None:

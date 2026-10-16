@@ -144,8 +144,8 @@ pytestmark: Final[MarkDecorator] = mark.sphinx(
         param(
             ".. autofunction:: dummy_module.ClassWithOverloadedInit",
             dedent("""\
-                dummy_module.ClassWithOverloadedInit(self, value: int) -> None
-                dummy_module.ClassWithOverloadedInit(self, value: str) -> None
+                dummy_module.ClassWithOverloadedInit(value: int)
+                dummy_module.ClassWithOverloadedInit(value: str)
 
                    Class docstring.
                 """),
@@ -154,8 +154,8 @@ pytestmark: Final[MarkDecorator] = mark.sphinx(
         param(
             ".. autoclass:: dummy_module.overloaded",
             dedent("""\
-                class dummy_module.overloaded
-                class dummy_module.overloaded(*, strict=...)
+                class dummy_module.overloaded(value: int) -> DataClass
+                class dummy_module.overloaded(value: str, *, strict=...) -> MyNamedTuple
 
                    Overloaded function.
                 """),

@@ -271,6 +271,34 @@ def test_summary_end(lines: list[str], expected: int) -> None:
             """),
             id="constructor",
         ),
+        param(
+            "autofunction:: dummy_module.ClassWithOverloadedInit",
+            dedent("""\
+                dummy_module.ClassWithOverloadedInit(value)
+
+                   Class docstring.
+
+                   Overloads:
+                      * **value** ("int")
+
+                      * **value** ("str")
+            """),
+            id="class-as-a-function",
+        ),
+        param(
+            "autoclass:: dummy_module.overloaded",
+            dedent("""\
+                class dummy_module.overloaded(value, *, strict=False)
+
+                   Overloaded function.
+
+                   Overloads:
+                      * **value** ("int") \N{RIGHTWARDS ARROW} "DataClass"
+
+                      * **value** ("str"), *, **strict** = "..." \N{RIGHTWARDS ARROW} "MyNamedTuple"
+            """),
+            id="function-as-a-class",
+        ),
     ],
 )
 def test_overloads_rendered_in_docstring(build_text: BuildText, directive: str, expected: str) -> None:

@@ -149,14 +149,12 @@ def _shown_types(
             key: signature_type(app, as_written(hint, hints.written_as.get(key))) for key, hint in hints.types.items()
         }
         arguments = bound_type_args(*documenting_class(entry.name, entry.obj))
-        typed = typed_overloads(app, entry.name, callee, overloads, overload_skip(entry.what, entry.name), arguments)
+        typed = typed_overloads(app, entry.name, callee, overloads, overload_skip(entry), arguments)
         return shown, [
             overload.replace(
                 parameters=[param.replace(annotation=signature_type(app, types[param.name])) for param in params],
-                # the overloads of a class entry drop the return as its signature does
-                return_annotation=(
-                    Signature.empty if entry.what in {"class", "exception"} else signature_type(app, types["return"])
-                ),
+                # the overloads of a class drop the return as its signature does
+                return_annotation=Signature.empty if isclass(entry.obj) else signature_type(app, types["return"]),
             )
             for overload, (params, types) in zip(overloads, typed, strict=True)
         ]

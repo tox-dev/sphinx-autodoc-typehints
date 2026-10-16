@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from functools import partial
-from inspect import Parameter, Signature, signature, unwrap
+from inspect import Parameter, Signature, isclass, signature, unwrap
 from typing import TYPE_CHECKING
 
 from sphinx.util.inspect import object_description
@@ -54,12 +54,12 @@ def inject_overloads(entry: Entry, obj: Callable[..., object], lines: list[str])
     if app.config.typehints_use_signature and name not in written_signatures(app.env):
         return True
     # a class documents its constructor's overloads, which return the instance like the class signature shows
-    if what in {"class", "exception"}:
+    if isclass(entry.obj):
         overloads = [overload.replace(return_annotation=Signature.empty) for overload in overloads]
     arguments = bound_type_args(*documenting_class(name, entry.obj))
     render = partial(as_field_type, config=app.config)
     listed = ["", ":Overloads:"]
-    for parameters, hints in typed_overloads(app, name, obj, overloads, overload_skip(what, name), arguments):
+    for parameters, hints in typed_overloads(app, name, obj, overloads, overload_skip(entry), arguments):
         entries: list[str] = []
         for at, param in enumerate(parameters):
             if param.kind is param.KEYWORD_ONLY and (
