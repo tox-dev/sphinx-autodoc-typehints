@@ -124,6 +124,11 @@ def test_stub_context_defines_what_the_stub_defines(
     }
 
 
+def test_stub_context_places_a_stub_class_in_the_module_of_the_stub(make_stubbed_module: MakeStubbedModule) -> None:
+    module = make_stubbed_module("def load(path): ...", "class Config: ...")
+    assert stub_context(module.load)[0]["Config"].__module__ == module.__name__
+
+
 @mark.parametrize(
     ("stub", "expected"),
     [
