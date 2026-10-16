@@ -1,0 +1,2 @@
+Document support for both Sphinx autodoc implementations and cover re-exported types and ``NamedTuple`` references in
+both modes.
