@@ -24,7 +24,8 @@ def keep_type_mapping(config: Config, env: BuildEnvironment) -> None:
     """
     all_documented: set[str] = set()
     candidates: list[tuple[str, str]] = []
-    for role in frozenset({"py:class", "py:function", "py:exception", "py:data"}):
+    # a fixed role order, so the documented name an internal path maps to does not follow string hash order
+    for role in ("py:class", "py:function", "py:exception", "py:data"):
         if (entries := inventory(env).get(role)) is None:
             continue
         for documented_name in entries:
@@ -42,10 +43,11 @@ def keep_type_mapping(config: Config, env: BuildEnvironment) -> None:
             # retarget every union
             if internal_path is not None and internal_path not in {"types.UnionType", "typing.Union", documented_name}:
                 candidates.append((internal_path, documented_name))
+    # the earliest role wins, so a class an inventory also lists as data links to its class entry
     setattr(
         config,
         _TYPE_MAPPING,
-        {internal: documented for internal, documented in candidates if internal not in all_documented},
+        {internal: documented for internal, documented in reversed(candidates) if internal not in all_documented},
     )
 
 

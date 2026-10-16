@@ -11,5 +11,7 @@ class Thing:
 
 
 THING = Thing()
+PublicThing = Thing
+CompatThing = Thing
 UnionClass = UnionType
 UnionAlias = Union[bytes, memoryview]

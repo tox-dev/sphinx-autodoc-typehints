@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from os import environ
 from re import findall
 from shutil import copytree
+from subprocess import check_output  # ruff:ignore[suspicious-subprocess-import]  # a fresh interpreter is the only way to pick the string hash seed
+from sys import executable
 from textwrap import dedent
 from threading import local
 from typing import TYPE_CHECKING
@@ -54,6 +57,27 @@ def test_keep_type_mapping(
 ) -> None:
     keep_type_mapping(config, inventory_env(entries))
     assert type_mapping(config) == expected
+
+
+@mark.parametrize("hash_seed", [param("0", id="seed-0"), param("2", id="seed-2")])
+def test_keep_type_mapping_picks_the_class_role_whatever_the_hash_seed(rootdir: Path, hash_seed: str) -> None:
+    script = dedent("""\
+        from types import SimpleNamespace
+
+        from sphinx_autodoc_typehints._render import keep_type_mapping
+        from sphinx_autodoc_typehints._render.intersphinx import type_mapping
+
+        config = SimpleNamespace()
+        inventory = {
+            "py:class": {"render_inventory_targets.PublicThing": None},
+            "py:data": {"render_inventory_targets.CompatThing": None},
+        }
+        keep_type_mapping(config, SimpleNamespace(intersphinx_inventory=inventory))
+        print(type_mapping(config)["render_inventory_targets.Thing"])
+    """)
+    env = {**environ, "PYTHONHASHSEED": hash_seed, "PYTHONPATH": str(rootdir / "test-render-intersphinx")}
+    output = check_output([executable, "-c", script], env=env, text=True)
+    assert output.strip() == "render_inventory_targets.PublicThing"
 
 
 @fixture(name="inventory_env")
