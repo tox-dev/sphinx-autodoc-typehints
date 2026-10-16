@@ -37,7 +37,11 @@ def type_alias_namespace(
     scopes = set(enclosing_scopes(module_prefix))
     for qualified_name, entry in py_objects.items():
         scope, _, short_name = qualified_name.rpartition(".")
-        if entry.objtype == "type" and scope in scopes:
+        if (
+            entry.objtype == "type"
+            and scope in scopes
+            and qualified_name in alias_lookup_names(module_prefix, short_name)
+        ):
             localns[short_name] = MyTypeAliasForwardRef(short_name, crossref=True)
     # under PEP 649 the annotations run on first access and may fail, naming what only a TYPE_CHECKING block binds or
     # subscripting a class that is not generic

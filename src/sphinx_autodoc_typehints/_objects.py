@@ -142,7 +142,17 @@ def prefix_of(name: str) -> str:
 
 def alias_lookup_names(module_prefix: str, name: str) -> list[str]:
     """Return the names a `py:type` documenting an alias used under `module_prefix` may have, innermost first."""
-    return [*(f"{scope}.{name}" for scope in enclosing_scopes(module_prefix)), name]
+    scopes = enclosing_scopes(module_prefix)
+    missing = object()
+
+    def binding(scope: str) -> object:
+        if (prefix := imported_prefix(scope.split("."))) is None:
+            return missing
+        owner = object_at(*prefix)
+        return vars(owner).get(name, missing) if hasattr(owner, "__dict__") else missing
+
+    visible = next((value for scope in scopes if (value := binding(scope)) is not missing), missing)
+    return [*(f"{scope}.{name}" for scope in scopes if visible is missing or binding(scope) is visible), name]
 
 
 def enclosing_scopes(module_prefix: str) -> list[str]:

@@ -126,6 +126,22 @@ def test_format_annotation_alias_links_the_alias_it_names(
 
 
 @mark.parametrize(
+    ("module", "expected"),
+    [param("shadow", '"str"', id="shadowed"), param("imported", '"Count"', id="imported")],
+)
+@mark.sphinx("text", testroot="render-types")
+def test_parent_package_alias_follows_submodule_binding(build_text: BuildText, module: str, expected: str) -> None:
+    result = build_text(
+        dedent(f"""\
+            .. py:type:: render_scopes.Count
+
+            .. autofunction:: render_scopes.{module}.consume
+        """)
+    )
+    assert f"**value** ({expected})" in result
+
+
+@mark.parametrize(
     ("annotation", "expected"),
     [
         param(BackportIntList, r":py:class:`list`\ \[:py:class:`int`]", id="typing-extensions"),
