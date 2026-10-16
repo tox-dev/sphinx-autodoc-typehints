@@ -894,3 +894,22 @@ def test_annotated_metadata_shows_selected_types(build_text: BuildText, make_mod
     assert "Annotated" in output
     assert "pixels" in output
     assert "range" not in output
+
+
+@mark.sphinx("text", testroot="render-types", confoverrides={"typehints_annotated_metadata": (range,)})
+def test_annotated_metadata_can_show_range_values(build_text: BuildText, make_module: MakeModule) -> None:
+    make_module(
+        "range_metadata_demo",
+        dedent('''\
+            from typing import Annotated
+
+
+            def clamp(value: Annotated[int, range(0, 100)]) -> None:
+                """Clamp a value.
+
+                :param value: the value
+                """
+            '''),
+    )
+
+    assert "range(0, 100)" in build_text(".. autofunction:: range_metadata_demo.clamp")
