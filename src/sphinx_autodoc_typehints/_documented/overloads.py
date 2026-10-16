@@ -5,11 +5,12 @@ from __future__ import annotations
 from inspect import Parameter, Signature, signature
 from typing import TYPE_CHECKING, Final, get_overloads
 
-from .._objects import declared_signature, prefix_of, unwrapped
+from .._objects import alias_lookup_names, declared_signature, prefix_of, unwrapped
 from .._render import annotation_state, render_context
 from .._resolve import (
     annotation_globals,
     declared_type_params,
+    guarded_names,
     resolve_string_annotations,
     specialize,
     type_alias_namespace,
@@ -51,6 +52,7 @@ def typed_overloads(
         # a staticmethod or classmethod overload registers the descriptor
         defining = [unwrapped(function) for function in functions]
     aliases = type_alias_namespace(app.config["autodoc_type_aliases"], obj, prefix_of(name), app.env)[0]
+    guarded = guarded_names(obj)
     scope = aliases | {param.__name__: param for param in declared_type_params(None, obj, None)}
     namespace = annotation_globals(obj)
     declared = render_context(app.config).declared_type_params
@@ -70,6 +72,7 @@ def typed_overloads(
             key: written_type_alias(source, hints[key], namespace)
             for key, source in written.items()
             if isinstance(source, str)
+            and (source not in guarded or alias_lookup_names(prefix_of(name), source, guarded=guarded))
         }
         with annotation_state(app.config, declared_type_params=declared | own):
             yield (
