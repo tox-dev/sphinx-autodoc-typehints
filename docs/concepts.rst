@@ -56,8 +56,8 @@ over the parsed documents before Sphinx writes them out, makes the last choice:
         extension_handlers-->>-sphinx_autodoc: link to the alias or its expanded value
 
 The docstring handler runs after :doc:`napoleon <sphinx:usage/extensions/napoleon>` and :doc:`numpydoc
-<numpydoc:index>`, so they have to come first in :confval:`extensions`: the extension types the reST fields they write
-as it types the ones you write yourself.
+<numpydoc:index>` wherever :confval:`extensions` lists them: the extension types the reST fields they write as it
+types the ones you write yourself.
 
 *******************************
  Signatures you write yourself
@@ -292,7 +292,7 @@ numpydoc docstrings
 
 .. live-example::
 
-    # numpydoc has to rewrite the docstring before this extension reads it
+    # numpydoc writes the sections this extension types
     extensions = ["sphinx.ext.autodoc", "numpydoc", "sphinx_autodoc_typehints"]
     ---
     def format_unit(value: float, unit: str) -> str:
