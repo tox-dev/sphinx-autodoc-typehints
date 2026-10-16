@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 
 from .._objects import alias_lookup_names, enclosing_scopes
 from .._refs import MyTypeAliasForwardRef, WrittenTypeAlias
-from .guards import annotation_globals
+from .guards import annotation_globals, guarded_names, resolve_type_guarded_imports
 from .source import written_annotations
 
 if TYPE_CHECKING:
@@ -33,11 +33,17 @@ def type_alias_namespace(
     localns = {name: MyTypeAliasForwardRef(value, configured=True) for name, value in type_aliases.items()}
     if env is None:
         return localns, {}
+    resolve_type_guarded_imports(env.config.autodoc_mock_imports, obj)
+    guarded = guarded_names(obj)
     py_objects = env.domains.python_domain.objects
     scopes = set(enclosing_scopes(module_prefix))
     for qualified_name, entry in py_objects.items():
         scope, _, short_name = qualified_name.rpartition(".")
-        if entry.objtype == "type" and scope in scopes:
+        if (
+            entry.objtype == "type"
+            and scope in scopes
+            and qualified_name in alias_lookup_names(module_prefix, short_name, guarded=guarded)
+        ):
             localns[short_name] = MyTypeAliasForwardRef(short_name, crossref=True)
     # under PEP 649 the annotations run on first access and may fail, naming what only a TYPE_CHECKING block binds or
     # subscripting a class that is not generic
@@ -56,10 +62,14 @@ def type_alias_namespace(
         if isinstance(annotation, str):
             if any(
                 candidate in py_objects and py_objects[candidate].objtype == "type"
-                for candidate in alias_lookup_names(module_prefix, annotation)
+                for candidate in alias_lookup_names(module_prefix, annotation, guarded=guarded)
             ):
                 localns[annotation] = MyTypeAliasForwardRef(annotation, crossref=True)
-        elif (source := written.get(name)) and (alias := written_type_alias(source, annotation, obj_globals)):
+        elif (
+            (source := written.get(name))
+            and (source not in guarded or alias_lookup_names(module_prefix, source, guarded=guarded))
+            and (alias := written_type_alias(source, annotation, obj_globals))
+        ):
             written_as[name] = alias
     return localns, written_as
 

@@ -344,6 +344,11 @@ another document, and ``-j`` doesn't change the result. Sphinx writes a signatur
 :confval:`typehints_use_signature` keeps while it still reads documents, so that signature names the alias only when
 Sphinx read the entry first.
 
+A submodule's own ``Vector`` takes precedence over an alias with that name documented in its parent package. If the
+submodule's alias has no entry, its type appears instead. This also applies when an ``if TYPE_CHECKING:`` block binds
+the name only for annotations. Import the parent's alias into the submodule when its functions should link to the
+parent's entry.
+
 A plain assignment, ``Count = int``, evaluates to the type it names, so without ``from __future__ import annotations``
 the extension reads the function's source to tell ``limit: Count`` from ``limit: int``. A function without source, such
 as a generated one, shows the type the alias names. An alias in :confval:`autodoc_type_aliases` renders by its name and

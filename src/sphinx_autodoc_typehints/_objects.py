@@ -16,7 +16,7 @@ from sphinx.ext.autodoc.mock import ismock
 from sphinx.util.inspect import safe_getattr
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
+    from collections.abc import Callable, Iterable, Mapping
     from typing import TypeIs
 
     from attrs import AttrsInstance
@@ -140,9 +140,27 @@ def prefix_of(name: str) -> str:
     return name.rpartition(".")[0]
 
 
-def alias_lookup_names(module_prefix: str, name: str) -> list[str]:
+def alias_lookup_names(module_prefix: str, name: str, *, guarded: Mapping[str, object] | None = None) -> list[str]:
     """Return the names a `py:type` documenting an alias used under `module_prefix` may have, innermost first."""
-    return [*(f"{scope}.{name}" for scope in enclosing_scopes(module_prefix)), name]
+    scopes = enclosing_scopes(module_prefix)
+    missing = object()
+
+    def binding(scope: str) -> object:
+        if (prefix := imported_prefix(scope.split("."))) is None:
+            return missing
+        owner = object_at(*prefix)
+        return vars(owner).get(name, missing) if hasattr(owner, "__dict__") else missing
+
+    guarded_binding = guarded is not None and name in guarded
+    visible = (
+        guarded[name]
+        if guarded_binding
+        else next((value for scope in scopes if (value := binding(scope)) is not missing), missing)
+    )
+    return [
+        *(f"{scope}.{name}" for scope in scopes if visible is missing or binding(scope) is visible),
+        *([] if guarded_binding else [name]),
+    ]
 
 
 def enclosing_scopes(module_prefix: str) -> list[str]:

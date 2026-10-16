@@ -21,6 +21,7 @@ from .guards import (
     SHADOWED_BY_GUARD,
     annotation_globals,
     guard_bound,
+    guarded_names,
     guarded_names_bound,
     resolve_type_guarded_imports,
 )
@@ -50,6 +51,7 @@ __all__ = [
     "get_descriptor_type_hint",
     "get_instance_var_annotations",
     "guard_bound",
+    "guarded_names",
     "guarded_names_bound",
     "resolve_annotations",
     "resolve_overloads",
