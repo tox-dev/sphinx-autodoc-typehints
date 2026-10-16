@@ -43,7 +43,7 @@ from ._render import (
     unescape,
     value_role,
 )
-from ._resolve import SHADOWED_BY_GUARD
+from ._resolve import forget_reads
 from ._signature import add_type_params, process_bases, process_signature, render_header_types
 from .version import __version__
 
@@ -91,8 +91,8 @@ def setup(app: Sphinx) -> dict[str, bool | int | str]:
     patch_autodoc_type_hints()
     # `builder-inited` fires while the app is created, so an app never built would count as building for good
     app.connect("env-before-read-docs", lambda sphinx_app, _env, _docnames: BUILDING.add(id(sphinx_app)))
-    # a module edited and imported again since the last build in this process binds other names in its guard
-    app.connect("env-before-read-docs", lambda _sphinx_app, _env, _docnames: SHADOWED_BY_GUARD.clear())
+    # a module edited and imported again since the last build in this process finds other stubs and binds other names
+    app.connect("env-before-read-docs", lambda _sphinx_app, _env, _docnames: forget_reads())
     app.connect("build-finished", lambda sphinx_app, _exception: BUILDING.discard(id(sphinx_app)))
     return {
         "version": __version__,

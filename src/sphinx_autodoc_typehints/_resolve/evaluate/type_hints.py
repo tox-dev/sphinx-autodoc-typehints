@@ -11,7 +11,8 @@ from functools import partial
 from inspect import getattr_static, isfunction, isroutine
 from sys import version_info
 from types import GenericAlias, ModuleType
-from typing import TYPE_CHECKING, get_args, get_origin, get_type_hints
+from typing import TYPE_CHECKING, Final, get_args, get_origin, get_type_hints
+from weakref import WeakKeyDictionary
 
 from sphinx_autodoc_typehints._objects import defining_module, is_attrs_class, object_at
 
@@ -36,6 +37,9 @@ if TYPE_CHECKING:
     from typing import TypeAliasType
 
     from sphinx_autodoc_typehints._types import Annotation, Documented
+
+
+_DROPS_ARGUMENTS: Final[WeakKeyDictionary[type | TypeAliasType, bool]] = WeakKeyDictionary()
 
 
 def type_hints(
@@ -74,7 +78,7 @@ def type_hints(
             name
             for name, hint in hints.items()
             if any(
-                isinstance(part, type) and get_origin(part) is None and _drops_arguments(part) for part in _parts(hint)
+                isinstance(part, type) and _drops_arguments(part) and get_origin(part) is None for part in _parts(hint)
             )
         }
     ):
@@ -135,6 +139,16 @@ def _parts(hint: Annotation) -> Iterator[Annotation]:
 
 
 def _drops_arguments(cls: type | TypeAliasType) -> bool:
+    try:
+        if (drops := _DROPS_ARGUMENTS.get(cls)) is None:
+            drops = _DROPS_ARGUMENTS[cls] = _defines_class_getitem(cls)
+    except TypeError:
+        # a metaclass defining `__eq__` without `__hash__` makes the class unhashable, and some types take no weakref
+        return _defines_class_getitem(cls)
+    return drops
+
+
+def _defines_class_getitem(cls: type | TypeAliasType) -> bool:
     # the standard library subscripts its classes in C, only a __class_getitem__ written in Python can drop arguments
     method = getattr_static(cls, "__class_getitem__", None)
     return isfunction(getattr(method, "__func__", method))

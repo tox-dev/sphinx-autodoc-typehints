@@ -355,3 +355,22 @@ def test_lazy_annotation_neither_source_nor_runtime_evaluates_warns(  # pragma: 
     )
     get_all_type_hints([], module.Holder, "mod.Holder", {})
     assert [warning[-1] for warning in logged_warnings()] == ["name 'Missing' is not defined"]
+
+
+def test_type_hints_of_a_class_with_an_unhashable_metaclass(make_module: Callable[[str], ModuleType]) -> None:
+    module = make_module(
+        dedent("""\
+            class Meta(type):
+                def __eq__(cls, other):
+                    return cls is other
+
+            class Engine(metaclass=Meta):
+                def __class_getitem__(cls, item):
+                    return cls
+
+            class Holder:
+                kind: Engine[int]
+        """)
+    )
+
+    assert type_hints(module.Holder, None, None) == {"kind": GenericAlias(module.Engine, int)}

@@ -25,6 +25,8 @@ if TYPE_CHECKING:
 
 
 _STUB_AST_CACHE: Final[dict[tuple[Path, int], Module | None]] = {}
+# cleared before each build reads its documents, as a stub may appear between two builds of one process
+STUB_FILES: Final[dict[tuple[str, str], Path | None]] = {}
 
 
 def stub_path(obj: Documented, name: str = "") -> Path | None:
@@ -86,7 +88,12 @@ def _find_stub_for_module(module: ModuleType) -> Path | None:
             ),
             None,
         )
-    source = Path(source_file)
+    if (key := (module.__name__, str(source_file))) not in STUB_FILES:
+        STUB_FILES[key] = _stub_beside(module, Path(source_file))
+    return STUB_FILES[key]
+
+
+def _stub_beside(module: ModuleType, source: Path) -> Path | None:
     if (stub := source.with_name(f"{source.name.split('.')[0]}.pyi")).is_file():
         return stub
     if isinstance(package_dirs := _module_attribute(module, "__path__"), Iterable):
@@ -182,6 +189,7 @@ def import_module_or_none(module_name: str) -> ModuleType | None:
 
 
 __all__ = [
+    "STUB_FILES",
     "find_stub_owner",
     "import_module_or_none",
     "live_statements",
