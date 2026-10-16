@@ -10,10 +10,10 @@ requires = [
 name = "sphinx-autodoc-typehints"
 description = "Type hints (PEP 484) support for the Sphinx autodoc extension"
 keywords = [
-  "environments",
-  "isolated",
-  "testing",
-  "virtual",
+  "autodoc",
+  "documentation",
+  "sphinx",
+  "type hints",
 ]
 license = "MIT"
 maintainers = [
