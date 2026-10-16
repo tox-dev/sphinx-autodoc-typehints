@@ -289,6 +289,30 @@ _TYPE_ALIAS_FUNC_EXPANDED: Final[str] = dedent("""\
         ),
         param(
             dedent("""\
+                .. autofunction:: render_generic.take_nested_pair
+
+                .. py:type:: render_generic.Pair
+            """),
+            {},
+            "",
+            dedent("""\
+                render_generic.take_nested_pair(value)
+
+                   Take a pair of pairs.
+
+                   Parameters:
+                      **value** ("Pair"["Pair"["int"]]) -- the pairs
+
+                   Return type:
+                      "None"
+
+                type render_generic.Pair
+                """),
+            id="alias-argument-of-itself",
+            marks=mark.sphinx("text", testroot="render-types"),
+        ),
+        param(
+            dedent("""\
                 .. autofunction:: render_nested.nested_func
 
                 .. toctree::

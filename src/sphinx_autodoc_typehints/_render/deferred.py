@@ -131,8 +131,9 @@ class DeferAliasChoice(SphinxPostTransform):
                 replacement = doc.children[0].children
             else:
                 replacement = self._parse(node, expanded).children[0].children
-                # an expanded value can name further aliases, each with its own choice pending
-                pending.extend(marker for child in replacement for marker in self._markers(child))
+            # either rendering can name further aliases, as an alias subscripted by itself does, each with its own
+            # choice pending
+            pending.extend(marker for child in replacement for marker in self._markers(child))
             node.replace_self(list(replacement))
 
     @staticmethod

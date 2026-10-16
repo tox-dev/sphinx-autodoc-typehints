@@ -33,6 +33,17 @@ def take_pair(value: Pair[Undocumented]) -> None:
     """
 
 
+def take_nested_pair(value: Pair[Pair[int]]) -> None:
+    """
+    Take a pair of pairs.
+
+    Parameters
+    ----------
+    value
+        the pairs
+    """
+
+
 def rec_func(some_param: RecType) -> None:
     """
     Take a recursive alias.
