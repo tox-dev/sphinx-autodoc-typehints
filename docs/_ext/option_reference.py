@@ -15,7 +15,7 @@ from docutils.parsers.rst import directives
 from sphinx.domains.std import ConfigurationValue
 
 from sphinx_autodoc_typehints._render import format_annotation
-from sphinx_autodoc_typehints._render.context import FixupModuleName, TypehintsFormatter
+from sphinx_autodoc_typehints._render.context import ContextualTypehintsFormatter, FixupModuleName, TypehintsFormatter
 from sphinx_autodoc_typehints._resolve import resolve_annotations
 from sphinx_autodoc_typehints._types import RenderNode
 
@@ -37,7 +37,8 @@ OPTION_TYPES: Final[dict[str, RenderNode]] = {
     "typehints_document_rtype": bool,
     "typehints_document_rtype_none": bool,
     "typehints_fixup_module_name": FixupModuleName | None,
-    "typehints_formatter": TypehintsFormatter | None,
+    "typehints_formatter": TypehintsFormatter | ContextualTypehintsFormatter | None,
+    "typehints_formatter_pass_context": bool,
     "typehints_fully_qualified": bool,
     "typehints_use_rtype": bool,
     "typehints_use_signature": bool,

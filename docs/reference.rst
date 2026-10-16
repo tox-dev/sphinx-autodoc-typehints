@@ -75,6 +75,14 @@ to an option without a *Rebuild* field leaves the cached documents as they are.
     evaluate, the placeholder Sphinx makes for a name in :confval:`autodoc_type_aliases`, ``None``, or a list or
     tuple of these, as the parameters of a :class:`~collections.abc.Callable` are.
 
+.. confval:: typehints_formatter_pass_context
+    :default: ``False``
+    :rebuild: ``env``
+
+    Pass a third argument to :confval:`typehints_formatter` naming where the type appears: ``"parameter"``,
+    ``"return"``, ``"attribute"``, ``"base"`` or ``"other"``. The default keeps the two-argument callback. A type
+    nested inside another type receives the same context as its outer type.
+
 .. confval:: typehints_fully_qualified
     :default: ``False``
     :rebuild: ``env``

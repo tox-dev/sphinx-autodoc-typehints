@@ -67,7 +67,7 @@ def inject_rtype(entry: Entry, lines: list[str], fmt: FieldListFormat, hints: Re
     info = fmt.get_rtype_insert_info(app, lines)
     # a formatter hides the type by rendering it empty, which leaves the field nothing to hold
     if formatted_annotation := as_field_type(
-        as_written(type_hints["return"], hints.written_as.get("return")), app.config
+        as_written(type_hints["return"], hints.written_as.get("return")), app.config, kind="return"
     ):
         write_rtype(lines, formatted_annotation, info, use_rtype=app.config.typehints_use_rtype)
 
@@ -87,7 +87,7 @@ def _type_yields(annotation: Hint, description: str | None, app: Sphinx, lines: 
     # the `Doc` describes what is yielded only where the entry holds at most a type, with no description inline or on
     # the indented lines below it
     if description and not following[:1].isspace() and (not text or (reads_as_type(text) and " -- " not in text)):
-        typed = text or (as_field_type(args[0], app.config) if args else "")
+        typed = text or (as_field_type(args[0], app.config, kind="return") if args else "")
         lines[at] = f":{field}: {typed} -- {description}" if typed else f":{field}: {description}"
         return
     # the text before -- or the whole entry may already be a type, as numpydoc writes an entry holding the type alone,
@@ -97,7 +97,7 @@ def _type_yields(annotation: Hint, description: str | None, app: Sphinx, lines: 
     # numpydoc lists several yielded values as typed bullets under an empty entry
     if not text and (bullet := following.strip()).startswith("* ") and reads_as_type(bullet[2:]):
         return
-    if not (formatted := as_field_type(args[0], app.config)):
+    if not (formatted := as_field_type(args[0], app.config, kind="return")):
         return
     if text:
         lines[at] = f":{field}: {formatted} -- {text}"

@@ -13,12 +13,19 @@ if TYPE_CHECKING:
     from sphinx.application import Sphinx
 
     from .._refs import WrittenTypeAlias
+    from .._render.context import AnnotationKind
     from .._types import Hint
 
 
-def signature_type(app: Sphinx, hint: Hint | WrittenTypeAlias) -> str | type[Parameter.empty]:
+def signature_type(
+    app: Sphinx, hint: Hint | WrittenTypeAlias, *, kind: AnnotationKind = "other"
+) -> str | type[Parameter.empty]:
     # a formatter hides a type by rendering it empty, which leaves the parameter or return unannotated
-    return Parameter.empty if hint is Parameter.empty or not (text := as_signature_type(hint, app.config)) else text
+    return (
+        Parameter.empty
+        if hint is Parameter.empty or not (text := as_signature_type(hint, app.config, kind=kind))
+        else text
+    )
 
 
 def directive_text(app: Sphinx, signature: str) -> str:

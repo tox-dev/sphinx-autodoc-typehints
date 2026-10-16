@@ -119,7 +119,11 @@ def inject_setter_type(
     if (
         accepted is Parameter.empty
         or accepted == getter_hints.get("return", Parameter.empty)
-        or not (accepted_type := as_field_type(as_written(accepted, resolved.written_as.get(param)), app.config))
+        or not (
+            accepted_type := as_field_type(
+                as_written(accepted, resolved.written_as.get(param)), app.config, kind="parameter"
+            )
+        )
     ):
         return
     lines.extend(["", f":Setter accepts: {accepted_type}"])

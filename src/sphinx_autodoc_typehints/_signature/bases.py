@@ -8,7 +8,7 @@ from sphinx.ext.autodoc.mock import ismock
 
 from sphinx_autodoc_typehints._documented import render_scope
 from sphinx_autodoc_typehints._objects import prefix_of
-from sphinx_autodoc_typehints._render import format_annotation
+from sphinx_autodoc_typehints._render import annotation_state, format_annotation
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
@@ -23,7 +23,7 @@ def process_bases(app: Sphinx, name: str, _obj: type, _options: Options, bases: 
 
     Sphinx keeps a string as it is. A mock stays for Sphinx to render, as the extension has no type to read off it.
     """
-    with render_scope(app, prefix_of(name)):
+    with render_scope(app, prefix_of(name)), annotation_state(app.config, kind="base"):
         bases[:] = [
             base if isinstance(base, str) or ismock(base) else format_annotation(base, app.config) for base in bases
         ]

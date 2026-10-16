@@ -308,6 +308,28 @@ such as ``:class:`bool```.
 
 With :confval:`typehints_use_signature` or :confval:`typehints_use_signature_return`, the formatter decides the types
 kept in the signature too, where a role becomes the name it refers to, so ``:class:`bool``` turns into ``bool``.
+Set :confval:`typehints_formatter_pass_context` when the same type needs different wording in a parameter and a return
+field. The formatter then receives a third argument naming the kind of field:
+
+.. live-example::
+
+    typehints_formatter_pass_context = True
+
+    def format_str(annotation, config, kind=None):
+        if annotation is str and kind == "parameter":
+            return "input text"
+        if annotation is str and kind == "return":
+            return "result text"
+        return None
+
+    typehints_formatter = format_str
+    ---
+    def normalize(value: str) -> str:
+        """Normalize text.
+
+        :param value: the text to normalize
+        """
+
 Changing the formatter rereads the documents in an incremental build. A value that is not callable stops the build
 with a :class:`~sphinx.errors.ConfigError`.
 

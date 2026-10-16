@@ -25,6 +25,7 @@ from typing import (
     ParamSpecKwargs,
     TypeVar,
     TypeVarTuple,
+    cast,
     get_args,
     get_origin,
 )
@@ -66,7 +67,7 @@ if TYPE_CHECKING:
 
     from sphinx_autodoc_typehints._types import Hint, RenderNode, TypeParam
 
-    from ..context import TypehintsFormatter
+    from ..context import ContextualTypehintsFormatter, TypehintsFormatter
 
     # yields the annotations nested in a node, receives each one rendered, and yields _Rendered last
     type _Frame = Generator[RenderNode | _Rendered, str, None]
@@ -112,13 +113,16 @@ class _Rendered:
 
 
 def _format_node(annotation: RenderNode, config: Config, *, short_literals: bool) -> _Frame:
-    formatter: TypehintsFormatter | None = config.typehints_formatter
-    if (
-        formatter is not None
-        # the written name is ours to show, the formatter sees the type it stands for
-        and (text := formatter(annotation.value if isinstance(annotation, WrittenTypeAlias) else annotation, config))
-        is not None
-    ) or (text := _atom(annotation, config)) is not None:
+    formatter: TypehintsFormatter | ContextualTypehintsFormatter | None = config.typehints_formatter
+    subject = annotation.value if isinstance(annotation, WrittenTypeAlias) else annotation
+    formatted = None
+    if formatter is not None:
+        formatted = (
+            cast("ContextualTypehintsFormatter", formatter)(subject, config, render_context(config).kind)
+            if config.typehints_formatter_pass_context
+            else cast("TypehintsFormatter", formatter)(subject, config)
+        )
+    if (text := formatted) is not None or (text := _atom(annotation, config)) is not None:
         yield _Rendered(text)
     elif (unstarred := unstar(annotation)) is not None:
         # render it the way `*Ts` renders

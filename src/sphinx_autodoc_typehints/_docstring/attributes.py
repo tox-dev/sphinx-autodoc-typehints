@@ -104,7 +104,10 @@ def inject_ivar_types(ivar_annotations: Mapping[str, Annotation | str], app: Sph
         ):
             line_index += 1
             continue
-        lines.insert(line_index, f":vartype {attr_name}: {as_field_type(ivar_annotations[attr_name], app.config)}")
+        lines.insert(
+            line_index,
+            f":vartype {attr_name}: {as_field_type(ivar_annotations[attr_name], app.config, kind='attribute')}",
+        )
         line_index += 2
 
 
@@ -126,7 +129,10 @@ def inject_attribute_types(ivar_annotations: Mapping[str, Annotation | str], app
         while not lines[end - 1].strip():
             end -= 1
         if not any(line.strip().startswith(":type:") for line in lines[at:end]):
-            lines[end:end] = ["", f"   :type: {as_field_type(ivar_annotations[directive[1]], app.config)}"]
+            lines[end:end] = [
+                "",
+                f"   :type: {as_field_type(ivar_annotations[directive[1]], app.config, kind='attribute')}",
+            ]
         at = end
 
 

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from dataclasses import dataclass, replace
-from typing import TYPE_CHECKING, Final, Protocol, TypedDict, Unpack
+from typing import TYPE_CHECKING, Final, Literal, Protocol, TypedDict, Unpack
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -22,6 +22,7 @@ if TYPE_CHECKING:
 
 
 _ATTRIBUTE: Final[str] = "_typehints_render_context"
+type AnnotationKind = Literal["parameter", "return", "attribute", "base", "other"]
 
 
 @contextmanager
@@ -58,6 +59,7 @@ class RenderContext:
     module_prefix: str = ""
     #: whether the text goes into a signature, which the Python domain parses and links itself
     signature: bool = False
+    kind: AnnotationKind = "other"
     #: the type parameters the signature lists, with their bounds, constraints and defaults
     declared_type_params: frozenset[TypeParam] = frozenset()
     #: how to bind the guarded names of a module, which resolution owns and rendering cannot import
@@ -70,6 +72,7 @@ class TypeParamScope(TypedDict, total=False):
 
 class ScopeExtras(TypeParamScope, total=False):
     signature: bool
+    kind: AnnotationKind
 
 
 class RenderChanges(ScopeExtras, total=False):
@@ -98,7 +101,13 @@ class TypehintsFormatter(Protocol):
     def __call__(self, annotation: RenderNode, config: Config, /) -> str | None: ...
 
 
+class ContextualTypehintsFormatter(Protocol):
+    def __call__(self, annotation: RenderNode, config: Config, kind: AnnotationKind, /) -> str | None: ...
+
+
 __all__ = [
+    "AnnotationKind",
+    "ContextualTypehintsFormatter",
     "FixupModuleName",
     "RenderContext",
     "ScopeExtras",
