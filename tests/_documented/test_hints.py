@@ -44,6 +44,13 @@ class _StatesSignature:
     def __init__(self, **data: float) -> None: ...
 
 
+# a decorator building it with `inspect.signature` under `from __future__ import annotations` copies strings
+class _StatesStrings:
+    __signature__ = Signature([Parameter("value", Parameter.KEYWORD_ONLY, annotation="_Pair")], return_annotation="str")
+
+    def __init__(self, **data: float) -> None: ...
+
+
 @mark.parametrize(
     ("name", "original", "obj", "expected"),
     [
@@ -93,6 +100,17 @@ class _StatesSignature:
                 scope={"declared_type_params": frozenset()},
             ),
             id="stated-signature",
+        ),
+        param(
+            "mod._StatesStrings",
+            _StatesStrings,
+            _StatesStrings.__init__,
+            ResolvedHints(
+                types={"data": float, "return": str, "value": _Pair},
+                written_as={},
+                scope={"declared_type_params": frozenset()},
+            ),
+            id="stated-signature-as-strings",
         ),
     ],
 )
