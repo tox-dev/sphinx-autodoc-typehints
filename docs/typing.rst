@@ -265,9 +265,10 @@ every Python the extension supports.
 ``Doc``
 =======
 
-``Doc`` from typing_extensions, :pep:`727`, holds a description inside :data:`~typing.Annotated` metadata. The extension
-writes it as the parameter or return description, so the docstring can leave those fields out. :pep:`727` was
-withdrawn, so ``Doc`` exists only in typing_extensions, on any Python.
+``Doc`` from typing_extensions or `annotated-doc <https://github.com/fastapi/annotated-doc>`__ holds a description
+inside :data:`~typing.Annotated` metadata. The extension writes it as the parameter or return description, so the
+docstring can leave those fields out. :pep:`727` proposed adding ``Doc`` to the standard library but was withdrawn;
+both third-party packages provide it on supported Python versions.
 
 .. live-example::
 
@@ -284,6 +285,8 @@ withdrawn, so ``Doc`` exists only in typing_extensions, on any Python.
     ) -> Annotated[str, Doc("the greeting")]:
         """Build a greeting."""
         return f"Hello {name}" * times
+
+The same example works with ``from annotated_doc import Doc`` in place of ``from typing_extensions import Doc``.
 
 ***********
  Callables

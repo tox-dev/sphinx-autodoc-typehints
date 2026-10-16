@@ -169,6 +169,10 @@ of a type it writes is a cross-reference, and napoleon docstrings get their type
 code imports every annotated name at runtime and the docstrings use Sphinx fields or napoleon, the built-in setting is
 enough.
 
+Sphinx 9 uses its rewritten autodoc implementation by default. This extension supports that implementation and
+:confval:`autodoc_use_legacy_class_based = True <autodoc_use_legacy_class_based>`, which Sphinx provides for extensions
+that still need the earlier autodoc API.
+
 The table lists what changes when this extension takes over the description, each row checked by building one module
 both ways, with ``autodoc_typehints = "description"`` alone and with this extension loaded.
 

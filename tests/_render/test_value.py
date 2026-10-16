@@ -94,6 +94,7 @@ def test_value_constant_stays_a_reference(
 
 @mark.sphinx("html", testroot="render-types")
 def test_value_stylesheet_is_served(app: SphinxTestApp, build_text: BuildText) -> None:
+    assert app.config.html_static_path == []
     html = build_text("Values\n======\n")
     stylesheet = Path(app.outdir) / "_static" / "sphinx_autodoc_typehints.css"
     assert (stylesheet.is_file(), 'href="_static/sphinx_autodoc_typehints.css' in html) == (True, True)

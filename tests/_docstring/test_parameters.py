@@ -3,6 +3,7 @@ from __future__ import annotations
 from textwrap import dedent
 from typing import TYPE_CHECKING, Annotated, Final, NotRequired, Required, TypedDict, Unpack
 
+from annotated_doc import Doc as AnnotatedDoc
 from pytest import MarkDecorator, mark, param
 from typing_extensions import Doc
 
@@ -195,6 +196,9 @@ def _pair(first: int, second: str) -> None: ...
 def _described(first: Annotated[int, Doc("the first")], second: str) -> None: ...
 
 
+def _described_external(first: Annotated[int, AnnotatedDoc("the first")], second: str) -> None: ...
+
+
 @mark.parametrize(
     ("func", "lines", "expected"),
     [
@@ -221,6 +225,12 @@ def _described(first: Annotated[int, Doc("the first")], second: str) -> None: ..
             [":param second: the second", "", "Closing."],
             [_FIRST_TYPE, ":param first: the first", _SECOND_TYPE, ":param second: the second", "", "Closing."],
             id="doc-description",
+        ),
+        param(
+            _described_external,
+            [":param second: the second", "", "Closing."],
+            [_FIRST_TYPE, ":param first: the first", _SECOND_TYPE, ":param second: the second", "", "Closing."],
+            id="annotated-doc-description",
         ),
         param(
             _described,

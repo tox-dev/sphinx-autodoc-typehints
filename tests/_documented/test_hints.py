@@ -150,6 +150,13 @@ def test_as_written(
 
 
 @mark.parametrize(
+    "legacy_autodoc",
+    [
+        param(False, marks=mark.sphinx(confoverrides={"autodoc_use_legacy_class_based": False}), id="new-autodoc"),
+        param(True, marks=mark.sphinx(confoverrides={"autodoc_use_legacy_class_based": True}), id="legacy-autodoc"),
+    ],
+)
+@mark.parametrize(
     ("rst", "expected", "warnings"),
     [
         param(
@@ -195,8 +202,9 @@ def test_as_written(
     ],
 )
 def test_resolved_type_hints_of_a_namedtuple(
-    build_text: BuildText, warning: StringIO, rst: str, expected: str, warnings: list[str]
+    build_text: BuildText, warning: StringIO, rst: str, expected: str, warnings: list[str], legacy_autodoc: bool
 ) -> None:
+    del legacy_autodoc
     assert (build_text(rst), strip_colors(warning.getvalue()).splitlines()) == (expected, warnings)
 
 
@@ -226,3 +234,37 @@ def test_resolved_type_hints_respect_type_comment_setting(
         use_type_comments,
         use_type_comments,
     )
+
+
+@mark.parametrize(
+    "legacy_autodoc",
+    [
+        param(False, marks=mark.sphinx(confoverrides={"autodoc_use_legacy_class_based": False}), id="new-autodoc"),
+        param(True, marks=mark.sphinx(confoverrides={"autodoc_use_legacy_class_based": True}), id="legacy-autodoc"),
+    ],
+)
+def test_reexported_function_resolves_its_defining_module_types(
+    build_text: BuildText, make_module: MakeModule, warning: StringIO, legacy_autodoc: bool
+) -> None:
+    del legacy_autodoc
+    make_module(
+        "array_impl",
+        dedent('''\
+            from __future__ import annotations
+            from typing import TYPE_CHECKING
+
+            if TYPE_CHECKING:
+                from decimal import Decimal as ScalarOrArrayT
+
+            def clip(value: ScalarOrArrayT) -> ScalarOrArrayT:
+                """Clip a value.
+
+                :param value: the input
+                """
+                return value
+        '''),
+    )
+    make_module("array_api", "from array_impl import clip as clip\n")
+    output = build_text(".. autofunction:: array_api.clip\n")
+    assert ('**value** ("Decimal")' in output, 'Return type:\n      "Decimal"' in output) == (True, True)
+    assert "forward reference" not in strip_colors(warning.getvalue())

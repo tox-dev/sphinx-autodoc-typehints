@@ -43,7 +43,7 @@ this extension; :ref:`concepts:Compared with Sphinx's built-in type hints` compa
 With :confval:`autoclass_content = "both" <autoclass_content>`, or the ``:class-doc-from: both`` option of an
 :rst:dir:`autoclass` directive, Sphinx joins the class and constructor docstrings. A parameter either of them documents
 gets its type there, and :confval:`always_document_param_types` adds the rest once, under the constructor docstring. The
-constructor's overloads, the keys of ``**kwargs: Unpack[...]`` and a :pep:`727` ``Doc()`` description go there too,
+constructor's overloads, the keys of ``**kwargs: Unpack[...]`` and an ``Annotated[..., Doc(...)]`` description go there too,
 while a :func:`@deprecated <warnings.deprecated>` notice heads the class docstring.
 
 A class created inside a function can be documented when the module exports it:
@@ -134,8 +134,10 @@ writes into field lists first, then types them as it types Sphinx-style fields. 
 ``a, b : int``, splits into one per name, and a type the docstring writes stays for a parameter without an annotation.
 A ``:Parameters:`` field list written by hand, as docutils writes its own docstrings, stays as written, since numpydoc
 sets each parameter name in bold and the extension takes a field without that markup for one written by hand.
-A hand-written ``:Returns:`` field with a prose description stays as written too; use a NumPy ``Returns`` section when
-the first indented line names a type.
+A hand-written ``:Returns:`` field with a prose description stays as written too, including a single word such as
+``Result``. Numpydoc gives a NumPy ``Returns`` entry a second, more-indented description line, or ``..`` when it has no
+description; the extension uses that line to distinguish its entries from hand-written fields. Types such as
+``str or bytes`` then receive the same treatment as ``str``.
 
 **************************
  Document every parameter
@@ -546,7 +548,9 @@ branch of ``if not TYPE_CHECKING:``, or joins the test to others with ``and`` or
 type checker does, so with ``else: ArrayLike = Any`` they show the guarded ``ArrayLike``. The module itself stays as it
 is at runtime. The fallback stays for your code and for autodoc, and a name only the block binds, such as a
 :class:`~typing.Protocol` defined there, doesn't become a member :rst:dir:`automodule` lists.
-An ``and False`` guard skips its body even when ``TYPE_CHECKING`` is true.
+An ``and False`` or ``and 0`` guard skips its body even when ``TYPE_CHECKING`` is true. A comparison of
+``sys.platform`` with a string follows the build platform. If another operand cannot be determined without running
+module code, the extension leaves that guard alone.
 
 When the block imports a dependency the docs environment lacks, the extension mocks it the way
 :confval:`autodoc_mock_imports` would, so its types still render as references; install it when you want those

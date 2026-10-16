@@ -353,8 +353,9 @@ A name shows without its module unless :confval:`typehints_fully_qualified` is o
 declares, as ``def first[T: Sized](items: T)`` or ``class Box(Generic[T])`` does, renders by name, ``T``, with its bound
 in the signature, and ``P.args`` renders as ``P.args``. A type variable defined at module level, as
 ``T = TypeVar("T")``, renders by name too, linked to its own entry when the docs document it, which shows its bound or
-constraints, and so does ``P`` in ``P.args``. A ``Doc(...)`` in :data:`~typing.Annotated` metadata becomes the
-parameter's description. Sphinx's :confval:`python_display_short_literal_types` renders ``Literal["a", "b"]`` as
+constraints, and so does ``P`` in ``P.args``. A ``Doc(...)`` from typing_extensions or annotated-doc in
+:data:`~typing.Annotated` metadata becomes the parameter's description. Sphinx's
+:confval:`python_display_short_literal_types` renders ``Literal["a", "b"]`` as
 ``'a' | 'b'``. A class from a module in :confval:`autodoc_mock_imports`, subscripted or not, renders by its name.
 Trailing arguments equal to their type parameter's :pep:`696` default are left out, so ``typing.ContextManager[None]``
 renders as written, though from Python 3.13 it carries its second argument's default. An argument written out that

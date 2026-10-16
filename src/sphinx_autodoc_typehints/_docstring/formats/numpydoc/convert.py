@@ -9,8 +9,6 @@ from typing import TYPE_CHECKING, Final
 
 from sphinx_autodoc_typehints._types import frozendict
 
-from ..napoleon import reads_as_type
-
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
 
@@ -75,14 +73,18 @@ def is_numpydoc_section(lines: list[str], index: int) -> bool:
     """
     if (section := lines[index].strip()) not in _NUMPYDOC_SECTIONS:
         return False
-    entry = next((line for line in lines[index + 1 :] if line.strip()), "")
+    entry_index = next((at for at in range(index + 1, len(lines)) if lines[at].strip()), None)
+    if entry_index is None:
+        return False
+    entry = lines[entry_index]
     return bool(
         _NUMPYDOC_BOLD_RE.match(entry)
         or (
             section not in {":Parameters:", ":Other Parameters:"}
             and (plain := _NUMPYDOC_PLAIN_RE.match(entry))
-            and reads_as_type(plain.group(1))
             and not plain.group(1).endswith(".")
+            and entry_index + 1 < len(lines)
+            and lines[entry_index + 1].startswith("        ")
         )
     )
 

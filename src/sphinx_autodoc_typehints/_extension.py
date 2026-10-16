@@ -6,6 +6,7 @@ It registers the options, roles, directive, post-transform and event handlers, a
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from docutils import nodes
@@ -41,7 +42,6 @@ from ._render import (
     VALUE_STYLESHEET,
     AliasChoiceCollector,
     DeferAliasChoice,
-    add_value_stylesheet,
     alias_choice_role,
     constant_role,
     enum_member_role,
@@ -69,6 +69,7 @@ def setup(app: Sphinx) -> dict[str, bool | int | str]:
     app.add_role(ENUM_MEMBER_ROLE, enum_member_role)
     app.add_role(VALUE_ROLE, value_role)
     app.add_role(CONSTANT_ROLE, constant_role)
+    app.add_static_dir(Path(__file__).parent / "_static")
     app.add_css_file(VALUE_STYLESHEET)
     app.add_directive(DEPRECATED_DIRECTIVE, DeprecatedDirective)
     app.add_post_transform(DeferAliasChoice)
@@ -76,7 +77,6 @@ def setup(app: Sphinx) -> dict[str, bool | int | str]:
     app.connect("config-inited", cache_fixup_module_name)
     app.connect("config-inited", cache_formatter)
     app.connect("config-inited", cache_annotated_metadata)
-    app.connect("config-inited", add_value_stylesheet)
     app.connect("builder-inited", note_builder)
     # after intersphinx, at the default priority, had its chance to link the member itself
     app.connect("missing-reference", link_enum_member_owner, priority=900)
