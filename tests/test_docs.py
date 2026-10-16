@@ -89,6 +89,8 @@ def _admits(annotation: object, value: object) -> bool:
         return value in get_args(annotation)
     if origin is Callable:
         return callable(value)
+    if origin is tuple:
+        return isinstance(value, tuple) and all(_admits(get_args(annotation)[0], item) for item in value)
     return isinstance(value, annotation)  # ty: ignore[invalid-argument-type]  # what remains is a class
 
 

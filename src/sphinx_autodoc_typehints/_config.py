@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 @dataclass(frozen=True, slots=True, kw_only=True)
 class Option:
     name: str
-    default: bool | Callable[[Config], bool] | None
+    default: bool | Callable[[Config], bool] | tuple[type, ...] | None
     rebuild: Literal["env", ""]
     types: tuple[type, ...] = ()
 
@@ -47,6 +47,7 @@ OPTIONS: Final[tuple[Option, ...]] = (
     Option(name="always_use_bars_union", default=False, rebuild="env"),
     Option(name="typehints_formatter", default=None, rebuild="env"),
     Option(name="typehints_formatter_pass_context", default=False, rebuild="env", types=(bool,)),
+    Option(name="typehints_annotated_metadata", default=(), rebuild="env", types=(tuple,)),
     Option(name="typehints_document_overloads", default=True, rebuild="env"),
     Option(name="typehints_use_signature", default=False, rebuild="env"),
     Option(name="typehints_use_signature_return", default=False, rebuild="env"),
@@ -63,6 +64,12 @@ def validate_config(app: Sphinx, _env: BuildEnvironment, _docnames: list[str]) -
 
     if (formatter := app.config.typehints_formatter) is not None and not callable(formatter):
         msg = f"typehints_formatter needs to be callable or `None`, not {formatter}"
+        raise ConfigError(msg)
+
+    if not isinstance(metadata := app.config.typehints_annotated_metadata, tuple) or not all(
+        isinstance(item, type) for item in metadata
+    ):
+        msg = "typehints_annotated_metadata needs a tuple of types"
         raise ConfigError(msg)
 
 

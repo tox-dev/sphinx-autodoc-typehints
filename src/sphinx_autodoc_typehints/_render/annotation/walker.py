@@ -385,7 +385,16 @@ def _new_type(reference: _Reference) -> _Frame:
 def _annotated(reference: _Reference) -> _Frame:
     # the form itself, a bare typing.Annotated, has no origin and renders as any special form does
     if get_origin(annotation := reference.annotation) is Annotated:
-        yield _Rendered((yield get_args(annotation)[0]))
+        base, *metadata = get_args(annotation)
+        rendered = yield base
+        selected = [
+            value_markup(repr(item))
+            for item in metadata
+            if isinstance(item, reference.config.typehints_annotated_metadata)
+        ]
+        yield _Rendered(
+            f":py:data:`~typing.Annotated`\\ \\[{rendered}, {', '.join(selected)}]" if selected else rendered
+        )
 
 
 def _type_variable(reference: _Reference) -> _Frame:

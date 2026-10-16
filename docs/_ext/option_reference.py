@@ -33,6 +33,7 @@ OPTION_TYPES: Final[dict[str, RenderNode]] = {
     "always_use_bars_union": bool,
     "simplify_optional_unions": bool,
     "typehints_defaults": Literal["comma", "braces", "braces-after", False] | None,
+    "typehints_annotated_metadata": tuple[type, ...],
     "typehints_document_overloads": bool,
     "typehints_document_rtype": bool,
     "typehints_document_rtype_none": bool,
