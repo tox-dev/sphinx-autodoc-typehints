@@ -488,7 +488,10 @@ Overrides
 A method or property marked with :func:`@typing.override <typing.override>` gets an ``Overrides`` field linking the
 member it replaces, in the nearest base class that defines it. A method no base class defines gets no field. Listed
 under a subclass with ``:inherited-members:``, the method still links what it overrides in its own class's bases, and
-the link goes through :confval:`typehints_fixup_module_name` like any other.
+the link goes through :confval:`typehints_fixup_module_name` like any other. If an intersphinx inventory documents an
+inherited member on a public class rather than its private defining class, the field links the public entry. A member
+missing from both the project and its intersphinx inventories remains an unresolved reference, so Sphinx can warn about
+it in nitpicky mode.
 
 Base classes
 ============

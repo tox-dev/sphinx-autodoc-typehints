@@ -18,6 +18,7 @@ from .._documented import (
 )
 from .._objects import documented_owner, stored_name, unwrapped
 from .._render import as_field_type, fixup_module_name, value_markup
+from .._render.intersphinx import inventory
 from .._resolve import bound_type_args, resolve_overloads
 from .._state import written_signatures
 from .parameters import VARIADIC_STARS
@@ -142,9 +143,18 @@ def inject_override(app: Sphinx, what: str, name: str, obj: Callable[..., object
     if (base := next(iter([klass for klass in owner.__mro__ if stored in vars(klass)][1:]), None)) is None:
         return
     target = f"{fixup_module_name(app.config, base.__module__)}.{base.__qualname__}.{attribute}"
+    linked_owner = base
+    roles = ("py:property", "py:attribute") if what == "property" else ("py:method",)
+    targets = inventory(app.env)
+    for klass in owner.__mro__[1 : owner.__mro__.index(base) + 1]:
+        candidate = f"{fixup_module_name(app.config, klass.__module__)}.{klass.__qualname__}.{attribute}"
+        if any(candidate in targets.get(role, {}) for role in roles):
+            target = candidate
+            linked_owner = klass
+            break
     # the class names which override this is, a bare member name would not; an explicit title keeps the parentheses
     # Sphinx adds to a bare method reference out of it
-    label = target if app.config.typehints_fully_qualified else f"{base.__qualname__}.{attribute}"
+    label = target if app.config.typehints_fully_qualified else f"{linked_owner.__qualname__}.{attribute}"
     lines.extend(["", f":Overrides: :py:{'attr' if what == 'property' else 'meth'}:`{label} <{target}>`"])
 
 

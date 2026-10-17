@@ -38,7 +38,7 @@ from sphinx_autodoc_typehints._render.annotation.names import (
 if TYPE_CHECKING:
     from io import StringIO
 
-    from conftest import BuildText
+    from conftest import BuildText, MakeModule
 
     from _render.conftest import MakeConfig
     from sphinx_autodoc_typehints._types import Hint, RenderNode
@@ -281,3 +281,31 @@ def test_fixup_module_name_links_the_path_the_docs_document(build_text: BuildTex
         """),
         "",
     )
+
+
+@mark.sphinx("html", testroot="render-types", confoverrides={"nitpicky": True})
+def test_path_annotation_links_the_public_name(
+    build_text: BuildText, make_module: MakeModule, warning: StringIO
+) -> None:
+    make_module(
+        "path_reference",
+        dedent("""\
+            from pathlib import Path
+
+
+            def read(path: Path) -> None:
+                '''Read a file.
+
+                :param path: file to read
+                '''
+        """),
+    )
+    html = build_text(
+        dedent("""\
+            .. py:class:: pathlib.Path
+
+            .. autofunction:: path_reference.read
+        """)
+    )
+    assert 'href="#pathlib.Path"' in html
+    assert not warning.getvalue()

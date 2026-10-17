@@ -5,7 +5,7 @@ from inspect import getattr_static
 from textwrap import dedent
 from typing import TYPE_CHECKING, Annotated, Final, overload, override
 
-from pytest import MarkDecorator, mark, param
+from pytest import MarkDecorator, fixture, mark, param
 
 from _docstring.conftest import BOOL, INT, NONE, STR, hide_type
 from sphinx_autodoc_typehints._docstring.object_fields import inject_overloads, summary_end
@@ -13,9 +13,10 @@ from sphinx_autodoc_typehints._documented import Entry
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from io import StringIO
     from types import FunctionType
 
-    from conftest import BuildText
+    from conftest import BuildText, MakeModule
     from sphinx.testing.util import SphinxTestApp
 
     from _docstring.conftest import Process
@@ -459,6 +460,58 @@ def test_override_outside_an_importable_class_links_nothing(process: Process) ->
         "",
         f":sphinx_autodoc_typehints_rtype: {STR}",
     ]
+
+
+@fixture
+def overridden_argument_parser(make_module: MakeModule) -> None:
+    make_module(
+        "override_reference",
+        dedent("""\
+            from argparse import ArgumentParser
+            from typing import override
+
+
+            class Parser(ArgumentParser):
+                @override
+                def add_argument(self, *args: str, **kwargs: object) -> object:
+                    '''Add an argument.'''
+                    return super().add_argument(*args, **kwargs)
+        """),
+    )
+
+
+@mark.sphinx(
+    "html",
+    testroot="intersphinx-role",
+    confoverrides={
+        "intersphinx_mapping": {"python": ("https://example.org/python/", "class.inv")},
+        "nitpicky": True,
+    },
+)
+@mark.usefixtures("overridden_argument_parser")
+def test_override_links_public_intersphinx_member(build_text: BuildText, warning: StringIO) -> None:
+    html = build_text(
+        dedent("""\
+            .. autoclass:: override_reference.Parser
+               :members: add_argument
+        """)
+    )
+    assert (
+        'href="https://example.org/python/library/argparse.html#argparse.ArgumentParser.add_argument"' in html,
+        warning.getvalue(),
+    ) == (True, "")
+
+
+@mark.sphinx("html", testroot="render-types", confoverrides={"nitpicky": True})
+@mark.usefixtures("overridden_argument_parser")
+def test_override_without_public_target_keeps_warning(build_text: BuildText, warning: StringIO) -> None:
+    build_text(
+        dedent("""\
+            .. autoclass:: override_reference.Parser
+               :members: add_argument
+        """)
+    )
+    assert "py:meth reference target not found: argparse._ActionsContainer.add_argument" in warning.getvalue()
 
 
 def _get_int(self: object) -> int: ...

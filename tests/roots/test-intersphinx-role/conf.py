@@ -22,5 +22,10 @@ for _role in ("class", "data"):
         b"# Project: Python\n"
         b"# Version: 3\n"
         b"# The remainder of this file is compressed using zlib.\n"
-        + compress(f"types.FunctionType py:{_role} 1 library/types.html#$ -\n".encode())
+        + compress(
+            (
+                f"types.FunctionType py:{_role} 1 library/types.html#$ -\n"
+                "argparse.ArgumentParser.add_argument py:method 1 library/argparse.html#$ -\n"
+            ).encode()
+        )
     )
