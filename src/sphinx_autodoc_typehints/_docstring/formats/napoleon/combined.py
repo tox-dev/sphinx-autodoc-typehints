@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re  # a from-import of compile would shadow the builtin
+from inspect import Parameter
 from itertools import accumulate
 from typing import TYPE_CHECKING, Literal
 
@@ -42,11 +43,10 @@ def type_combined_field_entry(
     if match["typed"]:
         depths = accumulate((({"(": 1, ")": -1}.get(char, 0) for char in lines[at][match.end() :])), initial=1)
         type_end = next((match.end() + offset for offset, depth in enumerate(depths) if not depth), None)
-    elif annotation is None:
-        return False
-    elif not (field_type := as_field_type(annotation, app.config, kind="parameter")):
-        # a type a formatter hides leaves the entry as written, with no parentheses for a default to join
-        return True
+    elif annotation is None or not (field_type := as_field_type(annotation, app.config, kind="parameter")):
+        if optional := app.config.typehints_defaults == "optional" and default is not Parameter.empty:
+            lines[at] = f"{lines[at][: match.end()]} (optional){lines[at][match.end() :]}"
+        return optional or annotation is not None
     else:
         typed = f" ({field_type})"
         lines[at] = f"{lines[at][: match.end()]}{typed}{lines[at][match.end() :]}"
@@ -57,7 +57,7 @@ def type_combined_field_entry(
         or not (formatted_default := format_default(app, default, annotated=True))
     ):
         return True
-    if app.config.typehints_defaults == "comma":
+    if app.config.typehints_defaults in {"comma", "optional"}:
         lines[at] = f"{lines[at][: type_end - 1]}{formatted_default}{lines[at][type_end - 1 :]}"
     elif app.config.typehints_defaults == "braces":
         lines[at] = f"{lines[at][:type_end]}{formatted_default}{lines[at][type_end:]}"

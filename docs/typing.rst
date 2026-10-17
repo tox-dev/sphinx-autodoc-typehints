@@ -28,7 +28,7 @@ stays for your next visit. The docs build renders each combination ahead of time
         Parameter types in the signature: typehints_use_signature = False, True
         Return type in the signature: typehints_use_signature_return = False, True
     Defaults
-        Default value style: typehints_defaults = None, "comma", "braces", "braces-after"
+        Default value style: typehints_defaults = None, "comma", "braces", "braces-after", "optional"
     Return type
         Document the return type: typehints_document_rtype = True, False
         Document None returns: typehints_document_rtype_none = True, False if typehints_document_rtype

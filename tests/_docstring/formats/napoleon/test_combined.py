@@ -87,6 +87,12 @@ pytestmark: Final[list[MarkDecorator]] = [mark.sphinx("text", testroot="dummy"),
             marks=without_rtype(typehints_defaults="braces"),
         ),
         param(
+            [":Parameters: **second** -- the second"],
+            [f":Parameters: **second** ({STR}, optional) -- the second"],
+            id="optional-default",
+            marks=without_rtype(typehints_defaults="optional"),
+        ),
+        param(
             [
                 ":Parameters: * **second** -- the second",
                 "               continued",
@@ -155,12 +161,28 @@ def test_combined_field_entry_of_an_unannotated_parameter_stays_untyped(process:
     ]
 
 
+@without_rtype(typehints_defaults="optional")
+def test_combined_field_entry_marks_unannotated_default_optional(process: Process) -> None:
+    assert process("function", "mod.unannotated", lambda first="x": first, [":Parameters: **first** -- the first"]) == [
+        ":Parameters: **first** (optional) -- the first"
+    ]
+
+
 @mark.sphinx(confoverrides={"typehints_formatter": hide_type})
 def test_combined_field_entry_stays_untyped_when_a_formatter_hides_the_type(process: Process) -> None:
     def documented(first: int) -> None: ...
 
     lines = [":Parameters: **first** -- the first"]
     assert process("function", "mod.documented", documented, lines.copy()) == lines
+
+
+@mark.sphinx(confoverrides={"typehints_formatter": hide_type, "typehints_defaults": "optional"})
+def test_combined_field_entry_marks_hidden_type_optional(process: Process) -> None:
+    def documented(first: int = 1) -> None: ...
+
+    assert process("function", "mod.documented", documented, [":Parameters: **first** -- the first"]) == [
+        ":Parameters: **first** (optional) -- the first"
+    ]
 
 
 @mark.parametrize(

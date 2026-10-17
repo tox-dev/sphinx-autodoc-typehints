@@ -1,0 +1,1 @@
+Add an ``"optional"`` default style that marks parameters callers may omit without printing their default values.

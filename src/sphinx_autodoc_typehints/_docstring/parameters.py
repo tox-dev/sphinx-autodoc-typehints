@@ -158,6 +158,8 @@ class _Fields:
         preexisting_line, has_preexisting = next(
             ((line, True) for line in self.lines if line.startswith(fields)), (fields[0], False)
         )
+        if self._mark_optional(at, param, has_preexisting=has_preexisting, inline_type=inline_type):
+            return
         if param.annotation is None or param.shown is None:
             type_annotation = (
                 f":type {doc_name}: {inline_type}" if inline_type and not has_preexisting else preexisting_line
@@ -194,6 +196,19 @@ class _Fields:
                 self.lines[idx:end] = [type_annotation]
         else:
             self.lines.insert(at, type_annotation)
+
+    def _mark_optional(self, at: int, param: _Parameter, *, has_preexisting: bool, inline_type: str) -> bool:
+        if (
+            self.app.config.typehints_defaults != "optional"
+            or param.default is Parameter.empty
+            or has_preexisting
+            or inline_type
+        ):
+            return False
+        if param.shown is not None and as_field_type(param.shown, self.app.config, kind="parameter"):
+            return False
+        self.lines[at] += " (optional)"
+        return True
 
 
 # `shown` is the type as the annotation names it, an alias by its own name
