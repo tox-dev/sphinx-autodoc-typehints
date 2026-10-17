@@ -1,0 +1,1 @@
+Add ``typehints_modernize_annotations`` to render legacy ``typing`` aliases with current Python spelling.

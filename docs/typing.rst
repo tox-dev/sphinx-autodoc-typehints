@@ -22,6 +22,8 @@ stays for your next visit. The docs build renders each combination ahead of time
 
     Names
         Full module paths: typehints_fully_qualified = False, True
+    Containers and unions
+        Modern spelling: typehints_modernize_annotations = False, True
     Signature
         Parameter types in the signature: typehints_use_signature = False, True
         Return type in the signature: typehints_use_signature_return = False, True
@@ -52,6 +54,7 @@ instead. A :class:`tuple` lists the type of each position, or one type and ``...
     extensions = ["sphinx.ext.autodoc", "sphinx_autodoc_typehints"]
     ---
     from collections.abc import Mapping, Sequence
+    from typing import Dict, List
 
 
     def tally(words: Sequence[str], weights: Mapping[str, float]) -> dict[str, list[float]]:
@@ -73,6 +76,14 @@ instead. A :class:`tuple` lists the type of each position, or one type and ``...
         :param empty: a tuple with no items
         """
         return set()
+
+
+    def legacy(groups: Dict[str, List[int]]) -> List[int]:
+        """Combine groups of numbers.
+
+        :param groups: numbers by group
+        """
+        return [number for numbers in groups.values() for number in numbers]
 
 Unions and ``Optional``
 =======================

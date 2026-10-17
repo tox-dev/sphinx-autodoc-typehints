@@ -42,6 +42,7 @@ OPTION_TYPES: Final[dict[str, RenderNode]] = {
     "typehints_formatter": TypehintsFormatter | ContextualTypehintsFormatter | None,
     "typehints_formatter_pass_context": bool,
     "typehints_fully_qualified": bool,
+    "typehints_modernize_annotations": bool,
     "typehints_use_rtype": bool,
     "typehints_use_signature": bool,
     "typehints_use_signature_return": bool,

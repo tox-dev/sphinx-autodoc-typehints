@@ -297,6 +297,8 @@ def _class_reference(annotation: Hint | NewType | None, config: Config, *, short
         # typing_extensions backports names to older Pythons, and the Python docs list a backported name under typing
         if module == "typing_extensions" and hasattr(typing, class_name):
             module = "typing"
+        if config.typehints_modernize_annotations and module == "typing" and isclass(origin := get_origin(annotation)):
+            module, class_name = origin.__module__, origin.__qualname__
         internal_path = f"{module}.{class_name}"
         local_path: str | None = None
         if mapped := mapped_name(config, internal_path):
@@ -308,6 +310,7 @@ def _class_reference(annotation: Hint | NewType | None, config: Config, *, short
             (version_info >= (3, 14) and full_name == "typing.Union")
             or full_name == "types.UnionType"
             or (config.always_use_bars_union and type(annotation).__qualname__ == "_UnionGenericAlias")
+            or (config.typehints_modernize_annotations and full_name in {"typing.Union", "typing.Optional"})
             or getattr(annotation, "__typehints_bars__", False)
         )
         # the inventory may document another Python version, and intersphinx resolves only the role its entry has
@@ -532,7 +535,14 @@ _SPECIAL_FORMS: Final[tuple[tuple[Callable[[_Reference], bool], Callable[[_Refer
         _star,
     ),
     (lambda ref: ref.full_name == "typing.Optional", _optional),
-    (lambda ref: ref.full_name in {"typing.Union", "types.UnionType"} and type(None) in ref.args, _union_with_none),
+    (
+        lambda ref: (
+            ref.full_name in {"typing.Union", "types.UnionType"}
+            and type(None) in ref.args
+            and not ref.config.typehints_modernize_annotations
+        ),
+        _union_with_none,
+    ),
     (
         lambda ref: ref.full_name in {"tuple", "typing.Tuple"} and getattr(ref.annotation, "__args__", None) == (),
         _empty_tuple,

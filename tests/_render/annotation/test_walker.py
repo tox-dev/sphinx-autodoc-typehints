@@ -378,6 +378,34 @@ def test_format_annotation_always_use_bars_union(
     assert format_annotation(annotation, make_config(always_use_bars_union=True)) == expected
 
 
+@mark.parametrize(
+    ("annotation", "expected"),
+    [
+        param(
+            typing.Dict[str, typing.List[int]],
+            r":py:class:`dict`\ \[:py:class:`str`, :py:class:`list`\ \[:py:class:`int`]]",
+            id="builtins",
+        ),
+        param(
+            typing.Mapping[str, int],
+            r":py:class:`~collections.abc.Mapping`\ \[:py:class:`str`, :py:class:`int`]",
+            id="abc",
+        ),
+        param(typing.Optional[str], ":py:class:`str` | :sphinx_autodoc_typehints_constant:`None`", id="optional"),
+        param(typing.Tuple[()], r":py:class:`tuple`\ \[()]", id="empty-tuple"),
+    ],
+)
+def test_format_annotation_modern_spelling(make_config: MakeConfig, annotation: Annotation, expected: str) -> None:
+    assert format_annotation(annotation, make_config(typehints_modernize_annotations=True)) == expected
+
+
+def test_format_annotation_modern_spelling_overrides_unsimplified_union(make_config: MakeConfig) -> None:
+    config = make_config(typehints_modernize_annotations=True, simplify_optional_unions=False)
+    assert format_annotation(typing.Union[str, int, None], config) == (
+        ":py:class:`str` | :py:class:`int` | :sphinx_autodoc_typehints_constant:`None`"
+    )
+
+
 @mark.parametrize("library", [param(typing, id="typing"), param(typing_extensions, id="typing_extensions")])
 @mark.parametrize(
     ("name", "params", "expected"),
