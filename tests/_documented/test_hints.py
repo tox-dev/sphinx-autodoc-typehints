@@ -268,3 +268,42 @@ def test_reexported_function_resolves_its_defining_module_types(
     output = build_text(".. autofunction:: array_api.clip\n")
     assert ('**value** ("Decimal")' in output, 'Return type:\n      "Decimal"' in output) == (True, True)
     assert "forward reference" not in strip_colors(warning.getvalue())
+
+
+@mark.parametrize(
+    ("legacy_autodoc", "preserve", "expected"),
+    [
+        param(
+            legacy,
+            setting,
+            expected,
+            marks=mark.sphinx(
+                confoverrides={
+                    "autodoc_use_legacy_class_based": legacy,
+                    "autodoc_preserve_defaults": setting,
+                    "typehints_defaults": "comma",
+                }
+            ),
+            id=f"{'legacy' if legacy else 'new'}-{'source' if setting else 'evaluated'}",
+        )
+        for legacy in (False, True)
+        for setting, expected in ((True, '"LIMIT + 1"'), (False, '"3"'))
+    ],
+)
+def test_displayed_default_preserves_source_expression(
+    build_text: BuildText, make_module: MakeModule, legacy_autodoc: bool, preserve: bool, expected: str
+) -> None:
+    del legacy_autodoc, preserve
+    make_module(
+        "source_default",
+        dedent('''\
+            LIMIT = 2
+
+            def read(count: int = LIMIT + 1) -> None:
+                """Read items.
+
+                :param count: the number to read
+                """
+        '''),
+    )
+    assert f"default: {expected}" in build_text(".. autofunction:: source_default.read\n")

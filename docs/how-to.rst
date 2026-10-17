@@ -189,6 +189,24 @@ stays as written. Both ``None``, the default, and ``False`` leave the defaults o
 its docstring, by a ``:type:`` field, as ``:param int x:`` or in napoleon's combined field, gets its default next to
 that type.
 
+Sphinx's :confval:`autodoc_preserve_defaults` also applies to defaults this extension puts in parameter fields. Turn
+it on when you want the source expression, such as ``LIMIT + 1``, rather than its evaluated value. If Sphinx cannot
+read the source, it keeps the evaluated value.
+
+.. live-example::
+
+    autodoc_preserve_defaults = True
+    typehints_defaults = "braces"
+    ---
+    LIMIT = 2
+
+
+    def read(count: int = LIMIT + 1) -> None:
+        """Read items.
+
+        :param count: the number to read
+        """
+
 A :mod:`dataclass <dataclasses>` field declared with :func:`field(default_factory=list) <dataclasses.field>`, or an
 attrs one with :func:`attrs.field(factory=list) <attrs.field>`, shows the call that builds its default, ``list()``, in
 the signature and in the field. An attrs factory taking the instance reads ``make(self)``. A lambda keeps the
