@@ -34,6 +34,7 @@ OPTION_TYPES: Final[dict[str, RenderNode]] = {
     "simplify_optional_unions": bool,
     "typehints_defaults": Literal["comma", "braces", "braces-after", False] | None,
     "typehints_annotated_metadata": tuple[type, ...],
+    "typehints_annotated_description": Callable[[object], str | None] | None,
     "typehints_document_overloads": bool,
     "typehints_document_rtype": bool,
     "typehints_document_rtype_none": bool,

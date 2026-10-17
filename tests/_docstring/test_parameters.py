@@ -4,6 +4,8 @@ from textwrap import dedent
 from typing import TYPE_CHECKING, Annotated, Final, NotRequired, Required, TypedDict, Unpack
 
 from annotated_doc import Doc as AnnotatedDoc
+from pydantic import Field
+from pydantic.fields import FieldInfo
 from pytest import MarkDecorator, mark, param
 from typing_extensions import Doc
 
@@ -199,6 +201,13 @@ def _described(first: Annotated[int, Doc("the first")], second: str) -> None: ..
 def _described_external(first: Annotated[int, AnnotatedDoc("the first")], second: str) -> None: ...
 
 
+def _field_description(metadata: object) -> str | None:
+    return metadata.description if isinstance(metadata, FieldInfo) else None
+
+
+def _described_field(first: Annotated[int, Field(description="the first")], second: str) -> None: ...
+
+
 @mark.parametrize(
     ("func", "lines", "expected"),
     [
@@ -245,6 +254,14 @@ def test_added_params_keep_signature_order(
     process: Process, func: Callable[..., None], lines: list[str], expected: list[str]
 ) -> None:
     assert process("function", "mod.func", func, lines) == expected
+
+
+@mark.sphinx(confoverrides={"typehints_annotated_description": _field_description, "typehints_document_rtype": False})
+def test_pydantic_metadata_adds_parameter_description(process: Process) -> None:
+    assert process("function", "mod._described_field", _described_field, []) == [
+        _FIRST_TYPE,
+        ":param first: the first",
+    ]
 
 
 def test_param_without_annotation_or_description_gets_no_field(process: Process) -> None:

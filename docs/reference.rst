@@ -92,6 +92,15 @@ to an option without a *Rebuild* field leaves the cached documents as they are.
     values. You can include your own metadata class. Matching uses :func:`isinstance`, and selected values render with
     their Python ``repr``. ``Doc`` still supplies descriptions independently of this setting.
 
+.. confval:: typehints_annotated_description
+    :default: ``None``
+    :rebuild: ``env``
+
+    A callback that receives each :data:`~typing.Annotated` metadata value and returns a description or ``None``.
+    The first description returned is used for an undocumented parameter or return value. A ``Doc`` description takes
+    precedence, and an existing docstring description is never replaced. See :ref:`how-to:Read descriptions from
+    Annotated metadata`.
+
 .. confval:: typehints_fully_qualified
     :default: ``False``
     :rebuild: ``env``

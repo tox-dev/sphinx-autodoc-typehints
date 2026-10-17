@@ -13,6 +13,7 @@ from docutils import nodes
 
 from ._config import (
     OPTIONS,
+    cache_annotated_description,
     cache_annotated_metadata,
     cache_fixup_module_name,
     cache_formatter,
@@ -76,6 +77,7 @@ def setup(app: Sphinx) -> dict[str, bool | int | str]:
     app.add_env_collector(AliasChoiceCollector)
     app.connect("config-inited", cache_fixup_module_name)
     app.connect("config-inited", cache_formatter)
+    app.connect("config-inited", cache_annotated_description)
     app.connect("config-inited", cache_annotated_metadata)
     app.connect("builder-inited", note_builder)
     # after intersphinx, at the default priority, had its chance to link the member itself

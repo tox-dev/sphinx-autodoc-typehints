@@ -5,6 +5,8 @@ from textwrap import dedent
 from typing import TYPE_CHECKING, Annotated, Final
 
 from annotated_doc import Doc as AnnotatedDoc
+from pydantic import Field
+from pydantic.fields import FieldInfo
 from pytest import MarkDecorator, fixture, mark, param
 from typing_extensions import Doc
 
@@ -20,6 +22,10 @@ if TYPE_CHECKING:
     from sphinx_autodoc_typehints._types import Annotation, Documented
 
 pytestmark: Final[MarkDecorator] = mark.sphinx("text", testroot="dummy")
+
+
+def _field_description(metadata: object) -> str | None:
+    return metadata.description if isinstance(metadata, FieldInfo) else None
 
 
 @mark.parametrize(
@@ -38,6 +44,20 @@ def test_description_from_doc(annotation: Annotation, expected: str | None) -> N
 
 def test_annotated_doc_package_describes_a_return(process: Process) -> None:
     def count() -> Annotated[int, AnnotatedDoc("the count")]: ...
+
+    assert process("function", "mod.count", count, []) == [f":rtype: {INT}", ":return: the count"]
+
+
+@mark.sphinx(confoverrides={"typehints_annotated_description": _field_description})
+def test_pydantic_metadata_describes_a_return(process: Process) -> None:
+    def count() -> Annotated[int, Field(description="the count")]: ...
+
+    assert process("function", "mod.count", count, []) == [f":rtype: {INT}", ":return: the count"]
+
+
+@mark.sphinx(confoverrides={"typehints_annotated_description": _field_description})
+def test_doc_precedes_other_metadata_descriptions(process: Process) -> None:
+    def count() -> Annotated[int, Field(description="field count"), Doc("the count")]: ...
 
     assert process("function", "mod.count", count, []) == [f":rtype: {INT}", ":return: the count"]
 

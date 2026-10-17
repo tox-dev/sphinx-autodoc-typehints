@@ -12,6 +12,8 @@ from .._render import as_field_type
 from .formats import reads_as_type, write_rtype
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from sphinx.application import Sphinx
 
     from .._documented import Entry, ResolvedHints
@@ -48,7 +50,12 @@ def inject_rtype(entry: Entry, lines: list[str], fmt: FieldListFormat, hints: Re
         ):
             # asked first, as it turns numpydoc's sections into the fields the Yields entry is read from
             described = fmt.has_return_description(lines)
-            _type_yields(produced, description_from_doc(type_hints["return"]), app, lines)
+            _type_yields(
+                produced,
+                description_from_doc(type_hints["return"], app.config.typehints_annotated_description),
+                app,
+                lines,
+            )
             # the Yields section covers what it produces, leaving the value its return statement gives, the R of
             # Generator[Y, S, R], for a Returns section that describes it
             match get_args(produced) if get_origin(produced) is Generator else ():
@@ -57,7 +64,9 @@ def inject_rtype(entry: Entry, lines: list[str], fmt: FieldListFormat, hints: Re
                 case _:
                     return
 
-    if (return_doc := description_from_doc(type_hints["return"])) and not fmt.has_return_description(lines):
+    if (
+        return_doc := description_from_doc(type_hints["return"], app.config.typehints_annotated_description)
+    ) and not fmt.has_return_description(lines):
         lines.append(f":return: {return_doc}")
 
     # a Doc on a None return still describes it, so the description stays and only the type drops out
@@ -106,19 +115,25 @@ def _type_yields(annotation: Hint, description: str | None, app: Sphinx, lines: 
         lines[at : at + 1] = [f":{field}: {formatted} --", ""]
 
 
-def description_from_doc(annotation: Hint | None) -> str | None:
-    """Return the text of a `Doc` an `Annotated` type carries, `None` for a type without one."""
+def description_from_doc(
+    annotation: Hint | None, extractor: Callable[[object], str | None] | None = None
+) -> str | None:
+    """Return a `Doc` description, or one the configured metadata callback extracts."""
     if get_origin(annotation) is not Annotated:
         return None
-    return next(
+    metadata = get_args(annotation)[1:]
+    documented = next(
         (
             meta.documentation
-            for meta in get_args(annotation)[1:]
+            for meta in metadata
             if type(meta).__qualname__ == "Doc"
             and type(meta).__module__ in {"typing_extensions", "typing", "annotated_doc.main"}
         ),
         None,
     )
+    if documented is not None or extractor is None:
+        return documented
+    return next((description for meta in metadata if (description := extractor(meta)) is not None), None)
 
 
 __all__ = [
