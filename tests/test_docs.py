@@ -15,13 +15,14 @@ from pytest import MonkeyPatch, fixture, mark, param, raises
 from sphinx.errors import ConfigError
 
 from sphinx_autodoc_typehints._config import OPTIONS
-from sphinx_autodoc_typehints._render import as_signature_type
+from sphinx_autodoc_typehints._render import as_signature_type, format_annotation
 from sphinx_autodoc_typehints._types import Documented
 from sphinx_autodoc_typehints._warnings import warn
 
 if TYPE_CHECKING:
     from sphinx.config import Config
     from sphinx.testing.util import SphinxTestApp
+    from sphobjinv import Inventory
 
 _REFERENCE: Final[str] = (Path(__file__).parents[1] / "docs" / "reference.rst").read_text(encoding="utf-8")
 _GALLERY: Final[str] = (Path(__file__).parents[1] / "docs" / "typing.rst").read_text(encoding="utf-8")
@@ -108,6 +109,23 @@ def test_docs_option_type_admits_the_registered_types(name: str, option_referenc
     registered = next(option.types for option in OPTIONS if option.name == name)
 
     assert all(_admits(option_reference.documented_type(name), kind()) for kind in registered)
+
+
+def test_docs_option_type_references_use_public_python_names(
+    option_reference: ModuleType, extension_config: Config, inv: Inventory
+) -> None:
+    known = {(entry.role, entry.name) for entry in inv.objects if entry.domain == "py"}
+    generated = {
+        (role, target.rsplit("<", 1)[-1].rstrip(">").lstrip("~"))
+        for name in _OPTIONS
+        for role, target in findall(
+            r":py:(class|data|func|obj|type):`([^`]+)`",
+            format_annotation(option_reference.documented_type(name), extension_config),
+        )
+    }
+
+    assert generated
+    assert generated - known == {("class", "sphinx.config.Config")}
 
 
 @mark.usefixtures("extension_config")
