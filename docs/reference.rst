@@ -36,6 +36,14 @@ to an option without a *Rebuild* field leaves the cached documents as they are.
     Show defaults in the ``"comma"``, ``"braces"`` or ``"braces-after"`` style; ``None`` or ``False`` hides them. See
     :ref:`how-to:Show default values`.
 
+.. confval:: typehints_modernize_annotations
+    :default: ``False``
+    :rebuild: ``env``
+
+    Render legacy :mod:`typing` generic aliases with their builtin or :mod:`collections.abc` names, and render
+    :data:`~typing.Optional` and :obj:`~typing.Union` with pipes. For example, ``typing.Dict[str, int]`` becomes
+    ``dict[str, int]`` and ``typing.Optional[str]`` becomes ``str | None``. See :ref:`how-to:Use modern type spelling`.
+
 .. confval:: typehints_document_overloads
     :default: ``True``
     :rebuild: ``env``

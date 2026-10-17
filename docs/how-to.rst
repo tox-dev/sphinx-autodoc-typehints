@@ -252,6 +252,32 @@ setting says. Before 3.14, a pipe next to a typing construct, ``Literal["a"] | N
 off, a :obj:`Union[...] <typing.Union>` holding ``None`` shows as :data:`Optional[...] <typing.Optional>`. It has no
 effect on Python 3.14, or on a union written with pipes.
 
+**************************
+ Use modern type spelling
+**************************
+
+Use :confval:`typehints_modernize_annotations` when an API still uses :mod:`typing` aliases but its docs should show
+the newer spelling. This changes only the rendered types; it does not edit annotations in the source or change the
+types passed to a custom formatter.
+
+.. live-example::
+
+    typehints_modernize_annotations = True
+    ---
+    from typing import Dict, List, Optional
+
+
+    def collect(values: Dict[str, List[int]], fallback: Optional[int] = None) -> List[int]:
+        """Collect values by name.
+
+        :param values: the groups of numbers
+        :param fallback: a number to use when a group is empty
+        """
+        return next(iter(values.values()), [fallback] if fallback is not None else [])
+
+The output uses ``dict[str, list[int]]`` and ``int | None``. The default leaves the legacy spelling visible; the
+:ref:`typing features gallery <typing:Containers and unions>` has a ``conf.py`` selector to compare both.
+
 *********************************
  Qualify or rewrite module names
 *********************************
