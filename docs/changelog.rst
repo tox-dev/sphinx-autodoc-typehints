@@ -7,6 +7,12 @@
 .. towncrier release notes start
 
 ********************
+ 3.17.1 (2026-10-17)
+********************
+
+- Describe the package as rendering Python type hints in Sphinx autodoc documentation. :pr:`1089`
+
+********************
  3.17.0 (2026-10-17)
 ********************
 

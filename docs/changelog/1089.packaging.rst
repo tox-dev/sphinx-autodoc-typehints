@@ -1,1 +1,0 @@
-Describe the package as rendering Python type hints in Sphinx autodoc documentation.
