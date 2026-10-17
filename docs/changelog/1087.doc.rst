@@ -1,1 +1,0 @@
-Explain how Sphinx's ``autodoc_preserve_defaults`` applies to default values in parameter descriptions.

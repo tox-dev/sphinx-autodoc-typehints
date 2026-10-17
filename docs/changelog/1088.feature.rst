@@ -1,1 +1,0 @@
-Allow a callback to read descriptions from ``Annotated`` metadata classes other than ``Doc``.

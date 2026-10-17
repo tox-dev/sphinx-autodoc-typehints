@@ -7,6 +7,15 @@
 .. towncrier release notes start
 
 ********************
+ 3.17.0 (2026-10-17)
+********************
+
+- Add ``typehints_modernize_annotations`` to render legacy ``typing`` aliases with current Python spelling. :pr:`1085`
+- Add an ``"optional"`` default style that marks parameters callers may omit without printing their default values. :pr:`1086`
+- Allow a callback to read descriptions from ``Annotated`` metadata classes other than ``Doc``. :pr:`1088`
+- Explain how Sphinx's ``autodoc_preserve_defaults`` applies to default values in parameter descriptions. :pr:`1087`
+
+********************
  3.16.0 (2026-10-17)
 ********************
 
