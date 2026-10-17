@@ -24,6 +24,8 @@ pytestmark: Final[MarkDecorator] = mark.sphinx("text", testroot="dummy")
         param("comma", False, "default: :sphinx_autodoc_typehints_value:`1`", id="comma-alone"),
         param("braces", False, "default: :sphinx_autodoc_typehints_value:`1`", id="braces-alone"),
         param("braces-after", False, " (default: :sphinx_autodoc_typehints_value:`1`)", id="braces-after-alone"),
+        param("optional", True, ", optional", id="optional-after-a-type"),
+        param("optional", False, " (optional)", id="optional-alone"),
     ],
 )
 def test_format_default_by_style(app: SphinxTestApp, defaults: str, annotated: bool, expected: str) -> None:

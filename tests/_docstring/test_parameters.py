@@ -9,7 +9,7 @@ from pydantic.fields import FieldInfo
 from pytest import MarkDecorator, mark, param
 from typing_extensions import Doc
 
-from _docstring.conftest import BOOL, FLOAT, INT, STR, without_rtype
+from _docstring.conftest import BOOL, FLOAT, INT, STR, hide_type, without_rtype
 from sphinx_autodoc_typehints._docstring.parameters import escape_trailing_underscore
 
 if TYPE_CHECKING:
@@ -119,6 +119,13 @@ def _defaulted(amount: int = 1) -> None: ...
         ),
         param(
             lambda count=1: count,
+            [":param count: the count", ":type count: int"],
+            [":param count: the count", ":type count: int, optional"],
+            id="optional-with-docstring-type",
+            marks=without_rtype(typehints_defaults="optional"),
+        ),
+        param(
+            lambda count=1: count,
             [":param count: the count", ":type count: dict[str,", "    int]"],
             [
                 ":param count: the count",
@@ -157,6 +164,13 @@ def _defaulted(amount: int = 1) -> None: ...
             marks=without_rtype(typehints_defaults="comma"),
         ),
         param(
+            lambda count=1: count,
+            [":param count: the count"],
+            [":param count: the count (optional)"],
+            id="optional-without-type",
+            marks=without_rtype(typehints_defaults="optional"),
+        ),
+        param(
             _sized,
             [":param width: the width", ":type width: int", ":param height: the height", ":type height: int"],
             [
@@ -186,6 +200,13 @@ def test_default_joins_the_type_or_the_description(
     process: Process, func: FunctionType, lines: list[str], expected: list[str]
 ) -> None:
     assert process("function", f"mod.{func.__name__}", func, lines) == expected
+
+
+@mark.sphinx(confoverrides={"typehints_formatter": hide_type, "typehints_defaults": "optional"})
+def test_hidden_type_marks_defaulted_parameter_optional(process: Process) -> None:
+    assert process("function", "mod._defaulted", _defaulted, [":param amount: the amount"]) == [
+        ":param amount: the amount (optional)"
+    ]
 
 
 _FIRST_TYPE: Final[str] = f":type first: {INT}"
@@ -530,6 +551,11 @@ def test_always_document_param_types_with_braces_after_defaults(build_text: Buil
             '("int") -- bar (default: "1")',
             id="braces-after",
             marks=mark.sphinx(confoverrides={"typehints_defaults": "braces-after"}),
+        ),
+        param(
+            '("int", optional) -- bar',
+            id="optional",
+            marks=mark.sphinx(confoverrides={"typehints_defaults": "optional"}),
         ),
     ],
 )

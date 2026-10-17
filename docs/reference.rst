@@ -33,7 +33,8 @@ to an option without a *Rebuild* field leaves the cached documents as they are.
     :default: ``None``
     :rebuild: ``env``
 
-    Show defaults in the ``"comma"``, ``"braces"`` or ``"braces-after"`` style; ``None`` or ``False`` hides them. See
+    Show defaults in the ``"comma"``, ``"braces"`` or ``"braces-after"`` style, or use ``"optional"`` to mark a
+    parameter with a default without printing its value. ``None`` or ``False`` hides them. See
     :ref:`how-to:Show default values`.
 
 .. confval:: typehints_modernize_annotations
@@ -135,7 +136,7 @@ to an option without a *Rebuild* field leaves the cached documents as they are.
 
     Keep the return type in the signature. See :ref:`how-to:Choose where types appear`.
 
-A :confval:`typehints_defaults` outside ``"comma"``, ``"braces"``, ``"braces-after"``, ``None`` and ``False``, or a
+A :confval:`typehints_defaults` outside ``"comma"``, ``"braces"``, ``"braces-after"``, ``"optional"``, ``None`` and ``False``, or a
 :confval:`typehints_formatter` that isn't callable, stops the build with a :class:`~sphinx.errors.ConfigError` before
 Sphinx reads any document.
 

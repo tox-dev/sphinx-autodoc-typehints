@@ -30,8 +30,10 @@ def format_default(app: Sphinx, default: object, *, annotated: bool) -> str | No
     """Describe a default the way `typehints_defaults` asks, after a type when `annotated` or on its own."""
     if default is Parameter.empty:
         return None
-    formatted = value_markup(object_description(default))
     style = app.config.typehints_defaults
+    if style == "optional":
+        return ", optional" if annotated else " (optional)"
+    formatted = value_markup(object_description(default))
     if style.startswith("braces") if annotated else style == "braces-after":
         return f" (default: {formatted})"
     return f"{', ' if annotated else ''}default: {formatted}"

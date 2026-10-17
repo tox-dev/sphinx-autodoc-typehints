@@ -59,7 +59,7 @@ OPTIONS: Final[tuple[Option, ...]] = (
 
 def validate_config(app: Sphinx, _env: BuildEnvironment, _docnames: list[str]) -> None:
     """Reject a `typehints_defaults` or `typehints_formatter` the extension cannot use before reading a document."""
-    valid = {None, "comma", "braces", "braces-after"}
+    valid = {None, "comma", "braces", "braces-after", "optional"}
     if app.config.typehints_defaults not in valid | {False}:
         msg = f"typehints_defaults needs to be one of {valid!r}, not {app.config.typehints_defaults!r}"
         raise ConfigError(msg)

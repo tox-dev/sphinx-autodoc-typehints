@@ -207,6 +207,23 @@ read the source, it keeps the evaluated value.
         :param count: the number to read
         """
 
+Set :confval:`typehints_defaults = "optional" <typehints_defaults>` to show ``unit (str, optional)`` without printing
+the value. Here *optional* means the caller may omit the argument because it has a default; it does not mean the type
+accepts ``None``. The marker appears only for parameters with defaults, including ones whose type is written in the
+docstring rather than in an annotation.
+
+.. live-example::
+
+    typehints_defaults = "optional"
+    ---
+    def format_unit(value: float, unit: str = "kg") -> str:
+        """Format a value with its unit.
+
+        :param value: the number
+        :param unit: the unit to use
+        """
+        return f"{value} {unit}"
+
 A :mod:`dataclass <dataclasses>` field declared with :func:`field(default_factory=list) <dataclasses.field>`, or an
 attrs one with :func:`attrs.field(factory=list) <attrs.field>`, shows the call that builds its default, ``list()``, in
 the signature and in the field. An attrs factory taking the instance reads ``make(self)``. A lambda keeps the
