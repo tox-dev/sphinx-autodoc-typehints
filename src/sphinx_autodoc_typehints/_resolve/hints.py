@@ -32,7 +32,12 @@ if TYPE_CHECKING:
 
 
 def get_all_type_hints(
-    autodoc_mock_imports: list[str], obj: Callable[..., object], name: str, localns: Mapping[str, Documented]
+    autodoc_mock_imports: list[str],
+    obj: Callable[..., object],
+    name: str,
+    localns: Mapping[str, Documented],
+    *,
+    use_type_comments: bool = True,
 ) -> dict[str, Hint]:
     """
     Return the type hints of `obj`, documented as `name`, backfilled from type comments or a stub when it has none.
@@ -49,7 +54,8 @@ def get_all_type_hints(
             stub_obj = obj.__new__
     stub_localns, crossrefs, owner_module = (
         stub_context(stub_obj, name)
-        if not (result := backfill_type_hints(stub_obj, name)) and (result := stub_annotations(stub_obj, name))
+        if not (result := backfill_type_hints(stub_obj, name) if use_type_comments else {})
+        and (result := stub_annotations(stub_obj, name))
         else ({}, {}, "")
     )
     combined_localns = {**stub_localns, **localns, **crossrefs}

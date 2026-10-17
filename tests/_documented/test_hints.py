@@ -209,6 +209,34 @@ def test_resolved_type_hints_of_a_namedtuple(
 
 
 @mark.parametrize(
+    "use_type_comments",
+    [
+        param(True, marks=mark.sphinx(confoverrides={"autodoc_use_type_comments": True}), id="enabled"),
+        param(False, marks=mark.sphinx(confoverrides={"autodoc_use_type_comments": False}), id="disabled"),
+    ],
+)
+def test_resolved_type_hints_respect_type_comment_setting(
+    build_text: BuildText, make_module: MakeModule, use_type_comments: bool
+) -> None:
+    make_module(
+        "commented",
+        dedent("""\
+            def convert(value):  # type: (int) -> str
+                '''Convert a value.
+
+                :param value: the input
+                '''
+                return str(value)
+        """),
+    )
+    text = build_text(".. autofunction:: commented.convert\n")
+    assert ('**value** ("int")' in text, 'Return type:\n      "str"' in text) == (
+        use_type_comments,
+        use_type_comments,
+    )
+
+
+@mark.parametrize(
     "legacy_autodoc",
     [
         param(False, marks=mark.sphinx(confoverrides={"autodoc_use_legacy_class_based": False}), id="new-autodoc"),

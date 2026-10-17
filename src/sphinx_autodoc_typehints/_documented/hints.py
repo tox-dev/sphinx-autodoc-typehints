@@ -43,7 +43,9 @@ def resolved_type_hints(
     # `__new__` documented on its own reaches through its name (#992)
     namedtuple_new = isclass(documenting) and isfunction(obj) and obj.__module__.startswith("namedtuple_")
     owner = documenting if namedtuple_new else annotated
-    type_hints = get_all_type_hints(app.config.autodoc_mock_imports, owner, name, localns)
+    type_hints = get_all_type_hints(
+        app.config.autodoc_mock_imports, owner, name, localns, use_type_comments=app.config.autodoc_use_type_comments
+    )
     if (stated_signature := declared_signature(original_obj)) is not None:
         # the parameters it lists, such as a pydantic model's fields, may be ones no annotation of the constructor names
         stated = {key: param.annotation for key, param in stated_signature.parameters.items()}
