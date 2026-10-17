@@ -7,6 +7,13 @@
 .. towncrier release notes start
 
 ********************
+ 3.17.2 (2026-10-17)
+********************
+
+- Link an overridden method to a documented public owner when its defining class is private and absent from the
+  intersphinx inventory. :pr:`1090`
+
+********************
  3.17.1 (2026-10-17)
 ********************
 

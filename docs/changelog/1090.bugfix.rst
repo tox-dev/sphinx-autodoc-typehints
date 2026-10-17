@@ -1,2 +1,0 @@
-Link an overridden method to a documented public owner when its defining class is private and absent from the
-intersphinx inventory.
