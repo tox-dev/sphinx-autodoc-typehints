@@ -8,7 +8,7 @@ requires = [
 
 [project]
 name = "sphinx-autodoc-typehints"
-description = "Type hints (PEP 484) support for the Sphinx autodoc extension"
+description = "Render Python type hints in Sphinx autodoc documentation"
 keywords = [
   "autodoc",
   "documentation",
