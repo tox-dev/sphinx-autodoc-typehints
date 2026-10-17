@@ -318,6 +318,34 @@ beside ``int``; the ``range`` value stays hidden.
         :param width: the new width
         """
 
+*******************************************
+ Read descriptions from Annotated metadata
+*******************************************
+
+Use :confval:`typehints_annotated_description` when a metadata class other than ``Doc`` holds descriptions. This
+example reads Pydantic's ``Field(description=...)`` without making Pydantic a runtime dependency of the extension.
+
+.. live-example::
+
+    from pydantic.fields import FieldInfo
+
+    def field_description(metadata):
+        return metadata.description if isinstance(metadata, FieldInfo) else None
+
+    typehints_annotated_description = field_description
+    ---
+    from typing import Annotated
+
+    from pydantic import Field as _Field
+
+
+    def resize(width: Annotated[int, _Field(description="width in pixels")]) -> Annotated[int, _Field(description="new width")]:
+        """Resize an image."""
+        return width
+
+``Doc`` takes precedence over the callback if both occur on one annotation. A description already written in the
+docstring also stays in place. Return ``None`` for metadata your callback does not describe.
+
 **************************
  Write a custom formatter
 **************************

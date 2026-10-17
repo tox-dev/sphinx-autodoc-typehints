@@ -288,6 +288,10 @@ both third-party packages provide it on supported Python versions.
 
 The same example works with ``from annotated_doc import Doc`` in place of ``from typing_extensions import Doc``.
 
+Other metadata classes can supply descriptions through :confval:`typehints_annotated_description`. The
+:ref:`Pydantic Field example <how-to:Read descriptions from Annotated metadata>` shows a callback for
+``Field(description=...)``; ``Doc`` still takes precedence when both occur on one annotation.
+
 ***********
  Callables
 ***********

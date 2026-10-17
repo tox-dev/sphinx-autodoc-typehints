@@ -48,6 +48,7 @@ OPTIONS: Final[tuple[Option, ...]] = (
     Option(name="typehints_formatter", default=None, rebuild="env"),
     Option(name="typehints_formatter_pass_context", default=False, rebuild="env", types=(bool,)),
     Option(name="typehints_annotated_metadata", default=(), rebuild="env", types=(tuple,)),
+    Option(name="typehints_annotated_description", default=None, rebuild="env"),
     Option(name="typehints_document_overloads", default=True, rebuild="env"),
     Option(name="typehints_use_signature", default=False, rebuild="env"),
     Option(name="typehints_use_signature_return", default=False, rebuild="env"),
@@ -64,6 +65,9 @@ def validate_config(app: Sphinx, _env: BuildEnvironment, _docnames: list[str]) -
 
     if (formatter := app.config.typehints_formatter) is not None and not callable(formatter):
         msg = f"typehints_formatter needs to be callable or `None`, not {formatter}"
+        raise ConfigError(msg)
+    if (extractor := app.config.typehints_annotated_description) is not None and not callable(extractor):
+        msg = f"typehints_annotated_description needs to be callable or `None`, not {extractor}"
         raise ConfigError(msg)
 
 
@@ -91,6 +95,12 @@ def cache_formatter(_app: Sphinx, config: Config) -> None:
     """Keep the formatter comparable across incremental builds."""
     if (function := config.typehints_formatter) is not None and callable(function):
         config.typehints_formatter = _CachedCallable(function)
+
+
+def cache_annotated_description(_app: Sphinx, config: Config) -> None:
+    """Keep the description callback comparable across incremental builds."""
+    if (function := config.typehints_annotated_description) is not None and callable(function):
+        config.typehints_annotated_description = _CachedCallable(function)
 
 
 # Sphinx can't pickle a function into its cached environment, so the source tells whether it changed between builds
@@ -124,6 +134,7 @@ class _FixupModuleName(_CachedCallable):
 
 __all__ = [
     "OPTIONS",
+    "cache_annotated_description",
     "cache_annotated_metadata",
     "cache_fixup_module_name",
     "cache_formatter",

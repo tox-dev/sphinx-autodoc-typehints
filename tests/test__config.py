@@ -30,6 +30,7 @@ def test_setup_registers_the_documented_options(app: SphinxTestApp) -> None:
         "typehints_formatter": (None, "env", frozenset()),
         "typehints_formatter_pass_context": (False, "env", frozenset({bool})),
         "typehints_annotated_metadata": ((), "env", frozenset({tuple})),
+        "typehints_annotated_description": (None, "env", frozenset()),
         "typehints_fully_qualified": (False, "env", frozenset({bool})),
         "typehints_use_rtype": (True, "env", frozenset()),
         "typehints_use_signature": (False, "env", frozenset()),
@@ -54,6 +55,13 @@ def test_setup_registers_the_documented_options(app: SphinxTestApp) -> None:
             r"^typehints_formatter needs to be callable or `None`, not some string$",
             marks=mark.sphinx("text", testroot="dummy", confoverrides={"typehints_formatter": "some string"}),
             id="formatter",
+        ),
+        param(
+            r"^typehints_annotated_description needs to be callable or `None`, not some string$",
+            marks=mark.sphinx(
+                "text", testroot="dummy", confoverrides={"typehints_annotated_description": "some string"}
+            ),
+            id="annotated-description",
         ),
     ],
 )

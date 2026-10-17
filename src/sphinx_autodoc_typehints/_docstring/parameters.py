@@ -127,7 +127,7 @@ class _Fields:
         elif type_combined_field_entry(self.app, self.lines, doc_name, param.shown, param.default):
             return
         elif not documented_elsewhere and (
-            (doc_description := description_from_doc(annotation))
+            (doc_description := description_from_doc(annotation, self.app.config.typehints_annotated_description))
             or (annotation is not None and self.app.config.always_document_param_types)
         ):
             # taken by the signature's own name, as the docstring may spell it escaped (`x\_`)
