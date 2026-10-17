@@ -1,2 +1,0 @@
-Use the build platform and false constants when choosing a ``TYPE_CHECKING`` guard's branch; skip guards whose other
-conditions cannot be determined without running code.

@@ -7,6 +7,20 @@
 .. towncrier release notes start
 
 ********************
+ 3.16.0 (2026-10-17)
+********************
+
+- Read ``Doc`` descriptions from annotated-doc as well as typing_extensions. :pr:`1083`
+- Register the value stylesheet through Sphinx's static-directory API, so loading the extension does not change
+  ``html_static_path``. :pr:`1079`
+- Honor ``autodoc_use_type_comments = False`` when reading types from a function's ``# type:`` comment. :pr:`1080`
+- Use the build platform and false constants when choosing a ``TYPE_CHECKING`` guard's branch; skip guards whose other
+  conditions cannot be determined without running code. :pr:`1081`
+- Keep single-word prose in hand-written ``:Returns:`` fields, and recognize numpydoc return types containing spaces. :pr:`1082`
+- Document support for both Sphinx autodoc implementations and cover re-exported types and ``NamedTuple`` references in
+  both modes. :pr:`1084`
+
+********************
  3.15.0 (2026-10-16)
 ********************
 

@@ -1,1 +1,0 @@
-Read ``Doc`` descriptions from annotated-doc as well as typing_extensions.

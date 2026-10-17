@@ -1,2 +1,0 @@
-Register the value stylesheet through Sphinx's static-directory API, so loading the extension does not change
-``html_static_path``.
