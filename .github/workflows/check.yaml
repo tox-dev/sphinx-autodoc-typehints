@@ -80,3 +80,15 @@ jobs:
           enable-cache: false
       - name: Require a news fragment
         run: uv run --only-group release towncrier check --compare-with "origin/${GITHUB_BASE_REF}"
+  required-checks-pass:
+    name: Required checks pass
+    if: always()
+    needs: [test, changelog]
+    runs-on: ubuntu-26.04
+    permissions: {}
+    steps:
+      - uses: re-actors/alls-green@b5b5b37504aa4183270bd3d855c52a67f212be35 # v1.3.0
+        with:
+          allowed-skips: >-
+            ${{ (github.event_name != 'pull_request' || contains(fromJSON('["dependabot[bot]", "pre-commit-ci[bot]"]'), github.event.pull_request.user.login) || contains(github.event.pull_request.labels.*.name, 'skip news')) && 'changelog' || '' }}
+          jobs: ${{ toJSON(needs) }}
