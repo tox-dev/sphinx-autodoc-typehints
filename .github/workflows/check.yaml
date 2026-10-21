@@ -85,15 +85,28 @@ jobs:
           echo "$RUNNER_TEMP/release-tools/bin" >>"$GITHUB_PATH"
       - name: Run repository hooks
         run: prek run --all-files
-      - uses: tox-dev/github-workflows/validate-news@a250ca3524857236e288764651851010939b6f71
+      - uses: tox-dev/github-workflows/validate-news@8db87d4730353b61630d66cbc592d6bed0c85d2b
+  hook-update-cooldown:
+    name: Hook update cooldown
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: tox-dev/github-workflows/check-hook-update-cooldown@8db87d4730353b61630d66cbc592d6bed0c85d2b
+        with:
+          repository: ${{ github.repository }}
+          pull-request: ${{ github.event.pull_request.number }}
+          head-sha: ${{ github.event.pull_request.head.sha }}
   required-checks-pass:
     name: Required checks pass
     if: always()
-    needs: [test, changelog]
+    needs: [test, changelog, hook-update-cooldown]
     runs-on: ubuntu-26.04
     permissions: {}
     steps:
       - uses: re-actors/alls-green@b5b5b37504aa4183270bd3d855c52a67f212be35 # v1.3.0
         with:
-          allowed-skips: ${{ github.event_name != 'pull_request' && 'changelog' || '' }}
+          allowed-skips: ${{ github.event_name != 'pull_request' && 'changelog, hook-update-cooldown' || '' }}
           jobs: ${{ toJSON(needs) }}
