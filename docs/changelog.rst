@@ -1326,6 +1326,13 @@ Documentation
  2.4.3 (2024-09-17)
 ********************
 
+.. _release-2-4-3-documentation:
+
+Documentation
+-------------
+
+- Update the README.
+
 .. _release-2-4-2:
 
 ********************
@@ -1814,6 +1821,13 @@ Added
 
 - Add the :confval:`typehints_use_signature` and :confval:`typehints_use_signature_return` options. :pr:`278` - by
   :user:`BhavyeMathur`.
+
+.. _release-1-20-0-packaging:
+
+Packaging
+---------
+
+- Build with hatchling instead of setuptools.
 
 .. _release-1-19-5:
 
@@ -2377,6 +2391,13 @@ Fixed
 -----
 
 - Keep escape characters in parameter default values during signature processing.
+
+.. _release-1-5-1-changes:
+
+Changes
+-------
+
+- Use the :event:`builder-inited` event instead of :event:`config-inited`, which required Sphinx 1.8.
 
 .. _release-1-5-0:
 
