@@ -82,8 +82,28 @@ jobs:
           name: pypi-missing-manifest
           path: ${{ steps.stage.outputs.manifest }}
           if-no-files-found: error
+  github-draft:
+    needs: [pypi-stage, github_notes]
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: github-release-notes
+          path: ${{ runner.temp }}/release-notes
+      - uses: tox-dev/github-workflows/publish-github-release@a250ca3524857236e288764651851010939b6f71
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          repository: ${{ github.repository }}
+          tag: ${{ github.ref_name }}
+          commit: ${{ github.sha }}
+          title: ${{ github.ref_name }}
+          notes-file: ${{ runner.temp }}/release-notes/release-notes.md
+          mode: stage
   release:
-    needs: pypi-stage
+    needs: [pypi-stage, github-draft]
     if: needs.pypi-stage.outputs.missing-count != '0'
     runs-on: ubuntu-26.04
     environment:
@@ -114,8 +134,8 @@ jobs:
           packages-dir: pypi-upload
           skip-existing: true
   pypi-verify:
-    needs: [pypi-stage, release]
-    if: always() && needs.pypi-stage.result == 'success' && (needs.release.result == 'success' || needs.release.result == 'skipped')
+    needs: [pypi-stage, github-draft, release]
+    if: always() && needs.pypi-stage.result == 'success' && needs.github-draft.result == 'success' && needs.release.result == (needs.pypi-stage.outputs.missing-count == '0' && 'skipped' || 'success')
     runs-on: ubuntu-26.04
     permissions:
       contents: read
@@ -234,7 +254,7 @@ jobs:
           path: ${{ runner.temp }}/release-notes.md
           if-no-files-found: error
   github-release:
-    needs: [pypi-verify, github_notes]
+    needs: [pypi-verify, github-draft, github_notes]
     runs-on: ubuntu-26.04
     permissions:
       contents: write
@@ -252,3 +272,4 @@ jobs:
           commit: ${{ github.sha }}
           title: ${{ github.ref_name }}
           notes-file: ${{ runner.temp }}/release-notes/release-notes.md
+          mode: publish
