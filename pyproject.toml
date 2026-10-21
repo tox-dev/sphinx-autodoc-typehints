@@ -84,6 +84,7 @@ type = [
   { include-group = "test" },
 ]
 docs = [
+  { include-group = "release" },
   "attrs>=26.1",
   "furo>=2025.12.19",
   "numpydoc>=1.11",
@@ -96,7 +97,6 @@ docs = [
   "sphinxcontrib-mermaid>=2.1.1",
   "sphinxcontrib-towncrier>=0.5.0a0",
   "sphinxext-opengraph>=0.13",
-  "towncrier>=26.9",
   "typing-extensions>=4.16",
 ]
 lint = [
@@ -108,6 +108,10 @@ pkg-meta = [
   "uv>=0.13.1",
 ]
 release = [
+  "mdformat-gfm>=1",
+  "mdformat-ruff>=0.1.3",
+  "prek>=0.5",
+  "release-creator @ git+https://github.com/tox-dev/release-creator@5ab33234939cf2969d25a11ba477c31eb264067c",
   "towncrier>=26.9",
 ]
 
@@ -121,6 +125,10 @@ metadata.hooks.fancy-pypi-readme.substitutions = [
   { pattern = '\]\((?!https?://|#)(?P<path>[^)]+)\)', replacement = '](https://github.com/tox-dev/sphinx-autodoc-typehints/blob/main/\g<path>)' },
 ]
 build.hooks.vcs.version-file = "src/sphinx_autodoc_typehints/version.py"
+
+[tool.uv]
+dependency-groups.docs = { requires-python = ">=3.15" }
+dependency-groups.release = { requires-python = ">=3.15" }
 
 [tool.ruff]
 line-length = 120
@@ -263,15 +271,21 @@ html.skip_covered = false
 name = "sphinx-autodoc-typehints"
 directory = "docs/changelog"
 filename = "docs/changelog.rst"
-template = "docs/changelog/template.jinja2"
+template = "release_creator.fragments:template.rst.jinja2"
 title_format = false
 issue_format = ":pr:`{issue}`"
+underlines = [ "*", "-", "~" ]
 type = [
-  { directory = "breaking", name = "Backward incompatible changes", showcontent = true },
-  { directory = "feature", name = "Features", showcontent = true },
-  { directory = "bugfix", name = "Bug fixes", showcontent = true },
-  { directory = "doc", name = "Improved documentation", showcontent = true },
-  { directory = "packaging", name = "Packaging updates", showcontent = true },
+  { directory = "feature", name = "Added", showcontent = true },
+  { directory = "change", name = "Changes", showcontent = true },
+  { directory = "bugfix", name = "Fixed", showcontent = true },
+  { directory = "doc", name = "Documentation", showcontent = true },
+  { directory = "breaking", name = "Breaking changes", showcontent = true },
+  { directory = "security", name = "Security", showcontent = true },
+  { directory = "performance", name = "Performance", showcontent = true },
+  { directory = "deprecation", name = "Deprecated", showcontent = true },
+  { directory = "removal", name = "Removed", showcontent = true },
+  { directory = "packaging", name = "Packaging", showcontent = true },
 ]
 
 [tool.importlinter]

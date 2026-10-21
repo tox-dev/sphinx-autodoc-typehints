@@ -264,6 +264,24 @@ Make sure `tox r -e fix,type,docs,3.12,3.15` passes, push to your fork and open 
 the problem and the change, and show the rendered output before and after where it changed. CI runs every supported
 Python version, including the free-threaded builds.
 
+Add one `.rst` fragment under `docs/changelog/` for each change users can observe. Use a named file such as
+`+overload-default.bugfix.rst`; the release process links it to the squash-merged PR and adds human authors. Use
+`feature` for added capabilities and Python version support changes, `change` for changed behavior, `bugfix` for fixes,
+and `doc` for documentation that affects users. Use `security`, `performance`, `deprecation`, `removal`, `breaking`, or
+`packaging` when that distinction matters to users. Do not add entries for internal maintenance. Apply the `skip news`
+label when a human PR needs no entry; the label can be added after opening the PR. Bot PRs get it automatically unless
+they include a fragment.
+
+Write the change itself in the fragment, without a PR number or author. For example, `+overload-default.bugfix.rst`
+could contain:
+
+```rst
+Keep the default in an overloaded signature when the implementation uses a different value.
+```
+
+The generated changelog uses `:pr:` and `:user:` links. GitHub Release notes use Markdown links and `@` handles. A PR
+with multiple human authors has one entry with each contributor credited; bots are excluded.
+
 ## Getting Help
 
 Check the existing [issues](https://github.com/tox-dev/sphinx-autodoc-typehints/issues) and the

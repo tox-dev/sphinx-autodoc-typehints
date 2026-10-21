@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 def parse(inputstr: str, env: BuildEnvironment) -> nodes.document:
     """Return the document `inputstr` parses to, for a caller inside `sphinx_domains` that reports its warnings."""
     # the document being read carries the settings of its writer, which lack the rST parser's (man has no tab_width)
-    settings = get_default_settings(RSTParser())
+    settings = get_default_settings(RSTParser)
     settings.env = env
     # the caller reports them against the spot in the document being read rather than this detached snippet
     settings.warning_stream = False
