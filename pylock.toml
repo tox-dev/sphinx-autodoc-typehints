@@ -3003,25 +3003,25 @@ sha256 = "67fba928dd5a544b783f6056f449e5e3931a5c378b128bc18501f7ea79e296ec"
 
 [[packages]]
 name = "filelock"
-version = "4.1.1"
+version = "4.1.2"
 index = "https://pypi.org/simple"
 marker = "\"dev\" in dependency_groups or \"lint\" in dependency_groups"
 
 [packages.sdist]
-url = "https://files.pythonhosted.org/packages/35/c8/1d457d9150ff948f2ce6ada7715e0eeebbe5d3b58a45271a1e222474bcd3/filelock-4.1.1.tar.gz"
-upload-time = 2026-10-11 16:11:54+00:00
-size = 563430
+url = "https://files.pythonhosted.org/packages/8c/32/5f1e1408eda63bdecdb814dfd18b1109d239fb9695d51780c2e8a2816e76/filelock-4.1.2.tar.gz"
+upload-time = 2026-10-14 14:47:34+00:00
+size = 565129
 
 [packages.sdist.hashes]
-sha256 = "7ba0927482c5a814b0a7f391d029ccdb8010f576f0a74c0dcde1811e8bc4c1b6"
+sha256 = "c541dd91878706be3ff20e934a0b913972d4eff7a20ddfc17defd2b7328d006c"
 
 [[packages.wheels]]
-url = "https://files.pythonhosted.org/packages/d7/8b/f837f52905395ba4510fe61f753c24833fb0a9c76e21267bb9f828b664a9/filelock-4.1.1-py3-none-any.whl"
-upload-time = 2026-10-11 16:11:52+00:00
-size = 132460
+url = "https://files.pythonhosted.org/packages/1b/84/16cbc2a5a102edf4b745ca43d7b9aaa8e26d46686c8e54d70d3d1225659e/filelock-4.1.2-py3-none-any.whl"
+upload-time = 2026-10-14 14:47:33+00:00
+size = 132861
 
 [packages.wheels.hashes]
-sha256 = "3f4a557945a7b0f95efeb1f432267affe5d45ac8ddde2aed1b97ebb62382c089"
+sha256 = "4d5dc2a1d64d6b48a5f0540814000986fd62ebd3ac9ccbb1d07d669e075db9bb"
 
 [[packages]]
 name = "furo"
@@ -6222,14 +6222,14 @@ sha256 = "381329a9f99628c9069361716891d34ad94af76e461dcb0335825aecc7692231"
 
 [[packages]]
 name = "release-creator"
-version = "0.4.2.dev44+g7db94b1b8"
+version = "0.4.2.dev48+g7c126334a"
 marker = "(\"docs\" in dependency_groups and (python_full_version >= '3.15')) or (\"release\" in dependency_groups and (python_full_version >= '3.15'))"
 
 [packages.vcs]
 type = "git"
 url = "https://github.com/tox-dev/release-creator"
-requested-revision = "7db94b1b86ee6559f22970f605a0eef7c4bff02e"
-commit-id = "7db94b1b86ee6559f22970f605a0eef7c4bff02e"
+requested-revision = "7c126334a6b6627976e69afb77f720d48d1394fd"
+commit-id = "7c126334a6b6627976e69afb77f720d48d1394fd"
 
 [[packages]]
 name = "requests"

@@ -272,15 +272,21 @@ and `doc` for documentation that affects users. Use `security`, `performance`, `
 label when a human PR needs no entry; the label can be added after opening the PR. Bot PRs get it automatically unless
 they include a fragment.
 
-Write the change itself in the fragment, without a PR number or author. For example, `+overload-default.bugfix.rst`
-could contain:
+For a single author, write the change in the fragment without a PR number or author. For example,
+`+overload-default.bugfix.rst` could contain:
 
 ```rst
 Keep the default in an overloaded signature when the implementation uses a different value.
 ```
 
-The generated changelog uses `:pr:` and `:user:` links. GitHub Release notes use Markdown links and `@` handles. A PR
-with multiple human authors has one entry with each contributor credited; bots are excluded.
+The generated changelog uses `:pr:` and `:user:` links. GitHub Release notes use Markdown links and `@` handles. For a
+PR with multiple authors, include every human author in one fragment, including the PR author:
+
+```rst
+Keep the default in overloaded signatures by :user:`alice` and :user:`bob`.
+```
+
+Release preparation verifies the PR author and excludes bots.
 
 ## Getting Help
 
