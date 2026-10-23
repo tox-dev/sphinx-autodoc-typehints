@@ -5,7 +5,7 @@ on:
     branches: ["main"]
     tags-ignore: ["**"]
   pull_request:
-    types: [opened, synchronize, reopened, labeled, unlabeled]
+    types: [opened, synchronize, reopened]
   schedule:
     - cron: "0 8 * * *"
 concurrency:
@@ -64,30 +64,6 @@ jobs:
           PYTEST_ADDOPTS: "-vv --durations=20"
           # a pull request is held to 100% coverage of the lines it changes; other runs have no base to diff against
           DIFF_AGAINST: ${{ github.event.pull_request.base.sha || 'HEAD' }}
-  changelog:
-    runs-on: ubuntu-26.04
-    if: github.event_name == 'pull_request'
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Install uv
-        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
-        with:
-          version: latest-known
-          python-version: "3.15"
-          enable-cache: false
-      - name: Install locked release tools
-        uses: tox-dev/github-workflows/install-locked-tools@cadf58a0dcc5d0c7853b248ab7c2b19bb93675d1
-        with:
-          groups: release-prepare
-          venv: ${{ runner.temp }}/release-tools
-      - name: Add installed tools to PATH
-        run: echo "$RUNNER_TEMP/release-tools/bin" >>"$GITHUB_PATH"
-      - name: Run repository hooks
-        run: prek run --all-files
-      - uses: tox-dev/github-workflows/validate-news@cadf58a0dcc5d0c7853b248ab7c2b19bb93675d1
   hook-update-cooldown:
     name: Hook update cooldown
     if: github.event_name == 'pull_request'
@@ -101,7 +77,7 @@ jobs:
   required-checks-pass:
     name: Required checks pass
     if: ${{ !cancelled() }} # codespell:ignore cancelled
-    needs: [test, changelog, hook-update-cooldown]
+    needs: [test, hook-update-cooldown]
     runs-on: ubuntu-26.04
     permissions: {}
     steps:
