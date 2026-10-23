@@ -28,10 +28,7 @@ jobs:
           version: latest-known
           python-version: "3.15"
           enable-cache: false
-      - uses: tox-dev/github-workflows/build-python-distribution@fcba1cc52c8e8bbb8c3305ee5e4bc454b9ab0c50
-        with:
-          planner-group: release-notes
-          python-version: "3.15"
+      - uses: tox-dev/github-workflows/build-python-distribution@cadf58a0dcc5d0c7853b248ab7c2b19bb93675d1
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ env.dists-artifact-name }}
@@ -40,51 +37,16 @@ jobs:
   build:
     name: 📦 validate tagged build
     if: startsWith(github.ref, 'refs/tags/')
-    uses: tox-dev/github-workflows/.github/workflows/validate-python-release.yaml@fcba1cc52c8e8bbb8c3305ee5e4bc454b9ab0c50
+    uses: tox-dev/github-workflows/.github/workflows/validate-python-release.yaml@cadf58a0dcc5d0c7853b248ab7c2b19bb93675d1
     permissions:
       contents: read
     with:
-      check-group: release-check
-      notes-group: release-notes
-      python-version: "3.15"
       changelog: docs/changelog.rst
-      issue-role: issue
       artifact-base-url: https://pypi.org/project/sphinx-autodoc-typehints/
-  pypi-stage:
-    needs: build
-    runs-on: ubuntu-26.04
-    permissions:
-      contents: read
-    outputs:
-      missing-count: ${{ steps.stage.outputs.missing-count }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: ${{ env.dists-artifact-name }}
-          path: dist/
-      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
-        with:
-          version: latest-known
-          python-version: "3.15"
-          enable-cache: false
-      - id: stage
-        uses: tox-dev/github-workflows/reconcile-pypi-artifacts@fcba1cc52c8e8bbb8c3305ee5e4bc454b9ab0c50
-        with:
-          tool-group: release-notes
-          project: sphinx-autodoc-typehints
-          version: ${{ github.ref_name }}
-          dist: dist
-          mode: stage
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: pypi-missing-manifest
-          path: ${{ steps.stage.outputs.manifest }}
-          if-no-files-found: error
   github-draft:
-    needs: [pypi-stage, github_notes]
+    needs:
+      - build
+      - github_notes
     runs-on: ubuntu-26.04
     permissions:
       contents: write
@@ -93,19 +55,19 @@ jobs:
         with:
           name: github-release-notes
           path: ${{ runner.temp }}/release-notes
-      - uses: tox-dev/github-workflows/publish-github-release@fcba1cc52c8e8bbb8c3305ee5e4bc454b9ab0c50
+      - uses: tox-dev/github-workflows/publish-github-release@cadf58a0dcc5d0c7853b248ab7c2b19bb93675d1
         env:
           GH_TOKEN: ${{ github.token }}
         with:
-          repository: ${{ github.repository }}
           tag: ${{ github.ref_name }}
           commit: ${{ github.sha }}
           title: ${{ github.ref_name }}
           notes-file: ${{ runner.temp }}/release-notes/release-notes.md
           mode: stage
   release:
-    needs: [pypi-stage, github-draft]
-    if: needs.pypi-stage.outputs.missing-count != '0'
+    needs:
+      - build
+      - github-draft
     runs-on: ubuntu-26.04
     environment:
       name: release
@@ -118,25 +80,16 @@ jobs:
         with:
           name: ${{ env.dists-artifact-name }}
           path: dist/
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: pypi-missing-manifest
-          path: ${{ runner.temp }}/pypi-missing-manifest
-      - uses: tox-dev/github-workflows/select-pypi-artifacts@fcba1cc52c8e8bbb8c3305ee5e4bc454b9ab0c50
-        with:
-          dist: dist
-          manifest: ${{ runner.temp }}/pypi-missing-manifest/pypi-missing-names.txt
-          output-dir: pypi-upload
-          expected-count: ${{ needs.pypi-stage.outputs.missing-count }}
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
         with:
           attestations: true
-          packages-dir: pypi-upload
-          skip-existing: true
+          packages-dir: dist
   pypi-verify:
-    needs: [pypi-stage, github-draft, release]
-    if: always() && needs.pypi-stage.result == 'success' && needs.github-draft.result == 'success' && needs.release.result == (needs.pypi-stage.outputs.missing-count == '0' && 'skipped' || 'success')
+    needs:
+      - build
+      - github-draft
+      - release
     runs-on: ubuntu-26.04
     permissions:
       contents: read
@@ -153,20 +106,18 @@ jobs:
           version: latest-known
           python-version: "3.15"
           enable-cache: false
-      - uses: tox-dev/github-workflows/reconcile-pypi-artifacts@fcba1cc52c8e8bbb8c3305ee5e4bc454b9ab0c50
+      - uses: tox-dev/github-workflows/reconcile-pypi-artifacts@cadf58a0dcc5d0c7853b248ab7c2b19bb93675d1
         with:
-          tool-group: release-notes
           project: sphinx-autodoc-typehints
           version: ${{ github.ref_name }}
           dist: dist
-          mode: verify
   previous_tag:
     needs: build
     runs-on: ubuntu-26.04
     permissions:
       contents: read
     outputs:
-      tag: ${{ steps.previous.outputs.tag }}
+      tag: ${{ steps.previous.outputs.previous }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -178,7 +129,7 @@ jobs:
           python-version: "3.15"
           enable-cache: false
       - name: Install locked release tools
-        uses: tox-dev/github-workflows/install-locked-tools@fcba1cc52c8e8bbb8c3305ee5e4bc454b9ab0c50
+        uses: tox-dev/github-workflows/install-locked-tools@cadf58a0dcc5d0c7853b248ab7c2b19bb93675d1
         with:
           groups: release-notes
           venv: ${{ runner.temp }}/release-tools
@@ -186,11 +137,9 @@ jobs:
         run: echo "$RUNNER_TEMP/release-tools/bin" >>"$GITHUB_PATH"
       - name: Find previous tag
         id: previous
-        env:
-          TAG: ${{ github.ref_name }}
-        run: |
-          set -euo pipefail
-          echo "tag=$(git tag --list | release-creator tags "$TAG" --previous)" >>"$GITHUB_OUTPUT"
+        uses: tox-dev/github-workflows/select-previous-tag@cadf58a0dcc5d0c7853b248ab7c2b19bb93675d1
+        with:
+          tag: ${{ github.ref_name }}
   contributor_metadata:
     needs: previous_tag
     runs-on: ubuntu-26.04
@@ -235,7 +184,7 @@ jobs:
           python-version: "3.15"
           enable-cache: false
       - name: Install locked release tools
-        uses: tox-dev/github-workflows/install-locked-tools@fcba1cc52c8e8bbb8c3305ee5e4bc454b9ab0c50
+        uses: tox-dev/github-workflows/install-locked-tools@cadf58a0dcc5d0c7853b248ab7c2b19bb93675d1
         with:
           groups: release-notes
           venv: ${{ runner.temp }}/release-tools
@@ -245,12 +194,10 @@ jobs:
         with:
           name: generated-release-notes
           path: ${{ runner.temp }}/generated-notes
-      - uses: tox-dev/github-workflows/render-release-notes@fcba1cc52c8e8bbb8c3305ee5e4bc454b9ab0c50
+      - uses: tox-dev/github-workflows/render-release-notes@cadf58a0dcc5d0c7853b248ab7c2b19bb93675d1
         with:
           tag: ${{ github.ref_name }}
           changelog: docs/changelog.rst
-          repository: ${{ github.repository }}
-          issue-role: issue
           artifact-url: https://pypi.org/project/sphinx-autodoc-typehints/${{ github.ref_name }}/
           generated-notes: ${{ runner.temp }}/generated-notes/generated-notes.md
           output: ${{ runner.temp }}/release-notes.md
@@ -269,11 +216,10 @@ jobs:
         with:
           name: github-release-notes
           path: ${{ runner.temp }}/release-notes
-      - uses: tox-dev/github-workflows/publish-github-release@fcba1cc52c8e8bbb8c3305ee5e4bc454b9ab0c50
+      - uses: tox-dev/github-workflows/publish-github-release@cadf58a0dcc5d0c7853b248ab7c2b19bb93675d1
         env:
           GH_TOKEN: ${{ github.token }}
         with:
-          repository: ${{ github.repository }}
           tag: ${{ github.ref_name }}
           commit: ${{ github.sha }}
           title: ${{ github.ref_name }}
