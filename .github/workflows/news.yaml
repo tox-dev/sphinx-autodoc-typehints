@@ -27,8 +27,6 @@ jobs:
         with:
           groups: release-prepare
           venv: ${{ runner.temp }}/release-tools
-      - name: Add installed tools to PATH
-        run: echo "$RUNNER_TEMP/release-tools/bin" >>"$GITHUB_PATH"
       - name: Run repository hooks
         run: prek run --all-files
       - uses: tox-dev/github-workflows/validate-news@1b7d58c3e744b505215e1cb11697a80737b0e94d # v1.0.1
