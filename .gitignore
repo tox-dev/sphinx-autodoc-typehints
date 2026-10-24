@@ -7,3 +7,4 @@ dist
 /src/sphinx_autodoc_typehints/version.py
 venv*
 .venv
+/uv.lock
