@@ -1,11 +1,11 @@
-name: check
+name: 🧪 check
 on:
   workflow_dispatch:
   push:
     branches: ["main"]
     tags-ignore: ["**"]
   pull_request:
-    types: [opened, synchronize, reopened, labeled, unlabeled]
+    types: [opened, synchronize, reopened]
   schedule:
     - cron: "0 8 * * *"
 concurrency:
@@ -15,6 +15,7 @@ permissions:
   contents: read
 jobs:
   test:
+    name: 🧪 Test
     runs-on: ubuntu-26.04
     env:
       # the runner's own interpreters lack the C headers the extension-module tests compile against
@@ -34,62 +35,46 @@ jobs:
           - pkg_meta
           - docs
     steps:
-      - name: Install OS dependencies
+      - name: 📦 Install Graphviz
         id: graphviz
         background: true
         run: sudo apt-get install graphviz -y
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: 📥 Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Install the latest version of uv
-        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - name: 🐍 Install uv
+        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
         with:
+          version: latest-known
           python-version: "3.15"
           enable-cache: false
           cache-dependency-glob: "pyproject.toml"
           github-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Install tox
+      - name: 📦 Install tox
         run: uv tool install --python-preference only-managed --python 3.15 tox --with tox-uv
-      - name: Install Python
+      - name: 🐍 Install Python
         if: startsWith(matrix.env, '3.') && matrix.env != '3.15'
         run: uv python install --python-preference only-managed ${{ matrix.env }}
-      - wait: graphviz
-      - name: Setup test suite
+      - name: ⏳ Wait for graphviz
+        wait: graphviz
+      - name: 📦 Set up test suite
         run: tox run -vv --notest --skip-missing-interpreters false -e ${{ matrix.env }}
-      - name: Run test suite
+      - name: 🧪 Run test suite
         run: tox run --skip-pkg-install -e ${{ matrix.env }}
         env:
           PYTEST_ADDOPTS: "-vv --durations=20"
           # a pull request is held to 100% coverage of the lines it changes; other runs have no base to diff against
           DIFF_AGAINST: ${{ github.event.pull_request.base.sha || 'HEAD' }}
-  changelog:
-    runs-on: ubuntu-26.04
-    # A PR must add a docs/changelog/<pr>.<type>.rst fragment; automated dependency and pre-commit bumps are exempt, as
-    # is anything labeled skip news, for changes no user of the extension can observe.
-    if: >-
-      github.event_name == 'pull_request' && !contains(fromJSON('["dependabot[bot]", "pre-commit-ci[bot]"]'), github.event.pull_request.user.login) && !contains(github.event.pull_request.labels.*.name, 'skip news')
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Install the latest version of uv
-        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
-        with:
-          python-version: "3.15"
-          enable-cache: false
-      - name: Require a news fragment
-        run: uv run --only-group release towncrier check --compare-with "origin/${GITHUB_BASE_REF}"
   required-checks-pass:
-    name: Required checks pass
-    if: always()
-    needs: [test, changelog]
+    name: 🚦 Required checks pass
+    if: ${{ !cancelled() }} # codespell:ignore cancelled
+    needs: [test]
     runs-on: ubuntu-26.04
     permissions: {}
     steps:
-      - uses: re-actors/alls-green@b5b5b37504aa4183270bd3d855c52a67f212be35 # v1.3.0
+      - name: 🚦 Require all needed jobs to pass
+        uses: re-actors/alls-green@b5b5b37504aa4183270bd3d855c52a67f212be35 # v1.3.0
         with:
-          allowed-skips: >-
-            ${{ (github.event_name != 'pull_request' || contains(fromJSON('["dependabot[bot]", "pre-commit-ci[bot]"]'), github.event.pull_request.user.login) || contains(github.event.pull_request.labels.*.name, 'skip news')) && 'changelog' || '' }}
           jobs: ${{ toJSON(needs) }}

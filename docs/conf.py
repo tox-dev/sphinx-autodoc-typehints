@@ -10,6 +10,8 @@ from importlib.metadata import version as package_version
 from pathlib import Path
 from typing import TYPE_CHECKING, Final
 
+from docutils import nodes
+
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
 
@@ -89,5 +91,28 @@ extlinks = {
 
 
 def setup(app: Sphinx) -> None:
-    """Register the event object type Sphinx's own docs define, so `:event:` links an event through intersphinx."""
+    """Keep event links and repeated release labels resolvable."""
     app.add_object_type("event", "event")
+    app.connect("doctree-read", _label_release_categories, priority=400)
+
+
+def _label_release_categories(app: Sphinx, document: nodes.document) -> None:
+    if app.env.current_document.docname != "changelog":
+        return
+    for section in document.findall(nodes.section):
+        if section[0].astext() not in {
+            "Added",
+            "Changes",
+            "Fixed",
+            "Documentation",
+            "Breaking changes",
+            "Security",
+            "Performance",
+            "Deprecated",
+            "Removed",
+            "Packaging",
+        }:
+            continue
+        if anchor := next((identifier for identifier in section["ids"] if identifier.startswith("release-")), None):
+            section["ids"] = [anchor]
+            section[0].rawsource = anchor
