@@ -12,7 +12,7 @@ from sphinx_autodoc_typehints._documented import render_scope
 from sphinx_autodoc_typehints._objects import object_at, prefix_of, property_getter
 from sphinx_autodoc_typehints._private_imports import parse_annotation, suppress_logging
 from sphinx_autodoc_typehints._refs import WrittenTypeAlias
-from sphinx_autodoc_typehints._render import as_signature_type
+from sphinx_autodoc_typehints._render import as_header_type
 from sphinx_autodoc_typehints._resolve import (
     bound_type_args,
     resolve_annotations,
@@ -72,7 +72,7 @@ def render_header_types(app: Sphinx, domain: str, objtype: str, contentnode: add
             and (hint := _hint(app, module, fullname, objtype)) is not _MISSING
         ):
             with render_scope(app, prefix_of(f"{module}.{fullname}"), signature=True):
-                text = as_signature_type(hint, app.config, kind="attribute")
+                text, roles = as_header_type(hint, app.config, kind="attribute")
             # a type a formatter hides takes its ": " separator along, leaving `attr = 1`
             if not text:
                 signode.remove(typed)
@@ -84,6 +84,9 @@ def render_header_types(app: Sphinx, domain: str, objtype: str, contentnode: add
             # `type` linked to an attribute `Event.type`; the fields of the same entry look their names up exactly
             for xref in typed.findall(addnodes.pending_xref):
                 del xref["refspecific"]
+                # Sphinx links each name as a class, and intersphinx then misses one an inventory lists as data, such
+                # as the `type` alias `numpy.typing.NDArray`, so it takes the role the field links it with
+                xref["reftype"] = roles.get(xref["reftarget"], xref["reftype"])
 
 
 def _hint(app: Sphinx, module: str, fullname: str, objtype: str) -> Hint | WrittenTypeAlias | _MISSING:

@@ -201,6 +201,27 @@ def test_header_type_links_its_names(build_doctree: BuildDoctree, rst: str, expe
     assert [ref["reftarget"] for ref in signature.findall(addnodes.pending_xref)] == expected
 
 
+@mark.sphinx("dummy")
+def test_header_type_links_a_name_with_its_field_role(make_module: MakeModule, build_doctree: BuildDoctree) -> None:
+    make_module("alias_package", "type Pair[T] = tuple[T, T]\n")
+    make_module(
+        "aliased_header_module",
+        dedent("""\
+            from alias_package import Pair
+
+            PAIR: Pair[int] = (1, 1)
+            '''The pair.'''
+        """),
+    )
+
+    signature = list(build_doctree(".. autodata:: aliased_header_module.PAIR").findall(addnodes.desc_signature))[-1]
+
+    assert [(ref["reftype"], ref["reftarget"]) for ref in signature.findall(addnodes.pending_xref)] == [
+        ("obj", "alias_package.Pair"),
+        ("class", "int"),
+    ]
+
+
 @mark.sphinx("html", testroot="headers")
 def test_header_type_skips_an_attribute_of_the_same_name(make_module: MakeModule, build_text: BuildText) -> None:
     make_module(
