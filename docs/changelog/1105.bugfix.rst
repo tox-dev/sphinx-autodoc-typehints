@@ -1,2 +1,0 @@
-Link each name in the type after an attribute, data or property name with the role its docstring field uses, so a
-``type`` alias an inventory lists as data, such as ``numpy.typing.NDArray``, resolves through intersphinx.

@@ -6,6 +6,21 @@
 
 .. towncrier release notes start
 
+.. _release-3-17-4:
+
+*********************
+ 3.17.4 (2026-10-27)
+*********************
+
+.. _release-3-17-4-fixed:
+
+Fixed
+-----
+
+- Link each name in the type after an attribute, data or property name with the role its docstring field uses, so a
+  ``type`` alias an inventory lists as data, such as ``numpy.typing.NDArray``, resolves through intersphinx (:pr:`1105`)
+  by :user:`gaborbernat`.
+
 .. _release-3-17-3:
 
 *********************
