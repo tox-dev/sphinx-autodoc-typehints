@@ -6,6 +6,19 @@
 
 .. towncrier release notes start
 
+.. _release-3-17-3:
+
+*********************
+ 3.17.3 (2026-10-27)
+*********************
+
+.. _release-3-17-3-packaging:
+
+Packaging
+---------
+
+- Publish categorized GitHub Release notes with PyPI and version-comparison links (:pr:`1094`) by :user:`gaborbernat`.
+
 .. _release-3-17-2:
 
 *********************
