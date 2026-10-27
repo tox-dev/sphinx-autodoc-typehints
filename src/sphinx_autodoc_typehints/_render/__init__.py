@@ -10,6 +10,7 @@ from __future__ import annotations
 from .annotation import (
     add_type_css_class,
     as_field_type,
+    as_header_type,
     as_signature_type,
     fixup_module_name,
     format_annotation,
@@ -44,6 +45,7 @@ __all__ = [
     "alias_choice_role",
     "annotation_state",
     "as_field_type",
+    "as_header_type",
     "as_signature_type",
     "constant_role",
     "enum_member_role",
