@@ -6,11 +6,11 @@ two disagree, SECURITY.md wins and we fix this file.
 
 ## How sphinx-autodoc-typehints works
 
-For each object autodoc documents, the extension reads its annotations, resolves forward references, names imported only
-under `if TYPE_CHECKING:` and declarations in `.pyi` stubs, and renders each type as cross-references, using the
-inventories intersphinx has loaded to map names to documentation. To resolve stub-only names it executes the stub's
-class and alias definitions in a scratch namespace, and evaluates `sys.version_info` and `sys.platform` checks with no
-builtins but `sys`.
+For each object autodoc documents, the extension reads its annotations, evaluates string annotations and forward
+references in the object's module namespace, runs `if TYPE_CHECKING:` blocks to resolve names imported only there, and
+reads `.pyi` stubs, whose class and alias definitions it executes in a scratch namespace and whose version and platform
+`if` conditions it evaluates. It renders each type as cross-references, using the inventories intersphinx has loaded to
+map names to documentation.
 
 ```mermaid
 flowchart LR
@@ -33,11 +33,11 @@ which first needs a trusted element compromised is out of scope; the first triag
 [DOMPurify](https://github.com/cure53/DOMPurify/blob/main/SECURITY.md#what-we-consider-a-vulnerability) puts it, is what
 the attacker controls.
 
-| Project                                                                              | Language   | Where it draws the line                                                                                             |
-| ------------------------------------------------------------------------------------ | ---------- | ------------------------------------------------------------------------------------------------------------------- |
-| [Sphinx autodoc](https://www.sphinx-doc.org/en/stable/usage/extensions/autodoc.html) | Python     | Imports the modules it documents and warns that their import-time side effects run; the documented code is trusted. |
-| [TypeDoc](https://github.com/TypeStrong/typedoc/security/policy)                     | TypeScript | Documentation generator that loads the project's own compiler setup; patches the latest minor version.              |
-| [rustdoc](https://www.rust-lang.org/policies/security)                               | Rust       | Covered by the Rust security policy; documenting a crate builds it, running its build script and macros.            |
+| Project                                                                              | Language   | Where it draws the line                                                                                                                               |
+| ------------------------------------------------------------------------------------ | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Sphinx autodoc](https://www.sphinx-doc.org/en/stable/usage/extensions/autodoc.html) | Python     | Imports the modules it documents and warns that their import-time side effects run; the documented code is trusted.                                   |
+| [TypeDoc](https://github.com/TypeStrong/typedoc/security/policy)                     | TypeScript | Documentation generator; patches the latest minor version and accepts community fixes for the one before.                                             |
+| [rustdoc](https://www.rust-lang.org/policies/security)                               | Rust       | The Rust toolchain, Cargo included, assumes the user's code and dependencies are trusted; compiling or analyzing a malicious project is out of scope. |
 
 ## Trusted
 
@@ -49,35 +49,42 @@ An attacker who controls any of these already has what sphinx-autodoc-typehints 
 
 ## Untrusted inputs
 
-| Input                   | Comes from                         | What sphinx-autodoc-typehints guarantees               |
-| ----------------------- | ---------------------------------- | ------------------------------------------------------ |
-| Stub version conditions | `.pyi` files of installed packages | Evaluated with empty builtins and only `sys` in scope. |
+| Input           | Comes from                                                                  | What sphinx-autodoc-typehints guarantees                     |
+| --------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| None of its own | Everything it reads is the documented code, its stubs, or the configuration | It writes no files and makes no network requests of its own. |
 
 ## Threats and controls
 
-| STRIDE                 | Threat                                     | Control                            |
-| ---------------------- | ------------------------------------------ | ---------------------------------- |
-| Elevation of privilege | A stub's version check calls `__import__`. | No builtins in the eval namespace. |
+| STRIDE                 | Threat                                                                         | Control                                               |
+| ---------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------- |
+| Elevation of privilege | Building docs runs the documented package's annotations, guards and stub code. | Accepted, as in Sphinx autodoc: that code is trusted. |
+| Tampering              | A name resolves to a module outside the documented package and its imports.    | Report any resolution outside those sources.          |
 
 ## Release chain
 
 Releases run on the shared [tox-dev/github-workflows](https://github.com/tox-dev/github-workflows) pipeline. A release
-App, not a person, pushes the release commit and tag; the build installs its tools hash-checked from `pylock.toml` with
-a seven-day upload cooldown; PyPI receives the files through
+App, not a person, pushes the release commit and tag; the build installs its tools from a hash-checked `pylock.toml`
+resolved with a seven-day upload cooldown by default; PyPI receives the files through
 [trusted publishing](https://docs.pypi.org/trusted-publishers/) with attestations, and the GitHub Release is immutable.
 Every workflow pins third-party actions to a commit SHA.
 
 ## Vulnerability or bug
 
-| Report                                                   | Verdict             | Why                                 |
-| -------------------------------------------------------- | ------------------- | ----------------------------------- |
-| A stub condition `__import__('os').system(...)` runs     | Vulnerability       | The eval namespace must stay empty. |
-| Building docs for a package runs its import side effects | Not a vulnerability | autodoc imports documented code.    |
-| A type renders without a link                            | Bug                 | Rendering only.                     |
+| Report                                                   | Verdict             | Why                                               |
+| -------------------------------------------------------- | ------------------- | ------------------------------------------------- |
+| A stub's `if` condition runs code during the docs build  | Not a vulnerability | Stubs are part of the trusted installed packages. |
+| Building docs for a package runs its import side effects | Not a vulnerability | autodoc imports documented code.                  |
+| A type renders without a link                            | Bug                 | Rendering only.                                   |
+
+## Severity
+
+- **Medium:** a name resolved from outside the documented package and its imports, or a file written outside the build
+  output.
+- **Low:** a crash on an unusual annotation instead of a clean build warning.
 
 ## Accepted risks
 
-- Stub class and alias definitions are executed to resolve names; stubs are part of the trusted installed packages.
+- Building documentation executes the documented package's annotations, `TYPE_CHECKING` blocks and stub code.
 
 ## Keeping this current
 

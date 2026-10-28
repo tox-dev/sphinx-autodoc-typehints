@@ -36,14 +36,13 @@ the open and publish no advisory. Classify by who supplies the dangerous input, 
 
 **In scope**
 
-- The `sys.version_info` and `sys.platform` conditions in stub files reaching anything but `sys`: they are evaluated
-  with empty builtins.
-- Resolving names from a location other than the documented package, its stubs and the installed packages it imports.
+- Resolving a name from a location other than the documented package, its stubs and the installed packages it imports.
+- The extension reading or writing files beyond the Sphinx build's own outputs.
 
 **Out of scope**
 
-- Code that runs when autodoc imports the documented modules, or when this extension evaluates their `TYPE_CHECKING`
-  imports and stub definitions: the documented code and its installed dependencies are trusted.
+- Code that runs when autodoc imports the documented modules, or when this extension evaluates their string annotations,
+  `TYPE_CHECKING` imports and stub code: the documented code and its installed dependencies are trusted.
 - Configuration values such as `typehints_formatter`, which are Python callables the author supplies.
 - Sphinx, autodoc and intersphinx behavior, and the intersphinx inventories the configuration chooses.
 
