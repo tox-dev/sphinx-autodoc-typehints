@@ -10,6 +10,8 @@
 [![Documentation status](https://readthedocs.org/projects/sphinx-autodoc-typehints/badge/?version=latest)](https://sphinx-autodoc-typehints.readthedocs.io/en/latest/?badge=latest)
 [![Downloads](https://pepy.tech/badge/sphinx-autodoc-typehints/month)](https://pepy.tech/project/sphinx-autodoc-typehints)
 [![check](https://github.com/tox-dev/sphinx-autodoc-typehints/actions/workflows/check.yaml/badge.svg)](https://github.com/tox-dev/sphinx-autodoc-typehints/actions/workflows/check.yaml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/tox-dev/sphinx-autodoc-typehints/badge)](https://scorecard.dev/viewer/?uri=github.com/tox-dev/sphinx-autodoc-typehints)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/16253/badge)](https://www.bestpractices.dev/projects/16253)
 
 This [Sphinx](https://www.sphinx-doc.org/) extension reads the
 [type hints](https://docs.python.org/3/library/typing.html) of the code autodoc documents and writes them into the
