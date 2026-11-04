@@ -27,6 +27,8 @@ jobs:
           groups: release-prepare
           venv: ${{ runner.temp }}/release-tools
       - name: 🧹 Check updated source
-        run: prek run --config .pre-commit-config.yaml --all-files
+        uses: tox-dev/github-workflows/cooled-prek@534a196a132a52365c464e1227d4c46f30968f29 # 6.4.0
+        with:
+          args: run --all-files
       - name: 🔍 Validate news fragments
         uses: tox-dev/github-workflows/validate-news@534a196a132a52365c464e1227d4c46f30968f29 # 6.4.0
