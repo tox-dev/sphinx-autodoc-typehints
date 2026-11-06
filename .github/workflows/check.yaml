@@ -67,10 +67,18 @@ jobs:
           PYTEST_ADDOPTS: "-vv --durations=20"
           # a pull request is held to 100% coverage of the lines it changes; other runs have no base to diff against
           DIFF_AGAINST: ${{ github.event.pull_request.base.sha || 'HEAD' }}
+  release:
+    name: 🏷️ Release dry run
+    uses: $/.github/workflows/prepare-release.yaml
+    permissions:
+      contents: read
+      pull-requests: read
+    with:
+      dry-run: true
   required-checks-pass:
     name: 🚦 Required checks pass
     if: ${{ !cancelled() }} # codespell:ignore cancelled
-    needs: [test]
+    needs: [test, release]
     runs-on: ubuntu-26.04
     permissions: {}
     steps:
