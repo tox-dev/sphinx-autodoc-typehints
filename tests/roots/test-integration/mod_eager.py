@@ -37,6 +37,11 @@ def count_eager(amount: Count, limit: int) -> None:
 class Users:
     """A user registry."""
 
+    @property
+    def size(self) -> Count:
+        """The number of users."""
+        return 0
+
     def get(self, user_id: UserId) -> str:
         """
         Get a user by ID.
@@ -45,11 +50,6 @@ class Users:
             user_id: The user identifier
         """
         return f"{type(self).__name__} {user_id}"
-
-    @property
-    def size(self) -> Count:
-        """The number of users."""
-        return 0
 
 
 class Special:
