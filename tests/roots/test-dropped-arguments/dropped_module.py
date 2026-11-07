@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, Any, overload
+from typing import TYPE_CHECKING, Annotated, Any, Final, overload
 
 from attrs import define
 
 if TYPE_CHECKING:
     from engines import Engine
 
-PAIRS = [(1, 2), (3, 4)]
+PAIRS: Final[list[tuple[int, int]]] = [(1, 2), (3, 4)]
 
 
 def compare(kind: Engine[Any] | None, spare: Engine[str] | Engine[bytes]) -> Engine[int]:
