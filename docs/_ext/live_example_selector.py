@@ -48,7 +48,8 @@ def _first_sentence(text: str) -> str:
     sentence = split(r"(?<=\.)\s|;\s", plain, maxsplit=1)[0].removesuffix(".")
     # the literals of reST alternate with the text around them
     parts = sentence.split("``")
-    return "".join(f"<code>{escape(part)}</code>" if at % 2 else escape(part) for at, part in enumerate(parts)) + "."
+    html = "".join(f"<code>{escape(part)}</code>" if at % 2 else escape(part) for at, part in enumerate(parts))
+    return f"{html}."
 
 
 def selector(options: list[Option], conf: str, descriptions: dict[str, str], reference: str, example: int) -> str:

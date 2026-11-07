@@ -39,7 +39,7 @@ class DeprecatedDirective(SphinxDirective):
     has_content = True
 
     def run(self) -> list[Node]:
-        label = nodes.inline("", _("Deprecated") + ": ", classes=["versionmodified", "deprecated"])
+        label = nodes.inline("", f"{_('Deprecated')}: ", classes=["versionmodified", "deprecated"])
         node = addnodes.versionmodified(type="deprecated")
         node += nodes.paragraph("", "", label, nodes.Text("\n".join(self.content)), translatable=False)
         self.set_source_info(node)
