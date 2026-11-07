@@ -113,7 +113,7 @@ def test_fixup_module_name_change_rereads_documents(
     first: Callable[[str], str],
     second: Callable[[str], str],
 ) -> None:
-    build_text(".. autofunction:: wrong_module_path.f")
+    build_text(".. autofunction:: wrong_module_path.make")
     for fixup in (first, second):
         make_app(
             "text",
@@ -122,10 +122,10 @@ def test_fixup_module_name_change_rereads_documents(
         ).build()
 
     assert (Path(app.outdir) / "index.txt").read_text() == dedent("""\
-        wrong_module_path.f()
+        wrong_module_path.make()
 
            Return type:
-              "second.A"
+              "second.Result"
         """)
 
 
@@ -133,7 +133,7 @@ def test_fixup_module_name_change_rereads_documents(
 def test_fixup_module_name_unchanged_keeps_environment(
     build_text: BuildText, app: SphinxTestApp, make_app: MakeApp
 ) -> None:
-    build_text(".. autofunction:: wrong_module_path.f")
+    build_text(".. autofunction:: wrong_module_path.make")
     rebuilt = make_app("text", srcdir=app.srcdir, confoverrides={"typehints_fixup_module_name": _fixup_to_first})
     rebuilt.build()
 

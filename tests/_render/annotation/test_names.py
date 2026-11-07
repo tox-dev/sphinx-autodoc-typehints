@@ -264,20 +264,20 @@ def test_fixup_module_name_links_the_path_the_docs_document(build_text: BuildTex
     assert (
         build_text(
             dedent("""\
-                .. class:: export_module.A
+                .. class:: export_module.Result
 
-                .. autofunction:: export_module.f
+                .. autofunction:: export_module.make
             """)
         ),
         warning.getvalue(),
     ) == (
         dedent("""\
-            class export_module.A
+            class export_module.Result
 
-            export_module.f()
+            export_module.make()
 
                Return type:
-                  "A"
+                  "Result"
         """),
         "",
     )
