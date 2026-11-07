@@ -5,7 +5,7 @@ from json import loads
 from pathlib import Path
 from re import findall, search, sub
 from textwrap import dedent, indent
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Final, TypedDict
 from zlib import compress
 
 from pytest import MonkeyPatch, fixture, mark, param
@@ -237,14 +237,33 @@ def _picked(source: str = _PICKED_SOURCE, conf: str = _SHARED_CONF) -> str:
     return f".. live-example::\n\n{indent(f'{conf}\n---\n{source}', '    ')}\n"
 
 
-def _about(app: SphinxTestApp) -> dict[str, Any]:
+class _Option(TypedDict):
+    name: str
+    values: list[str | bool]
+    dependsOn: str | None
+    lines: list[str]
+
+
+class _About(TypedDict):
+    options: list[_Option]
+    conf: str
+    data: str
+
+
+class _Variants(TypedDict):
+    bodies: list[str]
+    relevant: list[list[int]]
+    examples: list[dict[str, int]]
+
+
+def _about(app: SphinxTestApp) -> _About:
     page = (Path(app.outdir) / "index.html").read_text()
     found = search(r'<script type="application/json" id="live-example-picker">(?P<config>.*?)</script>', page)
     assert found is not None
     return loads(found["config"])
 
 
-def _variants(app: SphinxTestApp) -> dict[str, Any]:
+def _variants(app: SphinxTestApp) -> _Variants:
     script = (Path(app.outdir) / _about(app)["data"]).read_text()
     return loads(script[script.index("(") + 1 : script.rindex(")")])
 
@@ -342,7 +361,9 @@ def test_live_example_picker_lists_the_options_with_their_conf_lines(build: Buil
         ),
     ],
 )
-def test_live_example_picker_variant_matches_a_build_with_that_conf(picked: dict[str, object], build: Build) -> None:
+def test_live_example_picker_variant_matches_a_build_with_that_conf(
+    picked: dict[str, str | bool], build: Build
+) -> None:
     about, variants = _about(app := build(f"{_PICKER}{_picked()}")), _variants(app)
     combination = [
         option["values"].index(picked.get(option["name"], option["values"][0])) for option in about["options"]
