@@ -54,4 +54,6 @@ class SomeClass:
         return dt.timedelta(number)
 
 
-__all__ = ["SomeClass"]
+__all__ = [
+    "SomeClass",
+]

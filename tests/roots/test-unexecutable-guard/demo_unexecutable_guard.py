@@ -38,4 +38,8 @@ def wrap(array: DataArray) -> Wrapper:
     raise NotImplementedError
 
 
-__all__ = ["DataArray", "combine", "wrap"]
+__all__ = [
+    "DataArray",
+    "combine",
+    "wrap",
+]
