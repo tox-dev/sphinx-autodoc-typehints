@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 
-def function_with_some_defaults_and_without_typehints(x, y=None):  # ruff:ignore[missing-type-function-argument, missing-return-type-undocumented-public-function]
+def function_with_some_defaults_and_without_typehints(x, y=None):  # ruff:ignore[missing-type-function-argument, missing-return-type-undocumented-public-function]  # the fixture omits its types
     """
     Function docstring.
 
@@ -10,7 +10,7 @@ def function_with_some_defaults_and_without_typehints(x, y=None):  # ruff:ignore
     """
 
 
-def function_with_some_defaults_and_some_typehints(x: int, y=None):  # ruff:ignore[missing-type-function-argument, missing-return-type-undocumented-public-function]
+def function_with_some_defaults_and_some_typehints(x: int, y=None):  # ruff:ignore[missing-type-function-argument, missing-return-type-undocumented-public-function]  # the fixture omits one type
     """
     Function docstring.
 
@@ -19,7 +19,7 @@ def function_with_some_defaults_and_some_typehints(x: int, y=None):  # ruff:igno
     """
 
 
-def function_with_some_defaults_and_more_typehints(x: int, y=None) -> str:  # ruff:ignore[missing-type-function-argument]
+def function_with_some_defaults_and_more_typehints(x: int, y=None) -> str:  # ruff:ignore[missing-type-function-argument]  # the fixture omits one type
     """
     Function docstring.
 
@@ -28,7 +28,7 @@ def function_with_some_defaults_and_more_typehints(x: int, y=None) -> str:  # ru
     """
 
 
-def function_with_defaults_and_some_typehints(x: int = 0, y=None) -> str:  # ruff:ignore[missing-type-function-argument]
+def function_with_defaults_and_some_typehints(x: int = 0, y=None) -> str:  # ruff:ignore[missing-type-function-argument]  # the fixture omits one type
     """
     Function docstring.
 
@@ -37,7 +37,7 @@ def function_with_defaults_and_some_typehints(x: int = 0, y=None) -> str:  # ruf
     """
 
 
-def function_with_defaults_and_type_information_in_docstring(x, y=0) -> str:  # ruff:ignore[missing-type-function-argument]
+def function_with_defaults_and_type_information_in_docstring(x, y=0) -> str:  # ruff:ignore[missing-type-function-argument]  # the types live in the docstring
     """
     Function docstring.
 

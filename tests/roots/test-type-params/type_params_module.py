@@ -57,7 +57,7 @@ class Sizes[T: Sized]:
     """Bound by a type imported only for type checking."""
 
 
-class Unknown[T: Undefined]:  # ruff:ignore[undefined-name]
+class Unknown[T: Undefined]:  # ruff:ignore[undefined-name]  # the fixture renders a bound that does not resolve
     """Bound by a name defined nowhere."""
 
 

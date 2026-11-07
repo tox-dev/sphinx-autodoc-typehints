@@ -25,7 +25,7 @@ def setup(app: Sphinx) -> None:
 
     def inner(flag: str) -> str: ...
 
-    def formatter(annotation: Any, config: Config) -> None:  # ruff:ignore[unused-function-argument]
+    def formatter(annotation: Any, config: Config) -> None:  # ruff:ignore[unused-function-argument]  # Sphinx calls the formatter with both arguments
         if annotation is bool:
             process_docstring(app, "function", "inner_mod.inner", inner, None, ["Inner.", "", ":return: it"])
 

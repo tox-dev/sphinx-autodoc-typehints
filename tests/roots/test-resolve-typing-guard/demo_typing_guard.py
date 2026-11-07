@@ -21,7 +21,7 @@ if typing.TYPE_CHECKING:
 
 
 if TYPE_CHECKING:  # bad import
-    from functools import missing  # ruff:ignore[unused-import]
+    from functools import missing  # ruff:ignore[unused-import]  # the name does not exist, so the guard binds nothing
 
 
 def a[AnyStr: (bytes, str)](f: Decimal, s: AnyStr) -> Sequence[AnyStr | Decimal]:

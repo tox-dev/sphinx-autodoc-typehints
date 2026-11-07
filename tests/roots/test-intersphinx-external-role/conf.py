@@ -29,6 +29,6 @@ _INVENTORY.write_bytes(
 intersphinx_mapping = {"demo": ("https://example.org/demo/", str(_INVENTORY))}
 
 
-def typehints_formatter(annotation: Any, config: Config) -> str | None:  # ruff:ignore[unused-function-argument]
+def typehints_formatter(annotation: Any, config: Config) -> str | None:  # ruff:ignore[unused-function-argument]  # Sphinx calls the formatter with both arguments
     """Render one annotation as an intersphinx role, which the type role parses on its own."""
     return ":external+demo:doc:`the demo docs <index>`" if annotation is bool else None
