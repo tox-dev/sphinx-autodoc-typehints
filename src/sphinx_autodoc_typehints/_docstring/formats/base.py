@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from inspect import Parameter
 from itertools import pairwise
-from re import match
+from re import VERBOSE, match
 from typing import TYPE_CHECKING
 
 from sphinx.util.inspect import object_description
@@ -62,7 +62,15 @@ def last_paragraph_end(lines: list[str], at: int) -> int:
         if not (
             lines[previous[-1]].endswith("::")
             or line_indent(first) > indent
-            or match(r"\s*(?:[-*+]|\d+[.)]|#\.|\.\.)\s", first)
+            or match(
+                r"""
+                \s*
+                (?:[-*+]|\d+[.)]|\#\.|\.\.)  # a bullet, an enumerator, an auto-numbered item, or an explicit markup
+                \s
+                """,
+                first,
+                VERBOSE,
+            )
         ):
             end = block[-1]
     return end

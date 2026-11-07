@@ -5,7 +5,7 @@ from ast import literal_eval
 from collections.abc import Callable
 from importlib import import_module
 from pathlib import Path
-from re import MULTILINE, escape, findall, finditer, search, split, sub
+from re import MULTILINE, VERBOSE, escape, findall, finditer, search, split, sub
 from sys import version_info
 from textwrap import dedent
 from types import ModuleType, UnionType
@@ -27,8 +27,15 @@ if TYPE_CHECKING:
 _REFERENCE: Final[str] = (Path(__file__).parents[1] / "docs" / "reference.rst").read_text(encoding="utf-8")
 _GALLERY: Final[str] = (Path(__file__).parents[1] / "docs" / "typing.rst").read_text(encoding="utf-8")
 _OPTIONS: Final[dict[str, dict[str, str]]] = {
-    match["name"]: {key: value.strip("`") for key, value in findall(r":(\w+): (.*)", match["options"])}
-    for match in finditer(r"^\.\. confval:: (?P<name>\w+)\n(?P<options>(?: +:\w+: .*\n)+)", _REFERENCE, MULTILINE)
+    match["name"]: {key: value.strip("`") for key, value in findall(r":(?P<key>\w+): (?P<value>.*)", match["options"])}
+    for match in finditer(
+        r"""
+        ^\.\.\ confval::\ (?P<name>\w+)\n  # the directive and the option it names
+        (?P<options>(?:\ +:\w+:\ .*\n)+)   # the field list of the option
+        """,
+        _REFERENCE,
+        MULTILINE | VERBOSE,
+    )
 }
 
 
@@ -119,8 +126,12 @@ def test_docs_option_type_references_use_public_python_names(
         (role, target.rsplit("<", 1)[-1].rstrip(">").lstrip("~"))
         for name in _OPTIONS
         for role, target in findall(
-            r":py:(class|data|func|obj|type):`([^`]+)`",
+            r"""
+            :py:(?P<role>class|data|func|obj|type):  # the role of a Python cross reference
+            `(?P<target>[^`]+)`                      # its target
+            """,
             format_annotation(option_reference.documented_type(name), extension_config),
+            flags=VERBOSE,
         )
     }
 
@@ -162,7 +173,14 @@ def test_docs_warnings_table_lists_the_categories() -> None:
                 mark.skipif(
                     (version_info >= (int(found[2]), int(found[3]))) == bool(found[1]), reason=f"holds on {row[3]}"
                 )
-                for found in finditer(r"^(<)?(\d+)\.(\d+)\+?$", row[3])
+                for found in finditer(
+                    r"""
+                    ^(?P<less><)?                # a bound that the version has to exceed
+                    (?P<major>\d+)\.(?P<minor>\d+)\+?$  # the version, with an optional `+` for later releases
+                    """,
+                    row[3],
+                    VERBOSE,
+                )
             ],
         )
         for row in _list_table("Typing constructs")
@@ -185,7 +203,14 @@ def docs_namespace_fixture() -> dict[str, object]:
 
 
 def test_docs_typing_gallery_names_every_public_typing_name() -> None:
-    referenced = findall(r":(?:class|data|func|obj):`[^`]*?\btyping\.(\w+)>?`", _GALLERY)
+    referenced = findall(
+        r"""
+        :(?:class|data|func|obj):`  # a cross reference to a typing name
+        [^`]*?\btyping\.(\w+)>?`
+        """,
+        _GALLERY,
+        VERBOSE,
+    )
     literal = findall(r"``(?:typing\.)?(\w+)``", _GALLERY)
 
     assert set(typing.__all__) - {*referenced, *literal} == set()

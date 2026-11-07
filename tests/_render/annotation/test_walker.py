@@ -6,7 +6,7 @@ from dataclasses import InitVar
 from enum import Enum
 from io import StringIO
 from pydoc import locate
-from re import Pattern, findall
+from re import VERBOSE, Pattern, findall
 from sys import version_info
 from textwrap import dedent
 from threading import local
@@ -671,7 +671,14 @@ def test_format_annotation_type_variable_reads_as_its_name(build_text: BuildText
 def test_format_annotation_type_variable_links_to_its_entry(build_text: BuildText, directive: str) -> None:
     html = build_text(f".. {directive}:: dummy_module.Bounded\n\n.. autofunction:: dummy_module.bounded")
     assert (
-        findall(r'href="([^"]*)"[^>]*><code class="xref py py-obj[^"]*"><span class="pre">Bounded<', html)
+        findall(
+            r"""
+            href="([^"]*)"                                  # the link to the entry
+            [^>]*><code\ class="xref\ py\ py-obj[^"]*"><span\ class="pre">Bounded<
+            """,
+            html,
+            VERBOSE,
+        )
         == ["#dummy_module.Bounded"] * 2
     )
 
@@ -721,10 +728,14 @@ def test_format_annotation_param_spec_component_reads_as_written(build_text: Bui
 )
 def test_format_annotation_param_spec_component_links_to_its_entry(build_text: BuildText, shown: str) -> None:
     html = build_text(".. py:data:: type_params_module.DP\n\n.. autofunction:: type_params_module.relay")
-    assert findall(r'href="#type_params_module\.DP"[^>]*><code[^>]*><span class="pre">([^<]*)<', html) == [
-        f"{shown}.args",
-        f"{shown}.kwargs",
-    ]
+    assert findall(
+        r"""
+        href="\#type_params_module\.DP"  # the link to the parameter spec
+        [^>]*><code[^>]*><span\ class="pre">([^<]*)<
+        """,
+        html,
+        VERBOSE,
+    ) == [f"{shown}.args", f"{shown}.kwargs"]
 
 
 @mark.sphinx("html", testroot="type-params")

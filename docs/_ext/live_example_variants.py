@@ -9,8 +9,8 @@ from hashlib import sha256
 from io import StringIO
 from itertools import product
 from logging import getLogger
+from re import VERBOSE, sub
 from re import compile as compile_regex
-from re import sub
 from sys import modules, path
 from typing import TYPE_CHECKING, Final, NamedTuple
 from uuid import uuid4
@@ -33,7 +33,15 @@ _MODULE: Final[str] = "live_example_module"
 # every variant of an example documents the same objects, so all but one are duplicates of another variant's
 _DUPLICATE: Final[Pattern[str]] = compile_regex(r"duplicate (?:object|module) description of ")
 # a link to an object of another variant of the same example points at the variant shown, so it stays on the page
-_OTHER_PAGE: Final[Pattern[str]] = compile_regex(r'href="(?![a-z][a-z0-9+.-]*:)[^"#]*#')
+_OTHER_PAGE: Final[Pattern[str]] = compile_regex(
+    r"""
+    href="
+    (?![a-z][a-z0-9+.-]*:)  # not an absolute URL, which leaves the page
+    [^"\#]*
+    \#
+    """,
+    VERBOSE,
+)
 
 # how many options at once a probe moves away from their defaults
 _PROBED: Final[int] = 2

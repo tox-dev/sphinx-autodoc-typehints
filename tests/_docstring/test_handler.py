@@ -280,7 +280,7 @@ def test_process_docstring_rereads_the_pages_a_stub_types_once_it_changes(
     app.build()
 
     # the module this process already imported keeps the first types, so only the reread shows
-    assert findall(r"(\d+) added, (\d+) changed, (\d+) removed", status.getvalue()) == [
+    assert findall(r"(?P<added>\d+) added, (?P<changed>\d+) changed, (?P<removed>\d+) removed", status.getvalue()) == [
         ("1", "0", "0"),
         ("0", "1", "0"),
     ]

@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from html import escape
 from itertools import groupby
-from re import MULTILINE, split
+from re import MULTILINE, VERBOSE, split
 from re import compile as compile_regex
 from typing import TYPE_CHECKING, Final
 
@@ -15,11 +15,24 @@ if TYPE_CHECKING:
     from live_example_variants import Option
 
 _CONFVAL: Final[Pattern[str]] = compile_regex(
-    r"^\.\. confval:: (?P<name>\w+)\n(?:[ \t]+:\w+:.*\n)*\n(?P<content>(?:[ \t]+\S.*(?:\n|$))+)", MULTILINE
+    r"""
+    ^\.\.\ confval::\ (?P<name>\w+)\n  # the directive and the option it names
+    (?:[ \t]+:\w+:.*\n)*\n             # the field list above the content
+    (?P<content>(?:[ \t]+\S.*(?:\n|$))+)  # the indented content
+    """,
+    MULTILINE | VERBOSE,
 )
 # a role shows its explicit title, or its target, cut to the last part by a leading tilde
 _ROLE: Final[Pattern[str]] = compile_regex(
-    r":[\w:]+:`(?:(?P<title>[^`<]*?)\s*<[^`>]*>|~(?:[\w.]*\.)?(?P<short>[^`]+)|(?P<name>[^`]+))`"
+    r"""
+    :[\w:]+:`                              # the role and its opening backquote
+    (?:
+        (?P<title>[^`<]*?)\s*<[^`>]*>      # an explicit title, then the target
+        |~(?:[\w.]*\.)?(?P<short>[^`]+)    # the target, without its leading module path
+        |(?P<name>[^`]+)                   # the target alone
+    )`
+    """,
+    VERBOSE,
 )
 
 

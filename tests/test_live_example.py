@@ -238,9 +238,9 @@ def _picked(source: str = _PICKED_SOURCE, conf: str = _SHARED_CONF) -> str:
 
 def _about(app: SphinxTestApp) -> dict[str, Any]:
     page = (Path(app.outdir) / "index.html").read_text()
-    found = search(r'<script type="application/json" id="live-example-picker">(.*?)</script>', page)
+    found = search(r'<script type="application/json" id="live-example-picker">(?P<config>.*?)</script>', page)
     assert found is not None
-    return loads(found[1])
+    return loads(found["config"])
 
 
 def _variants(app: SphinxTestApp) -> dict[str, Any]:

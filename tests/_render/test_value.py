@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from re import findall
+from re import VERBOSE, findall
 from textwrap import dedent
 from typing import TYPE_CHECKING
 
@@ -56,10 +56,25 @@ def test_value_takes_the_pygments_token_classes(
 
 def _values(html: str) -> list[tuple[str, list[tuple[str, str]]]]:
     return [
-        (code_class, findall(r'(?:<span class="(\w+)">)?<span class="pre">([^<]*)</span>', inner))
+        (
+            code_class,
+            findall(
+                r"""
+                (?:<span\ class="(?P<kind>\w+)">)?      # the kind of a token, when it has one
+                <span\ class="pre">(?P<text>[^<]*)</span>  # its text
+                """,
+                inner,
+                VERBOSE,
+            ),
+        )
         for code_class, inner in findall(
-            r'<span class="highlight sphinx_autodoc_typehints-value">(?:<a [^>]*>)?<code class="([^"]*)">(.*?)</code>',
+            r"""
+            <span\ class="highlight\ sphinx_autodoc_typehints-value">  # a value the extension rendered
+            (?:<a\ [^>]*>)?<code\ class="(?P<class>[^"]*)">            # its class, under an optional link
+            (?P<inner>.*?)</code>                                      # its tokens
+            """,
             html,
+            VERBOSE,
         )
     ]
 

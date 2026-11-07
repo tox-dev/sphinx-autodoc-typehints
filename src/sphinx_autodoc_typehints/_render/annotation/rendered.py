@@ -48,10 +48,10 @@ def as_header_type(
     def plain(match: Match[str]) -> str:
         if (role := match["role"]) is not None:
             text = sub(r"\\(.)", r"\1", role)
-            titled = fullmatch(r"(.*?)\s*<(.+)>", text, DOTALL)
+            titled = fullmatch(r"(?P<title>.*?)\s*<(?P<target>.+)>", text, DOTALL)
             if (name := match["name"]).startswith("py:"):
-                roles[(titled[2] if titled else text).lstrip("~.")] = name.removeprefix("py:").removesuffix(":")
-            return titled[1] if titled else text
+                roles[(titled["target"] if titled else text).lstrip("~.")] = name.removeprefix("py:").removesuffix(":")
+            return titled["title"] if titled else text
         if (literal := match["literal"]) is not None:
             return literal
         # an escaped space only separates markup, as between a role and the [ after it

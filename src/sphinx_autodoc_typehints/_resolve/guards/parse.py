@@ -31,7 +31,7 @@ from ast import (
 )
 from functools import cache
 from inspect import getsource
-from re import MULTILINE, findall
+from re import MULTILINE, VERBOSE, findall
 from typing import TYPE_CHECKING
 from warnings import catch_warnings, simplefilter
 
@@ -65,7 +65,13 @@ def guarded_statements(module_code: str) -> tuple[tuple[stmt, ...], tuple[Syntax
             # a statement of the module body starting with `if`, with its indented lines and its `elif` and
             # `else` branches
             for block in findall(
-                r"^if\b.*(?:\n|\Z)(?:(?:[ \t]+.*|(?:elif|else)\b.*)?(?:\n|\Z))*", module_code, MULTILINE
+                r"""
+                ^if\b.*(?:\n|\Z)                   # the `if` line
+                (?:(?:[ \t]+.*|(?:elif|else)\b.*)?  # an indented line, or an `elif` or `else` line
+                (?:\n|\Z))*                        # the end of each such line
+                """,
+                module_code,
+                MULTILINE | VERBOSE,
             ):
                 if "TYPE_CHECKING" in block:
                     try:

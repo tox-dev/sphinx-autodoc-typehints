@@ -170,7 +170,7 @@ def _format_mock_argument(part: str) -> str:
     if fullmatch(r"[\w.]+", part):
         return f":py:class:`{'~' if '.' in part else ''}{part}`"
     # an argument is itself subscripted, as `dict[str, typing.Any]`, or a list of them, as `Callable` takes
-    if match := fullmatch(r"([\w.]*)\[(.*)\]", part):
+    if match := fullmatch(r"(?P<name>[\w.]*)\[(?P<arguments>.*)\]", part):
         name, arguments = match.groups()
         subscript = f"\\[{_format_mock_arguments(arguments)}]"
         return f"{_format_mock_argument(name)}\\ {subscript}" if name else subscript
