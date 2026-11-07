@@ -58,7 +58,7 @@ def test_class_member_type(name: str, expected: type | None) -> None:
 )
 @mark.sphinx("text", testroot="dummy")
 def test_overload_skip(app: SphinxTestApp, what: str, member: str, obj: Documented, expected: int) -> None:
-    assert overload_skip(Entry(app, what, f"{__name__}._Members.{member}", obj)) == expected
+    assert overload_skip(Entry(app=app, what=what, name=f"{__name__}._Members.{member}", obj=obj)) == expected
 
 
 @mark.parametrize(

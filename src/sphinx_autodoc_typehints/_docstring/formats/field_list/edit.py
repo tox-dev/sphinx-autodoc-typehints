@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from sphinx.application import Sphinx
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, kw_only=True)
 class FieldListFormat:
     """
     Read and extend the field list of a docstring.

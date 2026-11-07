@@ -85,7 +85,7 @@ def process_docstring(
             with render_scope(app, prefix_of(name)):
                 lines.extend(["", f":type: {as_field_type(hint, app.config, kind='attribute')}"])
     else:
-        _type_callable(Entry(app, what, name, obj), documented, options, lines, written)
+        _type_callable(Entry(app=app, what=what, name=name, obj=obj), documented, options, lines, written)
 
 
 # `declared` is the callable before unwrapping, as decorators mark that one

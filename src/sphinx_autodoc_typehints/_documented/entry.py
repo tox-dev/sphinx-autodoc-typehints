@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from .._types import Documented
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, kw_only=True)
 class Entry:
     """What an autodoc event names; `obj` may be a property."""
 

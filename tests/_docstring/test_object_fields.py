@@ -144,14 +144,16 @@ _PICK: Final[list[str]] = [
 def test_inject_overloads_lists_them(
     app: SphinxTestApp, func: FunctionType, lines: list[str], expected: list[str]
 ) -> None:
-    has_overloads = inject_overloads(Entry(app, "function", f"{__name__}.{func.__name__}", func), func, lines)
+    has_overloads = inject_overloads(
+        Entry(app=app, what="function", name=f"{__name__}.{func.__name__}", obj=func), func, lines
+    )
     assert (has_overloads, lines) == (True, expected)
 
 
 @mark.sphinx(confoverrides={"typehints_formatter": hide_type})
 def test_inject_overloads_leaves_out_types_a_formatter_hides(app: SphinxTestApp) -> None:
     lines: list[str] = []
-    inject_overloads(Entry(app, "function", f"{__name__}._pick", _pick), _pick, lines)
+    inject_overloads(Entry(app=app, what="function", name=f"{__name__}._pick", obj=_pick), _pick, lines)
     assert lines == ["", ":Overloads:", "   * **value**", "   * **value**", ""]
 
 
@@ -183,13 +185,19 @@ def test_inject_overloads_leaves_out_types_a_formatter_hides(app: SphinxTestApp)
 def test_inject_overloads_lists_none(
     app: SphinxTestApp, what: str, func: Callable[..., object], lines: list[str], expected: list[str]
 ) -> None:
-    assert (inject_overloads(Entry(app, what, f"{__name__}._pick", func), func, lines), lines) == (False, expected)
+    assert (inject_overloads(Entry(app=app, what=what, name=f"{__name__}._pick", obj=func), func, lines), lines) == (
+        False,
+        expected,
+    )
 
 
 @mark.sphinx(confoverrides={"typehints_use_signature": True})
 def test_inject_overloads_leaves_them_to_the_signature(app: SphinxTestApp) -> None:
     lines = ["Docs."]
-    assert (inject_overloads(Entry(app, "function", f"{__name__}._pick", _pick), _pick, lines), lines) == (
+    assert (
+        inject_overloads(Entry(app=app, what="function", name=f"{__name__}._pick", obj=_pick), _pick, lines),
+        lines,
+    ) == (
         True,
         ["Docs."],
     )

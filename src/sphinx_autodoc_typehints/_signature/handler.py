@@ -65,7 +65,7 @@ def process_signature(
     overloads = signature_overloads(app, what, obj, callee, options)
     if not _annotates(annotated) and declared_signature(callee) is None and not overloads:
         return None
-    entry = Entry(app, what, name, obj)
+    entry = Entry(app=app, what=what, name=name, obj=obj)
     full_signature = sphinx_signature(callee, type_aliases=app.config["autodoc_type_aliases"])
     if isclass(obj):
         full_signature = show_factory_defaults(obj, full_signature)
