@@ -69,11 +69,6 @@ class Proxied:
 class Vault:
     """Holds members autodoc reaches through their mangled names."""
 
-    @property
-    def __code(self) -> int:
-        """The code."""
-        return 0
-
     class __Lock:
         """A lock."""
 
@@ -81,6 +76,11 @@ class Vault:
         def pins(self) -> int:
             """The pins."""
             return 0
+
+    @property
+    def __code(self) -> int:
+        """The code."""
+        return 0
 
 
 class Box[T]:
