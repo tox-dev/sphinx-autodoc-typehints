@@ -98,7 +98,9 @@ def render_variants(project: Path, options: list[Option], sources: list[str], mo
     for at, source in enumerate(sources):
         (project / f"{prefix}_{at}.py").write_text(f"{source}\n", encoding="utf-8")
     (project / "index.rst").write_text("", encoding="utf-8")
-    probes = _probes(options)
+    # an option may change an example only next to another one, as a return type shows only without the overloads
+    ranges = [range(len(option.values)) for option in options]
+    probes = sorted({_canonical(options, picked) for picked in product(*ranges) if sum(map(bool, picked)) <= _PROBED})
     with _isolated(), _importable(project, prefix):
         nested = _application(
             project, options, lambda body, at: _rewrite(body, f"{prefix}_{at}", f"{at}{sources[at]}", module)
@@ -129,12 +131,6 @@ def render_variants(project: Path, options: list[Option], sources: list[str], mo
         for at in range(len(sources))
     ]
     return Variants(list(bodies), relevant, examples)
-
-
-def _probes(options: list[Option]) -> list[Combination]:
-    # an option may change an example only next to another one, as a return type shows only without the overloads
-    ranges = [range(len(option.values)) for option in options]
-    return sorted({_canonical(options, picked) for picked in product(*ranges) if sum(map(bool, picked)) <= _PROBED})
 
 
 @contextmanager

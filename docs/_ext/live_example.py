@@ -153,7 +153,11 @@ class LiveExample(SphinxDirective):
         try:
             builtin = _render(cache, f"{conf}\n{_BUILTIN_CONF}", source, inventories)
         except CalledProcessError as exc:
-            builtin = _failure(exc.stdout)
+            builtin = (
+                '<div class="live-example-output live-example-failure">'
+                "<p>Sphinx alone fails to build this example with <code>-W</code>:</p>"
+                f"<pre>{escape(exc.stdout.strip())}</pre></div>"
+            )
         texts = {"source": source, "rendered": rendered, "builtin": builtin}
         return self.parse_text_to_nodes(
             _LAYOUT.format(conf_tab=conf_tab, **{name: indent(text, " " * 12) for name, text in texts.items()})
@@ -177,7 +181,24 @@ def _render(cache: Path, conf: str, source: str, inventories: Inventories) -> st
     hashes = {name: sha256(Path(path).read_bytes()).hexdigest() for name, (_, path) in inventories.items()}
     digest = sha256(repr((_EXTENSION_DIGEST, version, __display_version__, conf, source, hashes)).encode()).hexdigest()
     if not (cached := cache / f"{digest}.html").exists():
-        body = _build(conf, source, inventories)
+        with TemporaryDirectory() as scratch:
+            project = _project(Path(scratch), conf, inventories)
+            (project / f"{_MODULE}.py").write_text(f"{source}\n", encoding="utf-8")
+            (project / "index.rst").write_text(_INDEX, encoding="utf-8")
+            try:
+                run(  # ruff:ignore[subprocess-without-shell-equals-true]  # this interpreter running Sphinx on our files
+                    [executable, "-m", "sphinx", "-b", "json", "-W", "-q", str(project), str(project / "_build")],
+                    check=True,
+                    stdout=PIPE,
+                    stderr=STDOUT,
+                    text=True,
+                    env={**environ, "PYTHONPATH": str(project)},
+                )
+            except CalledProcessError as exc:
+                # the scratch folder changes with every build, a cached page shows the path from the project instead
+                exc.stdout = exc.stdout.replace(f"{project}{sep}", "")
+                raise
+            body = loads((project / "_build" / "index.fjson").read_text(encoding="utf-8"))["body"]
         cache.mkdir(parents=True, exist_ok=True)
         # every example documents a module named demo, so its anchors need a prefix to stay unique on the page
         unique = sub(r'\b(id="|href="#)', rf"\g<1>{digest[:12]}-", body)
@@ -185,40 +206,11 @@ def _render(cache: Path, conf: str, source: str, inventories: Inventories) -> st
     return cached.read_text(encoding="utf-8")
 
 
-def _build(conf: str, source: str, inventories: Inventories) -> str:
-    with TemporaryDirectory() as scratch:
-        project = _project(Path(scratch), conf, inventories)
-        (project / f"{_MODULE}.py").write_text(f"{source}\n", encoding="utf-8")
-        (project / "index.rst").write_text(_INDEX, encoding="utf-8")
-        try:
-            run(  # ruff:ignore[subprocess-without-shell-equals-true]  # this interpreter running Sphinx on our files
-                [executable, "-m", "sphinx", "-b", "json", "-W", "-q", str(project), str(project / "_build")],
-                check=True,
-                stdout=PIPE,
-                stderr=STDOUT,
-                text=True,
-                env={**environ, "PYTHONPATH": str(project)},
-            )
-        except CalledProcessError as exc:
-            # the scratch folder changes with every build, a cached page shows the path from the project instead
-            exc.stdout = exc.stdout.replace(f"{project}{sep}", "")
-            raise
-        return loads((project / "_build" / "index.fjson").read_text(encoding="utf-8"))["body"]
-
-
 def _project(scratch: Path, conf: str, inventories: Inventories) -> Path:
     (project := scratch / "project").mkdir()
     intersphinx = f'extensions = [*extensions, "sphinx.ext.intersphinx"]\nintersphinx_mapping = {inventories!r}\n'
     (project / "conf.py").write_text(f"{_CONF_HEADER}{conf}\n{intersphinx}", encoding="utf-8")
     return project
-
-
-def _failure(output: str) -> str:
-    return (
-        '<div class="live-example-output live-example-failure">'
-        "<p>Sphinx alone fails to build this example with <code>-W</code>:</p>"
-        f"<pre>{escape(output.strip())}</pre></div>"
-    )
 
 
 class LiveExamplePicker(SphinxDirective):
