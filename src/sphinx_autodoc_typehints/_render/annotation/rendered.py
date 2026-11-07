@@ -40,7 +40,7 @@ def as_signature_type(hint: Hint | WrittenTypeAlias, config: Config, *, kind: An
 
 
 def as_header_type(
-    hint: Hint | WrittenTypeAlias, config: Config, *, kind: AnnotationKind = "other"
+    hint: Hint | WrittenTypeAlias, config: Config, *, kind: AnnotationKind
 ) -> tuple[str, dict[str, str]]:
     """Render `hint` as `as_signature_type` does, along with the Python role of each name it links, keyed by target."""
     roles: dict[str, str] = {}
