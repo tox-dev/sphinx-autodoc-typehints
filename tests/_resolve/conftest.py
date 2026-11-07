@@ -154,7 +154,7 @@ def logged_warnings(caplog: LogCaptureFixture) -> Callable[[], list[tuple[str, .
     # once an application set up Sphinx logging, the debug records reach caplog and the messages carry the location
     def read() -> list[tuple[str, ...]]:
         return [
-            (vars(record)["subtype"], str(vars(record)["location"]), *map(str, vars(record)["args"] or ()))
+            (record.__dict__["subtype"], str(record.__dict__["location"]), *map(str, record.__dict__["args"] or ()))
             for record in caplog.records
             if record.levelno >= WARNING
         ]

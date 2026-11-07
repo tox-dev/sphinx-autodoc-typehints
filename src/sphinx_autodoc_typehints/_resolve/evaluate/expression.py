@@ -58,7 +58,7 @@ def resolve_string_annotations(
     """
     # the __module__ of a C extension function may name a child (cbor2._cbor2) of the package its stub describes
     # (cbor2/__init__.pyi); the module defining obj is the one the evaluation that failed before this one used
-    globalns = vars(modules[owner_module]) if owner_module in modules else annotation_globals(obj)
+    globalns = modules[owner_module].__dict__ if owner_module in modules else annotation_globals(obj)
     resolved: dict[str, Hint] = {}
     for name, value in hints.items():
         resolved[name] = value

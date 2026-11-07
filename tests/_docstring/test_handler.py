@@ -71,7 +71,7 @@ class _Slotted:
 def _looping(value: int) -> str: ...
 
 
-vars(_looping)["__wrapped__"] = _looping
+_looping.__dict__["__wrapped__"] = _looping
 
 
 @mark.parametrize(
@@ -170,7 +170,7 @@ class _UnreadyWrapper:
 def _stated(*args: object, **kwargs: object) -> None: ...
 
 
-vars(_stated)["__signature__"] = Signature(
+_stated.__dict__["__signature__"] = Signature(
     [Parameter("value", Parameter.KEYWORD_ONLY, annotation=float)], return_annotation=str
 )
 
@@ -198,7 +198,7 @@ def test_wrapper_lists_the_parameters_it_states(process: Process) -> None:
     def injected(*args: object, **kwargs: object) -> bool: ...
 
     # a dependency-injecting decorator hides the parameter it supplies
-    vars(injected)["__signature__"] = Signature(list(signature(handle, eval_str=True).parameters.values())[1:])
+    injected.__dict__["__signature__"] = Signature(list(signature(handle, eval_str=True).parameters.values())[1:])
     assert process("function", "mod.injected", injected, [":param name: the name"]) == [
         f":type name: {STR}",
         ":param name: the name",
@@ -211,7 +211,7 @@ def test_wrapper_lists_the_parameters_it_states(process: Process) -> None:
 
 @mark.parametrize("member", [param("plain", id="property"), param("cached", id="cached-property")])
 def test_process_docstring_marks_a_deprecated_property_getter(process: Process, member: str) -> None:
-    prop = vars(_DeprecatedGetters)[member]
+    prop = _DeprecatedGetters.__dict__[member]
     assert process("property", f"mod._DeprecatedGetters.{member}", prop, ["Size."]) == [
         "Size.",
         "",

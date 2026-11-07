@@ -557,7 +557,7 @@ class _Sized:
     [
         param("class", "mod.Sized", _Sized, id="class"),
         param("method", "mod.Sized.__init__", _Sized.__init__, id="constructor"),
-        param("property", "mod.Sized.size", vars(_Sized)["size"], id="property"),
+        param("property", "mod.Sized.size", _Sized.__dict__["size"], id="property"),
         param(
             "function",
             "mod.counts",

@@ -42,7 +42,7 @@ def bases_module_fixture(make_module: Callable[[str], ModuleType]) -> ModuleType
 def test_base_scopes_reads_the_module_before_the_class_body(bases_module: ModuleType) -> None:
     # as get_type_hints does, the names of the class body evaluate as the globals
     *_, (_, scope_globals, scope_locals) = base_scopes(bases_module.Child, None, None)
-    assert (scope_globals["Local"], scope_locals) == (bytes, vars(bases_module))
+    assert (scope_globals["Local"], scope_locals) == (bytes, bases_module.__dict__)
 
 
 def test_base_scopes_hands_out_the_namespaces_it_is_given(bases_module: ModuleType) -> None:
@@ -55,7 +55,7 @@ def test_base_scopes_hands_out_the_namespaces_it_is_given(bases_module: ModuleTy
 
 def test_declared_hints_leaves_out_the_annotations_of_the_bases(bases_module: ModuleType) -> None:
     child = bases_module.Child
-    assert declared_hints(child, dict(vars(child)), vars(bases_module)) == {"own": Decimal, "local": bytes}
+    assert declared_hints(child, dict(child.__dict__), bases_module.__dict__) == {"own": Decimal, "local": bytes}
 
 
 def test_hints_of_bases_merges_the_bases_in_order(bases_module: ModuleType) -> None:

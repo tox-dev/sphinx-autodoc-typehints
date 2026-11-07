@@ -88,7 +88,7 @@ def property_getter(member: Documented) -> Callable[..., object] | None:
 def constructor_name(cls: type) -> Literal["__new__", "__init__"]:
     """Choose the constructor as `inspect.signature` does: the one defined lowest in the MRO, `__new__` on a tie."""
     depth = {
-        name: next(at for at, klass in enumerate(cls.__mro__) if name in vars(klass))
+        name: next(at for at, klass in enumerate(cls.__mro__) if name in klass.__dict__)
         for name in ("__new__", "__init__")
     }
     # a __new__ that only wraps object's, as @warnings.deprecated adds, is no constructor of its own to inspect
@@ -148,8 +148,7 @@ def alias_lookup_names(module_prefix: str, name: str, *, guarded: Mapping[str, o
     def binding(scope: str) -> object:
         if (prefix := imported_prefix(scope.split("."))) is None:
             return missing
-        owner = object_at(*prefix)
-        return vars(owner).get(name, missing) if hasattr(owner, "__dict__") else missing
+        return getattr(object_at(*prefix), "__dict__", {}).get(name, missing)
 
     guarded_binding = guarded is not None and name in guarded
     visible = (

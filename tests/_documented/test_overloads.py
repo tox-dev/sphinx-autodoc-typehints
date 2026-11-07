@@ -80,7 +80,7 @@ def _fetch(session: str, key: int | str) -> int | str: ...
 
 # a decorator supplying `session` hides it from callers by stating the signature without it
 _FETCH: Final = update_wrapper(partial(_fetch, "session"), _fetch)
-vars(_FETCH)["__signature__"] = signature(_fetch).replace(parameters=list(signature(_fetch).parameters.values())[1:])
+_FETCH.__dict__["__signature__"] = signature(_fetch).replace(parameters=list(signature(_fetch).parameters.values())[1:])
 
 
 @mark.parametrize(

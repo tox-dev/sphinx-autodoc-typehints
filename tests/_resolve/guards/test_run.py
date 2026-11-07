@@ -435,9 +435,9 @@ def test_resolve_type_guarded_imports_leaves_the_module_as_it_runs(
     make_module: Callable[[str], ModuleType], source: str
 ) -> None:
     module = make_module(f"{source}def func(value: Decimal) -> None: ...")
-    runtime = dict(vars(module))
+    runtime = dict(module.__dict__)
     resolve_type_guarded_imports([], module.func)
-    assert (vars(module), guarded_names(module.func)["Decimal"]) == (runtime, Decimal)
+    assert (module.__dict__, guarded_names(module.func)["Decimal"]) == (runtime, Decimal)
 
 
 def test_resolve_type_guarded_imports_registers_no_overload_for_a_runtime_function(

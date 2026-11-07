@@ -138,7 +138,7 @@ def inject_override(app: Sphinx, what: str, name: str, obj: Callable[..., object
         return
     stored = stored_name(owner, attribute)
     # an inherited member overrides what its defining class's bases define, not what that class itself does
-    if (base := next(iter([klass for klass in owner.__mro__ if stored in vars(klass)][1:]), None)) is None:
+    if (base := next(iter([klass for klass in owner.__mro__ if stored in klass.__dict__][1:]), None)) is None:
         return
     target = f"{fixup_module_name(app.config, base.__module__)}.{base.__qualname__}.{attribute}"
     linked_owner = base

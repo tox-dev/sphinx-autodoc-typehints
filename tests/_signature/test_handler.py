@@ -73,19 +73,19 @@ _LOCAL_CLASS: Final[type] = _make_local_class()
     [
         param(
             f"{__name__}._ClassWithPrivate._ClassWithPrivate__static_secret",
-            vars(_ClassWithPrivate)["_ClassWithPrivate__static_secret"].__func__,
+            _ClassWithPrivate.__dict__["_ClassWithPrivate__static_secret"].__func__,
             "(value)",
             id="private-staticmethod-of-private-class",
         ),
         param(
             f"{__name__}._ClassWithPrivate.__secret",
-            vars(_ClassWithPrivate)["_ClassWithPrivate__secret"],
+            _ClassWithPrivate.__dict__["_ClassWithPrivate__secret"],
             "(count)",
             id="mangled",
         ),
         param(
             f"{__name__}._ClassWithPrivate.__secret",
-            vars(_ClassWithPrivate)["_ClassWithPrivate__secret"].__get__(_ClassWithPrivate()),
+            _ClassWithPrivate.__dict__["_ClassWithPrivate__secret"].__get__(_ClassWithPrivate()),
             "(count)",
             id="bound-to-an-instance",
         ),
@@ -101,7 +101,9 @@ _LOCAL_CLASS: Final[type] = _make_local_class()
             f"{__name__}._BindsHelper.cached_class", _BindsHelper.cached_class, "(value)", id="classmethod-of-wrapper"
         ),
         param("not_imported.Missing.nothing", _nothing, "()", id="no-parameters-whatever-the-class"),
-        param(f"{__name__}._LOCAL_CLASS.method", vars(_LOCAL_CLASS)["method"], "(value)", id="method-of-local-class"),
+        param(
+            f"{__name__}._LOCAL_CLASS.method", _LOCAL_CLASS.__dict__["method"], "(value)", id="method-of-local-class"
+        ),
     ],
 )
 def test_process_signature_first_parameter_by_member_kind(
@@ -116,7 +118,7 @@ def test_process_signature_first_parameter_by_member_kind(
     confoverrides={"typehints_use_signature": True, "typehints_use_signature_return": True},
 )
 def test_process_signature_types_method_of_local_class(signature_of: SignatureOf) -> None:
-    assert signature_of("method", f"{__name__}._LOCAL_CLASS.method", vars(_LOCAL_CLASS)["method"]) == (
+    assert signature_of("method", f"{__name__}._LOCAL_CLASS.method", _LOCAL_CLASS.__dict__["method"]) == (
         "(value: int) -> str",
         None,
     )
@@ -505,10 +507,9 @@ def test_process_signature_strips_annotations_that_fail_to_evaluate(  # pragma: 
 @fixture(name="lazy_module")
 def lazy_module_fixture(make_module: MakeModule) -> dict[str, FunctionType]:  # pragma: >=3.14 cover
     # no `from __future__ import annotations`, so the annotations stay lazy instead of turning into strings
-    return vars(
-        make_module(
-            "lazy_module",
-            dedent("""\
+    return make_module(
+        "lazy_module",
+        dedent("""\
             class Rejecting:
                 def __class_getitem__(cls, item):
                     raise ValueError(item)
@@ -519,8 +520,7 @@ def lazy_module_fixture(make_module: MakeModule) -> dict[str, FunctionType]:  # 
 
             def value_error(value: Rejecting[int]) -> None: ...
         """),
-        )
-    )
+    ).__dict__
 
 
 def test_singledispatch_implementation_keeps_its_types(build_text: BuildText) -> None:

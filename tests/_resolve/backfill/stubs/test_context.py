@@ -63,7 +63,7 @@ def stub_namespace_fixture(make_stubbed_module: MakeStubbedModule) -> Callable[[
     def read(stub: str) -> StubNamespace:
         module = make_stubbed_module("def func(): ...", stub)
         namespace, crossrefs, _ = stub_context(module.func)
-        return {name: value for name, value in namespace.items() if name not in vars(module)}, set(crossrefs)
+        return {name: value for name, value in namespace.items() if name not in module.__dict__}, set(crossrefs)
 
     return read
 
@@ -183,7 +183,7 @@ def test_stub_context_cross_references_the_aliases_of_a_stub(
 
 def test_stub_context_of_a_function(stub_mod: ModuleType) -> None:
     namespace, crossrefs, owner = stub_context(stub_mod.greet)
-    assert (namespace["Sequence"], {name: vars(ref) for name, ref in crossrefs.items()}, owner) == (
+    assert (namespace["Sequence"], {name: ref.__dict__ for name, ref in crossrefs.items()}, owner) == (
         Sequence,
         {"MyAlias": {"name": "MyAlias", "configured": False, "crossref": True}},
         "stub_mod",

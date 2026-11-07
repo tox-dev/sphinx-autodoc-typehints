@@ -77,7 +77,7 @@ def resolve_type_guarded_imports(autodoc_mock_imports: list[str], obj: Documente
                 while _IMPORTS_FROM_RUNNING_GUARDS:
                     pending = _IMPORTS_FROM_RUNNING_GUARDS.pop()
                     # a guard may have taken the module out of sys.modules since, leaving only what its own guard bound
-                    module_globals = vars(source_module) if (source_module := modules.get(pending.source)) else {}
+                    module_globals = source_module.__dict__ if (source_module := modules.get(pending.source)) else {}
                     if pending.name in (names := ChainMap(SHADOWED_BY_GUARD[pending.source], module_globals)):
                         pending.importer[pending.bound] = names[pending.name]
 

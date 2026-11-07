@@ -32,8 +32,8 @@ def annotation_globals(obj: Documented) -> dict[str, Documented]:
     """
     if (module := defining_module(obj)) is None:
         return getattr(obj, "__globals__", {})
-    own = getattr(obj, "__globals__", vars(module))
-    names = own if own is vars(module) else {**vars(module), **own}
+    own = getattr(obj, "__globals__", module.__dict__)
+    names = own if own is module.__dict__ else {**module.__dict__, **own}
     return {**names, **shadowed} if (shadowed := guarded_names(obj)) else names
 
 
@@ -70,7 +70,7 @@ def guarded_names_bound(obj: Documented) -> Generator[None]:
     added: list[tuple[dict[str, Documented], dict[str, Documented]]] = []
     owners = obj.__mro__ if isinstance(obj, type) else (obj,)
     for module in {module for owner in owners if (module := defining_module(owner))}:
-        namespace = vars(module)
+        namespace = module.__dict__
         missing = {name: value for name, value in guarded_names(module).items() if name not in namespace}
         namespace.update(missing)
         added.append((namespace, missing))

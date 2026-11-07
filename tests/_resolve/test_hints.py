@@ -543,7 +543,8 @@ def test_get_all_type_hints_cross_references_a_name_of_the_stub(
     alias: str,
 ) -> None:
     hint = get_all_type_hints([], owner(request.getfixturevalue(fixture_name)), "mod.documented", {})[key]
-    assert (type(hint), vars(hint)) == (MyTypeAliasForwardRef, {"name": alias, "configured": False, "crossref": True})
+    assert type(hint) is MyTypeAliasForwardRef
+    assert hint.__dict__ == {"name": alias, "configured": False, "crossref": True}
 
 
 def test_get_all_type_hints_reads_the_stub_of_a_c_extension_allocator(c_ext_mod: ModuleType) -> None:

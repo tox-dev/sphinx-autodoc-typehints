@@ -114,11 +114,11 @@ def _build_localns(obj: Documented, localns: Mapping[str, Documented]) -> dict[s
     parts = (getattr(obj, "__qualname__", "") or "").split(".")
     if len(parts) <= 1:
         return result
-    if namespace := (vars(module) if (module := getmodule(obj)) else getattr(obj, "__globals__", None)):
+    if namespace := (module.__dict__ if (module := getmodule(obj)) else getattr(obj, "__globals__", None)):
         current: Documented = None
         for part in parts[:-1]:
             current = (
-                (namespace if current is None else vars(current)).get(part)
+                (namespace if current is None else current.__dict__).get(part)
                 if current is None or hasattr(current, "__dict__")
                 else None
             )

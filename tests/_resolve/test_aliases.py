@@ -91,7 +91,7 @@ def test_type_alias_namespace(
 ) -> None:
     env = None if documented is None else documented_types(*documented)
     deferred, written = type_alias_namespace(aliases, owner(aliased_module), module, env)
-    assert ({name: vars(ref) for name, ref in deferred.items()}, written) == (expected, {})
+    assert ({name: ref.__dict__ for name, ref in deferred.items()}, written) == (expected, {})
 
 
 @fixture(name="documented_types")
@@ -164,7 +164,7 @@ def test_type_alias_namespace_of_annotations_that_raise(documented_types: _Docum
             raise error
 
     deferred, written = type_alias_namespace({}, AnnotationsRaiser(), "mymod", documented_types("mymod.MyType"))
-    assert ({name: vars(ref) for name, ref in deferred.items()}, written) == (
+    assert ({name: ref.__dict__ for name, ref in deferred.items()}, written) == (
         {"MyType": {"name": "MyType", "configured": False, "crossref": True}},
         {},
     )

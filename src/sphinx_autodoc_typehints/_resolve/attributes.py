@@ -59,7 +59,7 @@ def get_instance_var_annotations(cls: type) -> dict[str, Annotation | str]:
     # an inherited or re-exported `__init__` sees the names of the module defining it, not those of the class's
     globalns = annotation_globals(init)
     # the PEP 695 type parameters of the class defining `__init__` live in no module namespace
-    definer = next(base for base in cls.__mro__ if "__init__" in vars(base))
+    definer = next(base for base in cls.__mro__ if "__init__" in base.__dict__)
     localns = {param.__name__: param for param in type_params_of(definer, legacy=False)}
     resolved: dict[str, Annotation | str] = {}
     for attribute, source in raw.items():
