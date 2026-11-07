@@ -27,7 +27,7 @@ jobs:
           groups: release-prepare
           venv: ${{ runner.temp }}/release-tools
       - name: 🧹 Check updated source
-        uses: tox-dev/github-workflows/cooled-prek@bceb5c005e19823dc8835f536f53f172ae223927 # 6.5.0
+        uses: tox-dev/github-workflows/cooled-prek@0c4cffd63033d38196319524d101caae1eef925b # 6.7.2
         with:
           args: run --all-files
       - name: 🔍 Validate news fragments
