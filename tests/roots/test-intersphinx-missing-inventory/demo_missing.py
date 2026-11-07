@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 
-def probe(x: int) -> int:
+def probe(value: int) -> int:
     """
     Summarize.
 
-    :param x: see :external+nope:doc:`the missing docs <index>`.
+    :param value: see :external+nope:doc:`the missing docs <index>`.
     """
-    return x
+    return value
