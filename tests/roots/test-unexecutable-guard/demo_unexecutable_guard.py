@@ -1,3 +1,5 @@
+"""Module demonstrating type guarded code that the interpreter cannot run."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, TypeVar
@@ -21,7 +23,7 @@ def combine(array: DataArray, other: T_Other) -> T_Other:
 
     :param array: the first array
     :param other: the second array
-    :returns: the combination
+    :return: the combination
     """
     raise NotImplementedError
 
@@ -31,13 +33,9 @@ def wrap(array: DataArray) -> Wrapper:
     Wrap an array.
 
     :param array: the array to wrap
-    :returns: the wrapper
+    :return: the wrapper
     """
     raise NotImplementedError
 
 
-__all__ = [
-    "DataArray",
-    "combine",
-    "wrap",
-]
+__all__ = ["DataArray", "combine", "wrap"]

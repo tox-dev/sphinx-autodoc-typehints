@@ -1,3 +1,5 @@
+"""Annotations subscripting a class that drops the arguments, imported only for type checking."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -8,7 +10,7 @@ from attrs import define
 if TYPE_CHECKING:
     from engines import Engine
 
-_PAIRS = [(1, 2), (3, 4)]
+PAIRS = [(1, 2), (3, 4)]
 
 
 def compare(kind: Engine[Any] | None, spare: Engine[str] | Engine[bytes]) -> Engine[int]:
@@ -51,7 +53,7 @@ class Column:
 
     def __init__(self) -> None:
         self.other: Engine[str] | None = None
-        self.limited: Annotated[int, max(_PAIRS, key=lambda pair: pair[0] - pair[1])] = 1
+        self.limited: Annotated[int, max(PAIRS, key=lambda pair: pair[0] - pair[1])] = 1
 
 
 def sliced(kind: Engine[int, 1:2]) -> None:
@@ -84,7 +86,7 @@ def aliased(kind: Engines) -> None:
     """
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
+@dataclass
 class Record:
     """
     A record.
@@ -114,7 +116,7 @@ class Switched:
     :ivar same: engine both branches agree on
     """
 
-    if _PAIRS:
+    if PAIRS:
         kind: Engine[int]
         same: Engine[int]
     else:

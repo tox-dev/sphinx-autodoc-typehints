@@ -1,7 +1,9 @@
+"""Members whose headers show a type."""
+
 from __future__ import annotations
 
 from functools import cached_property
-from typing import TYPE_CHECKING, Annotated, Any, Final, Generic, TypedDict, TypeVar
+from typing import TYPE_CHECKING, Annotated, Any, Generic, TypedDict, TypeVar
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -9,10 +11,10 @@ if TYPE_CHECKING:
 
 U = TypeVar("U")
 
-LIMIT: Final[Annotated[int, "a cap"]] = 3
+LIMIT: Annotated[int, "a cap"] = 3
 """The limit."""
 
-RATE: Final[Decimal | None] = None
+RATE: Decimal | None = None
 """The rate."""
 
 
@@ -67,6 +69,11 @@ class Proxied:
 class Vault:
     """Holds members autodoc reaches through their mangled names."""
 
+    @property
+    def __code(self) -> int:
+        """The code."""
+        return 0
+
     class __Lock:
         """A lock."""
 
@@ -74,11 +81,6 @@ class Vault:
         def pins(self) -> int:
             """The pins."""
             return 0
-
-    @property
-    def __code(self) -> int:
-        """The code."""
-        return 0
 
 
 class Box[T]:
@@ -113,10 +115,10 @@ class StrLegacy(Legacy[str]):
 
 Num = int | float
 
-SCORE: Final[Num] = 1
+SCORE: Num = 1
 """The score."""
 
-LOW: Final[Num] = 0
+LOW: Num = 0
 """The lowest score."""
 
 

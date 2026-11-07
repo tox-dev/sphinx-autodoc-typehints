@@ -1,3 +1,5 @@
+"""Module whose type checking guard names a dependency the docs environment lacks."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -16,11 +18,9 @@ def load(cube: Cube, array: no_such_array.core.Array, precision: Decimal) -> lis
     :param cube: the cube
     :param array: the backing array
     :param precision: the precision
-    :returns: the cubes
+    :return: the cubes
     """
     raise NotImplementedError
 
 
-__all__ = [
-    "load",
-]
+__all__ = ["load"]

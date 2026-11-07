@@ -6,6 +6,6 @@ def outer(flag: bool) -> bool:
     Outer.
 
     :param flag: the flag
-    :returns: it
+    :return: it
     """
     return flag

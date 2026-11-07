@@ -1,3 +1,5 @@
+"""Module demonstrating imports that are type guarded"""
+
 from __future__ import annotations
 
 import typing  # the typing.TYPE_CHECKING guard spelling is the case under test
@@ -28,7 +30,7 @@ def a[AnyStr: (bytes, str)](f: Decimal, s: AnyStr) -> Sequence[AnyStr | Decimal]
 
     :param f: first
     :param s: second
-    :returns: result
+    :return: result
     """
     return [f, s]
 

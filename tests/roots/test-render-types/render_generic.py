@@ -1,3 +1,5 @@
+"""Generic and recursive PEP 695 aliases."""
+
 from __future__ import annotations
 
 type Pair[Element] = tuple[Element, Element]

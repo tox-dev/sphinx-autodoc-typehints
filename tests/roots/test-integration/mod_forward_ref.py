@@ -1,3 +1,6 @@
+"""Module without deferred annotations that uses forward references."""
+
+
 class Tree:
     def children(self) -> list["Tree"]:
         """

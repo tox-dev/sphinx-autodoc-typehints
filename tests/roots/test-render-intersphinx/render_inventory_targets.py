@@ -1,3 +1,5 @@
+"""Objects an inventory lists whose reported path maps to no documented name."""
+
 from __future__ import annotations
 
 from types import UnionType

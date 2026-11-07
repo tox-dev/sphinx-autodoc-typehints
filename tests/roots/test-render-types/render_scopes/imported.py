@@ -1,6 +1,10 @@
+"""A submodule importing the package alias."""
+
 from __future__ import annotations
 
-from . import Count
+from render_scopes import Count
+
+__all__ = ["Count"]
 
 
 def consume(value: Count) -> None:
@@ -8,8 +12,3 @@ def consume(value: Count) -> None:
 
     :param value: the value
     """
-
-
-__all__ = [
-    "Count",
-]

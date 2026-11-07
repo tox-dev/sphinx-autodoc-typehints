@@ -1,3 +1,5 @@
+"""Aliases whose values name further aliases."""
+
 from __future__ import annotations
 
 type Inner = int | str

@@ -1,3 +1,5 @@
+"""A module using the aliases of another package."""
+
 from __future__ import annotations
 
 from render_ext import ExtAlias, ExtPair

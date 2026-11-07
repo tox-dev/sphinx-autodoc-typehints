@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from pathlib import Path
 from sys import path
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Any
 
 from sphinx_autodoc_typehints._docstring import process_docstring
 
 path.insert(0, str(Path(__file__).parent))
 
-master_doc: Final[str] = "index"
+master_doc = "index"
 
 extensions = [
     "sphinx.ext.autodoc",
