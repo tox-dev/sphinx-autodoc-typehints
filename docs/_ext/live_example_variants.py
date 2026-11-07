@@ -133,6 +133,18 @@ def render_variants(project: Path, options: list[Option], sources: list[str], mo
     return Variants(list(bodies), relevant, examples)
 
 
+def _canonical(options: list[Option], combination: Combination) -> Combination:
+    # an option needing another one that is switched off changes nothing, so it keeps its default
+    names = [option.name for option in options]
+    return tuple(
+        0
+        if option.depends_on
+        and not options[names.index(option.depends_on)].values[combination[names.index(option.depends_on)]]
+        else at
+        for option, at in zip(options, combination, strict=True)
+    )
+
+
 @contextmanager
 def _isolated() -> Generator[None]:
     # an application points the process-wide sphinx logger at its own streams and registers its directives and roles
@@ -256,18 +268,6 @@ def _build(
 
 class VariantBuildError(Exception):
     """Sphinx warned while building a variant, with the warnings as the message."""
-
-
-def _canonical(options: list[Option], combination: Combination) -> Combination:
-    # an option needing another one that is switched off changes nothing, so it keeps its default
-    names = [option.name for option in options]
-    return tuple(
-        0
-        if option.depends_on
-        and not options[names.index(option.depends_on)].values[combination[names.index(option.depends_on)]]
-        else at
-        for option, at in zip(options, combination, strict=True)
-    )
 
 
 def _reset(combination: Combination, index: int) -> Combination:
