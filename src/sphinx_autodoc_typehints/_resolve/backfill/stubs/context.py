@@ -11,7 +11,7 @@ from contextlib import suppress
 from copy import copy
 from importlib import import_module
 from sys import modules
-from typing import TYPE_CHECKING, Final, ParamSpec, TypeVar, TypeVarTuple
+from typing import TYPE_CHECKING, Final, NamedTuple, ParamSpec, TypeVar, TypeVarTuple
 
 from sphinx.ext.autodoc.mock import mock
 
@@ -37,7 +37,7 @@ _FACTORIES: Final[Mapping[type[ast.type_param], Callable[[str], TypeVar | ParamS
 
 def stub_context(
     obj: Callable[..., object] | GetSetDescriptorType | MemberDescriptorType, name: str = ""
-) -> tuple[dict[str, Documented], dict[str, MyTypeAliasForwardRef], str]:
+) -> StubContext:
     """
     Return the namespace the stub of `obj` evaluates in, the names to render as a plain cross-reference, its module.
 
@@ -50,10 +50,10 @@ def stub_context(
     defines. They cannot evaluate, so they render as a plain cross-reference.
     """
     if (info := find_stub_owner(obj, name)) is None:
-        return {}, {}, ""
+        return StubContext({}, {}, "")
     path, owner_module = info
     if (tree := parse_stub_ast(path)) is None:
-        return {}, {}, ""
+        return StubContext({}, {}, "")
     namespace: dict[str, Documented] = dict(vars(owner_module))
     # a class takes its `__module__` from the `__name__` of the globals it runs in, `builtins` when they lack one
     resolved: dict[str, Documented] = {"__name__": owner_module.__name__}
@@ -83,7 +83,7 @@ def stub_context(
             type_alias_names.add(node.target.id)
         elif isinstance(node, ast.TypeAlias) and isinstance(node.name, ast.Name):
             type_alias_names.add(node.name.id)
-    return (
+    return StubContext(
         namespace,
         {
             crossref_name: MyTypeAliasForwardRef(crossref_name, crossref=True)
@@ -91,6 +91,12 @@ def stub_context(
         },
         owner_module.__name__,
     )
+
+
+class StubContext(NamedTuple):
+    namespace: dict[str, Documented]
+    crossrefs: dict[str, MyTypeAliasForwardRef]
+    module: str
 
 
 def _resolve_stub_imports_from_body(
@@ -154,5 +160,6 @@ def _resolve_stub_definitions(body: list[ast.stmt], namespace: dict[str, Documen
 
 
 __all__ = [
+    "StubContext",
     "stub_context",
 ]
