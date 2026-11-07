@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING
 
 from pytest import MonkeyPatch, fixture, mark, param
 
-from sphinx_autodoc_typehints._resolve import forget_reads
 from sphinx_autodoc_typehints._resolve.backfill.stubs.find import (
     find_stub_owner,
     live_statements,
@@ -20,6 +19,7 @@ from sphinx_autodoc_typehints._resolve.backfill.stubs.find import (
     stub_owner_package,
     stub_path,
 )
+from sphinx_autodoc_typehints._resolve.forget import forget_reads
 
 if TYPE_CHECKING:
     from sphinx_autodoc_typehints._types import Documented

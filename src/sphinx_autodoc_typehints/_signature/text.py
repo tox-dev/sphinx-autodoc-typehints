@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 from sphinx.util.inspect import signature_from_str
 
-from .._render import as_signature_type
+from .._render.annotation.rendered import as_signature_type
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx

@@ -7,7 +7,10 @@ from typing import TYPE_CHECKING
 
 from sphinx.util.inspect import signature as sphinx_signature
 
-from .._documented import Entry, render_scope, resolved_type_hints, show_factory_defaults
+from .._documented.entry import Entry
+from .._documented.factory_defaults import show_factory_defaults
+from .._documented.hints import resolved_type_hints
+from .._documented.scope import render_scope
 from .._objects import (
     callable_target,
     constructor_name,
@@ -15,15 +18,12 @@ from .._objects import (
     prefix_of,
     property_getter,
 )
-from .._render import as_field_type
-from .._resolve import (
-    OPEN,
-    extra_items_type,
-    get_body_annotations,
-    get_descriptor_type_hint,
-    resolve_type_guarded_imports,
-    stub_path,
-)
+from .._render.annotation.rendered import as_field_type
+from .._resolve.attributes import get_body_annotations
+from .._resolve.backfill.stubs.find import stub_path
+from .._resolve.guards.run import resolve_type_guarded_imports
+from .._resolve.hints import get_descriptor_type_hint
+from .._resolve.typed_dict import OPEN, extra_items_type
 from .attributes import (
     class_attribute_annotations,
     documented_attributes,
@@ -32,7 +32,8 @@ from .attributes import (
 )
 from .class_parts import docstring_part, has_constructor_docstring
 from .deprecation import inject_deprecation
-from .formats import WRITTEN_BEFORE_NAPOLEON, detect_format
+from .formats.detect import detect_format
+from .formats.napoleon.attributes import WRITTEN_BEFORE_NAPOLEON
 from .object_fields import inject_overloads, inject_override, inject_setter_type, summary_end
 from .parameters import inject_parameters
 from .returns import inject_rtype

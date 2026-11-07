@@ -14,9 +14,9 @@ from docutils.nodes import field, field_body, field_list, field_name, paragraph
 from docutils.parsers.rst import directives
 from sphinx.domains.std import ConfigurationValue
 
-from sphinx_autodoc_typehints._render import format_annotation
+from sphinx_autodoc_typehints._render.annotation.walker import format_annotation
 from sphinx_autodoc_typehints._render.context import ContextualTypehintsFormatter, FixupModuleName, TypehintsFormatter
-from sphinx_autodoc_typehints._resolve import resolve_annotations
+from sphinx_autodoc_typehints._resolve.hints import resolve_annotations
 from sphinx_autodoc_typehints._types import RenderNode
 
 if TYPE_CHECKING:

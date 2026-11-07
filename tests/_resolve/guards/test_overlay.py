@@ -9,13 +9,9 @@ from typing import TYPE_CHECKING
 
 from pytest import mark, param
 
-from sphinx_autodoc_typehints._resolve import get_all_type_hints
-from sphinx_autodoc_typehints._resolve.guards import (
-    annotation_globals,
-    guarded_names,
-    guarded_names_bound,
-    resolve_type_guarded_imports,
-)
+from sphinx_autodoc_typehints._resolve.guards.overlay import annotation_globals, guarded_names, guarded_names_bound
+from sphinx_autodoc_typehints._resolve.guards.run import resolve_type_guarded_imports
+from sphinx_autodoc_typehints._resolve.hints import get_all_type_hints
 
 if TYPE_CHECKING:
     from collections.abc import Callable

@@ -10,7 +10,8 @@ from typing import TYPE_CHECKING
 
 from pytest import FixtureRequest, LogCaptureFixture, MonkeyPatch, fixture, mark, param
 
-from sphinx_autodoc_typehints._resolve.guards import SHADOWED_BY_GUARD, resolve_type_guarded_imports
+from sphinx_autodoc_typehints._resolve.guards.overlay import SHADOWED_BY_GUARD
+from sphinx_autodoc_typehints._resolve.guards.run import resolve_type_guarded_imports
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Mapping

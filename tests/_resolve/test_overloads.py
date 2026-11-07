@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Final
 
 from pytest import MarkDecorator, fixture, mark, param
 
-from sphinx_autodoc_typehints._resolve import resolve_overloads
+from sphinx_autodoc_typehints._resolve.overloads import resolve_overloads
 
 if TYPE_CHECKING:
     from collections.abc import Callable

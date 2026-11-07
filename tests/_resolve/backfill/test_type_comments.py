@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from pytest import mark, param
 
-from sphinx_autodoc_typehints._resolve.backfill import backfill_type_hints
+from sphinx_autodoc_typehints._resolve.backfill.type_comments import backfill_type_hints
 
 if TYPE_CHECKING:
     from collections.abc import Callable

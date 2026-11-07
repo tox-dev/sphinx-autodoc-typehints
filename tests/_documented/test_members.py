@@ -6,7 +6,8 @@ from typing import TYPE_CHECKING
 from pytest import mark, param
 from sphinx.ext.autodoc import Options
 
-from sphinx_autodoc_typehints._documented import Entry, class_doc_choice, class_member_type, overload_skip
+from sphinx_autodoc_typehints._documented.entry import Entry
+from sphinx_autodoc_typehints._documented.members import class_doc_choice, class_member_type, overload_skip
 
 if TYPE_CHECKING:
     from sphinx.testing.util import SphinxTestApp

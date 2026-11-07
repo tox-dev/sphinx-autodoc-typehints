@@ -13,17 +13,16 @@ from typing import TYPE_CHECKING, NewType, ParamSpec, TypeVar, TypeVarTuple, get
 
 from .._refs import is_type_alias
 from .._warnings import warn
-from .backfill import backfill_type_hints, find_ast_node, parse_stub_ast, stub_annotations, stub_context, stub_path
-from .evaluate import resolve_string_annotations, type_hints, unevaluated_annotations
+from .backfill.stubs.context import stub_context
+from .backfill.stubs.extract import find_ast_node, stub_annotations
+from .backfill.stubs.find import parse_stub_ast, stub_path
+from .backfill.type_comments import backfill_type_hints
+from .evaluate.expression import resolve_string_annotations, unevaluated_annotations
+from .evaluate.type_hints import type_hints
 from .generics import type_params_of
-from .guards import (
-    SHADOWED_BY_GUARD,
-    annotation_globals,
-    guard_binds,
-    guard_bound,
-    guarded_names,
-    resolve_type_guarded_imports,
-)
+from .guards.overlay import SHADOWED_BY_GUARD, annotation_globals, guarded_names
+from .guards.parse import guard_binds
+from .guards.run import guard_bound, resolve_type_guarded_imports
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping

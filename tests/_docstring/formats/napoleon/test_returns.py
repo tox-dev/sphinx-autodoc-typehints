@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Final
 
 from pytest import MarkDecorator, fixture, mark, param
 
-from sphinx_autodoc_typehints._docstring.formats.napoleon import mark_numpy_returns
+from sphinx_autodoc_typehints._docstring.formats.napoleon.returns import mark_numpy_returns
 
 if TYPE_CHECKING:
     from collections.abc import Callable

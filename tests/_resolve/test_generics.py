@@ -5,13 +5,13 @@ from typing import TYPE_CHECKING, TypeAliasType
 
 from pytest import fixture, mark, param
 
-from sphinx_autodoc_typehints._resolve import (
+from sphinx_autodoc_typehints._resolve.generics import (
     bound_type_args,
     declared_type_params,
     specialize,
+    type_arguments,
     type_params_of,
 )
-from sphinx_autodoc_typehints._resolve.generics import type_arguments
 
 if TYPE_CHECKING:
     from collections.abc import Callable

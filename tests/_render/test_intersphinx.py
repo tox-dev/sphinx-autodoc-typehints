@@ -13,8 +13,8 @@ from zlib import compress
 
 from pytest import MonkeyPatch, fixture, mark, param
 
-from sphinx_autodoc_typehints._render import format_annotation, keep_type_mapping
-from sphinx_autodoc_typehints._render.intersphinx import mapped_name
+from sphinx_autodoc_typehints._render.annotation.walker import format_annotation
+from sphinx_autodoc_typehints._render.intersphinx import keep_type_mapping, mapped_name
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -110,7 +110,7 @@ def test_mapped_name_picks_the_class_role_whatever_the_hash_seed(rootdir: Path, 
     script = dedent("""\
         from types import SimpleNamespace
 
-        from sphinx_autodoc_typehints._render import keep_type_mapping
+        from sphinx_autodoc_typehints._render.intersphinx import keep_type_mapping
         from sphinx_autodoc_typehints._render.intersphinx import mapped_name
 
         # rendering `Thing` imports the module that defines it

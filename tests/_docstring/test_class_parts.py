@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Final
 from pytest import MarkDecorator, mark, param
 from sphinx.ext.autodoc import Options
 
-from sphinx_autodoc_typehints._docstring import process_docstring
+from sphinx_autodoc_typehints._docstring.handler import process_docstring
 
 from .conftest import INT
 

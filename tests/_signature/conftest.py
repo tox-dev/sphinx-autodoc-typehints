@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Protocol
 from pytest import fixture
 from sphinx.ext.autodoc import Options
 
-from sphinx_autodoc_typehints._signature import process_signature
+from sphinx_autodoc_typehints._signature.handler import process_signature
 
 if TYPE_CHECKING:
     from collections.abc import Callable

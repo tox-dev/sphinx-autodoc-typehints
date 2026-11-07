@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pytest import mark, param
 
-from sphinx_autodoc_typehints._render import add_type_css_class
+from sphinx_autodoc_typehints._render.annotation.markup import add_type_css_class
 
 
 @mark.parametrize(

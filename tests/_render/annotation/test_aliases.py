@@ -8,8 +8,9 @@ from typing import TYPE_CHECKING, TypeAliasType, TypeVar
 import typing_extensions  # its TypeAliasType backport is tested next to typing's
 from pytest import MonkeyPatch, fixture, mark, param
 
-from sphinx_autodoc_typehints._render import annotation_state, format_annotation
 from sphinx_autodoc_typehints._render.annotation.aliases import alias_name_reference
+from sphinx_autodoc_typehints._render.annotation.walker import format_annotation
+from sphinx_autodoc_typehints._render.context import annotation_state
 
 if TYPE_CHECKING:
     from collections.abc import Callable

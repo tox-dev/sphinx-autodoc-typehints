@@ -12,8 +12,9 @@ from typing import TYPE_CHECKING, Final, Protocol, get_overloads
 from pytest import MonkeyPatch, fixture, mark, param, raises
 
 from sphinx_autodoc_typehints._refs import MyTypeAliasForwardRef
-from sphinx_autodoc_typehints._resolve import get_all_type_hints
-from sphinx_autodoc_typehints._resolve.guards import SHADOWED_BY_GUARD, guarded_names, resolve_type_guarded_imports
+from sphinx_autodoc_typehints._resolve.guards.overlay import SHADOWED_BY_GUARD, guarded_names
+from sphinx_autodoc_typehints._resolve.guards.run import resolve_type_guarded_imports
+from sphinx_autodoc_typehints._resolve.hints import get_all_type_hints
 
 if TYPE_CHECKING:
     from collections.abc import Callable

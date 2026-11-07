@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from pytest import mark
 
-from sphinx_autodoc_typehints._render import parse, unescape
+from sphinx_autodoc_typehints._render.rst import parse, unescape
 
 if TYPE_CHECKING:
     from sphinx.testing.util import SphinxTestApp

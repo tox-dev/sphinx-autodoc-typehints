@@ -12,10 +12,11 @@ from sphinx.util.typing import stringify_annotation
 
 from sphinx_autodoc_typehints._objects import object_at
 from sphinx_autodoc_typehints._private_imports import parse_annotation, parse_type_list
-from sphinx_autodoc_typehints._render import type_param_fields, unstar
-from sphinx_autodoc_typehints._resolve import TYPE_PARAM_KINDS, guard_bound, type_params_of
 from sphinx_autodoc_typehints._types import sentinel
 
+from ..._render.annotation.walker import type_param_fields, unstar
+from ..._resolve.generics import TYPE_PARAM_KINDS, type_params_of
+from ..._resolve.guards.run import guard_bound
 from .lookup import documented_signatures
 
 if version_info >= (3, 14):  # pragma: >=3.14 cover

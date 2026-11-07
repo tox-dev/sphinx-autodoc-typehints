@@ -17,9 +17,10 @@ from ast import (
 from typing import TYPE_CHECKING, ClassVar, Final, get_args, get_origin
 
 from .._objects import unwrapped
-from .evaluate import evaluate_annotation, type_hints
+from .evaluate.expression import evaluate_annotation
+from .evaluate.type_hints import type_hints
 from .generics import type_params_of
-from .guards import annotation_globals, guarded_names
+from .guards.overlay import annotation_globals, guarded_names
 from .source import parsed_source
 
 if TYPE_CHECKING:

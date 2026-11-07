@@ -7,10 +7,9 @@ from typing import TYPE_CHECKING, Final
 from _docstring.conftest import BOOL
 from pytest import MarkDecorator, fixture, mark
 
-from sphinx_autodoc_typehints._docstring import process_docstring
-from sphinx_autodoc_typehints._documented import render_scope
-from sphinx_autodoc_typehints._render import render_context
-from sphinx_autodoc_typehints._render.context import RenderContext
+from sphinx_autodoc_typehints._docstring.handler import process_docstring
+from sphinx_autodoc_typehints._documented.scope import render_scope
+from sphinx_autodoc_typehints._render.context import RenderContext, render_context
 
 if TYPE_CHECKING:
     from types import ModuleType

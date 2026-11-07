@@ -17,7 +17,8 @@ from sphinx.ext.autodoc._dynamic import (  # ruff:ignore[import-private-name]  #
 from sphinx.pycode import ModuleAnalyzer
 from sphinx.util.typing import get_type_hints
 
-from .._resolve import OVERLOADS, guarded_names_bound
+from .._resolve.guards.overlay import guarded_names_bound
+from .._resolve.overloads import OVERLOADS
 from .._state import signature_lines
 
 if TYPE_CHECKING:

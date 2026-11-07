@@ -16,7 +16,7 @@ from weakref import WeakKeyDictionary
 
 from sphinx_autodoc_typehints._objects import defining_module, is_attrs_class, object_at
 
-from ..guards import annotation_globals, guarded_names
+from ..guards.overlay import annotation_globals, guarded_names
 from ..source import (
     annotations_as_written,
     holds_values,

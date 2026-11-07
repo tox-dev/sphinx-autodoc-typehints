@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING, Final
 from pytest import MarkDecorator, mark, param
 from sphinx.errors import NoUri
 
-from sphinx_autodoc_typehints._render import ALIAS_CHOICE_ROLE, annotation_state
-from sphinx_autodoc_typehints._render.deferred import defer_alias_choice
+from sphinx_autodoc_typehints._render.context import annotation_state
+from sphinx_autodoc_typehints._render.deferred import ALIAS_CHOICE_ROLE, defer_alias_choice
 from sphinx_autodoc_typehints._state import alias_choices, document_alias_choices
 
 if TYPE_CHECKING:

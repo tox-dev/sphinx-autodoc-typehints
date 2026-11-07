@@ -20,7 +20,9 @@ from pytest import mark, param, skip
 from sphinx.util.inspect import TypeAliasForwardRef
 
 from sphinx_autodoc_typehints._refs import MyTypeAliasForwardRef, WrittenTypeAlias
-from sphinx_autodoc_typehints._render import ENUM_MEMBER_ROLE, annotation_state, format_annotation
+from sphinx_autodoc_typehints._render.annotation.walker import format_annotation
+from sphinx_autodoc_typehints._render.context import annotation_state
+from sphinx_autodoc_typehints._render.enum_member import ENUM_MEMBER_ROLE
 
 if TYPE_CHECKING:
     from _pytest.mark import ParameterSet

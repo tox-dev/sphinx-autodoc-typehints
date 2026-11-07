@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Final, NamedTuple
 from pytest import MarkDecorator, mark, param
 from sphinx.util.console import strip_colors
 
-from sphinx_autodoc_typehints._documented import ResolvedHints, as_written, documenting_class, resolved_type_hints
+from sphinx_autodoc_typehints._documented.hints import ResolvedHints, as_written, documenting_class, resolved_type_hints
 from sphinx_autodoc_typehints._refs import WrittenTypeAlias
 
 if TYPE_CHECKING:

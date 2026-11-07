@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Annotated, Final, overload, override
 from pytest import MarkDecorator, fixture, mark, param
 
 from sphinx_autodoc_typehints._docstring.object_fields import inject_overloads, summary_end
-from sphinx_autodoc_typehints._documented import Entry
+from sphinx_autodoc_typehints._documented.entry import Entry
 
 from .conftest import BOOL, INT, NONE, STR, hide_type
 

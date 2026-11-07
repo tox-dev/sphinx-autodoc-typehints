@@ -8,17 +8,12 @@ from typing import TYPE_CHECKING
 from sphinx.util.inspect import is_builtin_class_method, safe_getattr, stringify_signature
 from sphinx.util.inspect import signature as sphinx_signature
 
-from .._documented import (
-    Entry,
-    as_written,
-    class_member_type,
-    documenting_class,
-    overload_skip,
-    render_scope,
-    resolved_type_hints,
-    show_factory_defaults,
-    typed_overloads,
-)
+from .._documented.entry import Entry
+from .._documented.factory_defaults import show_factory_defaults
+from .._documented.hints import as_written, documenting_class, resolved_type_hints
+from .._documented.members import class_member_type, overload_skip
+from .._documented.overloads import typed_overloads
+from .._documented.scope import render_scope
 from .._objects import (
     callable_target,
     constructor_name,
@@ -26,10 +21,10 @@ from .._objects import (
     prefix_of,
 )
 from .._private_imports import METACLASS_CALL_BLACKLIST, suppress_logging
-from .._resolve import bound_type_args
+from .._resolve.generics import bound_type_args
 from .._state import add_signature_lines, note_documented, written_signatures
 from .._warnings import warn
-from .header import signature_overloads
+from .header.overloads import signature_overloads
 from .text import directive_text, names_other_parameters, signature_type
 
 if TYPE_CHECKING:

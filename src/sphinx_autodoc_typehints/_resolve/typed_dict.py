@@ -15,9 +15,9 @@ from typing import (
 )
 
 from .._types import sentinel
-from .evaluate import type_hints
+from .evaluate.type_hints import type_hints
 from .generics import specialize, type_arguments
-from .guards import guarded_names
+from .guards.overlay import guarded_names
 
 if version_info >= (3, 14):  # pragma: >=3.14 cover
     from annotationlib import Format, get_annotations

@@ -8,7 +8,7 @@ from inspect import signature
 from attrs import Factory, field, make_class
 from pytest import mark, param
 
-from sphinx_autodoc_typehints._documented import show_factory_defaults
+from sphinx_autodoc_typehints._documented.factory_defaults import show_factory_defaults
 
 
 class _Thing: ...

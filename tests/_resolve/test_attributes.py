@@ -7,11 +7,8 @@ from typing import TYPE_CHECKING, Annotated, Optional
 
 from pytest import fixture, mark, param
 
-from sphinx_autodoc_typehints._resolve import (
-    get_body_annotations,
-    get_instance_var_annotations,
-    resolve_type_guarded_imports,
-)
+from sphinx_autodoc_typehints._resolve.attributes import get_body_annotations, get_instance_var_annotations
+from sphinx_autodoc_typehints._resolve.guards.run import resolve_type_guarded_imports
 
 if TYPE_CHECKING:
     from collections.abc import Callable

@@ -20,39 +20,22 @@ from ._config import (
     store_type_mapping,
     validate_config,
 )
-from ._docstring import (
-    DEPRECATED_DIRECTIVE,
-    DeprecatedDirective,
-    mark_numpy_returns,
-    note_attributes_before_napoleon,
-    place_rtype,
-    process_docstring,
-)
-from ._patches import (
-    BUILDING,
-    patch_autodoc_type_hints,
-    patch_napoleon_attr_annotations,
-    patch_overload_capture,
-    patch_signature_lines,
-)
-from ._render import (
-    ALIAS_CHOICE_ROLE,
-    CONSTANT_ROLE,
-    ENUM_MEMBER_ROLE,
-    VALUE_ROLE,
-    VALUE_STYLESHEET,
-    AliasChoiceCollector,
-    DeferAliasChoice,
-    alias_choice_role,
-    constant_role,
-    enum_member_role,
-    link_enum_member_owner,
-    note_builder,
-    unescape,
-    value_role,
-)
-from ._resolve import forget_reads
-from ._signature import add_type_params, process_bases, process_signature, render_header_types
+from ._docstring.deprecation import DEPRECATED_DIRECTIVE, DeprecatedDirective
+from ._docstring.formats.field_list.rtype import place_rtype
+from ._docstring.formats.napoleon.attributes import note_attributes_before_napoleon
+from ._docstring.formats.napoleon.returns import mark_numpy_returns
+from ._docstring.handler import process_docstring
+from ._patches.autodoc import BUILDING, patch_autodoc_type_hints, patch_overload_capture, patch_signature_lines
+from ._patches.napoleon import patch_napoleon_attr_annotations
+from ._render.deferred import ALIAS_CHOICE_ROLE, AliasChoiceCollector, DeferAliasChoice, alias_choice_role, note_builder
+from ._render.enum_member import ENUM_MEMBER_ROLE, enum_member_role, link_enum_member_owner
+from ._render.rst import unescape
+from ._render.value import CONSTANT_ROLE, VALUE_ROLE, VALUE_STYLESHEET, constant_role, value_role
+from ._resolve.forget import forget_reads
+from ._signature.bases import process_bases
+from ._signature.handler import process_signature
+from ._signature.header.data_types import render_header_types
+from ._signature.header.type_params import add_type_params
 from .version import __version__
 
 if TYPE_CHECKING:

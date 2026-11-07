@@ -11,7 +11,8 @@ from typing import TYPE_CHECKING
 
 from .._objects import alias_lookup_names, enclosing_scopes
 from .._refs import MyTypeAliasForwardRef, WrittenTypeAlias
-from .guards import annotation_globals, guarded_names, resolve_type_guarded_imports
+from .guards.overlay import annotation_globals, guarded_names
+from .guards.run import resolve_type_guarded_imports
 from .source import written_annotations
 
 if TYPE_CHECKING:

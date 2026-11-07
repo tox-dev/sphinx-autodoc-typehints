@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from .field_list import FieldListFormat
-from .numpydoc import is_numpydoc_section
+from .field_list.edit import FieldListFormat
+from .numpydoc.convert import is_numpydoc_section
 
 
 def detect_format(lines: list[str]) -> FieldListFormat:

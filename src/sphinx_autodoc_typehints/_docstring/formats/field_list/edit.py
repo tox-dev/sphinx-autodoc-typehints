@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 
 from ..base import InsertIndexInfo
-from ..napoleon import reads_as_type
-from ..numpydoc import convert_to_field_list
+from ..napoleon.typed import reads_as_type
+from ..numpydoc.convert import convert_to_field_list
 from .keywords import PARAM_SYNONYMS, STAR_PREFIXES, field_keyword_and_argument
 from .rtype import RTYPE_MARKER
 

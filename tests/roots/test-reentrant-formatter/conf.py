@@ -4,7 +4,7 @@ from pathlib import Path
 from sys import path
 from typing import TYPE_CHECKING, Any
 
-from sphinx_autodoc_typehints._docstring import process_docstring
+from sphinx_autodoc_typehints._docstring.handler import process_docstring
 
 path.insert(0, str(Path(__file__).parent))
 

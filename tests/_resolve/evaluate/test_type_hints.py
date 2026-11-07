@@ -13,8 +13,8 @@ from pytest import MonkeyPatch, mark, param
 from sphinx import addnodes
 from sphinx.pycode import ModuleAnalyzer
 
-from sphinx_autodoc_typehints._resolve import get_all_type_hints
-from sphinx_autodoc_typehints._resolve.evaluate import type_hints
+from sphinx_autodoc_typehints._resolve.evaluate.type_hints import type_hints
+from sphinx_autodoc_typehints._resolve.hints import get_all_type_hints
 
 if TYPE_CHECKING:
     from collections.abc import Callable

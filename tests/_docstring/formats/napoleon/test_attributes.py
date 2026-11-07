@@ -7,7 +7,8 @@ from typing import TYPE_CHECKING, Final
 from pytest import MarkDecorator, mark, param
 
 from _docstring.conftest import INT
-from sphinx_autodoc_typehints._docstring import note_attributes_before_napoleon, process_docstring
+from sphinx_autodoc_typehints._docstring.formats.napoleon.attributes import note_attributes_before_napoleon
+from sphinx_autodoc_typehints._docstring.handler import process_docstring
 
 if TYPE_CHECKING:
     from collections.abc import Callable

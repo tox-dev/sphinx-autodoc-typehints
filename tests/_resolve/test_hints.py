@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Final, TypeAliasType, TypeVar, Union, get_args
 from pytest import FixtureRequest, fixture, mark, param
 
 from sphinx_autodoc_typehints._refs import MyTypeAliasForwardRef
-from sphinx_autodoc_typehints._resolve import get_all_type_hints, get_descriptor_type_hint, resolve_annotations
+from sphinx_autodoc_typehints._resolve.hints import get_all_type_hints, get_descriptor_type_hint, resolve_annotations
 
 if TYPE_CHECKING:
     from pathlib import Path

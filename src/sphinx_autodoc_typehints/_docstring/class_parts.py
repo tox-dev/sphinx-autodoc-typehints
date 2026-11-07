@@ -7,9 +7,9 @@ from typing import TYPE_CHECKING, Literal
 
 from sphinx.util.inspect import getdoc
 
-from .._documented import class_doc_choice
+from .._documented.members import class_doc_choice
 from .._state import class_docstrings
-from .formats import detect_format
+from .formats.detect import detect_format
 from .parameters import escape_trailing_underscore
 
 if TYPE_CHECKING:

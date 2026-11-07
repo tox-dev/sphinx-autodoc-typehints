@@ -28,8 +28,8 @@ from typing import (  # ruff:ignore[deprecated-import]  # the legacy aliases are
 from pytest import mark, param, raises
 from typing_extensions import ParamSpec, TypeVar
 
-from sphinx_autodoc_typehints._render import fixup_module_name
 from sphinx_autodoc_typehints._render.annotation.names import (
+    fixup_module_name,
     get_annotation_args,
     get_annotation_class_name,
     get_annotation_module,

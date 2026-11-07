@@ -6,9 +6,11 @@ from typing import TYPE_CHECKING
 
 from sphinx.ext.autodoc.mock import ismock
 
-from sphinx_autodoc_typehints._documented import render_scope
 from sphinx_autodoc_typehints._objects import prefix_of
-from sphinx_autodoc_typehints._render import annotation_state, format_annotation
+
+from .._documented.scope import render_scope
+from .._render.annotation.walker import format_annotation
+from .._render.context import annotation_state
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx

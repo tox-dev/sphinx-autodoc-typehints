@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Never, NotRequired, Protocol
 
 from pytest import MonkeyPatch, fixture, mark, param
 
-from sphinx_autodoc_typehints._resolve import OPEN, extra_items_type, typed_dict_keys
+from sphinx_autodoc_typehints._resolve.typed_dict import OPEN, extra_items_type, typed_dict_keys
 
 if TYPE_CHECKING:
     from collections.abc import Callable

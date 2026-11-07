@@ -9,8 +9,7 @@ from typing import TYPE_CHECKING, Literal
 
 from sphinx.locale import _  # ruff:ignore[import-private-name]  # Sphinx documents it as public
 
-from sphinx_autodoc_typehints._render import as_field_type
-
+from ...._render.annotation.rendered import as_field_type
 from ..base import format_default, last_paragraph_end, line_indent
 
 if TYPE_CHECKING:

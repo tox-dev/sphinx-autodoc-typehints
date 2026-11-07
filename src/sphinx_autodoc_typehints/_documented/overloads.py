@@ -6,16 +6,11 @@ from inspect import Parameter, Signature, signature
 from typing import TYPE_CHECKING, Final, get_overloads
 
 from .._objects import alias_lookup_names, declared_signature, prefix_of, unwrapped
-from .._render import annotation_state, render_context
-from .._resolve import (
-    annotation_globals,
-    declared_type_params,
-    guarded_names,
-    resolve_string_annotations,
-    specialize,
-    type_alias_namespace,
-    written_type_alias,
-)
+from .._render.context import annotation_state, render_context
+from .._resolve.aliases import type_alias_namespace, written_type_alias
+from .._resolve.evaluate.expression import resolve_string_annotations
+from .._resolve.generics import declared_type_params, specialize
+from .._resolve.guards.overlay import annotation_globals, guarded_names
 from .hints import as_written
 
 if TYPE_CHECKING:

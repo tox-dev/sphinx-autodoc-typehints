@@ -8,18 +8,16 @@ from typing import TYPE_CHECKING
 
 from sphinx.util.inspect import object_description
 
-from .._documented import (
-    OVERLOADED_KINDS,
-    as_written,
-    documenting_class,
-    overload_skip,
-    resolved_type_hints,
-    typed_overloads,
-)
+from .._documented.hints import as_written, documenting_class, resolved_type_hints
+from .._documented.members import overload_skip
+from .._documented.overloads import OVERLOADED_KINDS, typed_overloads
 from .._objects import documented_owner, stored_name, unwrapped
-from .._render import as_field_type, fixup_module_name, value_markup
+from .._render.annotation.names import fixup_module_name
+from .._render.annotation.rendered import as_field_type
 from .._render.intersphinx import inventory
-from .._resolve import bound_type_args, resolve_overloads
+from .._render.value import value_markup
+from .._resolve.generics import bound_type_args
+from .._resolve.overloads import resolve_overloads
 from .._state import written_signatures
 from .parameters import VARIADIC_STARS
 
@@ -28,7 +26,7 @@ if TYPE_CHECKING:
 
     from sphinx.application import Sphinx
 
-    from .._documented import Entry
+    from .._documented.entry import Entry
     from .._types import Documented, Hint
 
 

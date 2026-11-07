@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 
 from sphinx.util.inspect import object_description
 
-from sphinx_autodoc_typehints._render import value_markup
+from ..._render.value import value_markup
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx

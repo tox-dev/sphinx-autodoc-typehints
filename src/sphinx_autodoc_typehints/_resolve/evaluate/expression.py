@@ -26,7 +26,7 @@ from typing import TYPE_CHECKING, Final, ForwardRef, Union
 
 from sphinx.util import logging
 
-from ..guards import annotation_globals, guarded_names
+from ..guards.overlay import annotation_globals, guarded_names
 from ..source import names_read
 
 if version_info >= (3, 14):  # pragma: >=3.14 cover

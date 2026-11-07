@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Final
 
 from pytest import MarkDecorator, fixture, mark
 
-from sphinx_autodoc_typehints._docstring import process_docstring
+from sphinx_autodoc_typehints._docstring.handler import process_docstring
 
 if TYPE_CHECKING:
     from collections.abc import Callable

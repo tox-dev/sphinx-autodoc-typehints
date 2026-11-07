@@ -8,9 +8,9 @@ from typing import TYPE_CHECKING, Final, get_overloads, overload
 
 from pytest import MarkDecorator, MonkeyPatch, mark, param
 
-from sphinx_autodoc_typehints._documented import typed_overloads
-from sphinx_autodoc_typehints._render import render_context
-from sphinx_autodoc_typehints._resolve import resolve_overloads
+from sphinx_autodoc_typehints._documented.overloads import typed_overloads
+from sphinx_autodoc_typehints._render.context import render_context
+from sphinx_autodoc_typehints._resolve.overloads import resolve_overloads
 
 if TYPE_CHECKING:
     from collections.abc import Callable

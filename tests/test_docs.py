@@ -15,7 +15,8 @@ from pytest import MonkeyPatch, fixture, mark, param, raises
 from sphinx.errors import ConfigError
 
 from sphinx_autodoc_typehints._config import OPTIONS
-from sphinx_autodoc_typehints._render import as_signature_type, format_annotation
+from sphinx_autodoc_typehints._render.annotation.rendered import as_signature_type
+from sphinx_autodoc_typehints._render.annotation.walker import format_annotation
 from sphinx_autodoc_typehints._types import Documented
 from sphinx_autodoc_typehints._warnings import warn
 
