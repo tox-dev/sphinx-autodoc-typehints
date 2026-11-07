@@ -234,6 +234,11 @@ def _find_param(lines: list[str], arg_name: str, fmt: FieldListFormat) -> tuple[
     if rewritten == lines[insert_index]:
         return arg_name, insert_index
     lines[insert_index] = rewritten
+    # napoleon writes the type field with the same unescaped name, so it moves along to keep pairing with the param
+    type_fields = tuple(f":{field} {arg_name}:" for field in ("type", "paramtype", "kwtype"))
+    for index, line in enumerate(lines):
+        if line.startswith(type_fields):
+            lines[index] = line.replace(f" {arg_name}:", f" {escaped_name}:", 1)
     return escaped_name, insert_index
 
 
