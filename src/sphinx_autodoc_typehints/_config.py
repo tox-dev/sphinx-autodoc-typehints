@@ -105,10 +105,10 @@ def cache_annotated_description(_app: Sphinx, config: Config) -> None:
 
 
 # Sphinx can't pickle a function into its cached environment, so the source tells whether it changed between builds
-class _CachedCallable[**P, R]:
+class _CachedCallable[**Params, Result]:
     __hash__ = None
 
-    def __init__(self, function: Callable[P, R]) -> None:
+    def __init__(self, function: Callable[Params, Result]) -> None:
         self._function = function
         try:
             self._source = getsource(function)
@@ -116,7 +116,7 @@ class _CachedCallable[**P, R]:
             # with no source to compare, the repr carries the object's id, so every build counts as a change
             self._source = repr(function)
 
-    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
+    def __call__(self, *args: Params.args, **kwargs: Params.kwargs) -> Result:
         return self._function(*args, **kwargs)
 
     def __eq__(self, other: object) -> bool:
