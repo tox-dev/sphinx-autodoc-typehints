@@ -347,7 +347,8 @@ def test_live_example_picker_variant_matches_a_build_with_that_conf(picked: dict
     combination = [
         option["values"].index(picked.get(option["name"], option["values"][0])) for option in about["options"]
     ]
-    key = "".join(str(at if index in variants["relevant"][0] else 0) for index, at in enumerate(combination))
+    chosen = {index: at for index, at in enumerate(combination) if index in variants["relevant"][0]}
+    key = "".join(str(chosen.get(index, 0)) for index in range(len(combination)))
     variant = variants["bodies"][variants["examples"][0][key]]
 
     alone = build(_picked(conf="\n".join([_SHARED_CONF, *(f"{name} = {value!r}" for name, value in picked.items())])))

@@ -22,6 +22,8 @@ from sphinx_autodoc_typehints._resolve.backfill.stubs.find import (
 from sphinx_autodoc_typehints._resolve.forget import forget_reads
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from sphinx_autodoc_typehints._types import Documented
 
 
@@ -88,11 +90,11 @@ def test_stub_path_of_an_extension_module(tmp_path: Path, ext_filename: str) -> 
 @mark.parametrize(
     ("stubs", "expected"),
     [
-        param(["second/__init__.pyi"], "second/__init__.pyi", id="init-stub-in-a-later-path"),
-        param([], None, id="no-stub"),
+        param(["second/__init__.pyi"], lambda tmp: tmp / "second/__init__.pyi", id="init-stub-in-a-later-path"),
+        param([], lambda _: None, id="no-stub"),
     ],
 )
-def test_stub_path_of_a_package(tmp_path: Path, stubs: list[str], expected: str | None) -> None:
+def test_stub_path_of_a_package(tmp_path: Path, stubs: list[str], expected: Callable[[Path], Path | None]) -> None:
     for directory in ("first", "second"):
         (tmp_path / directory).mkdir()
     for stub in stubs:
@@ -100,19 +102,19 @@ def test_stub_path_of_a_package(tmp_path: Path, stubs: list[str], expected: str 
     module = ModuleType("_pkg")
     module.__file__ = str(tmp_path / "_pkg.cpython-312-x86_64-linux-gnu.so")
     module.__path__ = [str(tmp_path / "first"), str(tmp_path / "second")]
-    assert stub_path(module) == (None if expected is None else tmp_path / expected)
+    assert stub_path(module) == expected(tmp_path)
 
 
 @mark.parametrize(
     ("stub", "package_dir", "expected"),
     [
-        param("_mod.pyi", None, "_mod.pyi", id="beside-file"),
-        param("stubs/__init__.pyi", "stubs", "stubs/__init__.pyi", id="in-package-path"),
-        param("elsewhere.pyi", None, None, id="package-path-raising"),
+        param("_mod.pyi", None, lambda tmp: tmp / "_mod.pyi", id="beside-file"),
+        param("stubs/__init__.pyi", "stubs", lambda tmp: tmp / "stubs/__init__.pyi", id="in-package-path"),
+        param("elsewhere.pyi", None, lambda _: None, id="package-path-raising"),
     ],
 )
 def test_stub_path_reads_the_properties_of_a_module_proxy(
-    tmp_path: Path, stub: str, package_dir: str | None, expected: str | None
+    tmp_path: Path, stub: str, package_dir: str | None, expected: Callable[[Path], Path | None]
 ) -> None:
     (tmp_path / "stubs").mkdir()
     (tmp_path / stub).write_text("x: int")
@@ -129,19 +131,19 @@ def test_stub_path_reads_the_properties_of_a_module_proxy(
         (ModuleType,),
         {"__file__": property(lambda _: str(tmp_path / "_mod.py")), "__path__": property(package_path)},
     )
-    assert stub_path(proxy("_mod")) == (None if expected is None else tmp_path / expected)
+    assert stub_path(proxy("_mod")) == expected(tmp_path)
 
 
 @mark.parametrize(
     ("stub", "child", "expected"),
     [
-        param("warc.pyi", "warc", "warc.pyi", id="sibling-stub"),
-        param("sub/__init__.pyi", "sub", "sub/__init__.pyi", id="subpackage-stub"),
-        param("warc.pyi", "missing", None, id="no-matching-stub"),
+        param("warc.pyi", "warc", lambda tmp: tmp / "warc.pyi", id="sibling-stub"),
+        param("sub/__init__.pyi", "sub", lambda tmp: tmp / "sub/__init__.pyi", id="subpackage-stub"),
+        param("warc.pyi", "missing", lambda _: None, id="no-matching-stub"),
     ],
 )
 def test_stub_path_of_a_native_submodule(
-    tmp_path: Path, monkeypatch: MonkeyPatch, stub: str, child: str, expected: str | None
+    tmp_path: Path, monkeypatch: MonkeyPatch, stub: str, child: str, expected: Callable[[Path], Path | None]
 ) -> None:
     # PyO3 registers a submodule through PyModule_AddObject, which leaves it no file of its own
     (tmp_path / "sub").mkdir()
@@ -154,21 +156,21 @@ def test_stub_path_of_a_native_submodule(
     parent = ModuleType("natpkg")
     parent.__path__ = [str(tmp_path)]
     monkeypatch.setitem(modules, "natpkg", parent)
-    assert stub_path(ModuleType(f"natpkg.{child}")) == (None if expected is None else tmp_path / expected)
+    assert stub_path(ModuleType(f"natpkg.{child}")) == expected(tmp_path)
 
 
 @mark.parametrize(
-    ("parent", "child"),
+    ("parents", "child"),
     [
-        param(None, "top_level_native", id="no-parent"),
-        param(None, "absent_parent.child", id="parent-not-imported"),
-        param(ModuleType("flat_native"), "flat_native.child", id="parent-without-path"),
+        param([], "top_level_native", id="no-parent"),
+        param([], "absent_parent.child", id="parent-not-imported"),
+        param([ModuleType("flat_native")], "flat_native.child", id="parent-without-path"),
     ],
 )
 def test_stub_path_of_a_native_submodule_without_a_package(
-    monkeypatch: MonkeyPatch, parent: ModuleType | None, child: str
+    monkeypatch: MonkeyPatch, parents: list[ModuleType], child: str
 ) -> None:
-    if parent is not None:
+    for parent in parents:
         monkeypatch.setitem(modules, parent.__name__, parent)
     assert stub_path(ModuleType(child)) is None
 
@@ -179,11 +181,17 @@ def test_find_stub_owner_of_a_native_submodule(native_pkg: ModuleType) -> None:
 
 
 @mark.parametrize(
-    ("reexported", "expected"),
-    [param(True, "parent", id="reexported"), param(False, None, id="only-named-alike")],
+    ("reexported_names", "expected"),
+    [
+        param(["greet"], lambda tmp, parent: (tmp / "__init__.pyi", parent), id="reexported"),
+        param([], lambda _tmp, _parent: None, id="only-named-alike"),
+    ],
 )
 def test_find_stub_owner_reads_a_parent_stub_only_for_what_it_reexports(
-    tmp_path: Path, monkeypatch: MonkeyPatch, reexported: bool, expected: str | None
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+    reexported_names: list[str],
+    expected: Callable[[Path, ModuleType], tuple[Path, ModuleType] | None],
 ) -> None:
     # cbor2/__init__.pyi types the functions of the native cbor2._cbor2 it re-exports
     (tmp_path / "__init__.pyi").write_text("def greet(names: list[str]) -> str: ...")
@@ -194,30 +202,55 @@ def test_find_stub_owner_reads_a_parent_stub_only_for_what_it_reexports(
     namespace: dict[str, Documented] = {"__name__": child.__name__}
     exec("def greet(names, count): ...", namespace)  # ruff:ignore[exec-builtin]  # a function of the native module
     monkeypatch.setattr(child, "greet", greet := namespace["greet"], raising=False)
-    if reexported:
-        monkeypatch.setattr(parent, "greet", greet, raising=False)
+    for name in reexported_names:
+        monkeypatch.setattr(parent, name, greet, raising=False)
     monkeypatch.setitem(modules, "mypkg", parent)
     monkeypatch.setitem(modules, "mypkg._ext", child)
-    assert find_stub_owner(greet) == (None if expected is None else (tmp_path / "__init__.pyi", parent))
+    assert find_stub_owner(greet) == expected(tmp_path, parent)
 
 
 @mark.parametrize(
     ("documenting_stub", "name", "expected"),
     [
-        param("from reexp_src import conv as conv", "reexp_doc.conv", "reexp_src", id="reexported-stub"),
-        param("def conv(x: bytes) -> bytes: ...", "reexp_doc.conv", "reexp_doc", id="own-stub"),
-        param("from reexp_doc import conv as conv", "reexp_doc.conv", None, id="reexported-from-itself"),
-        param("from reexp_src import conv as conv", "reexp_src._next.conv", None, id="defining-module"),
-        param("from reexp_src import conv as conv", "reexp_src.conv", None, id="other-object-named-alike"),
+        param(
+            "from reexp_src import conv as conv",
+            "reexp_doc.conv",
+            lambda root: root / "reexp_src" / "__init__.pyi",
+            id="reexported-stub",
+        ),
+        param(
+            "def conv(x: bytes) -> bytes: ...",
+            "reexp_doc.conv",
+            lambda root: root / "reexp_doc" / "__init__.pyi",
+            id="own-stub",
+        ),
+        param(
+            "from reexp_doc import conv as conv",
+            "reexp_doc.conv",
+            lambda _: None,
+            id="reexported-from-itself",
+        ),
+        param(
+            "from reexp_src import conv as conv",
+            "reexp_src._next.conv",
+            lambda _: None,
+            id="defining-module",
+        ),
+        param(
+            "from reexp_src import conv as conv",
+            "reexp_src.conv",
+            lambda _: None,
+            id="other-object-named-alike",
+        ),
     ],
 )
 def test_stub_path_of_the_module_documenting_a_function(
-    reexport_packages: Path, documenting_stub: str, name: str, expected: str | None
+    reexport_packages: Path, documenting_stub: str, name: str, expected: Callable[[Path], Path | None]
 ) -> None:
     (reexport_packages / "reexp_doc" / "__init__.pyi").write_text(documenting_stub)
     import_module("reexp_doc")
     found = stub_path(import_module("reexp_src._next").conv, name)
-    assert found == (None if expected is None else reexport_packages / expected / "__init__.pyi")
+    assert found == expected(reexport_packages)
 
 
 # the layout behind `attrs.asdict`, which its stub types as the function of another package
@@ -294,14 +327,16 @@ def test_parse_stub_ast_reads_an_edited_stub_again(tmp_path: Path) -> None:
 
 
 @mark.parametrize(
-    "content",
-    [param("def (broken syntax", id="bad-syntax"), param(None, id="missing-file")],
+    "files",
+    [
+        param({"unreadable.pyi": "def (broken syntax"}, id="bad-syntax"),
+        param({}, id="missing-file"),
+    ],
 )
-def test_parse_stub_ast_of_an_unreadable_stub(tmp_path: Path, content: str | None) -> None:
-    stub = tmp_path / "unreadable.pyi"
-    if content is not None:
-        stub.write_text(content)
-    assert parse_stub_ast(stub) is None
+def test_parse_stub_ast_of_an_unreadable_stub(tmp_path: Path, files: dict[str, str]) -> None:
+    for name, content in files.items():
+        (tmp_path / name).write_text(content)
+    assert parse_stub_ast(tmp_path / "unreadable.pyi") is None
 
 
 @mark.parametrize(

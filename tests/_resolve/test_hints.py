@@ -679,8 +679,24 @@ def slotted(make_stubbed_module: MakeStubbedModule) -> ModuleType:
             marks=mark.sphinx("text", testroot="resolve-stubs"),
             id="native-submodule-class",
         ),
+    ],
+)
+@mark.sphinx(exception_on_warning=True)
+def test_build_documents_the_types_of_a_stub(
+    request: FixtureRequest,
+    build_text: BuildText,
+    fixture_name: str,
+    rst: str,
+    expected: str,
+) -> None:
+    request.getfixturevalue(fixture_name)
+    assert build_text(rst) == expected
+
+
+@mark.parametrize(
+    ("rst", "expected"),
+    [
         param(
-            None,
             ".. autofunction:: dummy_module_future_annotations.function_with_py310_annotations",
             dedent("""\
                 dummy_module_future_annotations.function_with_py310_annotations(self, x, y, z=None)
@@ -701,7 +717,6 @@ def slotted(make_stubbed_module: MakeStubbedModule) -> ModuleType:
             id="union-syntax-as-strings",
         ),
         param(
-            None,
             dedent("""\
                 .. autoclass:: mod_forward_ref.Tree
                    :members:
@@ -725,16 +740,7 @@ def slotted(make_stubbed_module: MakeStubbedModule) -> ModuleType:
     ],
 )
 @mark.sphinx(exception_on_warning=True)
-def test_build_documents_the_types_of_a_stub_or_a_string(
-    request: FixtureRequest,
-    build_text: BuildText,
-    fixture_name: str | None,
-    rst: str,
-    expected: str,
-) -> None:
-    # pytest.param cannot carry usefixtures, so each case names the fixture importing its module
-    if fixture_name is not None:
-        request.getfixturevalue(fixture_name)
+def test_build_documents_the_types_of_a_string(build_text: BuildText, rst: str, expected: str) -> None:
     assert build_text(rst) == expected
 
 

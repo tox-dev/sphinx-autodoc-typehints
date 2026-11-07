@@ -259,18 +259,19 @@ def test_type_arguments(
 @mark.parametrize(
     ("annotation", "expected"),
     [
-        param(lambda module: module.T, int, id="bound-parameter"),
-        param(lambda module: module.Ts, None, id="unbound-parameter"),
-        param(lambda module: list[module.T], list[int], id="generic-alias"),
-        param(lambda module: module.Legacy, None, id="bare-generic-class"),
-        param(lambda _: list[str], list[str], id="no-parameter"),
+        param(lambda module: module.T, lambda _: int, id="bound-parameter"),
+        param(lambda module: module.Ts, lambda module: module.Ts, id="unbound-parameter"),
+        param(lambda module: list[module.T], lambda _: list[int], id="generic-alias"),
+        param(lambda module: module.Legacy, lambda module: module.Legacy, id="bare-generic-class"),
+        param(lambda _: list[str], lambda _: list[str], id="no-parameter"),
     ],
 )
 def test_specialize(
-    generic_module: ModuleType, annotation: Callable[[ModuleType], Annotation], expected: Annotation | None
+    generic_module: ModuleType,
+    annotation: Callable[[ModuleType], Annotation],
+    expected: Callable[[ModuleType], Annotation],
 ) -> None:
-    unspecialized = annotation(generic_module)
-    assert specialize(unspecialized, {generic_module.T: int}) == (unspecialized if expected is None else expected)
+    assert specialize(annotation(generic_module), {generic_module.T: int}) == expected(generic_module)
 
 
 @mark.parametrize(
