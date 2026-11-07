@@ -190,12 +190,12 @@ def test_stub_context_of_a_function(stub_mod: ModuleType) -> None:
     )
 
 
-@mark.parametrize("stub", [param(None, id="no-stub"), param("def (broken", id="bad-syntax")])
-def test_stub_context_without_a_stub(
-    make_module: Callable[[str], ModuleType], make_stubbed_module: MakeStubbedModule, stub: str | None
-) -> None:
-    module = make_module("def func(): ...") if stub is None else make_stubbed_module("def func(): ...", stub)
-    assert stub_context(module.func) == ({}, {}, "")
+def test_stub_context_without_a_stub(make_module: Callable[[str], ModuleType]) -> None:
+    assert stub_context(make_module("def func(): ...").func) == ({}, {}, "")
+
+
+def test_stub_context_of_a_broken_stub(make_stubbed_module: MakeStubbedModule) -> None:
+    assert stub_context(make_stubbed_module("def func(): ...", "def (broken").func) == ({}, {}, "")
 
 
 @mark.parametrize(

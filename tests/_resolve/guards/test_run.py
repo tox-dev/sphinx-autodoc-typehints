@@ -87,7 +87,20 @@ def test_resolve_type_guarded_imports_skips_a_false_compound_guard(make_module: 
     assert "Ghost" not in guarded_names(module.consume)
 
 
-def test_resolve_type_guarded_imports_uses_the_build_platform(make_module: Callable[[str], ModuleType]) -> None:
+@mark.parametrize(
+    "expected",
+    [
+        param(date, id="windows", marks=mark.skipif(platform != "win32", reason="the guard binds date on Windows")),
+        param(
+            Decimal,
+            id="other-platforms",
+            marks=mark.skipif(platform == "win32", reason="the guard binds Decimal off Windows"),
+        ),
+    ],
+)
+def test_resolve_type_guarded_imports_uses_the_build_platform(
+    make_module: Callable[[str], ModuleType], expected: type
+) -> None:
     module = make_module(
         dedent("""\
             from __future__ import annotations
@@ -102,7 +115,6 @@ def test_resolve_type_guarded_imports_uses_the_build_platform(make_module: Calla
             def consume(value: PlatformType) -> None: ...
         """)
     )
-    expected = date if platform == "win32" else Decimal
     assert get_all_type_hints([], module.consume, "mod.consume", {})["value"] is expected
 
 

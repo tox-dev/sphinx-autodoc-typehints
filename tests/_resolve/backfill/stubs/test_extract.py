@@ -42,12 +42,16 @@ if TYPE_CHECKING:
             "class Foo:",
             id="class",
         ),
-        param("def foo(): ...", ["bar"], None, id="missing"),
     ],
 )
-def test_find_ast_node(source: str, parts: list[str], expected: str | None) -> None:
+def test_find_ast_node(source: str, parts: list[str], expected: str) -> None:
     node = find_ast_node(parse(source).body, parts)
-    assert (None if node is None else unparse(node).splitlines()[0]) == expected
+    assert node is not None
+    assert unparse(node).splitlines()[0] == expected
+
+
+def test_find_ast_node_misses_an_absent_name() -> None:
+    assert find_ast_node(parse("def foo(): ...").body, ["bar"]) is None
 
 
 @mark.parametrize(

@@ -611,16 +611,27 @@ def test_format_annotation_alias_union_keeps_its_bars(
     assert format_annotation(make_union(MyTypeAliasForwardRef("Json")), config) == expected
 
 
-def test_format_annotation_alias_union_leaves_optional_alone(config: Config) -> None:
+@mark.parametrize(
+    "expected",
+    [
+        param(
+            "Json | :sphinx_autodoc_typehints_constant:`None`",
+            id="bars",
+            marks=mark.skipif(version_info < (3, 14), reason="Optional renders with bars from Python 3.14"),
+        ),
+        param(
+            r":py:data:`~typing.Optional`\ \[Json]",
+            id="optional",
+            marks=mark.skipif(version_info >= (3, 14), reason="Optional renders as typing.Optional before 3.14"),
+        ),
+    ],
+)
+def test_format_annotation_alias_union_leaves_optional_alone(config: Config, expected: str) -> None:
     alias = MyTypeAliasForwardRef("Json")
     # the | form renders first, and the Union typing caches for both must not keep its mark
     format_annotation(alias | None, config)
     optional_alias = typing.Optional[alias]  # ty: ignore[invalid-type-form]  # the cached Optional is under test
-    assert format_annotation(optional_alias, config) == (
-        "Json | :sphinx_autodoc_typehints_constant:`None`"
-        if version_info >= (3, 14)
-        else r":py:data:`~typing.Optional`\ \[Json]"
-    )
+    assert format_annotation(optional_alias, config) == expected
 
 
 @mark.parametrize(
