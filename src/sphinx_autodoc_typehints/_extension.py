@@ -45,6 +45,12 @@ if TYPE_CHECKING:
 
 
 def setup(app: Sphinx) -> dict[str, bool | int | str]:
+    """
+    Register the configuration values, roles, directives and event handlers of the extension on `app`.
+
+    :param app: the Sphinx application the extension registers itself with
+    :returns: the metadata Sphinx reads, marking the extension safe to read and write in parallel
+    """
     app.setup_extension("sphinx.ext.autodoc")
     for option in OPTIONS:
         app.add_config_value(option.name, option.default, option.rebuild, option.types)
