@@ -173,7 +173,7 @@ def _highlight(code: str) -> str:
     return highlight(code, PythonLexer(), HtmlFormatter(nowrap=True))
 
 
-def _marker(name: object) -> str:
+def _marker(name: str | int) -> str:
     return f"<!--live-example-{name}-->"
 
 

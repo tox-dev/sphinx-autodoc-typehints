@@ -46,8 +46,6 @@ _OTHER_PAGE: Final[Pattern[str]] = compile_regex(
 # how many options at once a probe moves away from their defaults
 _PROBED: Final[int] = 2
 
-_BODY: Final[str] = "body.html"
-
 type Combination = tuple[int, ...]
 
 
@@ -177,9 +175,10 @@ def _application(project: Path, options: list[Option], rewrite: Callable[[str, i
     warnings, bodies = StringIO(), {}
     # the outer build registered the node classes already, so registering them again only overrides their visitors
     templates: str = "_templates"
+    body_template: str = "body.html"
     overrides = {"suppress_warnings": ["app.add_node"], "templates_path": [templates]}
     (project / templates).mkdir()
-    (project / templates / _BODY).write_text("{{ body }}", encoding="utf-8")
+    (project / templates / body_template).write_text("{{ body }}", encoding="utf-8")
     app = Sphinx(
         project,
         project,
@@ -197,7 +196,7 @@ def _application(project: Path, options: list[Option], rewrite: Callable[[str, i
     def keep_body(_app: Sphinx, pagename: str, _template: str, context: dict[str, object], _doctree: object) -> str:
         if pagename.startswith("v"):
             bodies[pagename] = rewrite(str(context["body"]), int(pagename.rsplit("/", 1)[1]))
-        return _BODY
+        return body_template
 
     app.connect("html-page-context", keep_body)
     return _Nested(app, warnings, bodies)

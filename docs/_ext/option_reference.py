@@ -51,11 +51,11 @@ OPTION_TYPES: Final[dict[str, RenderNode]] = {
 
 def setup(app: Sphinx) -> ExtensionMetadata:
     """Replace the `confval` directive with one that renders the type and shows the rebuild value."""
-    app.add_directive_to_domain("std", "confval", OptionReference, override=True)
+    app.add_directive_to_domain("std", "confval", _OptionReference, override=True)
     return {"parallel_read_safe": True, "parallel_write_safe": True}
 
 
-class OptionReference(ConfigurationValue):
+class _OptionReference(ConfigurationValue):
     """Show an option's type as this extension renders its annotation, and what a change to the option rebuilds."""
 
     option_spec: ClassVar[OptionSpec] = {**ConfigurationValue.option_spec, "rebuild": directives.unchanged_required}
