@@ -165,19 +165,9 @@ class _Fields:
             type_annotation = (
                 f":{type_field} {doc_name}: {as_field_type(param.shown, self.app.config, kind='parameter')}"
             )
-        # a braces-after default goes on the :param: line, so append it while at still points there
-        if self.app.config.typehints_defaults and (
-            formatted_default := format_default(
-                self.app, param.default, annotated=param.annotation is not None or has_preexisting or bool(inline_type)
-            )
-        ):
-            if not self.app.config.typehints_defaults.endswith("after"):
-                type_annotation += formatted_default
-            # a paragraph introducing a literal block keeps its :: last
-            elif (line := self.lines[end := last_paragraph_end(self.lines, at)]).endswith("::"):
-                self.lines[end] = f"{line[:-2].rstrip()}{formatted_default}::"
-            else:
-                self.lines[end] += formatted_default
+        type_annotation = self._append_default(
+            at, type_annotation, param, annotated=param.annotation is not None or has_preexisting or bool(inline_type)
+        )
         if has_preexisting:
             idx = self.lines.index(preexisting_line)
             end = idx + 1
@@ -204,6 +194,21 @@ class _Fields:
             return False
         self.lines[at] += " (optional)"
         return True
+
+    def _append_default(self, at: int, type_annotation: str, param: _Parameter, *, annotated: bool) -> str:
+        if not self.app.config.typehints_defaults or not (
+            formatted_default := format_default(self.app, param.default, annotated=annotated)
+        ):
+            return type_annotation
+        # a braces-after default goes on the :param: line, so append it while at still points there
+        if not self.app.config.typehints_defaults.endswith("after"):
+            return type_annotation + formatted_default
+        # a paragraph introducing a literal block keeps its :: last
+        if (line := self.lines[end := last_paragraph_end(self.lines, at)]).endswith("::"):
+            self.lines[end] = f"{line[:-2].rstrip()}{formatted_default}::"
+        else:
+            self.lines[end] += formatted_default
+        return type_annotation
 
 
 # `shown` is the type as the annotation names it, an alias by its own name

@@ -40,6 +40,23 @@ def get_instance_var_annotations(cls: type) -> dict[str, Annotation | str]:
     """
     if (init := unwrapped(cls.__init__)) is None or init is object.__init__ or (tree := parsed_source(init)) is None:
         return {}
+    if not (raw := _self_annotation_sources(tree)):
+        return {}
+    # an inherited or re-exported `__init__` sees the names of the module defining it, not those of the class's
+    globalns = annotation_globals(init)
+    # the PEP 695 type parameters of the class defining `__init__` live in no module namespace
+    definer = next(base for base in cls.__mro__ if "__init__" in base.__dict__)
+    localns = {param.__name__: param for param in type_params_of(definer, legacy=False)}
+    resolved: dict[str, Annotation | str] = {}
+    for attribute, source in raw.items():
+        try:
+            resolved[attribute] = evaluate_annotation(source, globalns, localns)
+        except Exception:  # ruff:ignore[blind-except]  # an annotation runs user code, which may raise anything
+            resolved[attribute] = source
+    return resolved
+
+
+def _self_annotation_sources(tree: AST) -> dict[str, str]:
     raw: dict[str, str] = {}
     for node in walk(tree):
         if isinstance(node, FunctionDef) and node.name == "__init__":
@@ -54,20 +71,7 @@ def get_instance_var_annotations(cls: type) -> dict[str, Annotation | str]:
                 ):
                     raw[statement.target.attr] = unparse(statement.annotation)
             break
-    if not raw:
-        return {}
-    # an inherited or re-exported `__init__` sees the names of the module defining it, not those of the class's
-    globalns = annotation_globals(init)
-    # the PEP 695 type parameters of the class defining `__init__` live in no module namespace
-    definer = next(base for base in cls.__mro__ if "__init__" in base.__dict__)
-    localns = {param.__name__: param for param in type_params_of(definer, legacy=False)}
-    resolved: dict[str, Annotation | str] = {}
-    for attribute, source in raw.items():
-        try:
-            resolved[attribute] = evaluate_annotation(source, globalns, localns)
-        except Exception:  # ruff:ignore[blind-except]  # an annotation runs user code, which may raise anything
-            resolved[attribute] = source
-    return resolved
+    return raw
 
 
 def _own_nodes(node: AST) -> Iterator[AST]:

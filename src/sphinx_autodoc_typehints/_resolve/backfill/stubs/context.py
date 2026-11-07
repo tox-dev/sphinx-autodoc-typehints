@@ -104,26 +104,18 @@ def _resolve_stub_imports_from_body(
 ) -> None:
     for node in body:
         if isinstance(node, ast.Import):
-            for alias in node.names:
-                if (module := _import_for_stub(alias.name, top=not alias.asname)) is not None:
-                    namespace[alias.asname or alias.name.partition(".")[0]] = module
+            _bind_import(node, namespace)
         elif isinstance(node, ast.ImportFrom):
-            module_name = resolve_import_from(node, owner_package)
-            from_module = import_module_or_none(module_name) if module_name else None
-            for alias in node.names:
-                if alias.name == "*":
-                    continue
-                name = alias.asname or alias.name
-                if from_module is not None and (
-                    (value := getattr(from_module, alias.name, None)) is not None
-                    or (value := import_module_or_none(f"{module_name}.{alias.name}")) is not None
-                ):
-                    namespace[name] = value
-                else:
-                    unresolved.add(name)
+            _bind_import_from(node, owner_package, namespace, unresolved)
         elif isinstance(node, ast.If):
             _resolve_stub_imports_from_body(node.body, owner_package, namespace, unresolved)
             _resolve_stub_imports_from_body(node.orelse, owner_package, namespace, unresolved)
+
+
+def _bind_import(node: ast.Import, namespace: dict[str, Documented]) -> None:
+    for alias in node.names:
+        if (module := _import_for_stub(alias.name, top=not alias.asname)) is not None:
+            namespace[alias.asname or alias.name.partition(".")[0]] = module
 
 
 # a stub may import a module only type checkers need, so this mocks a missing one as `autodoc_mock_imports` would,
@@ -141,6 +133,24 @@ def _import_for_stub(name: str, *, top: bool) -> ModuleType | None:
     with mock(mocked):
         module = import_module(name)
         return modules[name.partition(".")[0]] if top else module
+
+
+def _bind_import_from(
+    node: ast.ImportFrom, owner_package: str, namespace: dict[str, Documented], unresolved: set[str]
+) -> None:
+    module_name = resolve_import_from(node, owner_package)
+    from_module = import_module_or_none(module_name) if module_name else None
+    for alias in node.names:
+        if alias.name == "*":
+            continue
+        name = alias.asname or alias.name
+        if from_module is not None and (
+            (value := getattr(from_module, alias.name, None)) is not None
+            or (value := import_module_or_none(f"{module_name}.{alias.name}")) is not None
+        ):
+            namespace[name] = value
+        else:
+            unresolved.add(name)
 
 
 def _resolve_stub_definitions(body: list[ast.stmt], namespace: dict[str, Documented]) -> None:

@@ -27,6 +27,7 @@ if TYPE_CHECKING:
     from sphinx.application import Sphinx
 
     from .._documented.entry import Entry
+    from .._refs import WrittenTypeAlias
     from .._types import Documented, Hint
 
 
@@ -59,31 +60,48 @@ def inject_overloads(entry: Entry, obj: Callable[..., object], lines: list[str])
     render = partial(as_field_type, config=app.config)
     listed = ["", ":Overloads:"]
     for parameters, hints in typed_overloads(app, name, obj, overloads, overload_skip(entry), arguments):
-        entries: list[str] = []
-        for at, param in enumerate(parameters):
-            if param.kind is param.KEYWORD_ONLY and (
-                not at or parameters[at - 1].kind in {param.POSITIONAL_ONLY, param.POSITIONAL_OR_KEYWORD}
-            ):
-                entries.append("\\*")
-            hint = hints[param.name]
-            entries.append(
-                f"**{VARIADIC_STARS.get(param.kind.name, '')}{param.name}**"
-                f"{f' ({typed})' if hint is not Parameter.empty and (typed := render(hint)) else ''}"
-                f"{'' if param.default is param.empty else f' = {value_markup(object_description(param.default))}'}"
-            )
-            if param.kind is param.POSITIONAL_ONLY and (
-                at + 1 == len(parameters) or parameters[at + 1].kind is not param.POSITIONAL_ONLY
-            ):
-                entries.append("/")
-        returned = (
-            f" → {return_type}"
-            if (return_hint := hints["return"]) is not Signature.empty and (return_type := render(return_hint))
-            else ""
-        )
-        listed.append(f"   * {', '.join(entries) or '()'}{returned}")
+        listed.append(_overload_line(parameters, hints, render))
     summary_at = summary_end(lines)
     lines[summary_at:summary_at] = [*listed, ""]
     return True
+
+
+def _overload_line(
+    parameters: list[Parameter],
+    hints: Mapping[str, Hint | WrittenTypeAlias],
+    render: Callable[[Hint | WrittenTypeAlias], str],
+) -> str:
+    entries = _overload_parameters(parameters, hints, render)
+    returned = (
+        f" → {return_type}"
+        if (return_hint := hints["return"]) is not Signature.empty and (return_type := render(return_hint))
+        else ""
+    )
+    return f"   * {', '.join(entries) or '()'}{returned}"
+
+
+def _overload_parameters(
+    parameters: list[Parameter],
+    hints: Mapping[str, Hint | WrittenTypeAlias],
+    render: Callable[[Hint | WrittenTypeAlias], str],
+) -> list[str]:
+    entries: list[str] = []
+    for at, param in enumerate(parameters):
+        if param.kind is param.KEYWORD_ONLY and (
+            not at or parameters[at - 1].kind in {param.POSITIONAL_ONLY, param.POSITIONAL_OR_KEYWORD}
+        ):
+            entries.append("\\*")
+        hint = hints[param.name]
+        entries.append(
+            f"**{VARIADIC_STARS.get(param.kind.name, '')}{param.name}**"
+            f"{f' ({typed})' if hint is not Parameter.empty and (typed := render(hint)) else ''}"
+            f"{'' if param.default is param.empty else f' = {value_markup(object_description(param.default))}'}"
+        )
+        if param.kind is param.POSITIONAL_ONLY and (
+            at + 1 == len(parameters) or parameters[at + 1].kind is not param.POSITIONAL_ONLY
+        ):
+            entries.append("/")
+    return entries
 
 
 def summary_end(lines: list[str]) -> int:

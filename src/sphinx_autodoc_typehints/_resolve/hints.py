@@ -25,7 +25,7 @@ from .guards.parse import guard_binds
 from .guards.run import guard_bound, resolve_type_guarded_imports
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Mapping
+    from collections.abc import Callable, Mapping, Sequence
 
     from .._types import Documented, Hint
 
@@ -114,35 +114,41 @@ def _build_localns(obj: Documented, localns: Mapping[str, Documented]) -> dict[s
     parts = (getattr(obj, "__qualname__", "") or "").split(".")
     if len(parts) <= 1:
         return result
-    if namespace := (module.__dict__ if (module := getmodule(obj)) else getattr(obj, "__globals__", None)):
-        current: Documented = None
-        for part in parts[:-1]:
-            current = (
-                (namespace if current is None else current.__dict__).get(part)
-                if current is None or hasattr(current, "__dict__")
-                else None
-            )
-            if current is None:
-                break
-            if isclass(current):
-                result[part] = current
-            result.update({param.__name__: param for param in type_params_of(current, legacy=False)})
-        if isroutine(obj) and isclass(current):
-            # nested classes, type variables and aliases resolve as they do when annotations evaluate at definition,
-            # but other members (a method named list, a field defaulting to None) must not shadow the module globals
-            # get_type_hints resolves against
-            result = {
-                **{
-                    key: value
-                    for key, value in vars(current).items()
-                    if isclass(value)
-                    or isinstance(value, TypeVar | ParamSpec | TypeVarTuple | NewType)
-                    or get_origin(value) is not None
-                    or is_type_alias(value)
-                },
-                **result,
-            }
+    current = _enter_scopes(obj, parts[:-1], result)
+    if isroutine(obj) and isclass(current):
+        # nested classes, type variables and aliases resolve as they do when annotations evaluate at definition, but
+        # other members (a method named list, a field defaulting to None) must not shadow the module globals
+        # get_type_hints resolves against
+        result = {
+            **{
+                key: value
+                for key, value in vars(current).items()
+                if isclass(value)
+                or isinstance(value, TypeVar | ParamSpec | TypeVarTuple | NewType)
+                or get_origin(value) is not None
+                or is_type_alias(value)
+            },
+            **result,
+        }
     return result
+
+
+def _enter_scopes(obj: Documented, parts: Sequence[str], result: dict[str, Documented]) -> Documented:
+    if not (namespace := (module.__dict__ if (module := getmodule(obj)) else getattr(obj, "__globals__", None))):
+        return None
+    current: Documented = None
+    for part in parts:
+        current = (
+            (namespace if current is None else current.__dict__).get(part)
+            if current is None or hasattr(current, "__dict__")
+            else None
+        )
+        if current is None:
+            break
+        if isclass(current):
+            result[part] = current
+        result.update({param.__name__: param for param in type_params_of(current, legacy=False)})
+    return current
 
 
 def get_descriptor_type_hint(obj: GetSetDescriptorType | MemberDescriptorType) -> Hint | None:

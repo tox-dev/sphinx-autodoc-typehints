@@ -279,16 +279,7 @@ def _class_reference(annotation: Hint | NewType | None, config: Config, *, short
     except ValueError:
         yield _Rendered(text=annotation.__qualname__ if isclass(annotation) else str(annotation).strip("'"))
     else:
-        # where the docs place a class Python defines elsewhere, such as pathlib.Path living in pathlib._local from
-        # 3.13; the types module names its own classes, which Sphinx would turn from FunctionType into LambdaType
-        if module != "types" and (documented := is_invalid_builtin_class(annotation)):
-            module, _, class_name = documented.rpartition(".")
-        module = fixup_module_name(config, module)
-        # typing_extensions backports names to older Pythons, and the Python docs list a backported name under typing
-        if module == "typing_extensions" and hasattr(typing, class_name):
-            module = "typing"
-        if config.typehints_modernize_annotations and module == "typing" and isclass(origin := get_origin(annotation)):
-            module, class_name = origin.__module__, origin.__qualname__
+        module, class_name = _documented_location(annotation, config, module, class_name)
         internal_path = f"{module}.{class_name}"
         local_path: str | None = None
         if mapped := mapped_name(config, internal_path):
@@ -303,19 +294,12 @@ def _class_reference(annotation: Hint | NewType | None, config: Config, *, short
             or (config.typehints_modernize_annotations and full_name in {"typing.Union", "typing.Optional"})
             or getattr(annotation, "__typehints_bars__", False)
         )
-        # the inventory may document another Python version, and intersphinx resolves only the role its entry has
-        documented = inventory(render_context(config).env)
-        # a typing_extensions name is the same kind of object as its typing counterpart
-        pydata_key = ("typing" if module == "typing_extensions" else module, class_name)
-        role = next((kind for kind in ("class", "data") if full_name in documented.get(f"py:{kind}", {})), None) or (
-            "data" if pydata_key in PYDATA_ANNOTATIONS else "class"
-        )
         yield from _named_class(
             _Reference(
                 annotation=annotation,
                 config=config,
                 full_name="" if is_bars_union else full_name,
-                role=role,
+                role=_reference_role(config, module, class_name, full_name),
                 prefix="" if fully_qualified or full_name == class_name else "~",
                 fully_qualified=fully_qualified,
                 local_path=local_path,
@@ -324,6 +308,22 @@ def _class_reference(annotation: Hint | NewType | None, config: Config, *, short
                 short_literals=short_literals,
             )
         )
+
+
+def _documented_location(
+    annotation: Hint | NewType | None, config: Config, module: str, class_name: str
+) -> tuple[str, str]:
+    # where the docs place a class Python defines elsewhere, such as pathlib.Path living in pathlib._local from
+    # 3.13; the types module names its own classes, which Sphinx would turn from FunctionType into LambdaType
+    if module != "types" and (documented := is_invalid_builtin_class(annotation)):
+        module, _, class_name = documented.rpartition(".")
+    module = fixup_module_name(config, module)
+    # typing_extensions backports names to older Pythons, and the Python docs list a backported name under typing
+    if module == "typing_extensions" and hasattr(typing, class_name):
+        module = "typing"
+    if config.typehints_modernize_annotations and module == "typing" and isclass(origin := get_origin(annotation)):
+        module, class_name = origin.__module__, origin.__qualname__
+    return module, class_name
 
 
 def _named_class(reference: _Reference) -> _Frame:
@@ -358,6 +358,16 @@ class _Reference:
     short_literals: bool
     args_format: str = "\\[{}]"
     formatted_args: str | None = ""
+
+
+def _reference_role(config: Config, module: str, class_name: str, full_name: str) -> str:
+    # the inventory may document another Python version, and intersphinx resolves only the role its entry has
+    documented = inventory(render_context(config).env)
+    # a typing_extensions name is the same kind of object as its typing counterpart
+    pydata_key = ("typing" if module == "typing_extensions" else module, class_name)
+    return next((kind for kind in ("class", "data") if full_name in documented.get(f"py:{kind}", {})), None) or (
+        "data" if pydata_key in PYDATA_ANNOTATIONS else "class"
+    )
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

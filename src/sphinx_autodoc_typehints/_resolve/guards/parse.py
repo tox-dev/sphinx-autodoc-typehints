@@ -107,12 +107,7 @@ def _holds_when_type_checking(test: expr) -> bool | None:
     if isinstance(test, Compare):
         return _platform_comparison(test)
     if isinstance(test, BoolOp):
-        values = [_holds_when_type_checking(value) for value in test.values]
-        if isinstance(test.op, And):
-            holds = False if False in values else True if all(value is True for value in values) else None
-        else:
-            holds = True if True in values else False if all(value is False for value in values) else None
-        return holds
+        return _holds_bool_op(test)
     return None
 
 
@@ -128,6 +123,13 @@ def _platform_comparison(test: Compare) -> bool | None:
     if isinstance(test.ops[0], Eq):
         return sys.platform == test.comparators[0].value
     return sys.platform != test.comparators[0].value if isinstance(test.ops[0], NotEq) else None
+
+
+def _holds_bool_op(test: BoolOp) -> bool | None:
+    values = [_holds_when_type_checking(value) for value in test.values]
+    if isinstance(test.op, And):
+        return False if False in values else True if all(value is True for value in values) else None
+    return True if True in values else False if all(value is False for value in values) else None
 
 
 def module_source(module: ModuleType) -> str:

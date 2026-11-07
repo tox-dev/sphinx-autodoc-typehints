@@ -25,6 +25,7 @@ if version_info >= (3, 14):  # pragma: >=3.14 cover
 if TYPE_CHECKING:
     from docutils.nodes import Node
     from sphinx.application import Sphinx
+    from sphinx.environment import BuildEnvironment
 
     from sphinx_autodoc_typehints._types import Hint, TypeParam
 
@@ -51,27 +52,24 @@ def add_type_params(app: Sphinx, domain: str, objtype: str, contentnode: addnode
             and (name := next((node for node in signode if isinstance(node, addnodes.desc_name)), None)) is not None
             and (params := type_params_of(documented := object_at(module, fullname.split(".")), legacy=True))
         ):
-            declarations = []
             # PEP 695 evaluates a bound, constraints or default on first access, in the globals of the module
             with guard_bound(app.config.autodoc_mock_imports, documented):
-                for param in params:
-                    # typeshed types __name__ as the property naming an instance, so read the class's through its MRO
-                    declaration = f"{TYPE_PARAM_KINDS[type(param).__mro__[0].__name__]}{param.__name__}"
-                    fields = type_param_fields(param, partial(_lazy, param))
-                    if isinstance(constraints := _lazy(param, "constraints"), tuple) and constraints:
-                        declaration += f": ({', '.join(_stringify(constraint, mode) for constraint in constraints)})"
-                    elif (bound := fields.get("bound", _UNKNOWN)) is not _UNKNOWN:
-                        declaration += f": {_stringify(bound, mode)}"
-                    if (default := fields.get("default", _UNKNOWN)) is not _UNKNOWN:
-                        declaration += f" = {_stringify(default, mode)}"
-                    declarations.append(declaration)
-                type_params = parse_type_list(", ".join(declarations), app.env)
-            # Sphinx keeps the source text of a default, so a `~` would show and no name would link
-            for default in list(type_params.findall(_is_default)):
-                # the default of a TypeVarTuple unpacks a tuple, which does not parse as an annotation on its own
-                star = [addnodes.desc_sig_operator("", "*")] if (text := default.astext()).startswith("*") else []
-                default[:] = [*star, *parse_annotation(text.removeprefix("*"), app.env)]
+                type_params = parse_type_list(", ".join(_declaration(param, mode) for param in params), app.env)
+            _parse_defaults(type_params, app.env)
             signode.insert(signode.index(name) + 1, type_params)
+
+
+def _declaration(param: TypeParam, mode: _Mode) -> str:
+    # typeshed types __name__ as the property naming an instance, so read the class's through its MRO
+    declaration = f"{TYPE_PARAM_KINDS[type(param).__mro__[0].__name__]}{param.__name__}"
+    fields = type_param_fields(param, partial(_lazy, param))
+    if isinstance(constraints := _lazy(param, "constraints"), tuple) and constraints:
+        declaration += f": ({', '.join(_stringify(constraint, mode) for constraint in constraints)})"
+    elif (bound := fields.get("bound", _UNKNOWN)) is not _UNKNOWN:
+        declaration += f": {_stringify(bound, mode)}"
+    if (default := fields.get("default", _UNKNOWN)) is not _UNKNOWN:
+        declaration += f" = {_stringify(default, mode)}"
+    return declaration
 
 
 # PEP 695 evaluates these on access; where that fails, a forward reference stands in, or an unknown value before 3.14
@@ -92,6 +90,14 @@ def _stringify(value: Hint | list[Hint] | None, mode: _Mode) -> str:
     if (alias := unstar(value)) is not None:
         return f"*{stringify_annotation(alias, mode)}"
     return stringify_annotation(value, mode)
+
+
+def _parse_defaults(type_params: Node, env: BuildEnvironment) -> None:
+    # Sphinx keeps the source text of a default, so a `~` would show and no name would link
+    for default in list(type_params.findall(_is_default)):
+        # the default of a TypeVarTuple unpacks a tuple, which does not parse as an annotation on its own
+        star = [addnodes.desc_sig_operator("", "*")] if (text := default.astext()).startswith("*") else []
+        default[:] = [*star, *parse_annotation(text.removeprefix("*"), env)]
 
 
 def _is_default(node: Node) -> bool:
