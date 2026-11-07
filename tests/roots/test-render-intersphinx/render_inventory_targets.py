@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 from types import UnionType
-from typing import Union
+from typing import Final, Union
 
 
 class Thing:
     """A class whose instances have a module but no qualified name."""
 
 
-THING = Thing()
+THING: Final[Thing] = Thing()
 PublicThing = Thing
 CompatThing = Thing
 UnionClass = UnionType
