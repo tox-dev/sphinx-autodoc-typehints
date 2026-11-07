@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-from render_scopes import Count
-
-__all__ = ["Count"]
+from . import Count
 
 
 def consume(value: Count) -> None:
@@ -12,3 +10,8 @@ def consume(value: Count) -> None:
 
     :param value: the value
     """
+
+
+__all__ = [
+    "Count",
+]
