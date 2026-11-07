@@ -26,7 +26,14 @@ import live_example_variants
 from docutils.nodes import Text, raw
 from docutils.parsers.rst import directives
 from live_example_selector import describe, selector
-from live_example_variants import VariantBuildError, Variants, combination_key, parse_options, render_variants
+from live_example_variants import (
+    PageContext,
+    VariantBuildError,
+    Variants,
+    combination_key,
+    parse_options,
+    render_variants,
+)
 from pygments import highlight
 from pygments.formatters.html import HtmlFormatter
 from pygments.lexers.python import PythonLexer
@@ -331,7 +338,7 @@ def _render_variants(env: BuildEnvironment, conf: str, options: list[Option], so
 
 
 def _copy_picker_data(
-    app: Sphinx, _pagename: str, _template: str, _context: dict[str, object], doctree: document | None
+    app: Sphinx, _pagename: str, _template: str, _context: PageContext, doctree: document | None
 ) -> None:
     for node in doctree.findall(raw) if doctree is not None else ():
         if stored := node.get("live_example_data"):

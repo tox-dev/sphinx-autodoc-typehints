@@ -7,9 +7,7 @@ from typing import TYPE_CHECKING, Final, Protocol
 from pytest import MonkeyPatch, fixture, mark, param
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
-    from sphinx.testing.util import SphinxTestApp
+    from conftest import MakeApp
 
 _EXTENSION_DIR: Final[Path] = Path(__file__).parents[1] / "docs" / "_ext"
 
@@ -19,7 +17,7 @@ class Render(Protocol):
 
 
 @fixture(name="render")
-def render_fixture(tmp_path: Path, monkeypatch: MonkeyPatch, make_app: Callable[..., SphinxTestApp]) -> Render:
+def render_fixture(tmp_path: Path, monkeypatch: MonkeyPatch, make_app: MakeApp) -> Render:
     monkeypatch.syspath_prepend(_EXTENSION_DIR)
     # conftest removes a temporary directory holding a _build, and fails on the symlink pytest makes to the latest one
     (project := tmp_path / "project").mkdir()

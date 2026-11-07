@@ -98,7 +98,7 @@ def get_body_annotations(owner: type | ModuleType) -> dict[str, Annotation]:
     return {name: hint for name, hint in held.items() if not _is_qualifier(hint)}
 
 
-def _is_qualifier(hint: object) -> bool:
+def _is_qualifier(hint: Annotation | None) -> bool:
     # matched by identity, as a set lookup would hash the annotation, which Annotated with dict metadata cannot do
     return hint is ClassVar or hint is Final
 

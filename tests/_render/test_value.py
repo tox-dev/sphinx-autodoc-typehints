@@ -8,9 +8,7 @@ from typing import TYPE_CHECKING
 from pytest import mark, param
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
-    from conftest import BuildText, MakeModule
+    from conftest import BuildText, MakeApp, MakeModule
     from sphinx.testing.util import SphinxTestApp
 
 
@@ -117,7 +115,7 @@ def test_value_stylesheet_is_served(app: SphinxTestApp, build_text: BuildText) -
 
 @mark.sphinx("html", testroot="render-types")
 def test_value_stylesheet_keeps_incremental_config_stable(
-    app: SphinxTestApp, build_text: BuildText, make_app: Callable[..., SphinxTestApp]
+    app: SphinxTestApp, build_text: BuildText, make_app: MakeApp
 ) -> None:
     build_text("Values\n======\n")
     rebuilt = make_app("html", srcdir=app.srcdir)

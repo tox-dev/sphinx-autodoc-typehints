@@ -21,8 +21,8 @@ from sphinx_autodoc_typehints._types import Documented
 from sphinx_autodoc_typehints._warnings import warn
 
 if TYPE_CHECKING:
+    from conftest import MakeApp
     from sphinx.config import Config
-    from sphinx.testing.util import SphinxTestApp
     from sphobjinv import Inventory
 
 _REFERENCE: Final[str] = (Path(__file__).parents[1] / "docs" / "reference.rst").read_text(encoding="utf-8")
@@ -59,14 +59,14 @@ def project_fixture(tmp_path: Path) -> Path:
 
 
 @fixture(name="extension_config")
-def extension_config_fixture(project: Path, make_app: Callable[..., SphinxTestApp]) -> Config:
+def extension_config_fixture(project: Path, make_app: MakeApp) -> Config:
     (project / "conf.py").write_text('extensions = ["sphinx_autodoc_typehints"]')
     (project / "index.rst").write_text("")
     return make_app("text", srcdir=project).config
 
 
 def test_docs_reference_lists_the_registered_options(
-    extension_config: Config, project: Path, make_app: Callable[..., SphinxTestApp]
+    extension_config: Config, project: Path, make_app: MakeApp
 ) -> None:
     autodoc_only = make_app("text", srcdir=project, confoverrides={"extensions": ["sphinx.ext.autodoc"]}).config
 
@@ -142,7 +142,7 @@ def test_docs_option_type_references_use_public_python_names(
 
 @mark.usefixtures("extension_config")
 def test_docs_option_type_lists_the_defaults_styles_the_extension_accepts(
-    option_reference: ModuleType, project: Path, make_app: Callable[..., SphinxTestApp]
+    option_reference: ModuleType, project: Path, make_app: MakeApp
 ) -> None:
     app = make_app("text", srcdir=project, confoverrides={"typehints_defaults": "inline"})
     with raises(ConfigError) as error:

@@ -32,8 +32,8 @@ if TYPE_CHECKING:
     from sphobjinv import Inventory
 
     from _render.conftest import MakeConfig
-    from sphinx_autodoc_typehints._render.context import TypehintsFormatter
-    from sphinx_autodoc_typehints._types import Annotation
+    from sphinx_autodoc_typehints._render.context import AnnotationKind, TypehintsFormatter
+    from sphinx_autodoc_typehints._types import Annotation, RenderNode
 
 Item = TypeVar("Item")
 Out_co = TypeVar("Out_co", covariant=True)
@@ -863,7 +863,7 @@ def test_format_annotation_formatter_replaces_the_types_it_formats_in_a_build(
         """)
 
 
-def _format_by_kind(annotation: object, _config: object, kind: str) -> str | None:
+def _format_by_kind(annotation: RenderNode, _config: Config, kind: AnnotationKind) -> str | None:
     return kind.upper() if annotation is int or kind == "base" else None
 
 

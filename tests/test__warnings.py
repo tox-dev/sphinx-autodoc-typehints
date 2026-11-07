@@ -7,10 +7,9 @@ from typing import TYPE_CHECKING, Final
 from pytest import mark, param
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
     from pathlib import Path
 
-    from sphinx.testing.util import SphinxTestApp
+    from conftest import MakeApp
 
 
 _SUBTYPES: Final[set[str]] = {"comment", "forward_reference", "guarded_import", "multiple_ast_nodes"}
@@ -28,7 +27,7 @@ _SUBTYPES: Final[set[str]] = {"comment", "forward_reference", "guarded_import", 
     ],
 )
 def test_warnings_carry_suppressible_categories(
-    make_app: Callable[..., SphinxTestApp], rootdir: Path, tmp_path: Path, suppressed: list[str], expected: set[str]
+    make_app: MakeApp, rootdir: Path, tmp_path: Path, suppressed: list[str], expected: set[str]
 ) -> None:
     # the guard of a module runs once per process, so each build documents a module of its own
     module = f"public_module_{tmp_path.name}"

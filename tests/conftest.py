@@ -21,10 +21,12 @@ from sphinx_autodoc_typehints._resolve.guards.overlay import SHADOWED_BY_GUARD
 from sphinx_autodoc_typehints._resolve.overloads import OVERLOADS
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
+    from collections.abc import Callable, Iterator, Mapping
     from types import ModuleType
 
     from sphinx.testing.util import SphinxTestApp
+
+    from sphinx_autodoc_typehints._render.context import FixupModuleName, TypehintsFormatter
 
 
 pytest_plugins: Final[str] = "sphinx.testing.fixtures"
@@ -37,8 +39,36 @@ class BuildText(Protocol):
     def __call__(self, index: str, output: str = "", **documents: str) -> str: ...
 
 
+type ConfigOverride = (
+    bool
+    | str
+    | tuple[type | str, ...]
+    | list[str]
+    | dict[str, str]
+    | dict[str, tuple[str, str]]
+    | TypehintsFormatter
+    | FixupModuleName
+)
+
+
+class MakeApp(Protocol):
+    def __call__(
+        self,
+        buildername: str = "html",
+        /,
+        *,
+        srcdir: Path,
+        freshenv: bool = False,
+        confoverrides: Mapping[str, ConfigOverride] | None = None,
+    ) -> SphinxTestApp: ...
+
+
+class _SphinxMakeApp(Protocol):
+    def __call__(self, *args: object, **kwargs: object) -> SphinxTestApp: ...
+
+
 @fixture(name="make_app")
-def make_app_fixture(make_app: Callable[..., SphinxTestApp]) -> Iterator[Callable[..., SphinxTestApp]]:
+def make_app_fixture(make_app: _SphinxMakeApp) -> Iterator[MakeApp]:
     confdirs: set[str] = set()
 
     def make(*args: object, **kwargs: object) -> SphinxTestApp:
@@ -225,5 +255,7 @@ def native_pkg(tmp_path_factory: TempPathFactory) -> Iterator[ModuleType]:
 
 __all__ = [
     "BuildText",
+    "ConfigOverride",
+    "MakeApp",
     "MakeModule",
 ]

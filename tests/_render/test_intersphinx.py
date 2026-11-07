@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from pathlib import Path
 
-    from conftest import BuildText
+    from conftest import BuildText, MakeApp
     from sphinx.config import Config
     from sphinx.environment import BuildEnvironment
     from sphinx.testing.util import SphinxTestApp
@@ -130,9 +130,7 @@ def test_mapped_name_picks_the_class_role_whatever_the_hash_seed(rootdir: Path, 
 
 
 @fixture(name="inventory_env")
-def inventory_env_fixture(
-    make_app: Callable[..., SphinxTestApp], rootdir: Path, tmp_path: Path
-) -> Callable[[str], BuildEnvironment]:
+def inventory_env_fixture(make_app: MakeApp, rootdir: Path, tmp_path: Path) -> Callable[[str], BuildEnvironment]:
     def load(entries: str) -> BuildEnvironment:
         (inventory := tmp_path / "objects.inv").write_bytes(
             dedent("""\

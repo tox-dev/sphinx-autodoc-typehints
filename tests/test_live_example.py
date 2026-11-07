@@ -13,6 +13,7 @@ from pytest import MonkeyPatch, fixture, mark, param
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from conftest import MakeApp
     from sphinx.testing.util import SphinxTestApp
 
 _EXTENSION_DIR: Final[Path] = Path(__file__).parents[1] / "docs" / "_ext"
@@ -72,7 +73,7 @@ def project_fixture(tmp_path: Path, monkeypatch: MonkeyPatch) -> Path:
 
 
 @fixture(name="build")
-def build_fixture(project: Path, make_app: Callable[..., SphinxTestApp]) -> Build:
+def build_fixture(project: Path, make_app: MakeApp) -> Build:
     def build(index: str) -> SphinxTestApp:
         (project / "index.rst").write_text(f"Example\n=======\n\n{index}")
         app = make_app("html", srcdir=project, freshenv=True)

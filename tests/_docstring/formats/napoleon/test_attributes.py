@@ -11,9 +11,7 @@ from sphinx_autodoc_typehints._docstring.formats.napoleon.attributes import note
 from sphinx_autodoc_typehints._docstring.handler import process_docstring
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
-    from conftest import BuildText, MakeModule
+    from conftest import BuildText, MakeApp, MakeModule
     from sphinx.testing.util import SphinxTestApp
 
 
@@ -131,7 +129,7 @@ def test_napoleon_attributes_without_attr_annotations(build_text: BuildText, dir
 
 
 def test_napoleon_attributes_noted_for_a_failed_docstring_stay_out_of_the_next(
-    app: SphinxTestApp, make_app: Callable[..., SphinxTestApp], make_module: MakeModule
+    app: SphinxTestApp, make_app: MakeApp, make_module: MakeModule
 ) -> None:
     ledger = make_module(
         "noted_ledger",
@@ -191,7 +189,7 @@ def test_napoleon_attributes_typed_from_annotations(build_text: BuildText, cls: 
 
 @mark.sphinx("text", testroot="dummy", confoverrides={})
 def test_napoleon_attr_annotations_turned_off_re_reads_the_document(
-    app: SphinxTestApp, build_text: BuildText, make_app: Callable[..., SphinxTestApp]
+    app: SphinxTestApp, build_text: BuildText, make_app: MakeApp
 ) -> None:
     build_text(".. autoclass:: dummy_module.GoogleAttributes")
     untyped = make_app("text", srcdir=app.srcdir, confoverrides={"napoleon_attr_annotations": False})

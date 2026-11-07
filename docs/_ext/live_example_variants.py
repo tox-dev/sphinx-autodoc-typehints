@@ -12,7 +12,7 @@ from logging import getLogger
 from re import VERBOSE, sub
 from re import compile as compile_regex
 from sys import modules, path
-from typing import TYPE_CHECKING, Final, NamedTuple
+from typing import TYPE_CHECKING, Final, NamedTuple, TypedDict
 from uuid import uuid4
 
 from docutils.parsers.rst import directives, roles
@@ -75,10 +75,14 @@ class Option(NamedTuple):
     """
 
     name: str
-    values: tuple[object, ...]
+    values: tuple[str | bool | None, ...]
     depends_on: str
     label: str
     group: str
+
+
+class PageContext(TypedDict):
+    body: str
 
 
 def render_variants(project: Path, options: list[Option], sources: list[str], module: str) -> Variants:
@@ -193,7 +197,7 @@ def _application(project: Path, options: list[Option], rewrite: Callable[[str, i
 
     # the body is all a variant needs, so each page renders through a template holding nothing else; the links of a
     # variant depend on which variant the domain registered an object for last, so they compare only once rewritten
-    def keep_body(_app: Sphinx, pagename: str, _template: str, context: dict[str, object], _doctree: object) -> str:
+    def keep_body(_app: Sphinx, pagename: str, _template: str, context: PageContext, _doctree: document | None) -> str:
         if pagename.startswith("v"):
             bodies[pagename] = rewrite(str(context["body"]), int(pagename.rsplit("/", 1)[1]))
         return body_template
@@ -299,6 +303,7 @@ class Variants(NamedTuple):
 __all__ = [
     "Combination",
     "Option",
+    "PageContext",
     "VariantBuildError",
     "Variants",
     "combination_key",

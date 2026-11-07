@@ -15,10 +15,9 @@ from sphinx.util.console import strip_colors
 from sphinx_autodoc_typehints.version import __version__
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
     from types import ModuleType
 
-    from conftest import BuildText, MakeModule
+    from conftest import BuildText, MakeApp, MakeModule
     from sphinx.testing.util import SphinxTestApp
 
 
@@ -71,7 +70,7 @@ def test_setup_reports_the_package_version(app: SphinxTestApp) -> None:
 )
 @mark.parametrize("name", [param(name, id=name) for name in EXPECTED])
 def test_integration(
-    make_app: Callable[..., SphinxTestApp],
+    make_app: MakeApp,
     rootdir: Path,
     tmp_path: Path,
     cases_module: ModuleType,
@@ -124,7 +123,7 @@ def test_type_role_keeps_the_default_role_of_the_document(build_text: BuildText)
 
 
 def test_build_reads_the_guard_of_a_module_edited_since_the_last_build(
-    make_app: Callable[..., SphinxTestApp], tmp_path: Path, monkeypatch: MonkeyPatch
+    make_app: MakeApp, tmp_path: Path, monkeypatch: MonkeyPatch
 ) -> None:
     (project := tmp_path / "project").mkdir()
     (project / "conf.py").write_text('extensions = ["sphinx.ext.autodoc", "sphinx_autodoc_typehints"]')
@@ -229,7 +228,7 @@ def test_build_reads_the_guard_of_a_module_edited_since_the_last_build(
     ],
 )
 def test_docstring_extension_listed_after_still_gets_types(
-    make_app: Callable[..., SphinxTestApp],
+    make_app: MakeApp,
     make_module: MakeModule,
     tmp_path: Path,
     extension: str,
