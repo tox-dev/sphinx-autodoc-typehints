@@ -58,7 +58,13 @@ def process_signature(
         return None
     callee, annotated = target
     overloads = signature_overloads(app, what, obj, callee, options)
-    if not _annotates(annotated) and declared_signature(callee) is None and not overloads:
+    try:
+        annotates = bool(annotated.__annotations__)
+    except Exception:  # ruff:ignore[blind-except]  # an annotation runs user code, which may raise anything
+        # PEP 649 runs an annotation on access, where a name a TYPE_CHECKING block binds or a subscripted non-generic
+        # class fails; __annotate__ still shows annotations exist, and sphinx_signature renders them as FORWARDREF
+        annotates = getattr(annotated, "__annotate__", None) is not None
+    if not annotates and declared_signature(callee) is None and not overloads:
         return None
     entry = Entry(app=app, what=what, name=name, obj=obj)
     full_signature = sphinx_signature(callee, type_aliases=app.config["autodoc_type_aliases"])
@@ -117,15 +123,6 @@ def _target(obj: Callable[..., object]) -> tuple[QualifiedCallable, QualifiedCal
                 call = found
         obj = call or getattr(obj, constructor_name(obj))
     return callable_target(obj)
-
-
-def _annotates(annotated: QualifiedCallable) -> bool:
-    try:
-        return bool(annotated.__annotations__)
-    except Exception:  # ruff:ignore[blind-except]  # an annotation runs user code, which may raise anything
-        # PEP 649 runs an annotation on access, where a name a TYPE_CHECKING block binds or a subscripted non-generic
-        # class fails; __annotate__ still shows annotations exist, and sphinx_signature renders them as FORWARDREF
-        return getattr(annotated, "__annotate__", None) is not None
 
 
 def _shown_types(
