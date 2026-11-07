@@ -136,7 +136,7 @@ _NAMES: Final[list[tuple[str, object, str, str, tuple[object, ...]]]] = [
 ]
 
 
-_FILLED_IN_FROM_313: Final = version_info >= (3, 13)
+_FILLED_IN_FROM_313: Final[bool] = version_info >= (3, 13)
 
 
 @mark.parametrize(

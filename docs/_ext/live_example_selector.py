@@ -10,13 +10,15 @@ from re import compile as compile_regex
 from typing import TYPE_CHECKING, Final
 
 if TYPE_CHECKING:
+    from re import Pattern
+
     from live_example_variants import Option
 
-_CONFVAL: Final = compile_regex(
+_CONFVAL: Final[Pattern[str]] = compile_regex(
     r"^\.\. confval:: (?P<name>\w+)\n(?:[ \t]+:\w+:.*\n)*\n(?P<content>(?:[ \t]+\S.*(?:\n|$))+)", MULTILINE
 )
 # a role shows its explicit title, or its target, cut to the last part by a leading tilde
-_ROLE: Final = compile_regex(
+_ROLE: Final[Pattern[str]] = compile_regex(
     r":[\w:]+:`(?:(?P<title>[^`<]*?)\s*<[^`>]*>|~(?:[\w.]*\.)?(?P<short>[^`]+)|(?P<name>[^`]+))`"
 )
 

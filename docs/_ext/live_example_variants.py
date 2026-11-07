@@ -21,6 +21,7 @@ from sphinx.application import Sphinx
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator, Iterable
     from pathlib import Path
+    from re import Pattern
 
     from docutils.nodes import document
     from sphinx.builders import Builder
@@ -30,9 +31,9 @@ if TYPE_CHECKING:
 # each example documents a module of its own, whose name its rendered pages replace
 _MODULE: Final[str] = "live_example_module"
 # every variant of an example documents the same objects, so all but one are duplicates of another variant's
-_DUPLICATE: Final = compile_regex(r"duplicate (?:object|module) description of ")
+_DUPLICATE: Final[Pattern[str]] = compile_regex(r"duplicate (?:object|module) description of ")
 # a link to an object of another variant of the same example points at the variant shown, so it stays on the page
-_OTHER_PAGE: Final = compile_regex(r'href="(?![a-z][a-z0-9+.-]*:)[^"#]*#')
+_OTHER_PAGE: Final[Pattern[str]] = compile_regex(r'href="(?![a-z][a-z0-9+.-]*:)[^"#]*#')
 
 # how many options at once a probe moves away from their defaults
 _PROBED: Final[int] = 2
