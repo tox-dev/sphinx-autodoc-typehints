@@ -53,7 +53,7 @@ def inject_parameters(
 
     `documented_elsewhere` names the parameters the other docstring of a class entry documents.
     """
-    fields = _Fields(app, lines, fmt, signature, hints.types)
+    fields = _Fields(app=app, lines=lines, fmt=fmt, signature=signature, hints=hints.types)
     for arg_name in signature.parameters:
         fields.type_parameter(
             arg_name,
@@ -79,14 +79,14 @@ def inject_parameters(
     keywords = Signature([Parameter(key, Parameter.KEYWORD_ONLY) for key in keys])
     # the keys go with the part documenting **kwargs, or the one listing what neither part documents
     keys_elsewhere = kwargs.name in documented_elsewhere and fmt.find_param(lines, kwargs.name) is None
-    key_fields = _Fields(app, lines, fmt, keywords, keys)
+    key_fields = _Fields(app=app, lines=lines, fmt=fmt, signature=keywords, hints=keys)
     for key in keys:
         key_fields.type_parameter(
             key, written=None, documented_elsewhere=keys_elsewhere or key in documented_elsewhere, field="keyword"
         )
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, kw_only=True)
 class _Fields:
     app: Sphinx
     lines: list[str]
@@ -105,10 +105,10 @@ class _Fields:
         annotation = self.hints.get(arg_name)
         signature_param = self.signature.parameters[arg_name]
         param = _Parameter(
-            annotation,
-            as_written(annotation, written),
-            signature_param.default,
-            VARIADIC_STARS.get(signature_param.kind.name, ""),
+            annotation=annotation,
+            shown=as_written(annotation, written),
+            default=signature_param.default,
+            stars=VARIADIC_STARS.get(signature_param.kind.name, ""),
         )
         doc_name, at = _find_param(self.lines, arg_name, self.fmt)
         inline_type = ""
@@ -212,7 +212,7 @@ class _Fields:
 
 
 # `shown` is the type as the annotation names it, an alias by its own name
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, kw_only=True)
 class _Parameter:
     annotation: Hint | None
     shown: Hint | WrittenTypeAlias | None

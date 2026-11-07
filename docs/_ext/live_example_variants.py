@@ -37,41 +37,9 @@ _OTHER_PAGE: Final = compile_regex(r'href="(?![a-z][a-z0-9+.-]*:)[^"#]*#')
 # how many options at once a probe moves away from their defaults
 _PROBED: Final[int] = 2
 
-_TEMPLATES: Final[str] = "_templates"
 _BODY: Final[str] = "body.html"
 
 type Combination = tuple[int, ...]
-
-
-class Option(NamedTuple):
-    """
-    An option to pick: its name, the values it offers with its default first, and the option it needs switched on.
-
-    `label` names it for a reader in a few words, and `group` is the heading it shows under.
-    """
-
-    name: str
-    values: tuple[object, ...]
-    depends_on: str
-    label: str
-    group: str
-
-
-class Variants(NamedTuple):
-    """
-    What each example renders as under each combination of the options.
-
-    `relevant` lists, for each example, the options that change it. `examples` maps, for each example, the key of a
-    combination of only those options to the index of the page in `bodies`, which holds each distinct page once.
-    """
-
-    bodies: list[str]
-    relevant: list[list[int]]
-    examples: list[dict[str, int]]
-
-
-class VariantBuildError(Exception):
-    """Sphinx warned while building a variant, with the warnings as the message."""
 
 
 def parse_options(lines: Iterable[str]) -> list[Option]:
@@ -92,9 +60,18 @@ def parse_options(lines: Iterable[str]) -> list[Option]:
     return options
 
 
-def combination_key(combination: Combination) -> str:
-    """Name a combination by the index of the value it picks for each option."""
-    return "".join(map(str, combination))
+class Option(NamedTuple):
+    """
+    An option to pick: its name, the values it offers with its default first, and the option it needs switched on.
+
+    `label` names it for a reader in a few words, and `group` is the heading it shows under.
+    """
+
+    name: str
+    values: tuple[object, ...]
+    depends_on: str
+    label: str
+    group: str
 
 
 def render_variants(project: Path, options: list[Option], sources: list[str], module: str) -> Variants:
@@ -151,27 +128,6 @@ def _probes(options: list[Option]) -> list[Combination]:
     return sorted({_canonical(options, picked) for picked in product(*ranges) if sum(map(bool, picked)) <= _PROBED})
 
 
-def _reset(combination: Combination, index: int) -> Combination:
-    return tuple(0 if at == index else value for at, value in enumerate(combination))
-
-
-def _combinations(options: list[Option], relevant: list[int]) -> list[Combination]:
-    ranges = [range(len(option.values)) if index in relevant else range(1) for index, option in enumerate(options)]
-    return sorted({_canonical(options, combination) for combination in product(*ranges)})
-
-
-def _canonical(options: list[Option], combination: Combination) -> Combination:
-    # an option needing another one that is switched off changes nothing, so it keeps its default
-    names = [option.name for option in options]
-    return tuple(
-        0
-        if option.depends_on
-        and not options[names.index(option.depends_on)].values[combination[names.index(option.depends_on)]]
-        else at
-        for option, at in zip(options, combination, strict=True)
-    )
-
-
 @contextmanager
 def _isolated() -> Generator[None]:
     # an application points the process-wide sphinx logger at its own streams and registers its directives and roles
@@ -200,18 +156,13 @@ def _importable(project: Path, prefix: str) -> Generator[None]:
             del modules[name]
 
 
-class _Nested(NamedTuple):
-    app: Sphinx
-    warnings: StringIO
-    bodies: dict[str, str]
-
-
 def _application(project: Path, options: list[Option], rewrite: Callable[[str, int], str]) -> _Nested:
     warnings, bodies = StringIO(), {}
     # the outer build registered the node classes already, so registering them again only overrides their visitors
-    overrides = {"suppress_warnings": ["app.add_node"], "templates_path": [_TEMPLATES]}
-    (project / _TEMPLATES).mkdir()
-    (project / _TEMPLATES / _BODY).write_text("{{ body }}", encoding="utf-8")
+    templates: str = "_templates"
+    overrides = {"suppress_warnings": ["app.add_node"], "templates_path": [templates]}
+    (project / templates).mkdir()
+    (project / templates / _BODY).write_text("{{ body }}", encoding="utf-8")
     app = Sphinx(
         project,
         project,
@@ -268,6 +219,18 @@ def _switch_config(app: Sphinx, options: list[Option]) -> None:
     app.connect("build-finished", uninstall)
 
 
+class _Nested(NamedTuple):
+    app: Sphinx
+    warnings: StringIO
+    bodies: dict[str, str]
+
+
+def _rewrite(body: str, documented: str, example: str, module: str) -> str:
+    named = _OTHER_PAGE.sub('href="#', sub(rf"\b{documented}\b", module, body))
+    # the variants of an example share one prefix for their anchors, as only one of them shows at a time
+    return sub(r'\b(id="|href="#)', rf"\g<1>{sha256(example.encode()).hexdigest()[:12]}-", named)
+
+
 def _build(
     nested: _Nested, prefix: str, pairs: Iterable[tuple[Combination, int]], *, fresh: bool
 ) -> dict[tuple[Combination, int], str]:
@@ -286,13 +249,51 @@ def _build(
     return {(combination, at): nested.bodies[f"v{combination_key(combination)}/{at}"] for combination, at in paths}
 
 
-def _rewrite(body: str, documented: str, example: str, module: str) -> str:
-    named = _OTHER_PAGE.sub('href="#', sub(rf"\b{documented}\b", module, body))
-    # the variants of an example share one prefix for their anchors, as only one of them shows at a time
-    return sub(r'\b(id="|href="#)', rf"\g<1>{sha256(example.encode()).hexdigest()[:12]}-", named)
+class VariantBuildError(Exception):
+    """Sphinx warned while building a variant, with the warnings as the message."""
+
+
+def _canonical(options: list[Option], combination: Combination) -> Combination:
+    # an option needing another one that is switched off changes nothing, so it keeps its default
+    names = [option.name for option in options]
+    return tuple(
+        0
+        if option.depends_on
+        and not options[names.index(option.depends_on)].values[combination[names.index(option.depends_on)]]
+        else at
+        for option, at in zip(options, combination, strict=True)
+    )
+
+
+def _reset(combination: Combination, index: int) -> Combination:
+    return tuple(0 if at == index else value for at, value in enumerate(combination))
+
+
+def _combinations(options: list[Option], relevant: list[int]) -> list[Combination]:
+    ranges = [range(len(option.values)) if index in relevant else range(1) for index, option in enumerate(options)]
+    return sorted({_canonical(options, combination) for combination in product(*ranges)})
+
+
+def combination_key(combination: Combination) -> str:
+    """Name a combination by the index of the value it picks for each option."""
+    return "".join(map(str, combination))
+
+
+class Variants(NamedTuple):
+    """
+    What each example renders as under each combination of the options.
+
+    `relevant` lists, for each example, the options that change it. `examples` maps, for each example, the key of a
+    combination of only those options to the index of the page in `bodies`, which holds each distinct page once.
+    """
+
+    bodies: list[str]
+    relevant: list[list[int]]
+    examples: list[dict[str, int]]
 
 
 __all__ = [
+    "Combination",
     "Option",
     "VariantBuildError",
     "Variants",

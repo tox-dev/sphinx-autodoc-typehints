@@ -45,13 +45,6 @@ def guard_binds(module: ModuleType, names: set[str]) -> bool:
     return any(name in names for statement in statements for name in defined_names(statement))
 
 
-def module_source(module: ModuleType) -> str:
-    try:
-        return getsource(module)
-    except (TypeError, OSError):
-        return ""
-
-
 # every importer of a module asks again while its guard binds none of the names imported, and parsing typing takes
 # milliseconds; keyed on the source, so reloading an edited module parses it again
 @cache
@@ -129,6 +122,13 @@ def _platform_comparison(test: Compare) -> bool | None:
     if isinstance(test.ops[0], Eq):
         return sys.platform == test.comparators[0].value
     return sys.platform != test.comparators[0].value if isinstance(test.ops[0], NotEq) else None
+
+
+def module_source(module: ModuleType) -> str:
+    try:
+        return getsource(module)
+    except (TypeError, OSError):
+        return ""
 
 
 def defined_names(node: AST) -> Iterator[str]:

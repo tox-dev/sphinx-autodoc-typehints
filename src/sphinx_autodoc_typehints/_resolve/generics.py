@@ -100,6 +100,13 @@ def bound_type_args(documenting: Documented, attribute: str) -> dict[TypeParam, 
     return type_arguments(definer, _parametrized(documenting, definer))
 
 
+def type_arguments(cls: type, alias: Documented) -> dict[TypeParam, Annotation]:
+    """Map the type parameters of `cls` to the arguments `alias` subscripting it gives them, none for `cls`."""
+    params = getattr(cls, "__parameters__", ())
+    # a TypeVarTuple takes any number of arguments, leaving no one-to-one match, and a bare base binds none
+    return dict(zip(params, args, strict=True)) if len(params) == len(args := get_args(alias)) else {}
+
+
 def _parametrized(cls: type, target: type) -> Annotation:
     # a base the class statement names may stand in for the class it adds, as TypedDict does for dict, binding nothing;
     # issubclass would raise for a Protocol that is not runtime checkable and count a class registered with an ABC
@@ -114,13 +121,6 @@ def _parametrized(cls: type, target: type) -> Annotation:
     if (origin := get_origin(base) or base) is target:
         return base
     return specialize(_parametrized(origin, target), type_arguments(origin, base))
-
-
-def type_arguments(cls: type, alias: Documented) -> dict[TypeParam, Annotation]:
-    """Map the type parameters of `cls` to the arguments `alias` subscripting it gives them, none for `cls`."""
-    params = getattr(cls, "__parameters__", ())
-    # a TypeVarTuple takes any number of arguments, leaving no one-to-one match, and a bare base binds none
-    return dict(zip(params, args, strict=True)) if len(params) == len(args := get_args(alias)) else {}
 
 
 def specialize[Value](annotation: Value, arguments: Mapping[TypeParam, Annotation]) -> Value | Annotation:

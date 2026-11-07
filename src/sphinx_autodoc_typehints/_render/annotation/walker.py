@@ -107,11 +107,6 @@ def format_annotation(annotation: RenderNode, config: Config, *, short_literals:
             rendered = None
 
 
-@dataclass(frozen=True, slots=True)
-class _Rendered:
-    text: str
-
-
 def _format_node(annotation: RenderNode, config: Config, *, short_literals: bool) -> _Frame:
     formatter: TypehintsFormatter | ContextualTypehintsFormatter | None = config.typehints_formatter
     subject = annotation.value if isinstance(annotation, WrittenTypeAlias) else annotation
@@ -190,13 +185,6 @@ def unstar(annotation: RenderNode) -> GenericAlias | None:
             annotation.__args__,
         )
     return None
-
-
-# a generator cannot hand back a list without ending, so the caller passes the one to fill
-def _format_into(parts: list[str], nodes: Iterable[RenderNode]) -> _Frame:
-    for annotation in nodes:
-        rendered = yield annotation
-        parts.append(rendered)
 
 
 def _forward_alias(annotation: TypeAliasForwardRef, config: Config) -> _Frame:
@@ -336,22 +324,6 @@ def _class_reference(annotation: Hint | NewType | None, config: Config, *, short
         )
 
 
-@dataclass(slots=True)
-class _Reference:
-    annotation: Hint | NewType | None
-    config: Config
-    full_name: str
-    role: str
-    prefix: str
-    fully_qualified: bool
-    local_path: str | None
-    args: tuple[RenderNode, ...]
-    is_bars_union: bool
-    short_literals: bool
-    args_format: str = "\\[{}]"
-    formatted_args: str | None = ""
-
-
 def _named_class(reference: _Reference) -> _Frame:
     special = next((handle for matches, handle in _SPECIAL_FORMS if matches(reference)), None)
     # a form that renders whole ends the frame here, others only change how the arguments render
@@ -368,6 +340,34 @@ def _named_class(reference: _Reference) -> _Frame:
         local = f":py:{reference.role}:`{name_prefix(reference.config)}{reference.local_path}`"
         text = defer_alias_choice(reference.config, local, text) or text
     yield _Rendered(f"{text}{'\\ ' if reference.formatted_args else ''}{reference.formatted_args}")
+
+
+@dataclass(slots=True, kw_only=True)
+class _Reference:
+    annotation: Hint | NewType | None
+    config: Config
+    full_name: str
+    role: str
+    prefix: str
+    fully_qualified: bool
+    local_path: str | None
+    args: tuple[RenderNode, ...]
+    is_bars_union: bool
+    short_literals: bool
+    args_format: str = "\\[{}]"
+    formatted_args: str | None = ""
+
+
+@dataclass(frozen=True, slots=True)
+class _Rendered:
+    text: str
+
+
+# a generator cannot hand back a list without ending, so the caller passes the one to fill
+def _format_into(parts: list[str], nodes: Iterable[RenderNode]) -> _Frame:
+    for annotation in nodes:
+        rendered = yield annotation
+        parts.append(rendered)
 
 
 def _new_type(reference: _Reference) -> _Frame:
@@ -422,11 +422,11 @@ def _variable_name(param: TypeParam, config: Config, suffix: str = "") -> str:
     # a module-level one reads as a PEP 695 parameter does, its own entry showing the bound and constraints, and
     # :py:obj: matches that entry whether autodoc documents it as a class or as data
     target = f"{fixup_module_name(config, param.__module__)}.{param.__name__}"
-    if suffix:
-        shown = target if config.typehints_fully_qualified else param.__name__
-        linked = f":py:obj:`{shown}{suffix} <{target}>`"
-    else:
-        linked = f":py:obj:`{name_prefix(config)}{target}`"
+    linked = (
+        f":py:obj:`{target if config.typehints_fully_qualified else param.__name__}{suffix} <{target}>`"
+        if suffix
+        else f":py:obj:`{name_prefix(config)}{target}`"
+    )
     return defer_alias_choice(config, linked, plain) or plain
 
 

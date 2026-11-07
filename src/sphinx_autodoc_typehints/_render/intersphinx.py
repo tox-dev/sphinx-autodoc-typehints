@@ -21,6 +21,29 @@ _TYPE_MAPPING: Final[str] = "_intersphinx_type_mapping"
 _UNION_PATHS: Final[frozenset[str]] = frozenset({"types.UnionType", "typing.Union"})
 
 
+def keep_type_mapping(config: Config, env: BuildEnvironment) -> None:
+    """
+    Keep on `config`, where rendering reads it, the documented intersphinx name of each internal path.
+
+    An internal path is the `__module__.__qualname__` an inventory entry reports. Leave out a path some inventory
+    documents under its own name, and keep an empty mapping without intersphinx. Index the entries without importing
+    anything, `mapped_name` imports a module only once a rendered type may be listed in it.
+    """
+    mapping = _TypeMapping()
+    # a fixed role order, so the documented name an internal path maps to does not follow string hash order
+    for role in ("py:class", "py:function", "py:exception", "py:data"):
+        for documented_name in inventory(env).get(role, {}):
+            mapping.documented.add(documented_name)
+            mod_path, _, attr_name = documented_name.rpartition(".")
+            if not mod_path:
+                mapping.documented.add(f"builtins.{documented_name}")
+            elif documented_name not in mapping.rank:
+                mapping.rank[documented_name] = len(mapping.rank)
+                mapping.modules_by_leaf.setdefault(attr_name, {})[mod_path] = None
+                mapping.unread.setdefault(mod_path, []).append(documented_name)
+    setattr(config, _TYPE_MAPPING, mapping)
+
+
 @dataclass(frozen=True, slots=True, kw_only=True)
 class _TypeMapping:
     documented: set[str] = field(default_factory=set)
@@ -59,29 +82,6 @@ class _TypeMapping:
                 # the earliest role wins, so a class an inventory also lists as data links to its class entry
                 if (kept := self.found.get(internal_path)) is None or self.rank[documented_name] < self.rank[kept]:
                     self.found[internal_path] = documented_name
-
-
-def keep_type_mapping(config: Config, env: BuildEnvironment) -> None:
-    """
-    Keep on `config`, where rendering reads it, the documented intersphinx name of each internal path.
-
-    An internal path is the `__module__.__qualname__` an inventory entry reports. Leave out a path some inventory
-    documents under its own name, and keep an empty mapping without intersphinx. Index the entries without importing
-    anything, `mapped_name` imports a module only once a rendered type may be listed in it.
-    """
-    mapping = _TypeMapping()
-    # a fixed role order, so the documented name an internal path maps to does not follow string hash order
-    for role in ("py:class", "py:function", "py:exception", "py:data"):
-        for documented_name in inventory(env).get(role, {}):
-            mapping.documented.add(documented_name)
-            mod_path, _, attr_name = documented_name.rpartition(".")
-            if not mod_path:
-                mapping.documented.add(f"builtins.{documented_name}")
-            elif documented_name not in mapping.rank:
-                mapping.rank[documented_name] = len(mapping.rank)
-                mapping.modules_by_leaf.setdefault(attr_name, {})[mod_path] = None
-                mapping.unread.setdefault(mod_path, []).append(documented_name)
-    setattr(config, _TYPE_MAPPING, mapping)
 
 
 def inventory(env: BuildEnvironment | None) -> Inventory:

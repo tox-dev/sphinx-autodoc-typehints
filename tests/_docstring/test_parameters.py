@@ -9,8 +9,9 @@ from pydantic.fields import FieldInfo
 from pytest import MarkDecorator, mark, param
 from typing_extensions import Doc
 
-from _docstring.conftest import BOOL, FLOAT, INT, STR, hide_type, without_rtype
 from sphinx_autodoc_typehints._docstring.parameters import escape_trailing_underscore
+
+from .conftest import BOOL, FLOAT, INT, STR, hide_type, without_rtype
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -18,7 +19,7 @@ if TYPE_CHECKING:
 
     from conftest import BuildText
 
-    from _docstring.conftest import Process
+    from .conftest import Process
 
 
 pytestmark: Final[list[MarkDecorator]] = [mark.sphinx("text", testroot="dummy"), without_rtype()]

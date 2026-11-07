@@ -123,10 +123,6 @@ def _hint(app: Sphinx, module: str, fullname: str, objtype: str) -> Hint | Writt
     return specialize(hint, arguments)
 
 
-# no `Final`: ty stops reading an annotated sentinel as a type https://github.com/astral-sh/ty/issues/4737
-_MISSING = sentinel("_MISSING")
-
-
 def _resolved_hints(app: Sphinx, annotated: Documented, name: str) -> Mapping[str, Hint | WrittenTypeAlias]:
     localns, written_aliases = type_alias_namespace(
         app.config.autodoc_type_aliases, annotated, prefix_of(name), app.env
@@ -135,6 +131,10 @@ def _resolved_hints(app: Sphinx, annotated: Documented, name: str) -> Mapping[st
     if keys := typed_dict_keys(annotated, localns):
         return keys
     return resolve_annotations(app.config.autodoc_mock_imports, annotated, name, localns) | written_aliases
+
+
+# no `Final`: ty stops reading an annotated sentinel as a type https://github.com/astral-sh/ty/issues/4737
+_MISSING = sentinel("_MISSING")
 
 
 __all__ = [

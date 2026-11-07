@@ -65,7 +65,7 @@ def setup(app: Sphinx) -> dict[str, bool | int | str]:
     app.setup_extension("sphinx.ext.autodoc")
     for option in OPTIONS:
         app.add_config_value(option.name, option.default, option.rebuild, option.types)
-    app.add_role("sphinx_autodoc_typehints_type", sphinx_autodoc_typehints_type_role)
+    app.add_role("sphinx_autodoc_typehints_type", _sphinx_autodoc_typehints_type_role)
     app.add_role(ALIAS_CHOICE_ROLE, alias_choice_role)
     app.add_role(ENUM_MEMBER_ROLE, enum_member_role)
     app.add_role(VALUE_ROLE, value_role)
@@ -112,7 +112,7 @@ def setup(app: Sphinx) -> dict[str, bool | int | str]:
     }
 
 
-def sphinx_autodoc_typehints_type_role(
+def _sphinx_autodoc_typehints_type_role(
     _role: str,
     _rawtext: str,
     text: str,

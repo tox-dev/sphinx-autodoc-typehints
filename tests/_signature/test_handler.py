@@ -19,8 +19,9 @@ if TYPE_CHECKING:
     from conftest import BuildText, MakeModule
     from sphinx.config import Config
 
-    from _signature.conftest import SignatureOf
     from sphinx_autodoc_typehints._types import Annotation
+
+    from .conftest import SignatureOf
 
 pytestmark: Final[MarkDecorator] = mark.sphinx("text", testroot="dummy")
 
@@ -159,7 +160,7 @@ class _Point(NamedTuple):
     right: str
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class _Made:
     value: list[int] = field(default_factory=list)
 

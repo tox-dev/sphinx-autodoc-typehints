@@ -125,9 +125,8 @@ def test_live_example_tab_order(build: Build) -> None:
 
 
 def test_live_example_builtin_tab_renders_without_the_extension(build: Build) -> None:
-    app = build(_EXAMPLE)
 
-    builtin = _tab(app, "Sphinx built-in")
+    builtin = _tab(build(_EXAMPLE), "Sphinx built-in")
 
     assert "scale" in builtin
     assert "sphinx_autodoc_typehints-type" not in builtin
@@ -254,9 +253,8 @@ def _without_prefixes(html: str) -> str:
 
 
 def test_live_example_picker_puts_its_controls_above_the_rendered_page(build: Build) -> None:
-    app = build(f"{_PICKER}{_picked()}")
 
-    conf = _tab(app, "sphinx-autodoc-typehints")
+    conf = _tab(build(f"{_PICKER}{_picked()}"), "sphinx-autodoc-typehints")
 
     assert (
         'role="switch" class="lep-switch" id="lep-0-typehints_fully_qualified" name="typehints_fully_qualified">'
@@ -317,9 +315,8 @@ def test_live_example_picker_publishes_the_variants(build: Build) -> None:
 
 
 def test_live_example_picker_lists_the_options_with_their_conf_lines(build: Build) -> None:
-    app = build(f"{_PICKER}{_picked()}")
 
-    options = _about(app)["options"]
+    options = _about(build(f"{_PICKER}{_picked()}"))["options"]
 
     assert [option["name"] for option in options] == [
         "typehints_fully_qualified",

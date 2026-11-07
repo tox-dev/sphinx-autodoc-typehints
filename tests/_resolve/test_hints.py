@@ -20,8 +20,9 @@ if TYPE_CHECKING:
     from _pytest.mark import ParameterSet
     from conftest import BuildText
 
-    from _resolve.conftest import AsWritten, MakeStubbedModule
     from sphinx_autodoc_typehints._types import Annotation, Hint
+
+    from .conftest import AsWritten, MakeStubbedModule
 
     type Descriptor = GetSetDescriptorType | MemberDescriptorType
 

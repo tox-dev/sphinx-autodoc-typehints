@@ -187,17 +187,6 @@ def c_ext_mod(tmp_path_factory: TempPathFactory) -> Iterator[ModuleType]:
     del modules["c_ext_mod"]
 
 
-# a PyO3 extension registers a submodule with no file of its own, whose stub sits in the package (discussion #698)
-@fixture(scope="session")
-def native_pkg(tmp_path_factory: TempPathFactory) -> Iterator[ModuleType]:
-    build_dir = tmp_path_factory.mktemp("native_pkg_root")
-    copytree(_STUB_ROOT / "native_pkg", build_dir / "native_pkg", ignore=ignore_patterns("*.c"))
-    _compile(_STUB_ROOT / "native_pkg" / "_native.c", build_dir / "native_pkg" / "_native")
-    yield _import_from(build_dir, "native_pkg")
-    for name in [name for name in modules if name.partition(".")[0] == "native_pkg"]:
-        del modules[name]
-
-
 def _compile(source: Path, target: Path) -> None:
     if not (linker := get_config_var("LDSHARED")):  # pragma: no cover  # reached only without a C toolchain
         skip("no C compiler available")
@@ -221,6 +210,17 @@ def _import_from(directory: Path, name: str) -> ModuleType:
         return import_module(name)
     finally:
         path.remove(str(directory))
+
+
+# a PyO3 extension registers a submodule with no file of its own, whose stub sits in the package (discussion #698)
+@fixture(scope="session")
+def native_pkg(tmp_path_factory: TempPathFactory) -> Iterator[ModuleType]:
+    build_dir = tmp_path_factory.mktemp("native_pkg_root")
+    copytree(_STUB_ROOT / "native_pkg", build_dir / "native_pkg", ignore=ignore_patterns("*.c"))
+    _compile(_STUB_ROOT / "native_pkg" / "_native.c", build_dir / "native_pkg" / "_native")
+    yield _import_from(build_dir, "native_pkg")
+    for name in [name for name in modules if name.partition(".")[0] == "native_pkg"]:
+        del modules[name]
 
 
 __all__ = [

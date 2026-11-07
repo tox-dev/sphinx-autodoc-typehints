@@ -131,11 +131,12 @@ def _evaluate_written(  # pragma: >=3.14 cover
     return hints
 
 
-def _parts(hint: Annotation) -> Iterator[Annotation]:
-    yield hint
-    # the parameters of a Callable come as a list
-    for argument in hint if isinstance(hint, list) else get_args(hint):
-        yield from _parts(argument)
+# an annotation evaluates in the globals of the code defining it, and in those again unless the caller passes locals
+def _scope(
+    obj: Documented, globalns: dict[str, Documented] | None, localns: Mapping[str, Documented] | None
+) -> tuple[dict[str, Documented], Mapping[str, Documented]]:
+    scope_globals = annotation_globals(obj) if globalns is None else globalns
+    return scope_globals, scope_globals if localns is None else localns
 
 
 def _drops_arguments(cls: type | TypeAliasType) -> bool:
@@ -152,6 +153,13 @@ def _defines_class_getitem(cls: type | TypeAliasType) -> bool:
     # the standard library subscripts its classes in C, only a __class_getitem__ written in Python can drop arguments
     method = getattr_static(cls, "__class_getitem__", None)
     return isfunction(getattr(method, "__func__", method))
+
+
+def _parts(hint: Annotation) -> Iterator[Annotation]:
+    yield hint
+    # the parameters of a Callable come as a list
+    for argument in hint if isinstance(hint, list) else get_args(hint):
+        yield from _parts(argument)
 
 
 # a class yields its bases first, so the class that declares an attribute last comes last, as get_type_hints orders them
@@ -186,14 +194,6 @@ def _written_sources(
         scope_locals = {**base_locals, **params} if params else base_locals
         written = source_annotations(base.__module__, base.__qualname__)
         yield from ((name, written[name], base_globals, scope_locals) for name in names & written.keys())
-
-
-# an annotation evaluates in the globals of the code defining it, and in those again unless the caller passes locals
-def _scope(
-    obj: Documented, globalns: dict[str, Documented] | None, localns: Mapping[str, Documented] | None
-) -> tuple[dict[str, Documented], Mapping[str, Documented]]:
-    scope_globals = annotation_globals(obj) if globalns is None else globalns
-    return scope_globals, scope_globals if localns is None else localns
 
 
 __all__ = [

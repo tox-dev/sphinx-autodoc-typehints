@@ -1,8 +1,6 @@
-"""A package using a recursive alias of its submodule."""
-
 from __future__ import annotations
 
-from render_rec_pkg.other import RecType
+from .other import RecType
 
 
 def some_func(some_param: RecType) -> None:

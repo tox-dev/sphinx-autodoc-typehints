@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from pathlib import Path
 from sys import version_info
-from typing import TYPE_CHECKING, Any, Generic, Protocol, overload
+from typing import TYPE_CHECKING, Any, Final, Generic, Protocol, overload
 
 from typing_extensions import ParamSpec, TypeVar, TypeVarTuple
 
@@ -50,7 +50,7 @@ class Stack[T]:
 
 
 #: A stack ready to use.
-default_stack: Stack[int] = Stack(0)
+default_stack: Final[Stack[int]] = Stack(0)
 
 
 class Sizes[T: Sized]:
@@ -61,16 +61,16 @@ class Unknown[T: Undefined]:  # ruff:ignore[undefined-name]
     """Bound by a name defined nowhere."""
 
 
+class Rejected[T: Rejecting[int]]:
+    """Bound by a subscript that raises."""
+
+
 class Rejecting:
     """Rejects every argument, as a class validating its subscript does."""
 
     def __class_getitem__(cls, item: object) -> type[Rejecting]:
         msg = f"cannot take {item}"
         raise ValueError(msg)
-
-
-class Rejected[T: Rejecting[int]]:
-    """Bound by a subscript that raises."""
 
 
 type Pairs[K] = dict[K, K]

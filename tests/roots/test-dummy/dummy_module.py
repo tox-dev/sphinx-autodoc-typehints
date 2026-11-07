@@ -36,7 +36,7 @@ class MyNamedTupleWithPath(NamedTuple):
     version: str
 
 
-@dataclass
+@dataclass(frozen=True, slots=True, kw_only=True)
 class DataClass:
     """Class docstring."""
 
@@ -180,8 +180,6 @@ DocumentedTwiceAlias = DocumentedTwice
 class DocumentedTwiceWithUnderscore:
     r"""
     Class docstring.
-
-    :param type\_: the type
     """
 
     def __init__(self, type_: str, count: int) -> None:

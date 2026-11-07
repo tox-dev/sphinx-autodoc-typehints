@@ -10,16 +10,18 @@ from pydantic.fields import FieldInfo
 from pytest import MarkDecorator, fixture, mark, param
 from typing_extensions import Doc
 
-from _docstring.conftest import INT, STR, hide_type
 from sphinx_autodoc_typehints._docstring.returns import description_from_doc
+
+from .conftest import INT, STR, hide_type
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Callable, Generator, Iterable, Iterator
 
     from conftest import BuildText, MakeModule
 
-    from _docstring.conftest import Process
     from sphinx_autodoc_typehints._types import Annotation, Documented
+
+    from .conftest import Process
 
 pytestmark: Final[MarkDecorator] = mark.sphinx("text", testroot="dummy")
 
@@ -400,9 +402,6 @@ def test_yields_entry_gets_the_yielded_type(process: Process, lines: list[str], 
     assert process("function", "mod.counts", _counts, lines) == expected
 
 
-def _documented_counts() -> Annotated[Iterator[int], Doc("the numbers")]: ...
-
-
 @mark.parametrize(
     ("lines", "expected"),
     [
@@ -425,6 +424,9 @@ def _documented_counts() -> Annotated[Iterator[int], Doc("the numbers")]: ...
 )
 def test_yields_entry_takes_the_doc_description(process: Process, lines: list[str], expected: list[str]) -> None:
     assert process("function", "mod.counts", _documented_counts, lines) == expected
+
+
+def _documented_counts() -> Annotated[Iterator[int], Doc("the numbers")]: ...
 
 
 def test_untyped_yields_entry_takes_the_doc_description(process: Process) -> None:

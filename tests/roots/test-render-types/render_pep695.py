@@ -1,5 +1,3 @@
-"""PEP 695 aliases in the signatures of a function and of a method."""
-
 from __future__ import annotations
 
 from collections.abc import Callable

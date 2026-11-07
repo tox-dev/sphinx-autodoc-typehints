@@ -7,9 +7,10 @@ from typing import TYPE_CHECKING, Annotated, Final, overload, override
 
 from pytest import MarkDecorator, fixture, mark, param
 
-from _docstring.conftest import BOOL, INT, NONE, STR, hide_type
 from sphinx_autodoc_typehints._docstring.object_fields import inject_overloads, summary_end
 from sphinx_autodoc_typehints._documented import Entry
+
+from .conftest import BOOL, INT, NONE, STR, hide_type
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -19,7 +20,7 @@ if TYPE_CHECKING:
     from conftest import BuildText, MakeModule
     from sphinx.testing.util import SphinxTestApp
 
-    from _docstring.conftest import Process
+    from .conftest import Process
 
 pytestmark: Final[MarkDecorator] = mark.sphinx(
     "text", testroot="dummy", confoverrides={"typehints_document_rtype": False}
@@ -332,21 +333,21 @@ def test_class_doc_from_class_ignores_the_constructor_opting_out_of_overloads(bu
 
 
 class _OverrideBase:
+    @property
+    def size(self) -> int: ...
+
     def run(self) -> str: ...
 
     def __hook(self) -> None: ...
 
-    @property
-    def size(self) -> int: ...
-
 
 class _OverrideChild(_OverrideBase):
-    @override
-    def run(self) -> str: ...
-
     @property
     @override
     def size(self) -> int: ...
+
+    @override
+    def run(self) -> str: ...
 
     @override
     def extra(self) -> str: ...  # ty: ignore[invalid-explicit-override]  # the case under test

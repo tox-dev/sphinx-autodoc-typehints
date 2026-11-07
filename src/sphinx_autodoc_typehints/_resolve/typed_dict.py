@@ -122,8 +122,7 @@ class _Hierarchy:
         for base in bases:
             inherited |= self._split(base)[0]
         # an item written as a string names the type parameters of the class declaring it, which may be a base
-        localns = {**guarded_names(typed_dict), **self._localns, **self._scope(typed_dict)}
-        hints = type_hints(typed_dict, None, localns)
+        hints = type_hints(typed_dict, None, {**guarded_names(typed_dict), **self._localns, **self._scope(typed_dict)})
         # an item holding what a base holds belongs to that base, read in the module and guard of the base, not of
         # this class
         written = _written(typed_dict)

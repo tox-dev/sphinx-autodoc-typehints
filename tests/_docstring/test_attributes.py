@@ -11,7 +11,7 @@ import attr  # attr.s and attr.ib are the classic spelling under test
 from attrs import define
 from pytest import MarkDecorator, MonkeyPatch, fixture, mark, param
 
-from _docstring.conftest import INT, STR
+from .conftest import INT, STR
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
     from conftest import BuildText, MakeModule
 
-    from _docstring.conftest import Process
+    from .conftest import Process
 
 pytestmark: Final[MarkDecorator] = mark.sphinx("text", testroot="dummy")
 

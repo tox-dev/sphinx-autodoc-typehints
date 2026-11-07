@@ -1,5 +1,3 @@
-"""A class whose subscription hands back the class itself, as SQLAlchemy's TypeEngine does."""
-
 from __future__ import annotations
 
 from typing import Any

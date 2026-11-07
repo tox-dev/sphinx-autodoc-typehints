@@ -49,24 +49,10 @@ OPTION_TYPES: Final[dict[str, RenderNode]] = {
 }
 
 
-def documented_type(name: str) -> RenderNode:
-    """Return the type the reference shows for option `name`, each protocol replaced by the signature it calls."""
-    if get_origin(annotation := OPTION_TYPES[name]) in {Union, UnionType}:
-        return reduce(or_, map(_as_callable, get_args(annotation)))
-    return annotation
-
-
-def _as_callable(member: RenderNode) -> RenderNode:
-    # a protocol renders as its name, while a reader setting the option needs the parameters it gets called with
-    if not (isclass(member) and issubclass(member, Protocol)):
-        return member
-    call = member.__call__
-    hints = resolve_annotations([], call, f"{call.__module__}.{call.__qualname__}", {})
-    returns = hints.pop("return")
-    # the alias lives in a private module, so the reference names the parameter plainly and describes it in prose
-    hints = {name: ForwardRef("annotation") if hint is RenderNode else hint for name, hint in hints.items()}
-    # written as a subscript, the parameters would have to be a type expression rather than the values read here
-    return getitem(Callable, (list(hints.values()), returns))  # ty: ignore[no-matching-overload]  # a special form
+def setup(app: Sphinx) -> ExtensionMetadata:
+    """Replace the `confval` directive with one that renders the type and shows the rebuild value."""
+    app.add_directive_to_domain("std", "confval", OptionReference, override=True)
+    return {"parallel_read_safe": True, "parallel_write_safe": True}
 
 
 class OptionReference(ConfigurationValue):
@@ -89,14 +75,24 @@ class OptionReference(ConfigurationValue):
         return field("", field_name("", "Type"), field_body("", paragraph("", "", *parsed))), messages
 
 
-def setup(app: Sphinx) -> ExtensionMetadata:
-    """Replace the `confval` directive with one that renders the type and shows the rebuild value."""
-    app.add_directive_to_domain("std", "confval", OptionReference, override=True)
-    return {"parallel_read_safe": True, "parallel_write_safe": True}
+def documented_type(name: str) -> RenderNode:
+    """Return the type the reference shows for option `name`, each protocol replaced by the signature it calls."""
+    if get_origin(annotation := OPTION_TYPES[name]) in {Union, UnionType}:
+        return reduce(or_, map(_as_callable, get_args(annotation)))
+    return annotation
 
 
-__all__ = [
-    "OPTION_TYPES",
-    "OptionReference",
-    "documented_type",
-]
+def _as_callable(member: RenderNode) -> RenderNode:
+    # a protocol renders as its name, while a reader setting the option needs the parameters it gets called with
+    if not (isclass(member) and issubclass(member, Protocol)):
+        return member
+    call = member.__call__
+    hints = resolve_annotations([], call, f"{call.__module__}.{call.__qualname__}", {})
+    returns = hints.pop("return")
+    # the alias lives in a private module, so the reference names the parameter plainly and describes it in prose
+    hints = {name: ForwardRef("annotation") if hint is RenderNode else hint for name, hint in hints.items()}
+    # written as a subscript, the parameters would have to be a type expression rather than the values read here
+    return getitem(Callable, (list(hints.values()), returns))  # ty: ignore[no-matching-overload]  # a special form
+
+
+__all__ = []

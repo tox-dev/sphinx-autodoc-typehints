@@ -101,7 +101,7 @@ def configure(**kwargs: Unpack[Options[int]]) -> None:
     """
     Configure.
 
-    :keyword limit: the limit
+    :param limit: the limit
     """
 
 
@@ -109,7 +109,7 @@ def configure_legacy(**kwargs: Unpack[LegacyOptions[str]]) -> None:
     """
     Configure the pre-PEP 695 way.
 
-    :keyword limit: the limit
+    :param limit: the limit
     """
 
 
@@ -117,7 +117,7 @@ def draw(**kwargs: Unpack[Square]) -> None:
     """
     Draw.
 
-    :keyword size: the size
+    :param size: the size
     """
 
 
@@ -161,8 +161,8 @@ def pack(**kwargs: Unpack[Box]) -> None:
     """
     Pack.
 
-    :keyword width: the width
-    :keyword height: the height
+    :param width: the width
+    :param height: the height
     """
 
 
@@ -195,7 +195,7 @@ def nest(**kwargs: Unpack[Diamond]) -> None:
     """
     Nest.
 
-    :keyword name: the name
+    :param name: the name
     """
 
 
@@ -211,7 +211,7 @@ class Unstated:
 Spread = Root
 for level in range(10):
     # each level is a diamond over the one below, so 2**level paths lead to a base
-    sides = [type(Root)(f"Spread{side}{level}", (Spread,), {}) for side in ("Left", "Right")]
-    Spread = type(Root)("Spread", tuple(sides), {"__module__": __name__, "__doc__": "A diamond of diamonds."})
-    for spread in (*sides, Spread):
+    _SIDES = [type(Root)(f"Spread{side}{level}", (Spread,), {}) for side in ("Left", "Right")]
+    Spread = type(Root)("Spread", tuple(_SIDES), {"__module__": __name__, "__doc__": "A diamond of diamonds."})
+    for spread in (*_SIDES, Spread):
         spread.__closed__ = Unstated()

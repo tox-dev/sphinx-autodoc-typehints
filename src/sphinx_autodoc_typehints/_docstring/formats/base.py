@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from sphinx.application import Sphinx
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, kw_only=True)
 class InsertIndexInfo:
     """Where the return type goes, and which field or block of the docstring sits there."""
 

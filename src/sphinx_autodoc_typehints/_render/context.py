@@ -50,7 +50,7 @@ def render_context(config: Config) -> RenderContext:
     return getattr(config, _ATTRIBUTE, None) or RenderContext()
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, kw_only=True)
 class RenderContext:
     """Kept on the config, as a `typehints_formatter` may format a nested type with it, which must render the same."""
 
@@ -109,6 +109,8 @@ __all__ = [
     "AnnotationKind",
     "ContextualTypehintsFormatter",
     "FixupModuleName",
+    "GuardBinder",
+    "RenderChanges",
     "RenderContext",
     "ScopeExtras",
     "TypeParamScope",

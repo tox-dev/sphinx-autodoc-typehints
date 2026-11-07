@@ -1,5 +1,3 @@
-"""Functions naming the aliases through a TYPE_CHECKING import."""
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING

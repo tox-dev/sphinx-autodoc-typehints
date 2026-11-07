@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-master_doc = "index"
+from typing import Final
+
+master_doc: Final[str] = "index"
 
 extensions = [
     "sphinx.ext.autodoc",

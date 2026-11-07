@@ -10,11 +10,6 @@ if TYPE_CHECKING:
 pytestmark: Final[MarkDecorator] = mark.sphinx("text", testroot="bases")
 
 
-def _bases(text: str) -> str:
-    # the text builder wraps each literal in double quotes
-    return next(line for line in text.splitlines() if "Bases:" in line).strip().replace('"', "")
-
-
 @mark.parametrize(
     ("name", "bases"),
     [
@@ -32,6 +27,11 @@ def test_bases_render_as_a_field_type(build_text: BuildText, name: str, bases: s
     text = build_text(f".. autoclass:: bases_module.{name}\n   :show-inheritance:\n")
 
     assert _bases(text) == bases
+
+
+def _bases(text: str) -> str:
+    # the text builder wraps each literal in double quotes
+    return next(line for line in text.splitlines() if "Bases:" in line).strip().replace('"', "")
 
 
 @mark.sphinx(confoverrides={"typehints_fully_qualified": True})

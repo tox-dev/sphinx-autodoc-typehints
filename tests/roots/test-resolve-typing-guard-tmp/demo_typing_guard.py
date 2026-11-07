@@ -1,5 +1,3 @@
-"""Module demonstrating imports that are type guarded"""
-
 from __future__ import annotations
 
 import datetime as dt  # the module-qualified annotations are the case under test
@@ -20,7 +18,7 @@ class SomeClass:
         Initialize from string
 
         :param input_value: Input
-        :return: result
+        :returns: result
         """
         return cls(input_value)
 
@@ -30,7 +28,7 @@ class SomeClass:
         Initialize from date
 
         :param input_value: Input
-        :return: result
+        :returns: result
         """
         return cls(input_value)
 
@@ -40,7 +38,7 @@ class SomeClass:
         Initialize from time
 
         :param input_value: Input
-        :return: result
+        :returns: result
         """
         return cls(input_value)
 
@@ -49,9 +47,11 @@ class SomeClass:
         Calculate a thing
 
         :param number: Input
-        :return: result
+        :returns: result
         """
         return dt.timedelta(number)
 
 
-__all__ = ["SomeClass"]
+__all__ = [
+    "SomeClass",
+]

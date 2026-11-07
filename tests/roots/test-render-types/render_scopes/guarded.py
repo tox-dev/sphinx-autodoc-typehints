@@ -1,5 +1,3 @@
-"""A submodule with an alias visible only to type checkers."""
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, overload

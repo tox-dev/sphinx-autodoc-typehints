@@ -39,7 +39,41 @@ class Class:
     :param z: baz
     """
 
+    class InnerClass:
+        """
+        Inner class.
+        """
+
+        def inner_method(self, x: bool) -> str:
+            """
+            Inner method.
+
+            :param x: foo
+            """
+
+        def __dunder_inner_method(self, x: bool) -> str:
+            """
+            Dunder inner method.
+
+            :param x: foo
+            """
+
+    locally_defined_callable_field = get_local_function()
+
     def __init__(self, x: bool, y: int, z: Optional[str] = None) -> None: ...
+
+    def __magic_custom_method__(self, x: str) -> str:  # ruff:ignore[bad-dunder-method-name]  # a custom dunder name is the case
+        """
+        Magic dunder method docstring.
+
+        :param x: foo
+        """
+
+    @property
+    def a_property(self) -> str:
+        """
+        Property docstring
+        """
 
     def a_method(self, x: bool, y: int, z: Optional[str] = None) -> str:
         """
@@ -64,13 +98,6 @@ class Class:
         :param x: foo
         """
 
-    def __magic_custom_method__(self, x: str) -> str:  # ruff:ignore[bad-dunder-method-name]  # a custom dunder name is the case
-        """
-        Magic dunder method docstring.
-
-        :param x: foo
-        """
-
     @classmethod
     def a_classmethod(cls, x: bool, y: int, z: Optional[str] = None) -> str:
         """
@@ -90,33 +117,6 @@ class Class:
         :param y: bar
         :param z: baz
         """
-
-    @property
-    def a_property(self) -> str:
-        """
-        Property docstring
-        """
-
-    class InnerClass:
-        """
-        Inner class.
-        """
-
-        def inner_method(self, x: bool) -> str:
-            """
-            Inner method.
-
-            :param x: foo
-            """
-
-        def __dunder_inner_method(self, x: bool) -> str:
-            """
-            Dunder inner method.
-
-            :param x: foo
-            """
-
-    locally_defined_callable_field = get_local_function()
 
 
 class DummyException(Exception):  # ruff:ignore[error-suffix-on-exception-name]  # the expected output names the class
@@ -197,8 +197,7 @@ def function_with_multiline_param_defaults(x: int = 5, y: int = 10, z: int = 15)
     :param z: yet another optional s
               line 6
 
-    :return: something
-    :rtype: bytes
+    :returns: something
     """
 
 
@@ -241,8 +240,7 @@ def function_with_type_aliases(x: ArrayLike | None, y: Schema) -> str:
 
     :param x: foo
     :param y: boo
-    :return: something
-    :rtype: bytes
+    :returns: something
     """
 
 
@@ -250,7 +248,7 @@ def function_with_unresolvable_annotation(x: a.b.c):  # ruff:ignore[missing-retu
     """
     Function docstring.
 
-    :arg x: foo
+    :param x: foo
     """
 
 
@@ -262,8 +260,8 @@ def function_with_typehint_comment(  # ruff:ignore[missing-return-type-undocumen
     """
     Function docstring.
 
-    :parameter x: foo
-    :parameter y: bar
+    :param x: foo
+    :param y: bar
     """
 
 
@@ -289,7 +287,7 @@ class ClassWithTypehints:
         """
         Method docstring.
 
-        :arg x: foo
+        :param x: foo
         """
 
     def method_without_typehint(self, x):  # ruff:ignore[missing-type-function-argument, missing-return-type-undocumented-public-function]  # the method without hints is the case
@@ -303,10 +301,10 @@ def function_with_typehint_comment_not_inline(x=None, *y, z, **kwargs):  # ruff:
     """
     Function docstring.
 
-    :arg x: foo
-    :argument y: bar
-    :parameter z: baz
-    :parameter kwargs: some kwargs
+    :param x: foo
+    :param y: bar
+    :param z: baz
+    :param kwargs: some kwargs
     """
 
 
@@ -343,7 +341,7 @@ def undocumented_function(x: int) -> str:
     """Hi"""
 
 
-@dataclass
+@dataclass(frozen=True, slots=True, kw_only=True)
 class DataClass:
     """Class docstring."""
 
@@ -516,8 +514,6 @@ def func_with_rtype_in_weird_spot(a: int, b: int) -> int:
     :returns: The index of the widget
 
     More info about the function here.
-
-    :rtype: int
     """
 
 

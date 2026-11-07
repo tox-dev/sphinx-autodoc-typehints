@@ -12,7 +12,7 @@ import typing_extensions  # its Self is tested next to typing.Self
 from pytest import MarkDecorator, mark, param
 from typing_extensions import deprecated
 
-from _docstring.conftest import BOOL, FLOAT, INT, NONE, STR
+from .conftest import BOOL, FLOAT, INT, NONE, STR
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -22,8 +22,9 @@ if TYPE_CHECKING:
     from conftest import BuildText
     from sphinx.testing.util import SphinxTestApp
 
-    from _docstring.conftest import Process
     from sphinx_autodoc_typehints._types import Documented
+
+    from .conftest import Process
 
 pytestmark: Final[MarkDecorator] = mark.sphinx("text", testroot="dummy")
 
@@ -208,16 +209,6 @@ def test_wrapper_lists_the_parameters_it_states(process: Process) -> None:
     ]
 
 
-class _DeprecatedGetters:
-    @property
-    @deprecated("use size_v2")
-    def plain(self) -> int: ...
-
-    @cached_property
-    @deprecated("use size_v2")
-    def cached(self) -> int: ...
-
-
 @mark.parametrize("member", [param("plain", id="property"), param("cached", id="cached-property")])
 def test_process_docstring_marks_a_deprecated_property_getter(process: Process, member: str) -> None:
     prop = vars(_DeprecatedGetters)[member]
@@ -229,6 +220,16 @@ def test_process_docstring_marks_a_deprecated_property_getter(process: Process, 
         "   use size_v2",
         "",
     ]
+
+
+class _DeprecatedGetters:
+    @property
+    @deprecated("use size_v2")
+    def plain(self) -> int: ...
+
+    @cached_property
+    @deprecated("use size_v2")
+    def cached(self) -> int: ...
 
 
 class _ReturnsSelf:
@@ -253,7 +254,7 @@ def test_process_docstring_of_a_bound_method_types_its_return(process: Process, 
 
 @mark.sphinx(confoverrides={"typehints_defaults": "comma"})
 def test_process_docstring_shows_a_dataclass_factory_as_its_call(process: Process) -> None:
-    @dataclass
+    @dataclass(frozen=True, slots=True)
     class Made:
         value: list[int] = field(default_factory=list)
 

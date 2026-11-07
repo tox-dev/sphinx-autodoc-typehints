@@ -23,6 +23,13 @@ def as_field_type(hint: Hint | WrittenTypeAlias, config: Config, *, kind: Annota
     return add_type_css_class(_render(hint, config, kind))
 
 
+def _render(hint: Hint | WrittenTypeAlias, config: Config, kind: AnnotationKind) -> str:
+    if not config.typehints_formatter_pass_context or config.typehints_formatter is None:
+        return format_annotation(hint, config, short_literals=config.python_display_short_literal_types)
+    with annotation_state(config, kind=kind):
+        return format_annotation(hint, config, short_literals=config.python_display_short_literal_types)
+
+
 def as_signature_type(hint: Hint | WrittenTypeAlias, config: Config, *, kind: AnnotationKind = "other") -> str:
     """
     Render `hint` as the plain text a signature holds, such as `~pathlib.Path`, which the Python domain links again.
@@ -50,16 +57,9 @@ def as_header_type(
         # an escaped space only separates markup, as between a role and the [ after it
         return "" if match["escaped"] == " " else match["escaped"]
 
-    markup = r":(?P<name>(?:[\w-]+:)+)`(?P<role>(?:[^`\\]|\\.)*)`|``(?P<literal>.+?)``|\\(?P<escaped>.)"
     rendered = _render(hint, config, kind)
+    markup = r":(?P<name>(?:[\w-]+:)+)`(?P<role>(?:[^`\\]|\\.)*)`|``(?P<literal>.+?)``|\\(?P<escaped>.)"
     return sub(markup, plain, rendered, flags=DOTALL), roles
-
-
-def _render(hint: Hint | WrittenTypeAlias, config: Config, kind: AnnotationKind) -> str:
-    if not config.typehints_formatter_pass_context or config.typehints_formatter is None:
-        return format_annotation(hint, config, short_literals=config.python_display_short_literal_types)
-    with annotation_state(config, kind=kind):
-        return format_annotation(hint, config, short_literals=config.python_display_short_literal_types)
 
 
 __all__ = [

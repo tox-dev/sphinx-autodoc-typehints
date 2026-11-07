@@ -17,8 +17,9 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from types import ModuleType
 
-    from _resolve.conftest import MakeSubclassOfAGuardedBase
     from sphinx_autodoc_typehints._types import Annotation
+
+    from .conftest import MakeSubclassOfAGuardedBase
 
 
 @mark.parametrize(

@@ -96,6 +96,13 @@ class FieldListFormat:
         return InsertIndexInfo(insert_index=len(lines), deferred=True)
 
 
+def _field_end(lines: list[str], at: int) -> int:
+    end = at + 1
+    while end < len(lines) and lines[end][:1].isspace() and lines[end].strip():
+        end += 1
+    return end
+
+
 def write_rtype(
     lines: list[str],
     formatted_annotation: str,
@@ -136,13 +143,6 @@ def write_rtype(
     else:
         # the description starts on the next line, and a block such as a list cannot follow inline text
         lines[insert_index : insert_index + 1] = [f":return: {formatted_annotation} --", ""]
-
-
-def _field_end(lines: list[str], at: int) -> int:
-    end = at + 1
-    while end < len(lines) and lines[end][:1].isspace() and lines[end].strip():
-        end += 1
-    return end
 
 
 __all__ = [

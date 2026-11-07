@@ -117,14 +117,6 @@ def _execute_guarded_code(
     })
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
-class _PendingImport:
-    importer: dict[str, Documented]
-    bound: str
-    source: str
-    name: str
-
-
 def _warn_guarded_import(obj: Documented, exc: Exception) -> None:
     warn(
         "guarded_import",
@@ -198,6 +190,14 @@ def _source_module(statement: ImportFrom, namespace: dict[str, Documented]) -> s
         "." * statement.level + (statement.module or ""),
         package if isinstance(package := namespace.get("__package__"), str) else None,
     )
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class _PendingImport:
+    importer: dict[str, Documented]
+    bound: str
+    source: str
+    name: str
 
 
 __all__ = [

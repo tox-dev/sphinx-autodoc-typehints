@@ -49,6 +49,27 @@ def value_role(
     return [_scope(_color(nodes.literal(rawtext), unescape(text)))], []
 
 
+def _scope(node: nodes.Node) -> nodes.inline:
+    return nodes.inline("", "", node, classes=["highlight", "sphinx_autodoc_typehints-value"])
+
+
+def _color(literal: nodes.Element, source: str) -> nodes.Element:
+    del literal[:]
+    for ttype, tokens in groupby(_LEXER.get_tokens(source), key=itemgetter(0)):
+        text = "".join(part for _, part in tokens)
+        # a default's description need not be valid Python, and the error class frames each such character in red
+        if token_class := "" if ttype in Error else _token_class(ttype):
+            literal += nodes.inline(text, text, classes=[token_class])
+        else:
+            literal += nodes.Text(text)
+    return literal
+
+
+def _token_class(ttype: _TokenType) -> str:
+    # a token type without a class of its own takes the one of its nearest parent, as the HTML formatter does
+    return next(STANDARD_TYPES[kind] for kind in reversed(ttype.split()) if kind in STANDARD_TYPES)
+
+
 def constant_role(
     _role: str,
     rawtext: str,
@@ -64,27 +85,6 @@ def constant_role(
     xref = next(ref for ref in refs if isinstance(ref, addnodes.pending_xref))
     _color(xref[0], text)
     return [_scope(ref) if ref is xref else ref for ref in refs], messages
-
-
-def _color(literal: nodes.Element, source: str) -> nodes.Element:
-    del literal[:]
-    for ttype, tokens in groupby(_LEXER.get_tokens(source), key=itemgetter(0)):
-        text = "".join(part for _, part in tokens)
-        # a default's description need not be valid Python, and the error class frames each such character in red
-        if token_class := "" if ttype in Error else _token_class(ttype):
-            literal += nodes.inline(text, text, classes=[token_class])
-        else:
-            literal += nodes.Text(text)
-    return literal
-
-
-def _scope(node: nodes.Node) -> nodes.inline:
-    return nodes.inline("", "", node, classes=["highlight", "sphinx_autodoc_typehints-value"])
-
-
-def _token_class(ttype: _TokenType) -> str:
-    # a token type without a class of its own takes the one of its nearest parent, as the HTML formatter does
-    return next(STANDARD_TYPES[kind] for kind in reversed(ttype.split()) if kind in STANDARD_TYPES)
 
 
 __all__ = [

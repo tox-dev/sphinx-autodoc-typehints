@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from sys import path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 from zlib import compress
 
 path.insert(0, str(Path(__file__).parent))
@@ -10,7 +10,7 @@ path.insert(0, str(Path(__file__).parent))
 if TYPE_CHECKING:
     from sphinx.config import Config
 
-master_doc = "index"
+master_doc: Final[str] = "index"
 
 extensions = [
     "sphinx.ext.autodoc",

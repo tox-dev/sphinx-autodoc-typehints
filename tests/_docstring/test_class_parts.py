@@ -6,8 +6,9 @@ from typing import TYPE_CHECKING, Final
 from pytest import MarkDecorator, mark, param
 from sphinx.ext.autodoc import Options
 
-from _docstring.conftest import INT
 from sphinx_autodoc_typehints._docstring import process_docstring
+
+from .conftest import INT
 
 if TYPE_CHECKING:
     from conftest import BuildText

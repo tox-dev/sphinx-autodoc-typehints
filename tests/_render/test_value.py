@@ -14,16 +14,6 @@ if TYPE_CHECKING:
     from sphinx.testing.util import SphinxTestApp
 
 
-def _values(html: str) -> list[tuple[str, list[tuple[str, str]]]]:
-    return [
-        (code_class, findall(r'(?:<span class="(\w+)">)?<span class="pre">([^<]*)</span>', inner))
-        for code_class, inner in findall(
-            r'<span class="highlight sphinx_autodoc_typehints-value">(?:<a [^>]*>)?<code class="([^"]*)">(.*?)</code>',
-            html,
-        )
-    ]
-
-
 @mark.parametrize(
     ("signature", "expected"),
     [
@@ -62,6 +52,16 @@ def test_value_takes_the_pygments_token_classes(
     )
     html = build_text(".. autofunction:: values.paint\n")
     assert _values(html) == [("docutils literal notranslate", expected)]
+
+
+def _values(html: str) -> list[tuple[str, list[tuple[str, str]]]]:
+    return [
+        (code_class, findall(r'(?:<span class="(\w+)">)?<span class="pre">([^<]*)</span>', inner))
+        for code_class, inner in findall(
+            r'<span class="highlight sphinx_autodoc_typehints-value">(?:<a [^>]*>)?<code class="([^"]*)">(.*?)</code>',
+            html,
+        )
+    ]
 
 
 @mark.parametrize(
