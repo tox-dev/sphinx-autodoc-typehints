@@ -104,7 +104,9 @@ def process_signature(
     return directive_text(app, formatted), None
 
 
-def _target(obj: Callable[..., object]) -> tuple[QualifiedCallable, QualifiedCallable] | None:
+def _target(
+    obj: Callable[..., object],  # simplint: ignore[SMP603]  # any signature is read at runtime
+) -> tuple[QualifiedCallable, QualifiedCallable] | None:
     if isclass(obj) and declared_signature(obj) is None:
         # autodoc takes a class signature from the `__call__` of its metaclass ahead of the constructor
         call = None

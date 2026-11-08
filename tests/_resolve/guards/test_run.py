@@ -55,7 +55,10 @@ def test_resolve_type_guarded_imports_records_nothing_for_a_module_without_sourc
 def test_resolve_type_guarded_imports_records_the_guard_of_the_module(
     make_module: Callable[[str], ModuleType],
     guarded: Callable[[str, str], str],
-    target: Callable[[ModuleType], ModuleType | Callable[..., object]],
+    target: Callable[
+        [ModuleType],
+        ModuleType | Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+    ],
 ) -> None:
     module = make_module(
         guarded(

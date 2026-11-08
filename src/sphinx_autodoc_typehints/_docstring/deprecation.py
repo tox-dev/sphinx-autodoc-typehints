@@ -18,7 +18,11 @@ if TYPE_CHECKING:
 DEPRECATED_DIRECTIVE: Final[str] = "sphinx_autodoc_typehints_deprecated"
 
 
-def inject_deprecation(obj: Callable[..., object], lines: list[str], summary_end: int) -> None:
+def inject_deprecation(
+    obj: Callable[..., object],  # simplint: ignore[SMP603]  # any signature is read at runtime
+    lines: list[str],
+    summary_end: int,
+) -> None:
     """Add the `@deprecated` message of `obj` below the summary, unless the docstring notes the deprecation."""
     # the object's own, as a subclass of a deprecated class inherits the attribute that @deprecated set on the base
     if not isinstance(message := getattr(obj, "__dict__", {}).get("__deprecated__"), str) or any(

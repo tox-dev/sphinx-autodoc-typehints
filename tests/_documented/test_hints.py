@@ -115,7 +115,11 @@ class _StatesStrings:
     ],
 )
 def test_resolved_type_hints(
-    app: SphinxTestApp, name: str, original: Callable[..., object], obj: QualifiedCallable, expected: ResolvedHints
+    app: SphinxTestApp,
+    name: str,
+    original: Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+    obj: QualifiedCallable,
+    expected: ResolvedHints,
 ) -> None:
     assert resolved_type_hints(app, name, original, obj, obj) == expected
 

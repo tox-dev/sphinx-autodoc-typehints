@@ -42,7 +42,10 @@ class _Joiner:
     "obj",
     [param(partial(_joined, 1), id="partial"), param(_Joiner(), id="callable-instance")],
 )
-def test_callable_takes_the_types_of_what_it_calls(process: Process, obj: Callable[..., str]) -> None:
+def test_callable_takes_the_types_of_what_it_calls(
+    process: Process,
+    obj: Callable[..., str],  # simplint: ignore[SMP603]  # any callable is passed
+) -> None:
     assert process("function", "mod.joined", obj, [":param sep: the separator"]) == [
         f":type sep: {STR}",
         ":param sep: the separator",

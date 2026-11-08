@@ -34,7 +34,12 @@ if TYPE_CHECKING:
     ],
 )
 def test_written_annotations(
-    written: ModuleType, owner: Callable[[ModuleType], Callable[..., object]], expected: dict[str, str]
+    written: ModuleType,
+    owner: Callable[
+        [ModuleType],
+        Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+    ],
+    expected: dict[str, str],
 ) -> None:
     assert written_annotations(owner(written)) == expected
 
@@ -72,7 +77,10 @@ def written_fixture(make_module: Callable[[str], ModuleType]) -> ModuleType:
 )
 def test_parsed_source_without_a_tree(
     make_module: Callable[[str], ModuleType],
-    owner: Callable[[Callable[[str], ModuleType]], Callable[..., object] | property],
+    owner: Callable[
+        [Callable[[str], ModuleType]],
+        Callable[..., object] | property,  # simplint: ignore[SMP603]  # any callable is passed
+    ],
 ) -> None:
     assert parsed_source(owner(make_module)) is None
 

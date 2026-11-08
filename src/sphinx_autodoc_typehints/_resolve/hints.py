@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 
 def get_all_type_hints(
     autodoc_mock_imports: list[str],
-    obj: Callable[..., object],
+    obj: Callable[..., object],  # simplint: ignore[SMP603]  # any signature is read at runtime
     name: str,
     localns: Mapping[str, Documented],
     *,

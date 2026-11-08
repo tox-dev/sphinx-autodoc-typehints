@@ -41,7 +41,11 @@ def show_factory_defaults(cls: type, signature: Signature) -> Signature:
     )
 
 
-def _call_text(factory: Callable[..., object], *, takes_self: bool) -> str:
+def _call_text(
+    factory: Callable[..., object],  # simplint: ignore[SMP603]  # any signature is read at runtime
+    *,
+    takes_self: bool,
+) -> str:
     # a lambda or a function local to another has no name the reader could look up, and its source may not be
     # recoverable, so it keeps the placeholder autodoc shows for a dataclass field
     if "<" in (name := getattr(factory, "__qualname__", "<")):

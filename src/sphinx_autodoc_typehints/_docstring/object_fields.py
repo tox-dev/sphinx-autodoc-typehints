@@ -31,7 +31,11 @@ if TYPE_CHECKING:
     from .._types import Documented, Hint
 
 
-def inject_overloads(entry: Entry, obj: Callable[..., object], lines: list[str]) -> bool:
+def inject_overloads(
+    entry: Entry,
+    obj: Callable[..., object],  # simplint: ignore[SMP603]  # any signature is read at runtime
+    lines: list[str],
+) -> bool:
     """
     List the overloads of `obj`, the callable `entry` documents, below the summary, and return whether it has some.
 
@@ -148,7 +152,13 @@ def inject_setter_type(
     lines.extend(["", f":Setter accepts: {accepted_type}"])
 
 
-def inject_override(app: Sphinx, what: str, name: str, obj: Callable[..., object], lines: list[str]) -> None:
+def inject_override(
+    app: Sphinx,
+    what: str,
+    name: str,
+    obj: Callable[..., object],  # simplint: ignore[SMP603]  # any signature is read at runtime
+    lines: list[str],
+) -> None:
     if what not in {"method", "property"} or getattr(obj, "__override__", False) is not True:
         return
     owner, attribute = documented_owner(name)

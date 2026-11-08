@@ -107,7 +107,10 @@ _LOCAL_CLASS: Final[type] = _make_local_class()
     ],
 )
 def test_process_signature_first_parameter_by_member_kind(
-    signature_of: SignatureOf, name: str, method: Callable[..., object], expected: str
+    signature_of: SignatureOf,
+    name: str,
+    method: Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+    expected: str,
 ) -> None:
     assert signature_of("method", name, method) == (expected, None)
 
@@ -145,7 +148,11 @@ update_wrapper(_looping, _looping)
     ],
 )
 def test_process_signature_leaves_the_signature(
-    signature_of: SignatureOf, what: str, name: str, obj: Callable[..., object], given: str | None
+    signature_of: SignatureOf,
+    what: str,
+    name: str,
+    obj: Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+    given: str | None,
 ) -> None:
     assert signature_of(what, name, obj, given) is None
 
@@ -269,7 +276,12 @@ _injected.__dict__["__signature__"] = Signature(list(signature(_handle, eval_str
     ],
 )
 def test_process_signature_strips_the_types(
-    signature_of: SignatureOf, what: str, name: str, obj: Callable[..., object], given: str, expected: str
+    signature_of: SignatureOf,
+    what: str,
+    name: str,
+    obj: Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+    given: str,
+    expected: str,
 ) -> None:
     assert signature_of(what, name, obj, given) == (expected, None)
 
@@ -296,7 +308,10 @@ def _counted(count: int) -> str: ...
 )
 @mark.sphinx(confoverrides=_KEPT)
 def test_process_signature_omits_only_a_constructor_return(
-    signature_of: SignatureOf, what: str, obj: Callable[..., object], expected: str
+    signature_of: SignatureOf,
+    what: str,
+    obj: Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+    expected: str,
 ) -> None:
     assert signature_of(what, "mod.documented", obj) == (expected, None)
 
@@ -328,7 +343,9 @@ def _kept_param_spec[**Params](*args: Params.args, **kwargs: Params.kwargs) -> N
 def _kept_literal(value: Literal["a", 1]) -> None: ...
 
 
-def _kept_callable(value: Callable[..., int]) -> None: ...
+def _kept_callable(
+    value: Callable[..., int],  # simplint: ignore[SMP603]  # any callable is passed
+) -> None: ...
 
 
 type _Pair = tuple[int, int]

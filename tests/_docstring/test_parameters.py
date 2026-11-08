@@ -273,7 +273,10 @@ def _described_field(first: Annotated[int, Field(description="the first")], seco
 )
 @without_rtype(always_document_param_types=True)
 def test_added_params_keep_signature_order(
-    process: Process, func: Callable[..., None], lines: list[str], expected: list[str]
+    process: Process,
+    func: Callable[..., None],  # simplint: ignore[SMP603]  # any callable is passed
+    lines: list[str],
+    expected: list[str],
 ) -> None:
     assert process("function", "mod.func", func, lines) == expected
 

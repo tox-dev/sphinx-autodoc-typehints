@@ -114,7 +114,13 @@ _NAMES: Final[
     ("Literal", Literal["a", 1], "typing", "Literal", ("a", 1)),
     ("Generic", Generic[Item], "typing", "Generic", (Item,)),
     ("Callable", Callable, "collections.abc", "Callable", ()),
-    ("Callable-Ellipsis", Callable[..., str], "collections.abc", "Callable", (..., str)),
+    (
+        "Callable-Ellipsis",
+        Callable[..., str],  # simplint: ignore[SMP603]  # the rendered Callable[...] is the case under test
+        "collections.abc",
+        "Callable",
+        (..., str),
+    ),
     ("Callable-int-str", Callable[[int, str], str], "collections.abc", "Callable", (int, str, str)),
     ("Pattern", Pattern, "re", "Pattern", ()),
     ("Pattern-str", Pattern[str], "re", "Pattern", (str,)),

@@ -52,6 +52,10 @@ def overloaded_fixture(make_module: Callable[[str], ModuleType]) -> ModuleType:
     ],
 )
 def test_resolve_overloads_without_overloads(
-    overloaded: ModuleType, owner: Callable[[ModuleType], Callable[..., object]]
+    overloaded: ModuleType,
+    owner: Callable[
+        [ModuleType],
+        Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+    ],
 ) -> None:
     assert resolve_overloads(owner(overloaded)) is None

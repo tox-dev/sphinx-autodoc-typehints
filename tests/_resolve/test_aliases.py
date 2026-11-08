@@ -89,7 +89,10 @@ def test_type_alias_namespace(
     aliased_module: ModuleType,
     documented_types: _DocumentTypes,
     aliases: dict[str, str],
-    owner: Callable[[ModuleType], Callable[..., object]],
+    owner: Callable[
+        [ModuleType],
+        Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+    ],
     module: str,
     documented: Callable[[_DocumentTypes], BuildEnvironment | None],
     expected: dict[str, dict[str, str | bool]],

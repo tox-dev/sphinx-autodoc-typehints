@@ -232,5 +232,7 @@ def test_backfill_type_hints(
 
 
 @mark.parametrize("obj", [param(len, id="builtin"), param(property(), id="not-callable")])
-def test_backfill_type_hints_of_an_object_without_source(obj: Callable[..., object] | property) -> None:
+def test_backfill_type_hints_of_an_object_without_source(
+    obj: Callable[..., object] | property,  # simplint: ignore[SMP603]  # any callable is passed
+) -> None:
     assert backfill_type_hints(obj, "mod.obj") == {}

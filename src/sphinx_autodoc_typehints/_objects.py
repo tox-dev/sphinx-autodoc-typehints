@@ -36,7 +36,9 @@ class QualifiedCallable(Protocol):
     ) -> object: ...  # simplint: ignore[SMP602]  # the proxy forwards calls of any shape
 
 
-def callable_target(obj: Callable[..., object]) -> tuple[QualifiedCallable, QualifiedCallable] | None:
+def callable_target(
+    obj: Callable[..., object],  # simplint: ignore[SMP603]  # any signature is read at runtime
+) -> tuple[QualifiedCallable, QualifiedCallable] | None:
     """
     Return the function callers call through `obj` and the function holding its annotations.
 
@@ -45,7 +47,7 @@ def callable_target(obj: Callable[..., object]) -> tuple[QualifiedCallable, Qual
     """
     if (callee := unwrapped(obj, stop=lambda func: declared_signature(func) is not None)) is None:
         return None
-    annotated: Callable[..., object] = callee
+    annotated: Callable[..., object] = callee  # simplint: ignore[SMP603]  # any signature is read at runtime
     # a partial or a partialmethod holds its annotations on the function it calls, and the method a partialmethod
     # builds keeps it under a private name before Python 3.13
     while True:
@@ -65,7 +67,11 @@ def callable_target(obj: Callable[..., object]) -> tuple[QualifiedCallable, Qual
 
 
 def unwrapped(
-    obj: Callable[..., object], stop: Callable[[Callable[..., object]], bool] = lambda _: False
+    obj: Callable[..., object],  # simplint: ignore[SMP603]  # any signature is read at runtime
+    stop: Callable[
+        [Callable[..., object]],  # simplint: ignore[SMP603]  # any signature is read at runtime
+        bool,
+    ] = lambda _: False,
 ) -> QualifiedCallable | None:
     """Return the callable `obj` wraps, `None` when that is a mock or the `__wrapped__` chain loops."""
     # a mock answers __wrapped__ with a new mock, so inspect.unwrap would build mocks up to the recursion limit
@@ -82,7 +88,9 @@ def declared_signature(obj: Documented) -> Signature | None:
     return signature if isinstance(signature := safe_getattr(obj, "__signature__", None), Signature) else None
 
 
-def property_getter(member: Documented) -> Callable[..., object] | None:
+def property_getter(
+    member: Documented,
+) -> Callable[..., object] | None:  # simplint: ignore[SMP603]  # any signature is read at runtime
     """Return the getter of a `property` or a `functools.cached_property`, `None` for any other member."""
     if isinstance(member, cached_property):
         return member.func

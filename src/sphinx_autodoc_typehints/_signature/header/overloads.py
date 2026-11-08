@@ -21,7 +21,11 @@ if TYPE_CHECKING:
 
 
 def signature_overloads(
-    app: Sphinx, what: str, documented: Callable[..., object], obj: QualifiedCallable, options: Options
+    app: Sphinx,
+    what: str,
+    documented: Callable[..., object],  # simplint: ignore[SMP603]  # any signature is read at runtime
+    obj: QualifiedCallable,
+    options: Options,
 ) -> list[Signature]:
     if (
         not app.config.typehints_use_signature

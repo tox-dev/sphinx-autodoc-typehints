@@ -433,7 +433,10 @@ def test_get_all_type_hints_resolves_a_type_parameter(
 def test_get_all_type_hints_reads_a_stub(
     request: FixtureRequest,
     fixture_name: str,
-    owner: Callable[[ModuleType], Callable[..., object]],
+    owner: Callable[
+        [ModuleType],
+        Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+    ],
     expected: dict[str, Annotation],
 ) -> None:
     assert get_all_type_hints([], owner(request.getfixturevalue(fixture_name)), "mod.documented", {}) == expected
@@ -538,7 +541,10 @@ def test_get_all_type_hints_resolves_a_backfilled_object_again_without_warning(
 def test_get_all_type_hints_cross_references_a_name_of_the_stub(
     request: FixtureRequest,
     fixture_name: str,
-    owner: Callable[[ModuleType], Callable[..., object]],
+    owner: Callable[
+        [ModuleType],
+        Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+    ],
     key: str,
     alias: str,
 ) -> None:

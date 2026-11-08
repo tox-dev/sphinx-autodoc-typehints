@@ -36,7 +36,10 @@ _FACTORIES: Final[Mapping[type[ast.type_param], Callable[[str], TypeVar | ParamS
 
 
 def stub_context(
-    obj: Callable[..., object] | GetSetDescriptorType | MemberDescriptorType, name: str = ""
+    obj: Callable[..., object]  # simplint: ignore[SMP603]  # any signature is read at runtime
+    | GetSetDescriptorType
+    | MemberDescriptorType,
+    name: str = "",
 ) -> StubContext:
     """
     Return the namespace the stub of `obj` evaluates in, the names to render as a plain cross-reference, its module.

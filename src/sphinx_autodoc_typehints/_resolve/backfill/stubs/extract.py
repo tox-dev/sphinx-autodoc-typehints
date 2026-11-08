@@ -13,7 +13,10 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 
-def stub_annotations(obj: Callable[..., object], name: str = "") -> dict[str, str]:
+def stub_annotations(
+    obj: Callable[..., object],  # simplint: ignore[SMP603]  # any signature is read at runtime
+    name: str = "",
+) -> dict[str, str]:
     """Return the annotations the stub describing `obj`, documented as `name`, writes for it, empty without one."""
     if (
         not (path := stub_path(obj, name))

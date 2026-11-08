@@ -85,7 +85,10 @@ def test_find_ast_node_misses_an_absent_name() -> None:
 def test_stub_annotations(
     request: FixtureRequest,
     fixture: str,
-    owner: Callable[[ModuleType], Callable[..., object]],
+    owner: Callable[
+        [ModuleType],
+        Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+    ],
     expected: dict[str, str],
 ) -> None:
     assert stub_annotations(owner(request.getfixturevalue(fixture))) == expected

@@ -148,7 +148,7 @@ def sphinx_test_tempdir(tmp_path: Path) -> Path:
 
 
 @fixture
-def mocked_object() -> Callable[..., object]:
+def mocked_object() -> Callable[..., object]:  # simplint: ignore[SMP603]  # any callable is passed
     with mock(["mocked_dependency"]):
         return import_module("mocked_dependency").Thing
 

@@ -239,7 +239,7 @@ _CASES: Final[list[ParameterSet]] = [
         id="MutualRecA",
     ),
     param(
-        Callable[..., int],
+        Callable[..., int],  # simplint: ignore[SMP603]  # the rendered Callable[...] is the case under test
         r":py:class:`~collections.abc.Callable`\ \[:py:data:`...<Ellipsis>`, :py:class:`int`]",
         id="Callable-Ellipsis-int",
     ),

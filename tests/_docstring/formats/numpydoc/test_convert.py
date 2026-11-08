@@ -524,7 +524,11 @@ def _annotated_ratio(value: int) -> float: ...
         param(lambda value: value, "float", id="unannotated"),
     ],
 )
-def test_numpydoc_unnamed_return_keeps_its_type(process: Process, func: Callable[..., object], rtype: str) -> None:
+def test_numpydoc_unnamed_return_keeps_its_type(
+    process: Process,
+    func: Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+    rtype: str,
+) -> None:
     lines = [":Returns:", "", "    float", "        The ratio.", ""]
     assert process("function", "mod.ratio", func, lines) == [f":rtype: {rtype}", ":returns: The ratio.", ""]
 
