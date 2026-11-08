@@ -66,7 +66,7 @@ if TYPE_CHECKING:
         param(".. autoclass:: dropped_module.Entry", '**kind** ("Engine"["int"]) -- entry engine', id="attrs-field"),
         param(
             ".. autoclass:: dropped_module.Holder",
-            '**kind** ("Engine"["T"]) -- held engine',
+            '**kind** ("Engine"["ItemT"]) -- held engine',
             id="class-body-ivar-of-a-type-parameter",
         ),
         param(

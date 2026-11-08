@@ -141,11 +141,11 @@ class Commented:
         """
 
 
-class Holder[T]:
+class Holder[ItemT]:
     """
     A holder.
 
     :ivar kind: held engine
     """
 
-    kind: Engine[T]
+    kind: Engine[ItemT]
