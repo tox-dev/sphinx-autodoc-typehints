@@ -39,7 +39,39 @@ class Class:
     :param z: baz
     """
 
+    class InnerClass:
+        """
+        Inner class.
+        """
+
+        def inner_method(self, x: bool) -> str:
+            """
+            Inner method.
+
+            :param x: foo
+            """
+
+        def __dunder_inner_method(self, x: bool) -> str:
+            """
+            Dunder inner method.
+
+            :param x: foo
+            """
+
     def __init__(self, x: bool, y: int, z: Optional[str] = None) -> None: ...
+
+    def __magic_custom_method__(self, x: str) -> str:  # ruff:ignore[bad-dunder-method-name]  # a custom dunder name is the case
+        """
+        Magic dunder method docstring.
+
+        :param x: foo
+        """
+
+    @property
+    def a_property(self) -> str:
+        """
+        Property docstring
+        """
 
     def a_method(self, x: bool, y: int, z: Optional[str] = None) -> str:
         """
@@ -50,23 +82,16 @@ class Class:
         :param z: baz
         """
 
-    def _private_method(self, x: str) -> str:
+    def _private_method(self, x: str) -> str:  # simplint: ignore[SMP409]  # documented private member
         """
         Private method docstring.
 
         :param x: foo
         """
 
-    def __dunder_method(self, x: str) -> str:
+    def __dunder_method(self, x: str) -> str:  # simplint: ignore[SMP409]  # documented dunder member
         """
         Dunder method docstring.
-
-        :param x: foo
-        """
-
-    def __magic_custom_method__(self, x: str) -> str:  # ruff:ignore[bad-dunder-method-name]  # a custom dunder name is the case
-        """
-        Magic dunder method docstring.
 
         :param x: foo
         """
@@ -90,31 +115,6 @@ class Class:
         :param y: bar
         :param z: baz
         """
-
-    @property
-    def a_property(self) -> str:
-        """
-        Property docstring
-        """
-
-    class InnerClass:
-        """
-        Inner class.
-        """
-
-        def inner_method(self, x: bool) -> str:
-            """
-            Inner method.
-
-            :param x: foo
-            """
-
-        def __dunder_inner_method(self, x: bool) -> str:
-            """
-            Dunder inner method.
-
-            :param x: foo
-            """
 
     locally_defined_callable_field = get_local_function()
 
