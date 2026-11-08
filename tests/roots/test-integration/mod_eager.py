@@ -8,7 +8,7 @@ from typing_extensions import Doc
 UserId = Union[int, str]
 RequestData = dict[str, Any]
 Count = int
-T = TypeVar("T")
+ItemT = TypeVar("ItemT")
 Described = Annotated[int, Doc("an int value")]
 Counter = Generator[int, None, str]
 Ticket = NewType("Ticket", int)
@@ -106,10 +106,10 @@ def scale(amount: Count | str) -> Count | str:
     return amount
 
 
-class Base(Generic[T]):
+class Base(Generic[ItemT]):
     """A base."""
 
-    def echo(self, value: T) -> T:
+    def echo(self, value: ItemT) -> ItemT:
         """
         Echo a value.
 
