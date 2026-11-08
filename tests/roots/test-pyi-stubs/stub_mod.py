@@ -12,8 +12,8 @@ class Calculator:
         def process(self, data):
             return data
 
-    def add(self, x):
-        self.value += x
+    def add(self, value):
+        self.value += value
         return self
 
 
