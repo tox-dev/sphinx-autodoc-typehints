@@ -105,7 +105,7 @@ def process_signature(
 
 
 def _target(
-    obj: Callable[..., object],  # simplint: ignore[SMP603]  # any signature is read at runtime
+    obj: Callable[..., object],  # simplint: ignore[SMP603]  # a class with a metaclass __call__, or any callable
 ) -> tuple[QualifiedCallable, QualifiedCallable] | None:
     if isclass(obj) and declared_signature(obj) is None:
         # autodoc takes a class signature from the `__call__` of its metaclass ahead of the constructor

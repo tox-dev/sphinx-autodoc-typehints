@@ -36,7 +36,7 @@ _FACTORIES: Final[Mapping[type[ast.type_param], Callable[[str], TypeVar | ParamS
 
 
 def stub_context(
-    obj: Callable[..., object]  # simplint: ignore[SMP603]  # any signature is read at runtime
+    obj: Callable[..., object]  # simplint: ignore[SMP603]  # a descriptor or member of any shape
     | GetSetDescriptorType
     | MemberDescriptorType,
     name: str = "",

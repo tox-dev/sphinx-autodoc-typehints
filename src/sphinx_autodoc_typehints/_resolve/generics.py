@@ -34,7 +34,7 @@ class Subscriptable(Protocol):
 
 def declared_type_params(
     documented: Documented,
-    function: Callable[..., object] | None,  # simplint: ignore[SMP603]  # any signature is read at runtime
+    function: Callable[..., object] | None,  # simplint: ignore[SMP603]  # any function that declares type parameters
     documenting: Documented,
 ) -> frozenset[TypeParam]:
     """

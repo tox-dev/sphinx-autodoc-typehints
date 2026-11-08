@@ -28,7 +28,7 @@ OVERLOADED_KINDS: Final[frozenset[str]] = frozenset({"function", "method", "clas
 def typed_overloads(
     app: Sphinx,
     name: str,
-    obj: Callable[..., object],  # simplint: ignore[SMP603]  # any signature is read at runtime
+    obj: Callable[..., object],  # simplint: ignore[SMP603]  # any documented callable, overloaded or not
     overloads: list[Signature],
     skip: int,
     arguments: dict[TypeParam, Annotation],
@@ -43,7 +43,7 @@ def typed_overloads(
     # and misses those a TYPE_CHECKING block keeps from running, so a count differing from the source gives None each
     if len(functions := get_overloads(obj)) != len(overloads):
         defining: list[
-            Callable[..., object] | None  # simplint: ignore[SMP603]  # any signature is read at runtime
+            Callable[..., object] | None  # simplint: ignore[SMP603]  # an overload set of any signature
         ] = [None] * len(overloads)
     else:
         # a staticmethod or classmethod overload registers the descriptor

@@ -37,7 +37,7 @@ class QualifiedCallable(Protocol):
 
 
 def callable_target(
-    obj: Callable[..., object],  # simplint: ignore[SMP603]  # any signature is read at runtime
+    obj: Callable[..., object],  # simplint: ignore[SMP603]  # a documented object, any callable autodoc finds
 ) -> tuple[QualifiedCallable, QualifiedCallable] | None:
     """
     Return the function callers call through `obj` and the function holding its annotations.
@@ -47,7 +47,7 @@ def callable_target(
     """
     if (callee := unwrapped(obj, stop=lambda func: declared_signature(func) is not None)) is None:
         return None
-    annotated: Callable[..., object] = callee  # simplint: ignore[SMP603]  # any signature is read at runtime
+    annotated: Callable[..., object] = callee  # simplint: ignore[SMP603]  # the wrapped callee takes any arguments
     # a partial or a partialmethod holds its annotations on the function it calls, and the method a partialmethod
     # builds keeps it under a private name before Python 3.13
     while True:
@@ -67,9 +67,9 @@ def callable_target(
 
 
 def unwrapped(
-    obj: Callable[..., object],  # simplint: ignore[SMP603]  # any signature is read at runtime
+    obj: Callable[..., object],  # simplint: ignore[SMP603]  # the wrapper chain may hold any callable, mocks included
     stop: Callable[
-        [Callable[..., object]],  # simplint: ignore[SMP603]  # any signature is read at runtime
+        [Callable[..., object]],  # simplint: ignore[SMP603]  # the chain's stop predicate receives any callable
         bool,
     ] = lambda _: False,
 ) -> QualifiedCallable | None:
@@ -90,7 +90,7 @@ def declared_signature(obj: Documented) -> Signature | None:
 
 def property_getter(
     member: Documented,
-) -> Callable[..., object] | None:  # simplint: ignore[SMP603]  # any signature is read at runtime
+) -> Callable[..., object] | None:  # simplint: ignore[SMP603]  # the fget takes any arguments
     """Return the getter of a `property` or a `functools.cached_property`, `None` for any other member."""
     if isinstance(member, cached_property):
         return member.func

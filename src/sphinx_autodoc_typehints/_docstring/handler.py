@@ -92,7 +92,7 @@ def process_docstring(
 # `declared` is the callable before unwrapping, as decorators mark that one
 def _type_callable(
     entry: Entry,
-    declared: Callable[..., object],  # simplint: ignore[SMP603]  # any signature is read at runtime
+    declared: Callable[..., object],  # simplint: ignore[SMP603]  # any callable a decorator may have wrapped
     options: Options | None,
     lines: list[str],
     written: frozenset[str] | None,

@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 def stub_annotations(
-    obj: Callable[..., object],  # simplint: ignore[SMP603]  # any signature is read at runtime
+    obj: Callable[..., object],  # simplint: ignore[SMP603]  # a stub may describe a callable of any signature
     name: str = "",
 ) -> dict[str, str]:
     """Return the annotations the stub describing `obj`, documented as `name`, writes for it, empty without one."""

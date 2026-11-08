@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 
 def inject_overloads(
     entry: Entry,
-    obj: Callable[..., object],  # simplint: ignore[SMP603]  # any signature is read at runtime
+    obj: Callable[..., object],  # simplint: ignore[SMP603]  # autodoc documents any callable, function or method
     lines: list[str],
 ) -> bool:
     """
@@ -156,7 +156,7 @@ def inject_override(
     app: Sphinx,
     what: str,
     name: str,
-    obj: Callable[..., object],  # simplint: ignore[SMP603]  # any signature is read at runtime
+    obj: Callable[..., object],  # simplint: ignore[SMP603]  # a method or property of any signature
     lines: list[str],
 ) -> None:
     if what not in {"method", "property"} or getattr(obj, "__override__", False) is not True:

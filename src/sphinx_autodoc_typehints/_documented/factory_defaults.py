@@ -42,7 +42,7 @@ def show_factory_defaults(cls: type, signature: Signature) -> Signature:
 
 
 def _call_text(
-    factory: Callable[..., object],  # simplint: ignore[SMP603]  # any signature is read at runtime
+    factory: Callable[..., object],  # simplint: ignore[SMP603]  # a dataclass default factory may be any callable
     *,
     takes_self: bool,
 ) -> str:

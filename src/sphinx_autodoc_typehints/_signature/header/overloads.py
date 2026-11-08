@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 def signature_overloads(
     app: Sphinx,
     what: str,
-    documented: Callable[..., object],  # simplint: ignore[SMP603]  # any signature is read at runtime
+    documented: Callable[..., object],  # simplint: ignore[SMP603]  # the documented callable may be any function
     obj: QualifiedCallable,
     options: Options,
 ) -> list[Signature]:
