@@ -94,7 +94,10 @@ def bound_type_args(documenting: Documented, attribute: str) -> dict[TypeParam, 
             except ValueError:
                 declared = {}
         else:  # pragma: <3.14 cover
-            declared = get_annotations(definer)
+            try:
+                declared = get_annotations(definer)
+            except ValueError:
+                declared = {}
         if isinstance(declared, dict) and attribute in declared:
             break
     else:
