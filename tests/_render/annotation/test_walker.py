@@ -466,12 +466,16 @@ def test_format_annotation_modern_spelling_overrides_unsimplified_union(make_con
 def test_format_annotation_both_libs(
     config: Config, library: ModuleType, name: str, params: Annotation, expected: str
 ) -> None:
-    if (form := getattr(library, name, None)) is None:  # pragma: no cover -- typing gained some of these after 3.12
+    form = getattr(library, name, None)
+    if form is None:  # pragma: no cover -- typing gained some of these  # simplint: ignore[SMP803]  # Python-dependent
         skip(f"{name} not available in the {library.__name__} module")
-    if library is typing_extensions and not hasattr(typing, name):
+    if library is typing_extensions and not hasattr(typing, name):  # simplint: ignore[SMP803]  # Python-dependent rows
         # the docs list a name under typing_extensions while typing on this Python lacks it
         expected = expected.replace("~typing.", "~typing_extensions.")
-    assert format_annotation(form if params is None else form[params], config) == expected
+    assert (
+        format_annotation(form if params is None else form[params], config)  # simplint: ignore[SMP803]  # None is bare
+        == expected
+    )
 
 
 @mark.parametrize(
