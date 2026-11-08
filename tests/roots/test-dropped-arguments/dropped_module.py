@@ -86,7 +86,7 @@ def aliased(kind: Engines) -> None:
     """
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class Record:
     """
     A record.

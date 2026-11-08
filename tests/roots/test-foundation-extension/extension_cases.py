@@ -343,7 +343,7 @@ def undocumented_function(x: int) -> str:
     """Hi"""
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class DataClass:
     """Class docstring."""
 

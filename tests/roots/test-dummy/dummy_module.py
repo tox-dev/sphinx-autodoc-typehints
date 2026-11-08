@@ -36,7 +36,7 @@ class MyNamedTupleWithPath(NamedTuple):
     version: str
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class DataClass:
     """Class docstring."""
 
