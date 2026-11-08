@@ -709,14 +709,14 @@ def test_build_lists_no_member_the_guard_of_an_imported_member_adds(
 
                    Inappropriate argument value (of correct type).
 
-                demo_typing_guard.a[AnyStr: (bytes, str)](f, s)
+                demo_typing_guard.a[AnyStr: (bytes, str)](first, second)
 
                    Do.
 
                    Parameters:
-                      * **f** ("Decimal") -- first
+                      * **first** ("Decimal") -- first
 
-                      * **s** ("AnyStr") -- second
+                      * **second** ("AnyStr") -- second
 
                    Return type:
                       "Sequence"[{
