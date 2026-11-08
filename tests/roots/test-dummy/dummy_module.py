@@ -36,7 +36,7 @@ class MyNamedTupleWithPath(NamedTuple):
     version: str
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True)  # simplint: ignore[SMP703]  # the docs assert the positional constructor signature
 class DataClass:
     """Class docstring."""
 

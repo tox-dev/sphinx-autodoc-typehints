@@ -162,7 +162,7 @@ class _Point(NamedTuple):
     right: str
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True)  # simplint: ignore[SMP703]  # the expected signature lists positional arguments
 class _Made:
     value: list[int] = field(default_factory=list)
 

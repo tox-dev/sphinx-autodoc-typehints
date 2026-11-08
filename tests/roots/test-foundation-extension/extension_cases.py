@@ -343,7 +343,7 @@ def undocumented_function(x: int) -> str:
     """Hi"""
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True)  # simplint: ignore[SMP703]  # the docs assert the positional constructor signature
 class DataClass:
     """Class docstring."""
 

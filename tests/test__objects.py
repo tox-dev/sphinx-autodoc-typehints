@@ -59,7 +59,7 @@ def test_get_obj_location_without_a_source_file_is_none(obj: Documented) -> None
 
 
 def test_get_obj_location_of_generated_code_is_none() -> None:
-    @dataclass(frozen=True, slots=True)
+    @dataclass(frozen=True, slots=True, kw_only=True)
     class Generated:
         value: int
 

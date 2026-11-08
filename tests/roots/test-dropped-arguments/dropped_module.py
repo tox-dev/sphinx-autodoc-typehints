@@ -86,7 +86,7 @@ def aliased(kind: Engines) -> None:
     """
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True)  # simplint: ignore[SMP703]  # the docs assert the positional constructor signature
 class Record:
     """
     A record.

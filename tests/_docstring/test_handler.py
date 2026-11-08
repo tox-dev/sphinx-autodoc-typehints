@@ -254,7 +254,7 @@ def test_process_docstring_of_a_bound_method_types_its_return(process: Process, 
 
 @mark.sphinx(confoverrides={"typehints_defaults": "comma"})
 def test_process_docstring_shows_a_dataclass_factory_as_its_call(process: Process) -> None:
-    @dataclass(frozen=True, slots=True)
+    @dataclass(frozen=True, slots=True, kw_only=True)
     class Made:
         value: list[int] = field(default_factory=list)
 
