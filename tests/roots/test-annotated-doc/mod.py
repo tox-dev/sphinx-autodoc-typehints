@@ -12,22 +12,22 @@ def greet(
     return f"{greeting}, {name}!"
 
 
-def partial_doc(x: Annotated[int, Doc("The x value")], y: int) -> int:
+def partial_doc(value: Annotated[int, Doc("The x value")], other: int) -> int:
     """Compute sum.
 
-    :param y: The y value
+    :param other: The y value
     """
-    return x + y
+    return value + other
 
 
-def no_doc(x: Annotated[int, 42]) -> int:
+def no_doc(value: Annotated[int, 42]) -> int:
     """Identity."""
-    return x
+    return value
 
 
-def docstring_wins(x: Annotated[int, Doc("Doc description")]) -> int:
+def docstring_wins(value: Annotated[int, Doc("Doc description")]) -> int:
     """Override.
 
-    :param x: Docstring description
+    :param value: Docstring description
     """
-    return x
+    return value

@@ -6,19 +6,19 @@ from typing_extensions import Doc
 
 
 def compute(
-    x: Annotated[int, Doc("The x input")], y: Annotated[int, Doc("The y input")]
+    value: Annotated[int, Doc("The x input")], other: Annotated[int, Doc("The y input")]
 ) -> Annotated[int, Doc("The sum")]:
     """
     Compute the sum.
 
     Parameters
     ----------
-    x
+    value
         Placeholder.
-    y
+    other
         Placeholder.
     """
-    return x + y
+    return value + other
 
 
 def transform(data: Annotated[str, Doc("The input data")]) -> Annotated[str, Doc("The transformed result")]:

@@ -91,14 +91,14 @@ def test_doc_precedes_other_metadata_descriptions(process: Process) -> None:
         param(
             "partial_doc",
             dedent("""\
-                mod.partial_doc(x, y)
+                mod.partial_doc(value, other)
 
                    Compute sum.
 
                    Parameters:
-                      * **x** ("int") -- The x value
+                      * **value** ("int") -- The x value
 
-                      * **y** ("int") -- The y value
+                      * **other** ("int") -- The y value
 
                    Return type:
                       "int"
@@ -109,7 +109,7 @@ def test_doc_precedes_other_metadata_descriptions(process: Process) -> None:
         param(
             "no_doc",
             dedent("""\
-                mod.no_doc(x)
+                mod.no_doc(value)
 
                    Identity.
 
@@ -122,12 +122,12 @@ def test_doc_precedes_other_metadata_descriptions(process: Process) -> None:
         param(
             "docstring_wins",
             dedent("""\
-                mod.docstring_wins(x)
+                mod.docstring_wins(value)
 
                    Override.
 
                    Parameters:
-                      **x** ("int") -- Docstring description
+                      **value** ("int") -- Docstring description
 
                    Return type:
                       "int"
@@ -157,14 +157,14 @@ def test_doc_precedes_other_metadata_descriptions(process: Process) -> None:
         param(
             "compute",
             dedent("""\
-                mod.compute(x, y)
+                mod.compute(value, other)
 
                    Compute the sum.
 
                    Parameters:
-                      * **x** ("int") -- Placeholder.
+                      * **value** ("int") -- Placeholder.
 
-                      * **y** ("int") -- Placeholder.
+                      * **other** ("int") -- Placeholder.
 
                    Return type:
                       "int"
