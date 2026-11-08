@@ -15,9 +15,9 @@ pytestmark: Final[MarkDecorator] = mark.sphinx("text", testroot="bases")
     [
         param("Plain", "Bases: object", id="object"),
         param("Child", "Bases: Plain", id="class"),
-        param("Open", "Bases: Generic[T]", id="generic"),
+        param("Open", "Bases: Generic[ItemT]", id="generic"),
         param("Pairs", "Bases: Mapping[str, int]", id="subscripted-generic"),
-        param("Sub", "Bases: Stack[X], Generic[X]", id="pep-695-type-parameter"),
+        param("Sub", "Bases: Stack[BaseT], Generic[BaseT]", id="pep-695-type-parameter"),
         param("Reader", "Bases: Protocol", id="protocol"),
         param("FromMock", "Bases: Mocked", id="mocked-base-left-to-sphinx"),
         param("UsesHidden", "Bases: Stack[bytes | None]", id="alias-not-documented-expands"),
