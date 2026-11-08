@@ -323,12 +323,12 @@ def test_added_param_starts_a_field_list_after_a_comment(process: Process) -> No
 
 def test_return_type_stays_with_params_before_a_sphinx_directive(build_text: BuildText) -> None:
     assert build_text(".. autofunction:: dummy_module.versioned") == dedent("""\
-        dummy_module.versioned(a)
+        dummy_module.versioned(item)
 
            Do it.
 
            Parameters:
-              **a** ("int") -- the a
+              **item** ("int") -- the a
 
            Return type:
               "int"

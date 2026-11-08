@@ -184,12 +184,12 @@ def test_always_document_param_types_change_rereads_sources(
     make_app("text", srcdir=app.srcdir, confoverrides={"always_document_param_types": True}).build()
 
     assert (Path(app.outdir) / "index.txt").read_text() == dedent("""\
-        dummy_module.undocumented_function(x)
+        dummy_module.undocumented_function(value)
 
            Hi
 
            Parameters:
-              **x** ("int")
+              **value** ("int")
 
            Return type:
               "str"

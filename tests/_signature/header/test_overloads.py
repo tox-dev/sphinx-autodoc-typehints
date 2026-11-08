@@ -73,8 +73,8 @@ pytestmark: Final[MarkDecorator] = mark.sphinx(
         param(
             ".. autofunction:: dummy_module.overloaded_generic",
             dedent("""\
-                dummy_module.overloaded_generic[T: int](value: T) -> T
-                dummy_module.overloaded_generic[T: int](value: list[T]) -> T
+                dummy_module.overloaded_generic[ItemT: int](value: ItemT) -> ItemT
+                dummy_module.overloaded_generic[ItemT: int](value: list[ItemT]) -> ItemT
 
                    Generic function.
                 """),

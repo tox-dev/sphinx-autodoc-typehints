@@ -169,13 +169,13 @@ def test_as_written(
                    :special-members: __new__
             """),
             dedent("""\
-                class dummy_module.MyNamedTuple(x, y='hello')
+                class dummy_module.MyNamedTuple(value, other='hello')
 
                    A named tuple.
 
-                   static __new__(_cls, x, y='hello')
+                   static __new__(_cls, value, other='hello')
 
-                      Create new instance of MyNamedTuple(x, y)
+                      Create new instance of MyNamedTuple(value, other)
             """),
             [],
             id="constructor",

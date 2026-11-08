@@ -566,17 +566,17 @@ def test_kept_signature_warns_about_an_unresolvable_annotation_once(build_text: 
     "header",
     [
         param(
-            "dummy_module_simple.function(x: bool, y: int = 1)",
+            "dummy_module_simple.function(value: bool, other: int = 1)",
             marks=mark.sphinx(confoverrides={"typehints_use_signature": True}),
             id="parameters",
         ),
         param(
-            "dummy_module_simple.function(x, y=1) -> str",
+            "dummy_module_simple.function(value, other=1) -> str",
             marks=mark.sphinx(confoverrides={"typehints_use_signature_return": True}),
             id="return",
         ),
         param(
-            "dummy_module_simple.function(x: bool, y: int = 1) -> str",
+            "dummy_module_simple.function(value: bool, other: int = 1) -> str",
             marks=mark.sphinx(confoverrides=_KEPT),
             id="both",
         ),
@@ -589,9 +589,9 @@ def test_process_signature_keeps_the_configured_types_in_a_build(build_text: Bui
            Function docstring.
 
            Parameters:
-              * **x** ("bool") -- foo
+              * **value** ("bool") -- foo
 
-              * **y** ("int") -- bar
+              * **other** ("int") -- bar
 
            Return type:
               "str"

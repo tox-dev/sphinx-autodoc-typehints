@@ -461,45 +461,45 @@ def test_unpacked_kwargs_keys_get_their_types(
     [
         param(
             dedent("""\
-                dummy_module.undocumented_function(x)
+                dummy_module.undocumented_function(value)
 
                    Hi
 
                    Return type:
                       "str"
 
-                class dummy_module.DataClass(x)
+                class dummy_module.DataClass(value)
 
                    Class docstring.
 
-                   __init__(x)
+                   __init__(value)
             """),
             id="no_doc_param_type",
             marks=mark.sphinx(confoverrides={"typehints_document_rtype": True}),
         ),
         param(
             dedent("""\
-                dummy_module.undocumented_function(x)
+                dummy_module.undocumented_function(value)
 
                    Hi
 
                    Parameters:
-                      **x** ("int")
+                      **value** ("int")
 
                    Return type:
                       "str"
 
-                class dummy_module.DataClass(x)
+                class dummy_module.DataClass(value)
 
                    Class docstring.
 
                    Parameters:
-                      **x** ("int")
+                      **value** ("int")
 
-                   __init__(x)
+                   __init__(value)
 
                       Parameters:
-                         **x** ("int")
+                         **value** ("int")
             """),
             id="doc_param_type",
             marks=mark.sphinx(confoverrides={"always_document_param_types": True}),
@@ -523,14 +523,14 @@ def test_always_document_param_types(build_text: BuildText, expected: str) -> No
 @mark.sphinx(confoverrides={"always_document_param_types": True, "typehints_defaults": "braces-after"})
 def test_always_document_param_types_with_braces_after_defaults(build_text: BuildText) -> None:
     assert build_text(".. autofunction:: dummy_module.undocumented_function_with_defaults") == dedent("""\
-        dummy_module.undocumented_function_with_defaults(x, y='hello')
+        dummy_module.undocumented_function_with_defaults(value, other='hello')
 
            Hi
 
            Parameters:
-              * **x** ("int")
+              * **value** ("int")
 
-              * **y** ("str") -- (default: "'hello'")
+              * **other** ("str") -- (default: "'hello'")
 
            Return type:
               "str"
@@ -565,14 +565,14 @@ def test_always_document_param_types_with_braces_after_defaults(build_text: Buil
 )
 def test_default_shown_as_configured(build_text: BuildText, expected: str) -> None:
     assert build_text(".. autofunction:: dummy_module_simple.function") == dedent(f"""\
-        dummy_module_simple.function(x, y=1)
+        dummy_module_simple.function(value, other=1)
 
            Function docstring.
 
            Parameters:
-              * **x** ("bool") -- foo
+              * **value** ("bool") -- foo
 
-              * **y** {expected}
+              * **other** {expected}
 
            Return type:
               "str"
@@ -585,42 +585,42 @@ def test_default_shown_as_configured(build_text: BuildText, expected: str) -> No
         param(
             "function_with_some_defaults_and_without_typehints",
             dedent("""\
-                dummy_module_without_complete_typehints.function_with_some_defaults_and_without_typehints(x, y=None)
+                dummy_module_without_complete_typehints.function_with_some_defaults_and_without_typehints(num, opt=None)
 
                    Function docstring.
 
                    Parameters:
-                      * **x** -- untyped without a default
+                      * **num** -- untyped without a default
 
-                      * **y** (default: "None") -- untyped with a default
+                      * **opt** (default: "None") -- untyped with a default
             """),
             id="untyped",
         ),
         param(
             "function_with_some_defaults_and_some_typehints",
             dedent("""\
-                dummy_module_without_complete_typehints.function_with_some_defaults_and_some_typehints(x, y=None)
+                dummy_module_without_complete_typehints.function_with_some_defaults_and_some_typehints(num, opt=None)
 
                    Function docstring.
 
                    Parameters:
-                      * **x** ("int") -- typed without a default
+                      * **num** ("int") -- typed without a default
 
-                      * **y** (default: "None") -- untyped with a default
+                      * **opt** (default: "None") -- untyped with a default
             """),
             id="partly-typed",
         ),
         param(
             "function_with_some_defaults_and_more_typehints",
             dedent("""\
-                dummy_module_without_complete_typehints.function_with_some_defaults_and_more_typehints(x, y=None)
+                dummy_module_without_complete_typehints.function_with_some_defaults_and_more_typehints(num, opt=None)
 
                    Function docstring.
 
                    Parameters:
-                      * **x** ("int") -- typed without a default
+                      * **num** ("int") -- typed without a default
 
-                      * **y** (default: "None") -- untyped with a default
+                      * **opt** (default: "None") -- untyped with a default
 
                    Return type:
                       "str"
@@ -630,14 +630,14 @@ def test_default_shown_as_configured(build_text: BuildText, expected: str) -> No
         param(
             "function_with_defaults_and_some_typehints",
             dedent("""\
-                dummy_module_without_complete_typehints.function_with_defaults_and_some_typehints(x=0, y=None)
+                dummy_module_without_complete_typehints.function_with_defaults_and_some_typehints(num=0, opt=None)
 
                    Function docstring.
 
                    Parameters:
-                      * **x** ("int", default: "0") -- typed with a default
+                      * **num** ("int", default: "0") -- typed with a default
 
-                      * **y** (default: "None") -- untyped with a default
+                      * **opt** (default: "None") -- untyped with a default
 
                    Return type:
                       "str"
@@ -647,14 +647,15 @@ def test_default_shown_as_configured(build_text: BuildText, expected: str) -> No
         param(
             "function_with_defaults_and_type_information_in_docstring",
             dedent("""\
-                dummy_module_without_complete_typehints.function_with_defaults_and_type_information_in_docstring(x, y=0)
+                dummy_module_without_complete_typehints.function_with_defaults_and_type_information_in_docstring\
+(num, opt=0)
 
                    Function docstring.
 
                    Parameters:
-                      * **x** (*int*) -- typed in the docstring
+                      * **num** (*int*) -- typed in the docstring
 
-                      * **y** (int, default: "0") -- typed in the docstring with a default
+                      * **opt** (int, default: "0") -- typed in the docstring with a default
 
                    Return type:
                       "str"

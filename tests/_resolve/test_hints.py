@@ -705,14 +705,14 @@ def test_build_documents_the_types_of_a_stub(
         param(
             ".. autofunction:: dummy_module_future_annotations.function_with_py310_annotations",
             dedent("""\
-                dummy_module_future_annotations.function_with_py310_annotations(self, x, y, z=None)
+                dummy_module_future_annotations.function_with_py310_annotations(self, value, other, z=None)
 
                    Method docstring.
 
                    Parameters:
-                      * **x** ("bool" | "None") -- foo
+                      * **value** ("bool" | "None") -- foo
 
-                      * **y** ("int" | "str" | "float") -- bar
+                      * **other** ("int" | "str" | "float") -- bar
 
                       * **z** ("str" | "None") -- baz
 

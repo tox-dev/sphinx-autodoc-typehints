@@ -577,14 +577,14 @@ def test_return_type_left_out(process: Process, what: str, name: str, obj: Docum
         param(
             "function_no_returns",
             dedent("""\
-                dummy_module_simple_no_use_rtype.function_no_returns(x, y=1)
+                dummy_module_simple_no_use_rtype.function_no_returns(value, other=1)
 
                    Function docstring.
 
                    Parameters:
-                      * **x** ("bool") -- foo.
+                      * **value** ("bool") -- foo.
 
-                      * **y** ("int") -- bar.
+                      * **other** ("int") -- bar.
 
                    Return type:
                       "str"
@@ -594,14 +594,14 @@ def test_return_type_left_out(process: Process, what: str, name: str, obj: Docum
         param(
             "function_returns_with_type",
             dedent("""\
-                dummy_module_simple_no_use_rtype.function_returns_with_type(x, y=1)
+                dummy_module_simple_no_use_rtype.function_returns_with_type(value, other=1)
 
                    Function docstring.
 
                    Parameters:
-                      * **x** ("bool") -- foo.
+                      * **value** ("bool") -- foo.
 
-                      * **y** ("int") -- bar.
+                      * **other** ("int") -- bar.
 
                    Returns:
                       *CustomType* -- A string
@@ -611,14 +611,14 @@ def test_return_type_left_out(process: Process, what: str, name: str, obj: Docum
         param(
             "function_returns_with_compound_type",
             dedent("""\
-                dummy_module_simple_no_use_rtype.function_returns_with_compound_type(x, y=1)
+                dummy_module_simple_no_use_rtype.function_returns_with_compound_type(value, other=1)
 
                    Function docstring.
 
                    Parameters:
-                      * **x** ("bool") -- foo.
+                      * **value** ("bool") -- foo.
 
-                      * **y** ("int") -- bar.
+                      * **other** ("int") -- bar.
 
                    Returns:
                       Union[str, int] -- A string or int
@@ -628,14 +628,14 @@ def test_return_type_left_out(process: Process, what: str, name: str, obj: Docum
         param(
             "function_returns_without_type",
             dedent("""\
-                dummy_module_simple_no_use_rtype.function_returns_without_type(x, y=1)
+                dummy_module_simple_no_use_rtype.function_returns_without_type(value, other=1)
 
                    Function docstring.
 
                    Parameters:
-                      * **x** ("bool") -- foo.
+                      * **value** ("bool") -- foo.
 
-                      * **y** ("int") -- bar.
+                      * **other** ("int") -- bar.
 
                    Returns:
                       "str" -- A string
