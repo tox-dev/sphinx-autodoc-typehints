@@ -28,8 +28,8 @@ if TYPE_CHECKING:
         param(".. automethod:: type_params_module.IntBox.get", '"int"', id="legacy"),
         param(".. automethod:: type_params_module.IntStack.peek", '"int"', id="pep695"),
         param(".. automethod:: type_params_module.IntListing.get", '"list"["int"]', id="through-two-bases"),
-        param(".. automethod:: type_params_module.Listing.get", '"list"["U"]', id="to-own-param"),
-        param(".. automethod:: type_params_module.Restack.peek", '"V"', id="to-own-param-of-the-name"),
+        param(".. automethod:: type_params_module.Listing.get", '"list"["ElemT"]', id="to-own-param"),
+        param(".. automethod:: type_params_module.Restack.peek", '"ValueT"', id="to-own-param-of-the-name"),
         param(".. automethod:: type_params_module.IntFeed.pull", '"int"', id="protocol-not-runtime-checkable"),
         param(".. automethod:: type_params_module.IntSink.put", '"int"', id="past-a-registered-base"),
     ],
@@ -130,10 +130,12 @@ def test_type_params_bound_by_the_documenting_subclass_signature(
         param(".. automethod:: type_params_module.IntCrate.take", '* **key** ("int") \u2192 "int"', id="bound-legacy"),
         param(
             ".. automethod:: type_params_module.Shelf.take",
-            '* **key** ("S") → "list"["S"]',
+            '* **key** ("TextT") → "list"["TextT"]',
             id="own-type-parameter",
         ),
-        param(".. autofunction:: type_params_module.pick", "* **key** (K) → list[K]", id="unregistered-overloads"),
+        param(
+            ".. autofunction:: type_params_module.pick", "* **key** (KeyT) → list[KeyT]", id="unregistered-overloads"
+        ),
     ],
 )
 @mark.sphinx("text", testroot="type-params")
@@ -280,12 +282,12 @@ def test_specialize(
         param(
             ".. autofunction:: type_params_module.bounded",
             dedent("""\
-                type_params_module.bounded[T: Path](value)
+                type_params_module.bounded[ItemT: Path](value)
 
                    Take a bounded type parameter.
 
                    Return type:
-                      "T"
+                      "ItemT"
             """),
             id="function",
         ),
@@ -297,7 +299,7 @@ def test_specialize(
                    Look at the top.
 
                    Return type:
-                      "T"
+                      "ItemT"
             """),
             id="class",
         ),
@@ -309,7 +311,7 @@ def test_specialize(
                    Return the first.
 
                    Return type:
-                      "D"
+                      "DefaultT"
             """),
             id="generic-subclass",
         ),
@@ -321,21 +323,21 @@ def test_specialize(
                    Use a type variable no signature declares.
 
                    Return type:
-                      "L"
+                      "LeftT"
             """),
             id="undeclared",
         ),
         param(
             ".. autofunction:: type_params_module.forward",
             dedent("""\
-                type_params_module.forward[**P](call, *args, **kwargs)
+                type_params_module.forward[**Params](call, *args, **kwargs)
 
                    Call with the arguments it takes.
 
                    Parameters:
-                      * **args** ("P.args") -- positional
+                      * **args** ("Params.args") -- positional
 
-                      * **kwargs** ("P.kwargs") -- by keyword
+                      * **kwargs** ("Params.kwargs") -- by keyword
 
                    Return type:
                       "None"

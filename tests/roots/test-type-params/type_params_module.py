@@ -11,17 +11,17 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Sized
 
 
-def bounded[T: Path](value: T) -> T:
+def bounded[ItemT: Path](value: ItemT) -> ItemT:
     """Take a bounded type parameter."""
     return value
 
 
-def constrained[T: (int, str)](value: T) -> T:
+def constrained[ItemT: (int, str)](value: ItemT) -> ItemT:
     """Take a constrained type parameter."""
     return value
 
 
-def variadic[*Ts, **P](*args: *Ts) -> None:
+def variadic[*Ts, **Params](*args: *Ts) -> None:
     """
     Take variadic type parameters.
 
@@ -29,7 +29,7 @@ def variadic[*Ts, **P](*args: *Ts) -> None:
     """
 
 
-def forward[**P](call: Callable[P, None], *args: P.args, **kwargs: P.kwargs) -> None:
+def forward[**Params](call: Callable[Params, None], *args: Params.args, **kwargs: Params.kwargs) -> None:
     """
     Call with the arguments it takes.
 
@@ -38,13 +38,13 @@ def forward[**P](call: Callable[P, None], *args: P.args, **kwargs: P.kwargs) -> 
     """
 
 
-class Stack[T]:
+class Stack[ItemT]:
     """A stack."""
 
-    def __init__(self, item: T) -> None:
+    def __init__(self, item: ItemT) -> None:
         """Make a stack."""
 
-    def peek(self) -> T:
+    def peek(self) -> ItemT:
         """Look at the top."""
         raise NotImplementedError
 
@@ -53,15 +53,15 @@ class Stack[T]:
 default_stack: Stack[int] = Stack(0)  # simplint: ignore[SMP601]  # header tests render the annotation as written
 
 
-class Sizes[T: Sized]:
+class Sizes[ItemT: Sized]:
     """Bound by a type imported only for type checking."""
 
 
-class Unknown[T: Undefined]:  # ruff:ignore[undefined-name]  # the fixture renders a bound that does not resolve
+class Unknown[ItemT: Undefined]:  # ruff:ignore[undefined-name]  # the fixture renders a bound that does not resolve
     """Bound by a name defined nowhere."""
 
 
-class Rejected[T: Rejecting[int]]:
+class Rejected[ItemT: Rejecting[int]]:
     """Bound by a subscript that raises."""
 
 
@@ -73,7 +73,7 @@ class Rejecting:
         raise ValueError(msg)
 
 
-type Pairs[K] = dict[K, K]
+type Pairs[KeyT] = dict[KeyT, KeyT]
 
 
 def takes_pairs(value: Pairs) -> None:
@@ -95,7 +95,7 @@ def takes_rejected(value: RejectedAlias) -> None:
     """
 
 
-D = TypeVar("D", default=int)
+DefaultT = TypeVar("DefaultT", default=int)
 DP = ParamSpec("DP", default=[int, str])
 # what ``*tuple[int, ...]`` evaluates to, a spelling a default can take only from 3.13 on
 DTs = TypeVarTuple("DTs", default=next(iter(tuple[int, ...])))
@@ -110,10 +110,10 @@ def relay(*args: DP.args, **kwargs: DP.kwargs) -> None:
     """
 
 
-class Legacy(Generic[D, DP, *DTs]):
+class Legacy(Generic[DefaultT, DP, *DTs]):
     """Generic the pre-PEP 695 way."""
 
-    def first(self) -> D:
+    def first(self) -> DefaultT:
         """Return the first."""
         raise NotImplementedError
 
@@ -127,10 +127,10 @@ class PathDefaults(Generic[DPath, DPathP, *DPathTs]):
     """Generic over type parameters defaulting to an imported class."""
 
 
-L = TypeVar("L")
+LeftT = TypeVar("LeftT")
 
 
-def loose(value: L) -> L:  # ruff:ignore[non-pep695-generic-function]  # no signature declares L
+def loose(value: LeftT) -> LeftT:  # ruff:ignore[non-pep695-generic-function]  # no signature declares LeftT
     """Use a type variable no signature declares."""
     return value
 
@@ -140,13 +140,13 @@ def plain(value: int) -> int:
     return value
 
 
-E = TypeVar("E")
+ErrorT = TypeVar("ErrorT")
 
 
-class Box(Generic[E]):  # ruff:ignore[non-pep695-generic-class]  # the pre-PEP 695 way is the case under test
+class Box(Generic[ErrorT]):  # ruff:ignore[non-pep695-generic-class]  # the pre-PEP 695 way is the case under test
     """Generic the pre-PEP 695 way, with members its subclasses inherit."""
 
-    def get(self, default: E) -> E:
+    def get(self, default: ErrorT) -> ErrorT:
         """
         Return the content.
 
@@ -159,7 +159,7 @@ class IntBox(Box[int]):
     """Binds the type parameter of its base."""
 
 
-class Listing[U](Box[list[U]]):
+class Listing[ElemT](Box[list[ElemT]]):
     """Fills the type parameter of its base with a list of its own type parameter."""
 
 
@@ -171,24 +171,24 @@ class IntStack(Stack[int]):
     """Binds the type parameter of a PEP 695 base."""
 
 
-class Restack[V](Stack[V]):
+class Restack[ValueT](Stack[ValueT]):
     """Passes a type parameter of its own on to its base."""
 
 
-class Pool[T]:
+class Pool[ItemT]:
     """
     Holds the members its subclasses inherit, one annotated in its body and one overloaded.
 
     :ivar size: the member count
     """
 
-    size: T
+    size: ItemT
 
     @overload
-    def take(self, key: T) -> T: ...
+    def take(self, key: ItemT) -> ItemT: ...
     @overload
     def take(self, key: bytes) -> bytes: ...
-    def take(self, key: T | bytes) -> T | bytes:
+    def take(self, key: ItemT | bytes) -> ItemT | bytes:
         """Take one."""
         raise NotImplementedError
 
@@ -201,20 +201,20 @@ class IntPool(Pool[int]):
     """
 
 
-class Crate(Generic[E]):  # ruff:ignore[non-pep695-generic-class]  # the pre-PEP 695 way is the case under test
+class Crate(Generic[ErrorT]):  # ruff:ignore[non-pep695-generic-class]  # the pre-PEP 695 way is the case under test
     """
     Holds the members its subclasses inherit the pre-PEP 695 way.
 
     :ivar size: the member count
     """
 
-    size: E
+    size: ErrorT
 
     @overload
-    def take(self, key: E) -> E: ...
+    def take(self, key: ErrorT) -> ErrorT: ...
     @overload
     def take(self, key: bytes) -> bytes: ...
-    def take(self, key: E | bytes) -> E | bytes:
+    def take(self, key: ErrorT | bytes) -> ErrorT | bytes:
         """Take one."""
         raise NotImplementedError
 
@@ -237,20 +237,20 @@ class File(Readable):
     """Inherits its constructor from a protocol that is not runtime checkable."""
 
 
-class Feed[T](Protocol):
+class Feed[ItemT](Protocol):
     """A generic protocol that is not runtime checkable."""
 
-    def pull(self) -> T: ...
+    def pull(self) -> ItemT: ...
 
 
 class IntFeed(Feed[int]):
     """Gives int to the type parameter of a protocol that is not runtime checkable."""
 
 
-class Sink[T](ABC):
+class Sink[ItemT](ABC):
     """An abstract base class others register with."""
 
-    def put(self) -> T:
+    def put(self) -> ItemT:
         """Put one."""
         raise NotImplementedError
 
@@ -272,14 +272,14 @@ class IntSink(Registered, Sink[int]):
         """Close it."""
 
 
-class Shelf[T]:
+class Shelf[ItemT]:
     """Holds a member overloaded with a type parameter of its own."""
 
     @overload
-    def take[S: str](self, key: S) -> list[S]: ...
+    def take[TextT: str](self, key: TextT) -> list[TextT]: ...
     @overload
-    def take(self, key: int) -> T: ...
-    def take(self, key: str | int) -> list[str] | T:
+    def take(self, key: int) -> ItemT: ...
+    def take(self, key: str | int) -> list[str] | ItemT:
         """Take one."""
         raise NotImplementedError
 
@@ -287,7 +287,7 @@ class Shelf[T]:
 if version_info >= (4,):
 
     @overload
-    def pick[K: int](key: K) -> list[K]: ...
+    def pick[KeyT: int](key: KeyT) -> list[KeyT]: ...
     @overload
     def pick(key: str) -> str: ...
 

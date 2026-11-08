@@ -703,7 +703,7 @@ def test_format_annotation_type_variable_links_to_its_entry(build_text: BuildTex
 @mark.sphinx("text", testroot="type-params")
 def test_format_annotation_unpacked_type_variable_reads_as_starred(build_text: BuildText) -> None:
     assert build_text(".. autofunction:: type_params_module.variadic") == dedent("""\
-        type_params_module.variadic[*Ts, **P](*args)
+        type_params_module.variadic[*Ts, **Params](*args)
 
            Take variadic type parameters.
 

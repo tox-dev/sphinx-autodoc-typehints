@@ -22,55 +22,55 @@ pytestmark: Final[MarkDecorator] = mark.sphinx("text", testroot="type-params")
     [
         param(
             ".. autofunction:: type_params_module.bounded",
-            "type_params_module.bounded[T: Path](value)",
+            "type_params_module.bounded[ItemT: Path](value)",
             id="bound",
         ),
         param(
             ".. autofunction:: type_params_module.bounded",
-            "type_params_module.bounded[T: pathlib.Path](value)",
+            "type_params_module.bounded[ItemT: pathlib.Path](value)",
             marks=mark.sphinx(confoverrides={"typehints_fully_qualified": True}),
             id="fully-qualified",
         ),
         param(
             ".. autofunction:: type_params_module.constrained",
-            "type_params_module.constrained[T: (int, str)](value)",
+            "type_params_module.constrained[ItemT: (int, str)](value)",
             id="constraints",
         ),
         param(
             ".. autofunction:: type_params_module.variadic",
-            "type_params_module.variadic[*Ts, **P](*args)",
+            "type_params_module.variadic[*Ts, **Params](*args)",
             id="variadic",
         ),
         param(
             ".. autoclass:: type_params_module.Stack",
-            "class type_params_module.Stack[T](item)",
+            "class type_params_module.Stack[ItemT](item)",
             id="class",
         ),
         param(
             ".. autoclass:: type_params_module.Sizes",
-            "class type_params_module.Sizes[T: Sized]",
+            "class type_params_module.Sizes[ItemT: Sized]",
             id="bound-imported-for-type-checking",
         ),
         param(
             ".. autoclass:: type_params_module.Unknown",
             # only 3.14 can evaluate a bound into a forward reference
-            f"class type_params_module.Unknown[T{': Undefined' if version_info >= (3, 14) else ''}]",
+            f"class type_params_module.Unknown[ItemT{': Undefined' if version_info >= (3, 14) else ''}]",
             id="bound-not-defined",
         ),
         param(
             ".. autoclass:: type_params_module.Rejected",
             # 3.14 keeps a bound it cannot evaluate as a forward reference
-            f"class type_params_module.Rejected[T{': Rejecting[int]' if version_info >= (3, 14) else ''}]",
+            f"class type_params_module.Rejected[ItemT{': Rejecting[int]' if version_info >= (3, 14) else ''}]",
             id="bound-raises",
         ),
         param(
             ".. autotype:: type_params_module.Pairs",
-            "type type_params_module.Pairs[K] = dict[K, K]",
+            "type type_params_module.Pairs[KeyT] = dict[KeyT, KeyT]",
             id="type-alias",
         ),
         param(
             ".. autoclass:: type_params_module.Legacy",
-            "class type_params_module.Legacy[D = int, **DP = [int, str], *DTs = *tuple[int, ...]]",
+            "class type_params_module.Legacy[DefaultT = int, **DP = [int, str], *DTs = *tuple[int, ...]]",
             id="generic-subclass",
         ),
         param(
