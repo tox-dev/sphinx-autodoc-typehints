@@ -418,11 +418,11 @@ def test_attrs_class_whose_annotations_fail_documents_its_fields_untyped(  # pra
                    :undoc-members:
             """),
             dedent("""\
-                class attrs_mod.Outer.Bar(foo)
+                class attrs_mod.Outer.Bar(child)
 
                    An attrs class referencing a sibling nested class.
 
-                   foo: Foo
+                   child: Foo
             """),
             id="nested-forward-reference",
         ),
