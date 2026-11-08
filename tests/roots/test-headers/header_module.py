@@ -11,10 +11,10 @@ if TYPE_CHECKING:
 
 U = TypeVar("U")
 
-LIMIT: Annotated[int, "a cap"] = 3
+LIMIT: Annotated[int, "a cap"] = 3  # simplint: ignore[SMP601]  # header tests render the annotation as written
 """The limit."""
 
-RATE: Decimal | None = None
+RATE: Decimal | None = None  # simplint: ignore[SMP601]  # header tests render the annotation as written
 """The rate."""
 
 
@@ -115,10 +115,10 @@ class StrLegacy(Legacy[str]):
 
 Num = int | float
 
-SCORE: Num = 1
+SCORE: Num = 1  # simplint: ignore[SMP601]  # header tests render the annotation as written
 """The score."""
 
-LOW: Num = 0
+LOW: Num = 0  # simplint: ignore[SMP601]  # header tests render the annotation as written
 """The lowest score."""
 
 
@@ -174,7 +174,7 @@ class SubEngined(Engined):
     """Inherits engines."""
 
 
-INSTANCE = Engined()
+INSTANCE = Engined()  # simplint: ignore[SMP601]  # header tests render the annotation as written
 """An instance holding engines."""
 
 Generated = type("Generated", (Engined,), {"__module__": "generated", "__doc__": "Made where no source is at hand."})

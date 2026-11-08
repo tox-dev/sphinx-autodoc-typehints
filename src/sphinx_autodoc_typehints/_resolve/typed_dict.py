@@ -29,8 +29,7 @@ if TYPE_CHECKING:
     from .._types import Annotation, Documented, TypeParam
 
 
-# no `Final`: ty stops reading an annotated sentinel as a type https://github.com/astral-sh/ty/issues/4737
-OPEN = sentinel("OPEN")
+OPEN = sentinel("OPEN")  # simplint: ignore[SMP601]  # ty rejects Final sentinels as types, astral-sh/ty#4737
 
 
 def typed_dict_keys(typed_dict: Documented, localns: Mapping[str, Documented]) -> dict[str, Annotation]:

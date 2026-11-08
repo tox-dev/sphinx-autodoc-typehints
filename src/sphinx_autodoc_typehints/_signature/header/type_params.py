@@ -104,8 +104,7 @@ def _is_default(node: Node) -> bool:
     return isinstance(node, nodes.inline) and "default_value" in node["classes"]
 
 
-# no `Final`: ty stops reading an annotated sentinel as a type https://github.com/astral-sh/ty/issues/4737
-_UNKNOWN = sentinel("_UNKNOWN")
+_UNKNOWN = sentinel("_UNKNOWN")  # simplint: ignore[SMP601]  # ty rejects Final sentinels as types, astral-sh/ty#4737
 
 
 __all__ = [

@@ -14,6 +14,7 @@ from sphinx_autodoc_typehints._resolve.overloads import resolve_overloads
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from functools import _Wrapped
 
     from conftest import BuildText
     from sphinx.testing.util import SphinxTestApp
@@ -79,7 +80,9 @@ def _fetch(session: str, key: int | str) -> int | str: ...
 
 
 # a decorator supplying `session` hides it from callers by stating the signature without it
-_FETCH: Final = update_wrapper(partial(_fetch, "session"), _fetch)
+_FETCH: Final[_Wrapped[[str, int | str], int | str, [int | str], int | str]] = update_wrapper(
+    partial(_fetch, "session"), _fetch
+)
 _FETCH.__dict__["__signature__"] = signature(_fetch).replace(parameters=list(signature(_fetch).parameters.values())[1:])
 
 

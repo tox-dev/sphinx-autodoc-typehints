@@ -50,7 +50,7 @@ class Stack[T]:
 
 
 #: A stack ready to use.
-default_stack: Stack[int] = Stack(0)
+default_stack: Stack[int] = Stack(0)  # simplint: ignore[SMP601]  # header tests render the annotation as written
 
 
 class Sizes[T: Sized]:

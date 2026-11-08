@@ -130,8 +130,7 @@ def _resolved_hints(app: Sphinx, annotated: Documented, name: str) -> Mapping[st
     return resolve_annotations(app.config.autodoc_mock_imports, annotated, name, localns) | written_aliases
 
 
-# no `Final`: ty stops reading an annotated sentinel as a type https://github.com/astral-sh/ty/issues/4737
-_MISSING = sentinel("_MISSING")
+_MISSING = sentinel("_MISSING")  # simplint: ignore[SMP601]  # ty rejects Final sentinels as types, astral-sh/ty#4737
 
 
 __all__ = [
