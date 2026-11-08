@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from types import CodeType, ModuleType
 
 
-W = NewType("W", str)
+Word = NewType("Word", str)
 
 
 def get_local_function():  # ruff:ignore[missing-return-type-undocumented-public-function]  # the local function it returns is the case
@@ -34,61 +34,37 @@ class Class:
     """
     Initializer docstring.
 
-    :param x: initializer flag
-    :param y: bar
-    :param z: baz
+    :param flag: initializer flag
+    :param count: bar
+    :param label: baz
     """
 
-    def __init__(self, x: bool, y: int, z: Optional[str] = None) -> None: ...
-
-    def a_method(self, x: bool, y: int, z: Optional[str] = None) -> str:
+    class InnerClass:
         """
-        Method docstring.
-
-        :param x: method flag
-        :param y: bar
-        :param z: baz
+        Inner class.
         """
 
-    def _private_method(self, x: str) -> str:
-        """
-        Private method docstring.
+        def inner_method(self, flag: bool) -> str:
+            """
+            Inner method.
 
-        :param x: foo
-        """
+            :param flag: foo
+            """
 
-    def __dunder_method(self, x: str) -> str:
-        """
-        Dunder method docstring.
+        def __dunder_inner_method(self, flag: bool) -> str:
+            """
+            Dunder inner method.
 
-        :param x: foo
-        """
+            :param flag: foo
+            """
 
-    def __magic_custom_method__(self, x: str) -> str:  # ruff:ignore[bad-dunder-method-name]  # a custom dunder name is the case
+    def __init__(self, flag: bool, count: int, label: Optional[str] = None) -> None: ...
+
+    def __magic_custom_method__(self, flag: str) -> str:  # ruff:ignore[bad-dunder-method-name]  # a custom dunder name is the case
         """
         Magic dunder method docstring.
 
-        :param x: foo
-        """
-
-    @classmethod
-    def a_classmethod(cls, x: bool, y: int, z: Optional[str] = None) -> str:
-        """
-        Classmethod docstring.
-
-        :param x: classmethod flag
-        :param y: bar
-        :param z: baz
-        """
-
-    @staticmethod
-    def a_staticmethod(x: bool, y: int, z: Optional[str] = None) -> str:
-        """
-        Staticmethod docstring.
-
-        :param x: staticmethod flag
-        :param y: bar
-        :param z: baz
+        :param flag: foo
         """
 
     @property
@@ -97,24 +73,48 @@ class Class:
         Property docstring
         """
 
-    class InnerClass:
+    def a_method(self, flag: bool, count: int, label: Optional[str] = None) -> str:
         """
-        Inner class.
+        Method docstring.
+
+        :param flag: method flag
+        :param count: bar
+        :param label: baz
         """
 
-        def inner_method(self, x: bool) -> str:
-            """
-            Inner method.
+    def _private_method(self, flag: str) -> str:  # simplint: ignore[SMP409]  # documented private member
+        """
+        Private method docstring.
 
-            :param x: foo
-            """
+        :param flag: foo
+        """
 
-        def __dunder_inner_method(self, x: bool) -> str:
-            """
-            Dunder inner method.
+    def __dunder_method(self, flag: str) -> str:  # simplint: ignore[SMP409]  # documented dunder member
+        """
+        Dunder method docstring.
 
-            :param x: foo
-            """
+        :param flag: foo
+        """
+
+    @classmethod
+    def a_classmethod(cls, flag: bool, count: int, label: Optional[str] = None) -> str:
+        """
+        Classmethod docstring.
+
+        :param flag: classmethod flag
+        :param count: bar
+        :param label: baz
+        """
+
+    @staticmethod
+    def a_staticmethod(flag: bool, count: int, label: Optional[str] = None) -> str:
+        """
+        Staticmethod docstring.
+
+        :param flag: staticmethod flag
+        :param count: bar
+        :param label: baz
+        """
 
     locally_defined_callable_field = get_local_function()
 
@@ -129,35 +129,35 @@ class DummyException(Exception):  # ruff:ignore[error-suffix-on-exception-name] 
     def __init__(self, message: str) -> None: ...
 
 
-def function(x: bool, y: int, z_: Optional[str] = None) -> str:
+def function(flag: bool, count: int, z_: Optional[str] = None) -> str:
     """
     Function docstring.
 
-    :param x: foo
-    :param y: bar
+    :param flag: foo
+    :param count: bar
     :param z\\_: baz
     :return: something
     :rtype: bytes
     """
 
 
-def function_with_trailing_underscore_numpy(a: int, lambda_: float | None = None) -> None:
+def function_with_trailing_underscore_numpy(value: int, lambda_: float | None = None) -> None:
     """Do nothing.
 
     Parameters
     ----------
-    a
+    value
         Description for a.
     lambda_
         Description for lambda.
     """
 
 
-def function_with_trailing_underscore_google(a: int, lambda_: float | None = None) -> None:
+def function_with_trailing_underscore_google(value: int, lambda_: float | None = None) -> None:
     """Do nothing.
 
     Args:
-        a: Description for a.
+        value: Description for a.
         lambda_: Description for lambda.
     """
 
@@ -175,26 +175,26 @@ def function_with_starred_documentation_param_names(*args: int, **kwargs: str): 
     """
 
 
-def function_with_escaped_default(x: str = "\b"):  # ruff:ignore[missing-return-type-undocumented-public-function]  # the case documents no return type
+def function_with_escaped_default(flag: str = "\b"):  # ruff:ignore[missing-return-type-undocumented-public-function]  # the case documents no return type
     """
     Function docstring.
 
-    :param x: foo
+    :param flag: foo
     """
 
 
-def function_with_multiline_param_defaults(x: int = 5, y: int = 10, z: int = 15) -> str:
+def function_with_multiline_param_defaults(flag: int = 5, count: int = 10, label: int = 15) -> str:
     """
     Function docstring.
 
-    :param x: optional specifier
+    :param flag: optional specifier
               line 2
-    :param y: another optional
+    :param count: another optional
               line 4
 
               second paragraph for y
 
-    :param z: yet another optional s
+    :param label: yet another optional s
               line 6
 
     :return: something
@@ -217,53 +217,53 @@ class Schema(metaclass=_SchemaMeta):
 class AliasedClass: ...
 
 
-def function_with_eq_metaclass(s: Schema) -> Schema:
+def function_with_eq_metaclass(text: Schema) -> Schema:
     """
     Do something.
 
     Args:
-        s: Some schema.
+        text: Some schema.
     """
 
 
-def function_with_aliased_class(s: AliasedClass) -> AliasedClass:
+def function_with_aliased_class(text: AliasedClass) -> AliasedClass:
     """
     Do something.
 
     Args:
-        s: Some schema.
+        text: Some schema.
     """
 
 
-def function_with_type_aliases(x: ArrayLike | None, y: Schema) -> str:
+def function_with_type_aliases(flag: ArrayLike | None, count: Schema) -> str:
     """
     Function docstring.
 
-    :param x: foo
-    :param y: boo
+    :param flag: foo
+    :param count: boo
     :return: something
     :rtype: bytes
     """
 
 
-def function_with_unresolvable_annotation(x: a.b.c):  # ruff:ignore[missing-return-type-undocumented-public-function, undefined-name]  # the unresolvable annotation is the case
+def function_with_unresolvable_annotation(flag: a.b.c):  # ruff:ignore[missing-return-type-undocumented-public-function, undefined-name]  # the unresolvable annotation is the case
     """
     Function docstring.
 
-    :arg x: foo
+    :arg flag: foo
     """
 
 
 def function_with_typehint_comment(  # ruff:ignore[missing-return-type-undocumented-public-function]  # the type comment gives the return type
-    x,  # type: int  # ruff:ignore[missing-type-function-argument]  # the type comment gives the type
-    y,  # type: str  # ruff:ignore[missing-type-function-argument]  # the type comment gives the type
+    flag,  # type: int  # ruff:ignore[missing-type-function-argument]  # the type comment gives the type
+    count,  # type: str  # ruff:ignore[missing-type-function-argument]  # the type comment gives the type
 ):
     # type: (...) -> None
     """
     Function docstring.
 
-    :parameter x: foo
-    :parameter y: bar
+    :parameter flag: foo
+    :parameter count: bar
     """
 
 
@@ -271,41 +271,41 @@ class ClassWithTypehints:
     """
     Class docstring.
 
-    :param x: foo
+    :param flag: foo
     """
 
     def __init__(
         self,
-        x,  # type: int  # ruff:ignore[missing-type-function-argument]  # the type comment gives the type
+        flag,  # type: int  # ruff:ignore[missing-type-function-argument]  # the type comment gives the type
     ) -> None:
         # type: (...) -> None
         ...
 
     def foo(  # ruff:ignore[missing-return-type-undocumented-public-function]  # the type comment gives the return type
         self,
-        x,  # type: str  # ruff:ignore[missing-type-function-argument]  # the type comment gives the type
+        flag,  # type: str  # ruff:ignore[missing-type-function-argument]  # the type comment gives the type
     ):
         # type: (...) -> int
         """
         Method docstring.
 
-        :arg x: foo
+        :arg flag: foo
         """
 
-    def method_without_typehint(self, x):  # ruff:ignore[missing-type-function-argument, missing-return-type-undocumented-public-function]  # the method without hints is the case
+    def method_without_typehint(self, flag):  # ruff:ignore[missing-type-function-argument, missing-return-type-undocumented-public-function]  # the method without hints is the case
         """
         Method docstring.
         """
 
 
-def function_with_typehint_comment_not_inline(x=None, *y, z, **kwargs):  # ruff:ignore[missing-type-function-argument, missing-type-args, missing-type-kwargs, missing-return-type-undocumented-public-function]  # the type comment gives the types
+def function_with_typehint_comment_not_inline(flag=None, *count, label, **kwargs):  # ruff:ignore[missing-type-function-argument, missing-type-args, missing-type-kwargs, missing-return-type-undocumented-public-function]  # the type comment gives the types
     # type: (Union[str, bytes, None], *str, bytes, **int) -> None
     """
     Function docstring.
 
-    :arg x: foo
-    :argument y: bar
-    :parameter z: baz
+    :arg flag: foo
+    :argument count: bar
+    :parameter label: baz
     :parameter kwargs: some kwargs
     """
 
@@ -314,40 +314,40 @@ class ClassWithTypehintsNotInline:
     """
     Class docstring.
 
-    :param x: foo
+    :param flag: foo
     """
 
-    def __init__(self, x=None) -> None:  # type: (Optional[Callable[[int, bytes], int]]) -> None  # ruff:ignore[missing-type-function-argument]  # the type comment gives the type
+    def __init__(self, flag=None) -> None:  # type: (Optional[Callable[[int, bytes], int]]) -> None  # ruff:ignore[missing-type-function-argument]  # the type comment gives the type
         ...
 
-    def foo(self, x=1):  # type: (Callable[[int, bytes], int]) -> int  # ruff:ignore[missing-type-function-argument, missing-return-type-undocumented-public-function]  # the type comment gives the types
+    def foo(self, flag=1):  # type: (Callable[[int, bytes], int]) -> int  # ruff:ignore[missing-type-function-argument, missing-return-type-undocumented-public-function]  # the type comment gives the types
         """
         Method docstring.
 
-        :param x: callback
+        :param flag: callback
         """
 
     @classmethod
     def mk(  # ruff:ignore[missing-return-type-class-method]  # the type comment gives the return type
         cls,
-        x=None,  # ruff:ignore[missing-type-function-argument]  # the type comment gives the type
+        flag=None,  # ruff:ignore[missing-type-function-argument]  # the type comment gives the type
     ):  # type: (Optional[Callable[[int, bytes], int]]) -> ClassWithTypehintsNotInline
         """
         Method docstring.
 
-        :param x: foo
+        :param flag: foo
         """
 
 
-def undocumented_function(x: int) -> str:
+def undocumented_function(flag: int) -> str:
     """Hi"""
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)  # simplint: ignore[SMP703]  # the docs assert the positional constructor signature
 class DataClass:
     """Class docstring."""
 
-    x: int
+    flag: int
 
 
 class Decorator:
@@ -360,11 +360,11 @@ class Decorator:
     def __init__(self, func: Callable[[int, str], str]) -> None: ...
 
 
-def mocked_import(x: Mailbox):  # ruff:ignore[missing-return-type-undocumented-public-function]  # the case documents no return type
+def mocked_import(flag: Mailbox):  # ruff:ignore[missing-return-type-undocumented-public-function]  # the case documents no return type
     """
     A docstring.
 
-    :param x: function
+    :param flag: function
     """
 
 
@@ -379,80 +379,80 @@ def func_with_examples() -> int:
 
 
 @overload
-def func_with_overload(a: int, b: int) -> None: ...
+def func_with_overload(value: int, other: int) -> None: ...
 
 
 @overload
-def func_with_overload(a: str, b: str) -> None: ...
+def func_with_overload(value: str, other: str) -> None: ...
 
 
-def func_with_overload(a: Union[int, str], b: Union[int, str]) -> None:
+def func_with_overload(value: Union[int, str], other: Union[int, str]) -> None:
     """
     f does the thing. The arguments can either be ints or strings but they must
     both have the same type.
 
     Parameters
     ----------
-    a:
+    value:
         The first thing
-    b:
+    other:
         The second thing
     """
 
 
 @overload
-def overload_with_complex_types(x: list[int]) -> dict[str, int]: ...
+def overload_with_complex_types(flag: list[int]) -> dict[str, int]: ...
 
 
 @overload
-def overload_with_complex_types(x: dict[str, int]) -> list[int]: ...
+def overload_with_complex_types(flag: dict[str, int]) -> list[int]: ...
 
 
-def overload_with_complex_types(x: list[int] | dict[str, int]) -> dict[str, int] | list[int]:
+def overload_with_complex_types(flag: list[int] | dict[str, int]) -> dict[str, int] | list[int]:
     """Function with overloaded complex types.
 
     Parameters:
-        x: Input value
+        flag: Input value
     """
 
 
 @overload
-def func_with_overload_no_overloads(a: int, b: int) -> None: ...
+def func_with_overload_no_overloads(value: int, other: int) -> None: ...
 
 
 @overload
-def func_with_overload_no_overloads(a: str, b: str) -> None: ...
+def func_with_overload_no_overloads(value: str, other: str) -> None: ...
 
 
-def func_with_overload_no_overloads(a: Union[int, str], b: Union[int, str]) -> None:
+def func_with_overload_no_overloads(value: Union[int, str], other: Union[int, str]) -> None:
     """:no-overloads:
 
     Accepts int or str pairs, see docs for details.
 
     Parameters
     ----------
-    a:
+    value:
         The first thing
-    b:
+    other:
         The second thing
     """
 
 
-def func_literals_long_format(a: Literal["arg1", "arg2"], b: Literal["arg1", "arg2"]) -> None:
+def func_literals_long_format(value: Literal["arg1", "arg2"], other: Literal["arg1", "arg2"]) -> None:
     """
     A docstring.
 
-    :param a: Argument that can take either of two literal values.
-    :param b: Argument that can take either of two literal values.
+    :param value: Argument that can take either of two literal values.
+    :param other: Argument that can take either of two literal values.
     """
 
 
-def func_literals_short_format(a: Literal["arg1", "arg2"], b: Literal["arg1", "arg2"]) -> None:
+def func_literals_short_format(value: Literal["arg1", "arg2"], other: Literal["arg1", "arg2"]) -> None:
     """
     A docstring.
 
-    :param a: Argument that can take either of two literal values.
-    :param b: Argument that can take either of two literal values.
+    :param value: Argument that can take either of two literal values.
+    :param other: Argument that can take either of two literal values.
     """
 
 
@@ -492,21 +492,21 @@ def func_with_examples_and_returns_after() -> int:
     """
 
 
-def func_with_parameters_and_stuff_after(a: int, b: int) -> int:
+def func_with_parameters_and_stuff_after(value: int, other: int) -> int:
     """A func
 
-    :param a: a tells us something
-    :param b: b tells us something
+    :param value: a tells us something
+    :param other: b tells us something
 
     More info about the function here.
     """
 
 
-def func_with_rtype_in_weird_spot(a: int, b: int) -> int:
+def func_with_rtype_in_weird_spot(value: int, other: int) -> int:
     """A func
 
-    :param a: a tells us something
-    :param b: b tells us something
+    :param value: a tells us something
+    :param other: b tells us something
 
     Examples
     --------
@@ -521,10 +521,10 @@ def func_with_rtype_in_weird_spot(a: int, b: int) -> int:
     """
 
 
-def empty_line_between_parameters(a: int, b: int) -> int:
+def empty_line_between_parameters(value: int, other: int) -> int:
     """A func
 
-    :param a: One of the following possibilities:
+    :param value: One of the following possibilities:
 
              - a
 
@@ -532,7 +532,7 @@ def empty_line_between_parameters(a: int, b: int) -> int:
 
              - c
 
-    :param b: Whatever else we have to say.
+    :param other: Whatever else we have to say.
 
               There is more of it And here too
 
@@ -568,12 +568,12 @@ def func_with_definition_list() -> int:
     """
 
 
-def decorator_2(f: Any) -> Any:
+def decorator_2(func: Any) -> Any:
     """Run the decorated function with `asyncio.run`.
 
     Parameters
     ----------
-    f
+    func
         The function to wrap.
 
     Examples
@@ -724,7 +724,7 @@ def docstring_with_definition_list_after_params_no_blank_line(param: int) -> Non
     """
 
 
-def has_typevar[T](param: T) -> T:
+def has_typevar[ItemT](param: ItemT) -> ItemT:
     """Do something.
 
     Args:
@@ -732,7 +732,7 @@ def has_typevar[T](param: T) -> T:
     """
 
 
-def has_newtype(param: W) -> W:
+def has_newtype(param: Word) -> Word:
     """Do something.
 
     Args:
@@ -740,11 +740,11 @@ def has_newtype(param: W) -> W:
     """
 
 
-def typehints_use_signature(a: AsyncGenerator) -> AsyncGenerator:
+def typehints_use_signature(value: AsyncGenerator) -> AsyncGenerator:
     """Do something.
 
     Args:
-        a: blah
+        value: blah
     """
 
 
@@ -790,9 +790,9 @@ def has_doctest1() -> None:
     r"""Test that the return type follows a doctest in the function.
 
     >>> this is a fake doctest
-    a
+    value
     >>> more doctest
-    b
+    other
     """
 
 

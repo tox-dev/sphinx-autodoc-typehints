@@ -10,21 +10,23 @@ from pydantic.fields import FieldInfo
 from pytest import MarkDecorator, fixture, mark, param
 from typing_extensions import Doc
 
-from _docstring.conftest import INT, STR, hide_type
 from sphinx_autodoc_typehints._docstring.returns import description_from_doc
+
+from .conftest import INT, STR, hide_type
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Callable, Generator, Iterable, Iterator
 
     from conftest import BuildText, MakeModule
 
-    from _docstring.conftest import Process
     from sphinx_autodoc_typehints._types import Annotation, Documented
+
+    from .conftest import Process
 
 pytestmark: Final[MarkDecorator] = mark.sphinx("text", testroot="dummy")
 
 
-def _field_description(metadata: object) -> str | None:
+def _field_description(metadata: object) -> str | None:  # simplint: ignore[SMP602]  # metadata may be any object
     return metadata.description if isinstance(metadata, FieldInfo) else None
 
 
@@ -89,14 +91,14 @@ def test_doc_precedes_other_metadata_descriptions(process: Process) -> None:
         param(
             "partial_doc",
             dedent("""\
-                mod.partial_doc(x, y)
+                mod.partial_doc(value, other)
 
                    Compute sum.
 
                    Parameters:
-                      * **x** ("int") -- The x value
+                      * **value** ("int") -- The x value
 
-                      * **y** ("int") -- The y value
+                      * **other** ("int") -- The y value
 
                    Return type:
                       "int"
@@ -107,7 +109,7 @@ def test_doc_precedes_other_metadata_descriptions(process: Process) -> None:
         param(
             "no_doc",
             dedent("""\
-                mod.no_doc(x)
+                mod.no_doc(value)
 
                    Identity.
 
@@ -120,12 +122,12 @@ def test_doc_precedes_other_metadata_descriptions(process: Process) -> None:
         param(
             "docstring_wins",
             dedent("""\
-                mod.docstring_wins(x)
+                mod.docstring_wins(value)
 
                    Override.
 
                    Parameters:
-                      **x** ("int") -- Docstring description
+                      **value** ("int") -- Docstring description
 
                    Return type:
                       "int"
@@ -155,14 +157,14 @@ def test_doc_precedes_other_metadata_descriptions(process: Process) -> None:
         param(
             "compute",
             dedent("""\
-                mod.compute(x, y)
+                mod.compute(value, other)
 
                    Compute the sum.
 
                    Parameters:
-                      * **x** ("int") -- Placeholder.
+                      * **value** ("int") -- Placeholder.
 
-                      * **y** ("int") -- Placeholder.
+                      * **other** ("int") -- Placeholder.
 
                    Return type:
                       "int"
@@ -400,9 +402,6 @@ def test_yields_entry_gets_the_yielded_type(process: Process, lines: list[str], 
     assert process("function", "mod.counts", _counts, lines) == expected
 
 
-def _documented_counts() -> Annotated[Iterator[int], Doc("the numbers")]: ...
-
-
 @mark.parametrize(
     ("lines", "expected"),
     [
@@ -425,6 +424,9 @@ def _documented_counts() -> Annotated[Iterator[int], Doc("the numbers")]: ...
 )
 def test_yields_entry_takes_the_doc_description(process: Process, lines: list[str], expected: list[str]) -> None:
     assert process("function", "mod.counts", _documented_counts, lines) == expected
+
+
+def _documented_counts() -> Annotated[Iterator[int], Doc("the numbers")]: ...
 
 
 def test_untyped_yields_entry_takes_the_doc_description(process: Process) -> None:
@@ -555,7 +557,7 @@ class _Sized:
     [
         param("class", "mod.Sized", _Sized, id="class"),
         param("method", "mod.Sized.__init__", _Sized.__init__, id="constructor"),
-        param("property", "mod.Sized.size", vars(_Sized)["size"], id="property"),
+        param("property", "mod.Sized.size", _Sized.__dict__["size"], id="property"),
         param(
             "function",
             "mod.counts",
@@ -575,14 +577,14 @@ def test_return_type_left_out(process: Process, what: str, name: str, obj: Docum
         param(
             "function_no_returns",
             dedent("""\
-                dummy_module_simple_no_use_rtype.function_no_returns(x, y=1)
+                dummy_module_simple_no_use_rtype.function_no_returns(value, other=1)
 
                    Function docstring.
 
                    Parameters:
-                      * **x** ("bool") -- foo.
+                      * **value** ("bool") -- foo.
 
-                      * **y** ("int") -- bar.
+                      * **other** ("int") -- bar.
 
                    Return type:
                       "str"
@@ -592,14 +594,14 @@ def test_return_type_left_out(process: Process, what: str, name: str, obj: Docum
         param(
             "function_returns_with_type",
             dedent("""\
-                dummy_module_simple_no_use_rtype.function_returns_with_type(x, y=1)
+                dummy_module_simple_no_use_rtype.function_returns_with_type(value, other=1)
 
                    Function docstring.
 
                    Parameters:
-                      * **x** ("bool") -- foo.
+                      * **value** ("bool") -- foo.
 
-                      * **y** ("int") -- bar.
+                      * **other** ("int") -- bar.
 
                    Returns:
                       *CustomType* -- A string
@@ -609,14 +611,14 @@ def test_return_type_left_out(process: Process, what: str, name: str, obj: Docum
         param(
             "function_returns_with_compound_type",
             dedent("""\
-                dummy_module_simple_no_use_rtype.function_returns_with_compound_type(x, y=1)
+                dummy_module_simple_no_use_rtype.function_returns_with_compound_type(value, other=1)
 
                    Function docstring.
 
                    Parameters:
-                      * **x** ("bool") -- foo.
+                      * **value** ("bool") -- foo.
 
-                      * **y** ("int") -- bar.
+                      * **other** ("int") -- bar.
 
                    Returns:
                       Union[str, int] -- A string or int
@@ -626,14 +628,14 @@ def test_return_type_left_out(process: Process, what: str, name: str, obj: Docum
         param(
             "function_returns_without_type",
             dedent("""\
-                dummy_module_simple_no_use_rtype.function_returns_without_type(x, y=1)
+                dummy_module_simple_no_use_rtype.function_returns_without_type(value, other=1)
 
                    Function docstring.
 
                    Parameters:
-                      * **x** ("bool") -- foo.
+                      * **value** ("bool") -- foo.
 
-                      * **y** ("int") -- bar.
+                      * **other** ("int") -- bar.
 
                    Returns:
                       "str" -- A string

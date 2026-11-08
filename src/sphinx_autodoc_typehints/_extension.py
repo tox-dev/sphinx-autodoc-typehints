@@ -20,39 +20,22 @@ from ._config import (
     store_type_mapping,
     validate_config,
 )
-from ._docstring import (
-    DEPRECATED_DIRECTIVE,
-    DeprecatedDirective,
-    mark_numpy_returns,
-    note_attributes_before_napoleon,
-    place_rtype,
-    process_docstring,
-)
-from ._patches import (
-    BUILDING,
-    patch_autodoc_type_hints,
-    patch_napoleon_attr_annotations,
-    patch_overload_capture,
-    patch_signature_lines,
-)
-from ._render import (
-    ALIAS_CHOICE_ROLE,
-    CONSTANT_ROLE,
-    ENUM_MEMBER_ROLE,
-    VALUE_ROLE,
-    VALUE_STYLESHEET,
-    AliasChoiceCollector,
-    DeferAliasChoice,
-    alias_choice_role,
-    constant_role,
-    enum_member_role,
-    link_enum_member_owner,
-    note_builder,
-    unescape,
-    value_role,
-)
-from ._resolve import forget_reads
-from ._signature import add_type_params, process_bases, process_signature, render_header_types
+from ._docstring.deprecation import DEPRECATED_DIRECTIVE, DeprecatedDirective
+from ._docstring.formats.field_list.rtype import place_rtype
+from ._docstring.formats.napoleon.attributes import note_attributes_before_napoleon
+from ._docstring.formats.napoleon.returns import mark_numpy_returns
+from ._docstring.handler import process_docstring
+from ._patches.autodoc import BUILDING, patch_autodoc_type_hints, patch_overload_capture, patch_signature_lines
+from ._patches.napoleon import patch_napoleon_attr_annotations
+from ._render.deferred import ALIAS_CHOICE_ROLE, AliasChoiceCollector, DeferAliasChoice, alias_choice_role, note_builder
+from ._render.enum_member import ENUM_MEMBER_ROLE, enum_member_role, link_enum_member_owner
+from ._render.rst import unescape
+from ._render.value import CONSTANT_ROLE, VALUE_ROLE, VALUE_STYLESHEET, constant_role, value_role
+from ._resolve.forget import forget_reads
+from ._signature.bases import process_bases
+from ._signature.handler import process_signature
+from ._signature.header.data_types import render_header_types
+from ._signature.header.type_params import add_type_params
 from .version import __version__
 
 if TYPE_CHECKING:
@@ -62,10 +45,16 @@ if TYPE_CHECKING:
 
 
 def setup(app: Sphinx) -> dict[str, bool | int | str]:
+    """
+    Register the configuration values, roles, directives and event handlers of the extension on `app`.
+
+    :param app: the Sphinx application the extension registers itself with
+    :returns: the metadata Sphinx reads, marking the extension safe to read and write in parallel
+    """
     app.setup_extension("sphinx.ext.autodoc")
     for option in OPTIONS:
         app.add_config_value(option.name, option.default, option.rebuild, option.types)
-    app.add_role("sphinx_autodoc_typehints_type", sphinx_autodoc_typehints_type_role)
+    app.add_role("sphinx_autodoc_typehints_type", _sphinx_autodoc_typehints_type_role)
     app.add_role(ALIAS_CHOICE_ROLE, alias_choice_role)
     app.add_role(ENUM_MEMBER_ROLE, enum_member_role)
     app.add_role(VALUE_ROLE, value_role)
@@ -112,13 +101,13 @@ def setup(app: Sphinx) -> dict[str, bool | int | str]:
     }
 
 
-def sphinx_autodoc_typehints_type_role(
+def _sphinx_autodoc_typehints_type_role(  # simplint: ignore[SMP602]  # docutils passes options of any value
     _role: str,
     _rawtext: str,
     text: str,
     lineno: int,
     inliner: states.Inliner,
-    _options: dict[str, object] | None = None,
+    _options: dict[str, object] | None = None,  # simplint: ignore[SMP602]  # docutils passes options of any value
     _content: list[str] | None = None,
 ) -> tuple[list[Node], list[Node]]:
     # a type is inline text, a block parse would turn one such as `- item` into a list

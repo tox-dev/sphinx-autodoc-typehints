@@ -7,18 +7,20 @@ from inspect import isclass, isdatadescriptor
 from types import NoneType
 from typing import TYPE_CHECKING, Annotated, Final, get_args, get_origin
 
-from .._documented import as_written
-from .._render import as_field_type
-from .formats import reads_as_type, write_rtype
+from .._documented.hints import as_written
+from .._render.annotation.rendered import as_field_type
+from .formats.field_list.edit import write_rtype
+from .formats.napoleon.typed import reads_as_type
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from sphinx.application import Sphinx
 
-    from .._documented import Entry, ResolvedHints
+    from .._documented.entry import Entry
+    from .._documented.hints import ResolvedHints
     from .._types import Hint
-    from .formats import FieldListFormat
+    from .formats.field_list.edit import FieldListFormat
 
 _YIELDS_FIELDS: Final[tuple[str, ...]] = (":Yields:", ":yields:", ":yield:")
 
@@ -116,7 +118,8 @@ def _type_yields(annotation: Hint, description: str | None, app: Sphinx, lines: 
 
 
 def description_from_doc(
-    annotation: Hint | None, extractor: Callable[[object], str | None] | None = None
+    annotation: Hint | None,
+    extractor: Callable[[object], str | None] | None = None,  # simplint: ignore[SMP602]  # callback gets any metadata
 ) -> str | None:
     """Return a `Doc` description, or one the configured metadata callback extracts."""
     if get_origin(annotation) is not Annotated:

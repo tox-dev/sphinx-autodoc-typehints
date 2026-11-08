@@ -23,4 +23,6 @@ def load(cube: Cube, array: no_such_array.core.Array, precision: Decimal) -> lis
     raise NotImplementedError
 
 
-__all__ = ["load"]
+__all__ = [
+    "load",
+]

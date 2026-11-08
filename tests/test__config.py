@@ -11,8 +11,11 @@ from sphinx.errors import ConfigError
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from conftest import BuildText
+    from conftest import BuildText, MakeApp
+    from sphinx.config import Config
     from sphinx.testing.util import SphinxTestApp
+
+    from sphinx_autodoc_typehints._types import RenderNode
 
 
 @mark.sphinx("text", testroot="public-api")
@@ -71,16 +74,14 @@ def test_unusable_option_fails_the_build(app: SphinxTestApp, pattern: str) -> No
 
 
 @mark.sphinx("text", testroot="dummy")
-def test_annotated_metadata_rejects_names_instead_of_types(
-    app: SphinxTestApp, make_app: Callable[..., SphinxTestApp]
-) -> None:
+def test_annotated_metadata_rejects_names_instead_of_types(app: SphinxTestApp, make_app: MakeApp) -> None:
     with raises(ConfigError, match="typehints_annotated_metadata needs a tuple of types"):
         make_app("text", srcdir=app.srcdir, confoverrides={"typehints_annotated_metadata": ("str",)})
 
 
 @mark.sphinx("text", testroot="dummy", confoverrides={"typehints_annotated_metadata": (str,)})
 def test_annotated_metadata_keeps_the_config_cacheable(
-    build_text: BuildText, app: SphinxTestApp, make_app: Callable[..., SphinxTestApp]
+    build_text: BuildText, app: SphinxTestApp, make_app: MakeApp
 ) -> None:
     build_text(".. autofunction:: dummy_module.undocumented_function")
     rebuilt = make_app("text", srcdir=app.srcdir, confoverrides={"typehints_annotated_metadata": (str,)})
@@ -108,11 +109,11 @@ def _fixup_to_second(module: str) -> str:
 def test_fixup_module_name_change_rereads_documents(
     build_text: BuildText,
     app: SphinxTestApp,
-    make_app: Callable[..., SphinxTestApp],
+    make_app: MakeApp,
     first: Callable[[str], str],
     second: Callable[[str], str],
 ) -> None:
-    build_text(".. autofunction:: wrong_module_path.f")
+    build_text(".. autofunction:: wrong_module_path.make")
     for fixup in (first, second):
         make_app(
             "text",
@@ -121,18 +122,18 @@ def test_fixup_module_name_change_rereads_documents(
         ).build()
 
     assert (Path(app.outdir) / "index.txt").read_text() == dedent("""\
-        wrong_module_path.f()
+        wrong_module_path.make()
 
            Return type:
-              "second.A"
+              "second.Result"
         """)
 
 
 @mark.sphinx("text", testroot="dummy", confoverrides={"typehints_fixup_module_name": _fixup_to_first})
 def test_fixup_module_name_unchanged_keeps_environment(
-    build_text: BuildText, app: SphinxTestApp, make_app: Callable[..., SphinxTestApp]
+    build_text: BuildText, app: SphinxTestApp, make_app: MakeApp
 ) -> None:
-    build_text(".. autofunction:: wrong_module_path.f")
+    build_text(".. autofunction:: wrong_module_path.make")
     rebuilt = make_app("text", srcdir=app.srcdir, confoverrides={"typehints_fixup_module_name": _fixup_to_first})
     rebuilt.build()
 
@@ -177,18 +178,18 @@ def test_fully_qualified_defaults_to_autodoc_typehints_format(build_text: BuildT
 
 @mark.sphinx("text", testroot="dummy")
 def test_always_document_param_types_change_rereads_sources(
-    build_text: BuildText, app: SphinxTestApp, make_app: Callable[..., SphinxTestApp]
+    build_text: BuildText, app: SphinxTestApp, make_app: MakeApp
 ) -> None:
     build_text(".. autofunction:: dummy_module.undocumented_function")
     make_app("text", srcdir=app.srcdir, confoverrides={"always_document_param_types": True}).build()
 
     assert (Path(app.outdir) / "index.txt").read_text() == dedent("""\
-        dummy_module.undocumented_function(x)
+        dummy_module.undocumented_function(value)
 
            Hi
 
            Parameters:
-              **x** ("int")
+              **value** ("int")
 
            Return type:
               "str"
@@ -205,18 +206,16 @@ def test_formatter_keeps_the_config_cacheable(build_text: BuildText) -> None:
     build_text(".. autofunction:: dummy_module.undocumented_function")
 
 
-def _format_first(_annotation: object, _config: object) -> str:
+def _format_first(_annotation: RenderNode, _config: Config) -> str:
     return "First"
 
 
-def _format_second(_annotation: object, _config: object) -> str:
+def _format_second(_annotation: RenderNode, _config: Config) -> str:
     return "Second"
 
 
 @mark.sphinx("text", testroot="dummy", confoverrides={"typehints_formatter": _format_first})
-def test_formatter_change_rereads_documents(
-    build_text: BuildText, app: SphinxTestApp, make_app: Callable[..., SphinxTestApp]
-) -> None:
+def test_formatter_change_rereads_documents(build_text: BuildText, app: SphinxTestApp, make_app: MakeApp) -> None:
     build_text(".. autofunction:: dummy_module.undocumented_function")
     make_app("text", srcdir=app.srcdir, confoverrides={"typehints_formatter": _format_second}).build()
 
@@ -226,9 +225,7 @@ def test_formatter_change_rereads_documents(
 
 
 @mark.sphinx("text", testroot="dummy", confoverrides={"typehints_formatter": _format_first})
-def test_formatter_unchanged_keeps_environment(
-    build_text: BuildText, app: SphinxTestApp, make_app: Callable[..., SphinxTestApp]
-) -> None:
+def test_formatter_unchanged_keeps_environment(build_text: BuildText, app: SphinxTestApp, make_app: MakeApp) -> None:
     build_text(".. autofunction:: dummy_module.undocumented_function")
     rebuilt = make_app("text", srcdir=app.srcdir, confoverrides={"typehints_formatter": _format_first})
     rebuilt.build()

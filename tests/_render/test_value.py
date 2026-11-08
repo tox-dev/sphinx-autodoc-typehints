@@ -1,27 +1,15 @@
 from __future__ import annotations
 
 from pathlib import Path
-from re import findall
+from re import VERBOSE, findall
 from textwrap import dedent
 from typing import TYPE_CHECKING
 
 from pytest import mark, param
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
-    from conftest import BuildText, MakeModule
+    from conftest import BuildText, MakeApp, MakeModule
     from sphinx.testing.util import SphinxTestApp
-
-
-def _values(html: str) -> list[tuple[str, list[tuple[str, str]]]]:
-    return [
-        (code_class, findall(r'(?:<span class="(\w+)">)?<span class="pre">([^<]*)</span>', inner))
-        for code_class, inner in findall(
-            r'<span class="highlight sphinx_autodoc_typehints-value">(?:<a [^>]*>)?<code class="([^"]*)">(.*?)</code>',
-            html,
-        )
-    ]
 
 
 @mark.parametrize(
@@ -64,6 +52,31 @@ def test_value_takes_the_pygments_token_classes(
     assert _values(html) == [("docutils literal notranslate", expected)]
 
 
+def _values(html: str) -> list[tuple[str, list[tuple[str, str]]]]:
+    return [
+        (
+            code_class,
+            findall(
+                r"""
+                (?:<span\ class="(?P<kind>\w+)">)?      # the kind of a token, when it has one
+                <span\ class="pre">(?P<text>[^<]*)</span>  # its text
+                """,
+                inner,
+                VERBOSE,
+            ),
+        )
+        for code_class, inner in findall(
+            r"""
+            <span\ class="highlight\ sphinx_autodoc_typehints-value">  # a value the extension rendered
+            (?:<a\ [^>]*>)?<code\ class="(?P<class>[^"]*)">            # its class, under an optional link
+            (?P<inner>.*?)</code>                                      # its tokens
+            """,
+            html,
+            VERBOSE,
+        )
+    ]
+
+
 @mark.parametrize(
     ("value", "role"),
     [
@@ -102,7 +115,7 @@ def test_value_stylesheet_is_served(app: SphinxTestApp, build_text: BuildText) -
 
 @mark.sphinx("html", testroot="render-types")
 def test_value_stylesheet_keeps_incremental_config_stable(
-    app: SphinxTestApp, build_text: BuildText, make_app: Callable[..., SphinxTestApp]
+    app: SphinxTestApp, build_text: BuildText, make_app: MakeApp
 ) -> None:
     build_text("Values\n======\n")
     rebuilt = make_app("html", srcdir=app.srcdir)

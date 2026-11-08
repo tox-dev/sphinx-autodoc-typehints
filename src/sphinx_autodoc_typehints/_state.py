@@ -16,7 +16,6 @@ if TYPE_CHECKING:
 
 _DOCUMENTED: Final[str] = "sphinx_autodoc_typehints_documented"
 _TYPES_DOCUMENTED: Final[str] = "sphinx_autodoc_typehints_types_documented"
-_ALIAS_CHOICES: Final[str] = "sphinx_autodoc_typehints_alias_choices"
 # an environment attribute rather than current_document, so the pickled environment keeps the choices across builds
 _DOCUMENT_ALIAS_CHOICES: Final[str] = "_typehints_alias_choices"
 
@@ -24,6 +23,12 @@ _DOCUMENT_ALIAS_CHOICES: Final[str] = "_typehints_alias_choices"
 def note_documented(env: BuildEnvironment, name: str) -> None:
     """Remember that autodoc documents `name` on the page being read, so its header is the extension's to render."""
     _record(env, _DOCUMENTED, set[str]()).add(name)
+
+
+def _record[Record](env: BuildEnvironment, key: str, empty: Record) -> Record:
+    if (record := env.current_document.get(key)) is None:
+        record = env.current_document[key] = empty
+    return record
 
 
 def is_documented(env: BuildEnvironment, name: str) -> bool:
@@ -34,12 +39,6 @@ def is_documented(env: BuildEnvironment, name: str) -> bool:
     looking up a name written by hand could import, raise, or rename what autodoc documents later.
     """
     return name in (env.current_document.get(_DOCUMENTED) or ())
-
-
-def _record[Record](env: BuildEnvironment, key: str, empty: Record) -> Record:
-    if (record := env.current_document.get(key)) is None:
-        record = env.current_document[key] = empty
-    return record
 
 
 def written_signatures(env: BuildEnvironment) -> set[str]:
@@ -72,7 +71,7 @@ def class_docstrings(env: BuildEnvironment) -> dict[str, tuple[Options | None, l
 
 def alias_choices(env: BuildEnvironment) -> dict[str, tuple[str, ...]]:
     """Hold the alias choices recorded while reading the current document until `doctree-read` files them."""
-    return _record(env, _ALIAS_CHOICES, dict[str, tuple[str, ...]]())
+    return _record(env, "sphinx_autodoc_typehints_alias_choices", dict[str, tuple[str, ...]]())
 
 
 def document_alias_choices(env: BuildEnvironment) -> dict[str, dict[str, tuple[str, ...]]]:

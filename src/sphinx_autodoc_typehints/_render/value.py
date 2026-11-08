@@ -37,33 +37,20 @@ def value_markup(text: str) -> str:
     return f":{VALUE_ROLE}:`{text.replace('\\', '\\\\').replace('`', '\\`')}`"
 
 
-def value_role(
+def value_role(  # simplint: ignore[SMP602]  # docutils passes options of any value
     _role: str,
     rawtext: str,
     text: str,
     _lineno: int,
     _inliner: states.Inliner,
-    _options: dict[str, object] | None = None,
+    _options: dict[str, object] | None = None,  # simplint: ignore[SMP602]  # docutils passes options of any value
     _content: list[str] | None = None,
 ) -> tuple[list[Node], list[system_message]]:
     return [_scope(_color(nodes.literal(rawtext), unescape(text)))], []
 
 
-def constant_role(
-    _role: str,
-    rawtext: str,
-    text: str,
-    lineno: int,
-    inliner: states.Inliner,
-    options: dict[str, object] | None = None,
-    content: list[str] | None = None,
-) -> tuple[list[Node], list[system_message]]:
-    # the Python docs list True and False as data on their constants page
-    kind = "py:obj" if text == "None" else "py:data"
-    refs, messages = _XREF_ROLE(kind, rawtext, text, lineno, inliner, options or {}, content or [])
-    xref = next(ref for ref in refs if isinstance(ref, addnodes.pending_xref))
-    _color(xref[0], text)
-    return [_scope(ref) if ref is xref else ref for ref in refs], messages
+def _scope(node: nodes.Node) -> nodes.inline:
+    return nodes.inline("", "", node, classes=["highlight", "sphinx_autodoc_typehints-value"])
 
 
 def _color(literal: nodes.Element, source: str) -> nodes.Element:
@@ -78,13 +65,26 @@ def _color(literal: nodes.Element, source: str) -> nodes.Element:
     return literal
 
 
-def _scope(node: nodes.Node) -> nodes.inline:
-    return nodes.inline("", "", node, classes=["highlight", "sphinx_autodoc_typehints-value"])
-
-
 def _token_class(ttype: _TokenType) -> str:
     # a token type without a class of its own takes the one of its nearest parent, as the HTML formatter does
     return next(STANDARD_TYPES[kind] for kind in reversed(ttype.split()) if kind in STANDARD_TYPES)
+
+
+def constant_role(  # simplint: ignore[SMP602]  # docutils passes options of any value
+    _role: str,
+    rawtext: str,
+    text: str,
+    lineno: int,
+    inliner: states.Inliner,
+    options: dict[str, object] | None = None,  # simplint: ignore[SMP602]  # docutils passes options of any value
+    content: list[str] | None = None,
+) -> tuple[list[Node], list[system_message]]:
+    # the Python docs list True and False as data on their constants page
+    kind = "py:obj" if text == "None" else "py:data"
+    refs, messages = _XREF_ROLE(kind, rawtext, text, lineno, inliner, options or {}, content or [])
+    xref = next(ref for ref in refs if isinstance(ref, addnodes.pending_xref))
+    _color(xref[0], text)
+    return [_scope(ref) if ref is xref else ref for ref in refs], messages
 
 
 __all__ = [

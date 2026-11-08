@@ -11,12 +11,12 @@ from typing import TYPE_CHECKING, ForwardRef, Union, get_args, get_origin
 from pytest import fixture, mark, param
 from sphinx.ext.autodoc.mock import mock
 
-from sphinx_autodoc_typehints._resolve.evaluate import (
+from sphinx_autodoc_typehints._resolve.evaluate.expression import (
     evaluate_annotation,
     resolve_string_annotations,
     unevaluated_annotations,
 )
-from sphinx_autodoc_typehints._resolve.guards import resolve_type_guarded_imports
+from sphinx_autodoc_typehints._resolve.guards.run import resolve_type_guarded_imports
 
 if TYPE_CHECKING:
     from collections.abc import Callable

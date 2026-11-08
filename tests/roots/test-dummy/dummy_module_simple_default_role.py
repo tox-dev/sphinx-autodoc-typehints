@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 
-def function(x: bool, y: int) -> str:
+def function(value: bool, other: int) -> str:
     """
     Function docstring.
 
-    :param x: `foo`
-    :param y: ``bar``
+    :param value: `foo`
+    :param other: ``bar``
     """

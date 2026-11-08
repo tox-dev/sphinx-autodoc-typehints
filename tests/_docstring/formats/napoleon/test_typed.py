@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pytest import mark, param
 
-from sphinx_autodoc_typehints._docstring.formats.napoleon import reads_as_type
+from sphinx_autodoc_typehints._docstring.formats.napoleon.typed import reads_as_type
 
 
 @mark.parametrize(

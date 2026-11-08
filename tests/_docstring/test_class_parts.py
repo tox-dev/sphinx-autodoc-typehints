@@ -6,8 +6,9 @@ from typing import TYPE_CHECKING, Final
 from pytest import MarkDecorator, mark, param
 from sphinx.ext.autodoc import Options
 
-from _docstring.conftest import INT
-from sphinx_autodoc_typehints._docstring import process_docstring
+from sphinx_autodoc_typehints._docstring.handler import process_docstring
+
+from .conftest import INT
 
 if TYPE_CHECKING:
     from conftest import BuildText
@@ -180,40 +181,40 @@ def test_class_docstring_part_does_not_pair_with_another_directive(app: SphinxTe
         param(
             "OverloadedTwice",
             dedent("""\
-                class dummy_module.OverloadedTwice(a)
+                class dummy_module.OverloadedTwice(item)
 
                    Class docstring.
 
                    Constructor docstring.
 
                    Overloads:
-                      * **a** ("int")
+                      * **item** ("int")
 
-                      * **a** ("str")
+                      * **item** ("str")
 
                    Parameters:
-                      **a** ("int" | "str")
+                      **item** ("int" | "str")
             """),
             id="overloads",
         ),
         param(
             "DescribedTwice",
             dedent("""\
-                class dummy_module.DescribedTwice(a)
+                class dummy_module.DescribedTwice(item)
 
                    Class docstring.
 
                    Constructor docstring.
 
                    Parameters:
-                      **a** ("int") -- the a
+                      **item** ("int") -- the a
             """),
             id="doc-described",
         ),
         param(
             "DeprecatedTwice",
             dedent("""\
-                class dummy_module.DeprecatedTwice(a)
+                class dummy_module.DeprecatedTwice(item)
 
                    Class docstring.
 
@@ -222,7 +223,7 @@ def test_class_docstring_part_does_not_pair_with_another_directive(app: SphinxTe
                    Constructor docstring.
 
                    Parameters:
-                      **a** ("int") -- the a
+                      **item** ("int") -- the a
             """),
             id="deprecated",
             marks=mark.sphinx(confoverrides={"autoclass_content": "both"}),

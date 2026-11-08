@@ -22,7 +22,7 @@ class Document(Protocol):
 @fixture(name="document")
 def document_fixture(make_module: MakeModule, build_text: BuildText) -> Document:
     def build(docstring: str) -> str:
-        source = 'def documented(x: int) -> int:\n    """\n' + indent(dedent(docstring), "    ") + '    """\n'
+        source = f'def documented(x: int) -> int:\n    """\n{indent(dedent(docstring), "    ")}    """\n'
         make_module("rtype_placed", source)
         return build_text(".. autofunction:: rtype_placed.documented")
 

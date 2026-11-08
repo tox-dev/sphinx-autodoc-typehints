@@ -14,7 +14,7 @@ from sphinx import addnodes
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from conftest import BuildText, MakeModule
+    from conftest import BuildText, MakeApp, MakeModule
     from sphinx.testing.util import SphinxTestApp
 
     from _signature.conftest import BuildDoctree
@@ -250,9 +250,7 @@ def test_header_type_skips_an_attribute_of_the_same_name(make_module: MakeModule
     assert findall(r'href="([^"]*)"', header[0]) == ["#named_module.Registry.factory"]
 
 
-def test_header_type_follows_a_rebuild(
-    app: SphinxTestApp, build_text: BuildText, make_app: Callable[..., SphinxTestApp]
-) -> None:
+def test_header_type_follows_a_rebuild(app: SphinxTestApp, build_text: BuildText, make_app: MakeApp) -> None:
     build_text(".. autodata:: header_module.SCORE")
     rebuilt = make_app("text", srcdir=app.srcdir, confoverrides={"autodoc_type_aliases": {"Num": "header_module.Num"}})
     rebuilt.build()
@@ -303,7 +301,7 @@ def test_header_type_resolves_a_module_again_in_another_document(
 
 # beyond the evaluations autodoc makes on its own
 @fixture(name="extra_evaluations")
-def extra_evaluations_fixture(app: SphinxTestApp, make_app: Callable[..., SphinxTestApp]) -> Callable[[], int]:
+def extra_evaluations_fixture(app: SphinxTestApp, make_app: MakeApp) -> Callable[[], int]:
     def count() -> int:
         evaluations = import_module("counted_module").EVALUATIONS
         before = len(evaluations)

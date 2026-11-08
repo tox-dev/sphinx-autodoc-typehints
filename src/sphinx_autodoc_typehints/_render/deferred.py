@@ -47,13 +47,13 @@ _REF_CONTEXT_KEY: Final[str] = "sphinx_autodoc_typehints_ref_context"
 _BUILDERS: Final[WeakValueDictionary[int, Builder]] = WeakValueDictionary()
 
 
-def alias_choice_role(
+def alias_choice_role(  # simplint: ignore[SMP602]  # docutils passes options of any value
     _role: str,
     _rawtext: str,
     text: str,
     lineno: int,
     inliner: states.Inliner,
-    _options: dict[str, object] | None = None,
+    _options: dict[str, object] | None = None,  # simplint: ignore[SMP602]  # docutils passes options of any value
     _content: list[str] | None = None,
 ) -> tuple[list[Node], list[Node]]:
     # `replace_self` would copy any classes onto whichever rendering wins

@@ -12,14 +12,10 @@ from textwrap import dedent
 from typing import TYPE_CHECKING, Final
 
 from .._objects import is_attrs_class, unwrapped
-from .._render import as_field_type
-from .._resolve import (
-    bound_type_args,
-    get_body_annotations,
-    get_instance_var_annotations,
-    resolve_type_guarded_imports,
-    specialize,
-)
+from .._render.annotation.rendered import as_field_type
+from .._resolve.attributes import get_body_annotations, get_instance_var_annotations
+from .._resolve.generics import bound_type_args, specialize
+from .._resolve.guards.run import resolve_type_guarded_imports
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping

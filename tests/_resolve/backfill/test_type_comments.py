@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from pytest import mark, param
 
-from sphinx_autodoc_typehints._resolve.backfill import backfill_type_hints
+from sphinx_autodoc_typehints._resolve.backfill.type_comments import backfill_type_hints
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 @mark.parametrize(
-    ("source", "owner", "expected", "warning"),
+    ("source", "owner", "expected", "warnings"),
     [
         param(
             dedent("""\
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
             """),
             "func",
             {"x": "int", "y": "str", "return": "bool"},
-            None,
+            [],
             id="function",
         ),
         param(
@@ -36,7 +36,7 @@ if TYPE_CHECKING:
             """),
             "Holder.method",
             {"x": "int", "return": "str"},
-            None,
+            [],
             id="method-leaving-out-self",
         ),
         param(
@@ -47,7 +47,7 @@ if TYPE_CHECKING:
             """),
             "func",
             {"x": "int", "y": "str", "return": "bool"},
-            None,
+            [],
             id="positional-only",
         ),
         param(
@@ -61,7 +61,7 @@ if TYPE_CHECKING:
             """),
             "func",
             {"x": "int", "y": "str", "return": "bool"},
-            None,
+            [],
             id="per-parameter",
         ),
         param(
@@ -73,7 +73,7 @@ if TYPE_CHECKING:
             """),
             "func",
             {"x": "int"},
-            None,
+            [],
             id="empty-return",
         ),
         param(
@@ -84,7 +84,7 @@ if TYPE_CHECKING:
             """),
             "func",
             {"return": "int"},
-            None,
+            [],
             id="no-parameters",
         ),
         param(
@@ -95,7 +95,7 @@ if TYPE_CHECKING:
             """),
             "func",
             {"x": "List[int]", "y": "Dict[str, int]", "return": "None"},
-            None,
+            [],
             id="nested-brackets",
         ),
         param(
@@ -106,7 +106,7 @@ if TYPE_CHECKING:
             """),
             "func",
             {"args": "int", "kwargs": "str", "return": "None"},
-            None,
+            [],
             id="variadic",
         ),
         param(
@@ -118,7 +118,7 @@ if TYPE_CHECKING:
             """),
             "func",
             {"x": "int", "return": "None"},
-            None,
+            [],
             id="async",
         ),
         param(
@@ -137,7 +137,7 @@ if TYPE_CHECKING:
             """),
             "Holder.method",
             {"x": "int", "return": "str"},
-            None,
+            [],
             id="decorator-over-several-lines",
         ),
         param(
@@ -151,7 +151,7 @@ if TYPE_CHECKING:
             """),
             "Holder.method",
             {"x": "int", "return": "str"},
-            None,
+            [],
             id="line-left-of-the-def",
         ),
         param(
@@ -161,7 +161,7 @@ if TYPE_CHECKING:
             """),
             "func",
             {},
-            None,
+            [],
             id="no-type-comment",
         ),
         param(
@@ -170,7 +170,7 @@ if TYPE_CHECKING:
             """),
             "square",
             {},
-            None,
+            [],
             id="lambda-typed-as-a-variable",
         ),
         param(
@@ -180,7 +180,7 @@ if TYPE_CHECKING:
             """),
             "square",
             {},
-            None,
+            [],
             id="source-that-does-not-parse-alone",
         ),
         param(
@@ -191,7 +191,7 @@ if TYPE_CHECKING:
             """),
             "func",
             {"return": "bool"},
-            ("comment", "mod.func"),
+            [("comment", "mod.func")],
             id="fewer-types-than-parameters",
         ),
         param(
@@ -202,7 +202,7 @@ if TYPE_CHECKING:
             """),
             "func",
             {},
-            ("comment", "mod.func"),
+            [("comment", "mod.func")],
             id="no-arrow",
         ),
         param(
@@ -211,7 +211,7 @@ if TYPE_CHECKING:
             """),
             "square",
             {},
-            ("multiple_ast_nodes", "mod.func", "2"),
+            [("multiple_ast_nodes", "mod.func", "2")],
             id="source-of-two-statements",
         ),
     ],
@@ -222,15 +222,17 @@ def test_backfill_type_hints(
     source: str,
     owner: str,
     expected: dict[str, str],
-    warning: tuple[str, ...] | None,
+    warnings: list[tuple[str, ...]],
 ) -> None:
     module = make_module(source)
     assert (backfill_type_hints(attrgetter(owner)(module), "mod.func"), logged_warnings()) == (
         expected,
-        [] if warning is None else [(warning[0], f"{module.__file__}:1", *warning[1:])],
+        [(warning[0], f"{module.__file__}:1", *warning[1:]) for warning in warnings],
     )
 
 
 @mark.parametrize("obj", [param(len, id="builtin"), param(property(), id="not-callable")])
-def test_backfill_type_hints_of_an_object_without_source(obj: Callable[..., object] | property) -> None:
+def test_backfill_type_hints_of_an_object_without_source(
+    obj: Callable[..., object] | property,  # simplint: ignore[SMP603]  # any callable is passed
+) -> None:
     assert backfill_type_hints(obj, "mod.obj") == {}

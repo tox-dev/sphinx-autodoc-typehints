@@ -5,19 +5,34 @@ from __future__ import annotations
 
 from html import escape
 from itertools import groupby
-from re import MULTILINE, split
+from re import MULTILINE, VERBOSE, split
 from re import compile as compile_regex
 from typing import TYPE_CHECKING, Final
 
 if TYPE_CHECKING:
+    from re import Pattern
+
     from live_example_variants import Option
 
-_CONFVAL: Final = compile_regex(
-    r"^\.\. confval:: (?P<name>\w+)\n(?:[ \t]+:\w+:.*\n)*\n(?P<content>(?:[ \t]+\S.*(?:\n|$))+)", MULTILINE
+_CONFVAL: Final[Pattern[str]] = compile_regex(
+    r"""
+    ^\.\.\ confval::\ (?P<name>\w+)\n  # the directive and the option it names
+    (?:[ \t]+:\w+:.*\n)*\n             # the field list above the content
+    (?P<content>(?:[ \t]+\S.*(?:\n|$))+)  # the indented content
+    """,
+    MULTILINE | VERBOSE,
 )
 # a role shows its explicit title, or its target, cut to the last part by a leading tilde
-_ROLE: Final = compile_regex(
-    r":[\w:]+:`(?:(?P<title>[^`<]*?)\s*<[^`>]*>|~(?:[\w.]*\.)?(?P<short>[^`]+)|(?P<name>[^`]+))`"
+_ROLE: Final[Pattern[str]] = compile_regex(
+    r"""
+    :[\w:]+:`                              # the role and its opening backquote
+    (?:
+        (?P<title>[^`<]*?)\s*<[^`>]*>      # an explicit title, then the target
+        |~(?:[\w.]*\.)?(?P<short>[^`]+)    # the target, without its leading module path
+        |(?P<name>[^`]+)                   # the target alone
+    )`
+    """,
+    VERBOSE,
 )
 
 
@@ -33,7 +48,8 @@ def _first_sentence(text: str) -> str:
     sentence = split(r"(?<=\.)\s|;\s", plain, maxsplit=1)[0].removesuffix(".")
     # the literals of reST alternate with the text around them
     parts = sentence.split("``")
-    return "".join(f"<code>{escape(part)}</code>" if at % 2 else escape(part) for at, part in enumerate(parts)) + "."
+    html = "".join(f"<code>{escape(part)}</code>" if at % 2 else escape(part) for at, part in enumerate(parts))
+    return f"{html}."
 
 
 def selector(options: list[Option], conf: str, descriptions: dict[str, str], reference: str, example: int) -> str:

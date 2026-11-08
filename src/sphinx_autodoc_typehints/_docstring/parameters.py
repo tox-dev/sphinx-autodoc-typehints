@@ -12,18 +12,13 @@ from inspect import Parameter, Signature
 from keyword import iskeyword
 from typing import TYPE_CHECKING, Final, Literal, Unpack, get_args, get_origin
 
-from .._documented import as_written
-from .._render import as_field_type
-from .._resolve import typed_dict_keys
+from .._documented.hints import as_written
+from .._render.annotation.rendered import as_field_type
+from .._resolve.typed_dict import typed_dict_keys
 from .._types import frozendict
-from .formats import (
-    STAR_PREFIXES,
-    add_combined_field_entry,
-    field_keyword_and_argument,
-    format_default,
-    last_paragraph_end,
-    type_combined_field_entry,
-)
+from .formats.base import format_default, last_paragraph_end
+from .formats.field_list.keywords import STAR_PREFIXES, field_keyword_and_argument
+from .formats.napoleon.combined import add_combined_field_entry, type_combined_field_entry
 from .returns import description_from_doc
 
 if TYPE_CHECKING:
@@ -31,10 +26,10 @@ if TYPE_CHECKING:
 
     from sphinx.application import Sphinx
 
-    from .._documented import ResolvedHints
+    from .._documented.hints import ResolvedHints
     from .._refs import WrittenTypeAlias
     from .._types import Hint
-    from .formats import FieldListFormat
+    from .formats.field_list.edit import FieldListFormat
 
 VARIADIC_STARS: Final[Mapping[str, str]] = frozendict({"VAR_POSITIONAL": "\\*", "VAR_KEYWORD": "\\*\\*"})
 
@@ -53,7 +48,7 @@ def inject_parameters(
 
     `documented_elsewhere` names the parameters the other docstring of a class entry documents.
     """
-    fields = _Fields(app, lines, fmt, signature, hints.types)
+    fields = _Fields(app=app, lines=lines, fmt=fmt, signature=signature, hints=hints.types)
     for arg_name in signature.parameters:
         fields.type_parameter(
             arg_name,
@@ -79,14 +74,14 @@ def inject_parameters(
     keywords = Signature([Parameter(key, Parameter.KEYWORD_ONLY) for key in keys])
     # the keys go with the part documenting **kwargs, or the one listing what neither part documents
     keys_elsewhere = kwargs.name in documented_elsewhere and fmt.find_param(lines, kwargs.name) is None
-    key_fields = _Fields(app, lines, fmt, keywords, keys)
+    key_fields = _Fields(app=app, lines=lines, fmt=fmt, signature=keywords, hints=keys)
     for key in keys:
         key_fields.type_parameter(
             key, written=None, documented_elsewhere=keys_elsewhere or key in documented_elsewhere, field="keyword"
         )
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, kw_only=True)
 class _Fields:
     app: Sphinx
     lines: list[str]
@@ -105,10 +100,10 @@ class _Fields:
         annotation = self.hints.get(arg_name)
         signature_param = self.signature.parameters[arg_name]
         param = _Parameter(
-            annotation,
-            as_written(annotation, written),
-            signature_param.default,
-            VARIADIC_STARS.get(signature_param.kind.name, ""),
+            annotation=annotation,
+            shown=as_written(annotation, written),
+            default=signature_param.default,
+            stars=VARIADIC_STARS.get(signature_param.kind.name, ""),
         )
         doc_name, at = _find_param(self.lines, arg_name, self.fmt)
         inline_type = ""
@@ -170,19 +165,9 @@ class _Fields:
             type_annotation = (
                 f":{type_field} {doc_name}: {as_field_type(param.shown, self.app.config, kind='parameter')}"
             )
-        # a braces-after default goes on the :param: line, so append it while at still points there
-        if self.app.config.typehints_defaults and (
-            formatted_default := format_default(
-                self.app, param.default, annotated=param.annotation is not None or has_preexisting or bool(inline_type)
-            )
-        ):
-            if not self.app.config.typehints_defaults.endswith("after"):
-                type_annotation += formatted_default
-            # a paragraph introducing a literal block keeps its :: last
-            elif (line := self.lines[end := last_paragraph_end(self.lines, at)]).endswith("::"):
-                self.lines[end] = f"{line[:-2].rstrip()}{formatted_default}::"
-            else:
-                self.lines[end] += formatted_default
+        type_annotation = self._append_default(
+            at, type_annotation, param, annotated=param.annotation is not None or has_preexisting or bool(inline_type)
+        )
         if has_preexisting:
             idx = self.lines.index(preexisting_line)
             end = idx + 1
@@ -210,13 +195,28 @@ class _Fields:
         self.lines[at] += " (optional)"
         return True
 
+    def _append_default(self, at: int, type_annotation: str, param: _Parameter, *, annotated: bool) -> str:
+        if not self.app.config.typehints_defaults or not (
+            formatted_default := format_default(self.app, param.default, annotated=annotated)
+        ):
+            return type_annotation
+        # a braces-after default goes on the :param: line, so append it while at still points there
+        if not self.app.config.typehints_defaults.endswith("after"):
+            return type_annotation + formatted_default
+        # a paragraph introducing a literal block keeps its :: last
+        if (line := self.lines[end := last_paragraph_end(self.lines, at)]).endswith("::"):
+            self.lines[end] = f"{line[:-2].rstrip()}{formatted_default}::"
+        else:
+            self.lines[end] += formatted_default
+        return type_annotation
+
 
 # `shown` is the type as the annotation names it, an alias by its own name
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, kw_only=True)
 class _Parameter:
     annotation: Hint | None
     shown: Hint | WrittenTypeAlias | None
-    default: object
+    default: object  # simplint: ignore[SMP602]  # a parameter default is any value
     stars: str
 
 

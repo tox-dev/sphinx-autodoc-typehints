@@ -59,7 +59,7 @@ def test_get_obj_location_without_a_source_file_is_none(obj: Documented) -> None
 
 
 def test_get_obj_location_of_generated_code_is_none() -> None:
-    @dataclass
+    @dataclass(frozen=True, slots=True, kw_only=True)
     class Generated:
         value: int
 
@@ -67,9 +67,13 @@ def test_get_obj_location_of_generated_code_is_none() -> None:
 
 
 # a mock answers every __wrapped__ with another mock, which unwrapping past it follows to the recursion limit
-def test_callable_target_of_a_mock_is_none(mocked_object: Callable[..., object]) -> None:
+def test_callable_target_of_a_mock_is_none(
+    mocked_object: Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+) -> None:
     assert callable_target(mocked_object) is None
 
 
-def test_constructor_name_of_a_new_a_mock_decorates_is_new(mocked_object: Callable[..., object]) -> None:
+def test_constructor_name_of_a_new_a_mock_decorates_is_new(
+    mocked_object: Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+) -> None:
     assert constructor_name(type("Made", (), {"__new__": mocked_object})) == "__new__"

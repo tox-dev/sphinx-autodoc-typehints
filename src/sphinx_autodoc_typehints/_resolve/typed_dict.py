@@ -15,9 +15,9 @@ from typing import (
 )
 
 from .._types import sentinel
-from .evaluate import type_hints
+from .evaluate.type_hints import type_hints
 from .generics import specialize, type_arguments
-from .guards import guarded_names
+from .guards.overlay import guarded_names
 
 if version_info >= (3, 14):  # pragma: >=3.14 cover
     from annotationlib import Format, get_annotations
@@ -29,8 +29,7 @@ if TYPE_CHECKING:
     from .._types import Annotation, Documented, TypeParam
 
 
-# no `Final`: ty stops reading an annotated sentinel as a type https://github.com/astral-sh/ty/issues/4737
-OPEN = sentinel("OPEN")
+OPEN = sentinel("OPEN")  # simplint: ignore[SMP601]  # ty rejects Final sentinels as types, astral-sh/ty#4737
 
 
 def typed_dict_keys(typed_dict: Documented, localns: Mapping[str, Documented]) -> dict[str, Annotation]:
@@ -54,35 +53,7 @@ def typed_dict_keys(typed_dict: Documented, localns: Mapping[str, Documented]) -
         return {}
     items: dict[str, Annotation] = {}
     for name, hint in hints.items():
-        optional = name in optional_keys
-        annotation = hint
-        metadata: list[object] = []
-        read_only = None
-        while True:
-            item_origin = get_origin(annotation)
-            qualifier = getattr(item_origin, "_name", None)
-            if item_origin is not Annotated and qualifier not in {"Required", "NotRequired", "ReadOnly"}:
-                break
-            if qualifier in {"Required", "NotRequired"}:
-                optional = qualifier == "NotRequired"
-            elif qualifier == "ReadOnly":
-                # the one written, as typing has none before Python 3.13
-                read_only = item_origin
-            annotation, *more = get_args(annotation)
-            metadata.extend(more)
-        if read_only is not None:
-            annotation = read_only[annotation]
-        if optional:
-            annotation = NotRequired[annotation]
-        # an Annotated outermost keeps its Doc() a description
-        items[name] = (
-            Annotated[
-                annotation,  # ty: ignore[invalid-type-form]  # https://github.com/astral-sh/ty/issues/727
-                *metadata,
-            ]
-            if metadata
-            else annotation
-        )
+        items[name] = _item_type(hint, optional=name in optional_keys)
     return items
 
 
@@ -122,8 +93,7 @@ class _Hierarchy:
         for base in bases:
             inherited |= self._split(base)[0]
         # an item written as a string names the type parameters of the class declaring it, which may be a base
-        localns = {**guarded_names(typed_dict), **self._localns, **self._scope(typed_dict)}
-        hints = type_hints(typed_dict, None, localns)
+        hints = type_hints(typed_dict, None, {**guarded_names(typed_dict), **self._localns, **self._scope(typed_dict)})
         # an item holding what a base holds belongs to that base, read in the module and guard of the base, not of
         # this class
         written = _written(typed_dict)
@@ -172,7 +142,7 @@ def _written(typed_dict: type) -> dict[str, Annotation | ForwardRef]:
 # part by part, as a string annotation evaluates anew for each class holding it, so the parts may be equal objects
 # rather than one, and comparing a whole `Annotated` asks its metadata, such as an array, for a truth value it may not
 # have
-def _same(left: object, right: object) -> bool:
+def _same(left: object, right: object) -> bool:  # simplint: ignore[SMP602]  # Annotated metadata may be any object
     if left is right:
         return True
     if (origin := get_origin(left)) is not None:
@@ -182,6 +152,37 @@ def _same(left: object, right: object) -> bool:
         return type(left) is type(right) and (left == right) is True
     except Exception:  # ruff:ignore[blind-except]  # metadata compares through user code, which may raise anything
         return False
+
+
+def _item_type(hint: Annotation, *, optional: bool) -> Annotation:
+    annotation = hint
+    metadata: list[object] = []  # simplint: ignore[SMP602]  # Annotated metadata may be any object
+    read_only = None
+    while True:
+        item_origin = get_origin(annotation)
+        qualifier = getattr(item_origin, "_name", None)
+        if item_origin is not Annotated and qualifier not in {"Required", "NotRequired", "ReadOnly"}:
+            break
+        if qualifier in {"Required", "NotRequired"}:
+            optional = qualifier == "NotRequired"
+        elif qualifier == "ReadOnly":
+            # the one written, as typing has none before Python 3.13
+            read_only = item_origin
+        annotation, *more = get_args(annotation)
+        metadata.extend(more)
+    if read_only is not None:
+        annotation = read_only[annotation]
+    if optional:
+        annotation = NotRequired[annotation]
+    # an Annotated outermost keeps its Doc() a description
+    return (
+        Annotated[
+            annotation,  # ty: ignore[invalid-type-form]  # https://github.com/astral-sh/ty/issues/727
+            *metadata,
+        ]
+        if metadata
+        else annotation
+    )
 
 
 def extra_items_type(typed_dict: Documented, seen: set[int]) -> Annotation | OPEN:

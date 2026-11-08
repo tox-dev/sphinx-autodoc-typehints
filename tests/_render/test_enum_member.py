@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from re import findall
+from re import VERBOSE, findall
 from textwrap import dedent
 from typing import TYPE_CHECKING
 
@@ -53,7 +53,14 @@ def test_enum_member_in_literal_links(build_text: BuildText, warning: StringIO, 
                {options}
             """)
     )
-    links = findall(r'href="([^"]*)"[^>]*><code class="xref py py-attr[^>]*><span class="pre">Color.RED</span>', html)
+    links = findall(
+        r"""
+        href="([^"]*)"                                # the link to the member
+        [^>]*><code\ class="xref\ py\ py-attr[^>]*><span\ class="pre">Color\.RED</span>
+        """,
+        html,
+        VERBOSE,
+    )
     assert (links, "literal_enum.Color" in warning.getvalue()) == ([href], False)
 
 

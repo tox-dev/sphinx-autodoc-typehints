@@ -15,17 +15,16 @@ from sphinx.util.console import strip_colors
 from sphinx_autodoc_typehints.version import __version__
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
     from types import ModuleType
 
-    from conftest import BuildText, MakeModule
+    from conftest import BuildText, MakeApp, MakeModule
     from sphinx.testing.util import SphinxTestApp
 
 
 @mark.sphinx("text", testroot="dummy", confoverrides={"extensions": ["sphinx_autodoc_typehints", "sphinx.ext.autodoc"]})
 def test_setup_loads_autodoc_listed_after_it(build_text: BuildText) -> None:
     assert build_text(".. autofunction:: dummy_module.undocumented_function") == dedent("""\
-        dummy_module.undocumented_function(x)
+        dummy_module.undocumented_function(value)
 
            Hi
 
@@ -71,7 +70,7 @@ def test_setup_reports_the_package_version(app: SphinxTestApp) -> None:
 )
 @mark.parametrize("name", [param(name, id=name) for name in EXPECTED])
 def test_integration(
-    make_app: Callable[..., SphinxTestApp],
+    make_app: MakeApp,
     rootdir: Path,
     tmp_path: Path,
     cases_module: ModuleType,
@@ -79,9 +78,10 @@ def test_integration(
     log_conf: dict[str, str],
 ) -> None:
     srcdir = copytree(rootdir / "test-foundation-extension", tmp_path / "src")
-    if isclass(documented := getattr(cases_module, name)):
+    if isclass(documented := getattr(cases_module, name)):  # simplint: ignore[SMP803]  # the kind picks the directive
+        directive = {True: "autoexception", False: "autoclass"}[issubclass(documented, BaseException)]
         rst = dedent(f"""\
-            .. {"autoexception" if issubclass(documented, BaseException) else "autoclass"}:: mod.{name}
+            .. {directive}:: mod.{name}
                :members:
         """)
     else:
@@ -109,14 +109,14 @@ def cases_module_fixture(rootdir: Path, monkeypatch: MonkeyPatch) -> ModuleType:
 @mark.sphinx("text", testroot="dummy", confoverrides={"default_role": "literal"})
 def test_type_role_keeps_the_default_role_of_the_document(build_text: BuildText) -> None:
     assert build_text(".. autofunction:: dummy_module_simple_default_role.function") == dedent("""\
-        dummy_module_simple_default_role.function(x, y)
+        dummy_module_simple_default_role.function(value, other)
 
            Function docstring.
 
            Parameters:
-              * **x** ("bool") -- "foo"
+              * **value** ("bool") -- "foo"
 
-              * **y** ("int") -- "bar"
+              * **other** ("int") -- "bar"
 
            Return type:
               "str"
@@ -124,7 +124,7 @@ def test_type_role_keeps_the_default_role_of_the_document(build_text: BuildText)
 
 
 def test_build_reads_the_guard_of_a_module_edited_since_the_last_build(
-    make_app: Callable[..., SphinxTestApp], tmp_path: Path, monkeypatch: MonkeyPatch
+    make_app: MakeApp, tmp_path: Path, monkeypatch: MonkeyPatch
 ) -> None:
     (project := tmp_path / "project").mkdir()
     (project / "conf.py").write_text('extensions = ["sphinx.ext.autodoc", "sphinx_autodoc_typehints"]')
@@ -229,7 +229,7 @@ def test_build_reads_the_guard_of_a_module_edited_since_the_last_build(
     ],
 )
 def test_docstring_extension_listed_after_still_gets_types(
-    make_app: Callable[..., SphinxTestApp],
+    make_app: MakeApp,
     make_module: MakeModule,
     tmp_path: Path,
     extension: str,

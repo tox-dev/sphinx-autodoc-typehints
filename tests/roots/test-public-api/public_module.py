@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     import broken_dependency  # a guarded import of a module that fails to import is the case under test
 
 
@@ -11,7 +13,7 @@ def unparseable_comment(value):
     """Unparsable."""
 
 
-one_of_two = lambda value: value; second = 1  # fmt: skip
+one_of_two: Final[Callable[[int], int]] = lambda value: value; second: Final[int] = 1  # fmt: skip
 
 
 def forward_reference(value: Undefined) -> None:

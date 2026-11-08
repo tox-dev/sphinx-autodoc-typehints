@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from render_scopes.other import Config
+from .other import Config
 
 __all__ = [
     "Config",

@@ -5,8 +5,7 @@ from typing import TYPE_CHECKING
 
 from pytest import mark, raises
 
-from sphinx_autodoc_typehints._render import annotation_state, render_context
-from sphinx_autodoc_typehints._render.context import RenderContext
+from sphinx_autodoc_typehints._render.context import RenderContext, annotation_state, render_context
 
 if TYPE_CHECKING:
     from conftest import BuildText

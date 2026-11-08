@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Final, NamedTuple
 from pytest import MarkDecorator, mark, param
 from sphinx.util.console import strip_colors
 
-from sphinx_autodoc_typehints._documented import ResolvedHints, as_written, documenting_class, resolved_type_hints
+from sphinx_autodoc_typehints._documented.hints import ResolvedHints, as_written, documenting_class, resolved_type_hints
 from sphinx_autodoc_typehints._refs import WrittenTypeAlias
 
 if TYPE_CHECKING:
@@ -115,7 +115,11 @@ class _StatesStrings:
     ],
 )
 def test_resolved_type_hints(
-    app: SphinxTestApp, name: str, original: Callable[..., object], obj: QualifiedCallable, expected: ResolvedHints
+    app: SphinxTestApp,
+    name: str,
+    original: Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+    obj: QualifiedCallable,
+    expected: ResolvedHints,
 ) -> None:
     assert resolved_type_hints(app, name, original, obj, obj) == expected
 
@@ -165,13 +169,13 @@ def test_as_written(
                    :special-members: __new__
             """),
             dedent("""\
-                class dummy_module.MyNamedTuple(x, y='hello')
+                class dummy_module.MyNamedTuple(value, other='hello')
 
                    A named tuple.
 
-                   static __new__(_cls, x, y='hello')
+                   static __new__(_cls, value, other='hello')
 
-                      Create new instance of MyNamedTuple(x, y)
+                      Create new instance of MyNamedTuple(value, other)
             """),
             [],
             id="constructor",

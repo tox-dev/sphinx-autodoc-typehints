@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from pytest import mark, param
 
-from sphinx_autodoc_typehints._docstring.formats import FieldListFormat, detect_format
+from sphinx_autodoc_typehints._docstring.formats.detect import detect_format
+from sphinx_autodoc_typehints._docstring.formats.field_list.edit import FieldListFormat
 
 
 @mark.parametrize(

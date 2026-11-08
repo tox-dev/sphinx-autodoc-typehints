@@ -19,8 +19,9 @@ if TYPE_CHECKING:
     from conftest import BuildText, MakeModule
     from sphinx.config import Config
 
-    from _signature.conftest import SignatureOf
     from sphinx_autodoc_typehints._types import Annotation
+
+    from .conftest import SignatureOf
 
 pytestmark: Final[MarkDecorator] = mark.sphinx("text", testroot="dummy")
 
@@ -72,19 +73,19 @@ _LOCAL_CLASS: Final[type] = _make_local_class()
     [
         param(
             f"{__name__}._ClassWithPrivate._ClassWithPrivate__static_secret",
-            vars(_ClassWithPrivate)["_ClassWithPrivate__static_secret"].__func__,
+            _ClassWithPrivate.__dict__["_ClassWithPrivate__static_secret"].__func__,
             "(value)",
             id="private-staticmethod-of-private-class",
         ),
         param(
             f"{__name__}._ClassWithPrivate.__secret",
-            vars(_ClassWithPrivate)["_ClassWithPrivate__secret"],
+            _ClassWithPrivate.__dict__["_ClassWithPrivate__secret"],
             "(count)",
             id="mangled",
         ),
         param(
             f"{__name__}._ClassWithPrivate.__secret",
-            vars(_ClassWithPrivate)["_ClassWithPrivate__secret"].__get__(_ClassWithPrivate()),
+            _ClassWithPrivate.__dict__["_ClassWithPrivate__secret"].__get__(_ClassWithPrivate()),
             "(count)",
             id="bound-to-an-instance",
         ),
@@ -100,11 +101,16 @@ _LOCAL_CLASS: Final[type] = _make_local_class()
             f"{__name__}._BindsHelper.cached_class", _BindsHelper.cached_class, "(value)", id="classmethod-of-wrapper"
         ),
         param("not_imported.Missing.nothing", _nothing, "()", id="no-parameters-whatever-the-class"),
-        param(f"{__name__}._LOCAL_CLASS.method", vars(_LOCAL_CLASS)["method"], "(value)", id="method-of-local-class"),
+        param(
+            f"{__name__}._LOCAL_CLASS.method", _LOCAL_CLASS.__dict__["method"], "(value)", id="method-of-local-class"
+        ),
     ],
 )
 def test_process_signature_first_parameter_by_member_kind(
-    signature_of: SignatureOf, name: str, method: Callable[..., object], expected: str
+    signature_of: SignatureOf,
+    name: str,
+    method: Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+    expected: str,
 ) -> None:
     assert signature_of("method", name, method) == (expected, None)
 
@@ -115,7 +121,7 @@ def test_process_signature_first_parameter_by_member_kind(
     confoverrides={"typehints_use_signature": True, "typehints_use_signature_return": True},
 )
 def test_process_signature_types_method_of_local_class(signature_of: SignatureOf) -> None:
-    assert signature_of("method", f"{__name__}._LOCAL_CLASS.method", vars(_LOCAL_CLASS)["method"]) == (
+    assert signature_of("method", f"{__name__}._LOCAL_CLASS.method", _LOCAL_CLASS.__dict__["method"]) == (
         "(value: int) -> str",
         None,
     )
@@ -142,7 +148,11 @@ update_wrapper(_looping, _looping)
     ],
 )
 def test_process_signature_leaves_the_signature(
-    signature_of: SignatureOf, what: str, name: str, obj: Callable[..., object], given: str | None
+    signature_of: SignatureOf,
+    what: str,
+    name: str,
+    obj: Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+    given: str | None,
 ) -> None:
     assert signature_of(what, name, obj, given) is None
 
@@ -159,7 +169,7 @@ class _Point(NamedTuple):
     right: str
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)  # simplint: ignore[SMP703]  # the expected signature lists positional arguments
 class _Made:
     value: list[int] = field(default_factory=list)
 
@@ -266,7 +276,12 @@ _injected.__dict__["__signature__"] = Signature(list(signature(_handle, eval_str
     ],
 )
 def test_process_signature_strips_the_types(
-    signature_of: SignatureOf, what: str, name: str, obj: Callable[..., object], given: str, expected: str
+    signature_of: SignatureOf,
+    what: str,
+    name: str,
+    obj: Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+    given: str,
+    expected: str,
 ) -> None:
     assert signature_of(what, name, obj, given) == (expected, None)
 
@@ -293,7 +308,10 @@ def _counted(count: int) -> str: ...
 )
 @mark.sphinx(confoverrides=_KEPT)
 def test_process_signature_omits_only_a_constructor_return(
-    signature_of: SignatureOf, what: str, obj: Callable[..., object], expected: str
+    signature_of: SignatureOf,
+    what: str,
+    obj: Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+    expected: str,
 ) -> None:
     assert signature_of(what, "mod.documented", obj) == (expected, None)
 
@@ -325,7 +343,9 @@ def _kept_param_spec[**Params](*args: Params.args, **kwargs: Params.kwargs) -> N
 def _kept_literal(value: Literal["a", 1]) -> None: ...
 
 
-def _kept_callable(value: Callable[..., int]) -> None: ...
+def _kept_callable(
+    value: Callable[..., int],  # simplint: ignore[SMP603]  # any callable is passed
+) -> None: ...
 
 
 type _Pair = tuple[int, int]
@@ -504,10 +524,9 @@ def test_process_signature_strips_annotations_that_fail_to_evaluate(  # pragma: 
 @fixture(name="lazy_module")
 def lazy_module_fixture(make_module: MakeModule) -> dict[str, FunctionType]:  # pragma: >=3.14 cover
     # no `from __future__ import annotations`, so the annotations stay lazy instead of turning into strings
-    return vars(
-        make_module(
-            "lazy_module",
-            dedent("""\
+    return make_module(
+        "lazy_module",
+        dedent("""\
             class Rejecting:
                 def __class_getitem__(cls, item):
                     raise ValueError(item)
@@ -518,8 +537,7 @@ def lazy_module_fixture(make_module: MakeModule) -> dict[str, FunctionType]:  # 
 
             def value_error(value: Rejecting[int]) -> None: ...
         """),
-        )
-    )
+    ).__dict__
 
 
 def test_singledispatch_implementation_keeps_its_types(build_text: BuildText) -> None:
@@ -548,17 +566,17 @@ def test_kept_signature_warns_about_an_unresolvable_annotation_once(build_text: 
     "header",
     [
         param(
-            "dummy_module_simple.function(x: bool, y: int = 1)",
+            "dummy_module_simple.function(value: bool, other: int = 1)",
             marks=mark.sphinx(confoverrides={"typehints_use_signature": True}),
             id="parameters",
         ),
         param(
-            "dummy_module_simple.function(x, y=1) -> str",
+            "dummy_module_simple.function(value, other=1) -> str",
             marks=mark.sphinx(confoverrides={"typehints_use_signature_return": True}),
             id="return",
         ),
         param(
-            "dummy_module_simple.function(x: bool, y: int = 1) -> str",
+            "dummy_module_simple.function(value: bool, other: int = 1) -> str",
             marks=mark.sphinx(confoverrides=_KEPT),
             id="both",
         ),
@@ -571,9 +589,9 @@ def test_process_signature_keeps_the_configured_types_in_a_build(build_text: Bui
            Function docstring.
 
            Parameters:
-              * **x** ("bool") -- foo
+              * **value** ("bool") -- foo
 
-              * **y** ("int") -- bar
+              * **other** ("int") -- bar
 
            Return type:
               "str"

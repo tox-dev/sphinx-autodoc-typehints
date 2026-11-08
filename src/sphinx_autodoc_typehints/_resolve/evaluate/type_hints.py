@@ -16,7 +16,7 @@ from weakref import WeakKeyDictionary
 
 from sphinx_autodoc_typehints._objects import defining_module, is_attrs_class, object_at
 
-from ..guards import annotation_globals, guarded_names
+from ..guards.overlay import annotation_globals, guarded_names
 from ..source import (
     annotations_as_written,
     holds_values,
@@ -83,23 +83,7 @@ def type_hints(
         }
     ):
         return hints
-    again: dict[str, Annotation] = {}
-    for name, source, scope_globals, scope_locals in _written_sources(obj, dropped, globalns, localns):
-        try:
-            # a quoted annotation evaluates to the string inside it
-            if isinstance(value := evaluate_annotation(source, scope_globals, scope_locals), str):
-                value = evaluate_annotation(value, scope_globals, scope_locals)
-        except Exception:  # ruff:ignore[blind-except]  # an annotation runs user code, which may raise anything
-            value = hints[name]
-        # an alias named in the source holds the forward references get_type_hints resolved, so it only wins when it
-        # kept the arguments the source gives it; such a class subscripts to itself, so only evaluate_annotation builds
-        # a generic alias of it
-        again[name] = (
-            value
-            if any(isinstance(part, GenericAlias) and _drops_arguments(part.__origin__) for part in _parts(value))
-            else hints[name]
-        )
-    return hints | again
+    return hints | _reevaluated_dropped(obj, dropped, hints, globalns, localns)
 
 
 def _evaluate_written(  # pragma: >=3.14 cover
@@ -131,11 +115,12 @@ def _evaluate_written(  # pragma: >=3.14 cover
     return hints
 
 
-def _parts(hint: Annotation) -> Iterator[Annotation]:
-    yield hint
-    # the parameters of a Callable come as a list
-    for argument in hint if isinstance(hint, list) else get_args(hint):
-        yield from _parts(argument)
+# an annotation evaluates in the globals of the code defining it, and in those again unless the caller passes locals
+def _scope(
+    obj: Documented, globalns: dict[str, Documented] | None, localns: Mapping[str, Documented] | None
+) -> tuple[dict[str, Documented], Mapping[str, Documented]]:
+    scope_globals = annotation_globals(obj) if globalns is None else globalns
+    return scope_globals, scope_globals if localns is None else localns
 
 
 def _drops_arguments(cls: type | TypeAliasType) -> bool:
@@ -154,7 +139,40 @@ def _defines_class_getitem(cls: type | TypeAliasType) -> bool:
     return isfunction(getattr(method, "__func__", method))
 
 
+def _parts(hint: Annotation) -> Iterator[Annotation]:
+    yield hint
+    # the parameters of a Callable come as a list
+    for argument in hint if isinstance(hint, list) else get_args(hint):
+        yield from _parts(argument)
+
+
 # a class yields its bases first, so the class that declares an attribute last comes last, as get_type_hints orders them
+def _reevaluated_dropped(
+    obj: Documented,
+    dropped: set[str],
+    hints: dict[str, Annotation],
+    globalns: dict[str, Documented] | None,
+    localns: Mapping[str, Documented] | None,
+) -> dict[str, Annotation]:
+    again: dict[str, Annotation] = {}
+    for name, source, scope_globals, scope_locals in _written_sources(obj, dropped, globalns, localns):
+        try:
+            # a quoted annotation evaluates to the string inside it
+            if isinstance(value := evaluate_annotation(source, scope_globals, scope_locals), str):
+                value = evaluate_annotation(value, scope_globals, scope_locals)
+        except Exception:  # ruff:ignore[blind-except]  # an annotation runs user code, which may raise anything
+            value = hints[name]
+        # an alias named in the source holds the forward references get_type_hints resolved, so it only wins when it
+        # kept the arguments the source gives it; such a class subscripts to itself, so only evaluate_annotation builds
+        # a generic alias of it
+        again[name] = (
+            value
+            if any(isinstance(part, GenericAlias) and _drops_arguments(part.__origin__) for part in _parts(value))
+            else hints[name]
+        )
+    return again
+
+
 def _written_sources(
     obj: Documented, names: set[str], globalns: dict[str, Documented] | None, localns: Mapping[str, Documented] | None
 ) -> Iterator[tuple[str, str, dict[str, Documented], Mapping[str, Documented]]]:
@@ -186,14 +204,6 @@ def _written_sources(
         scope_locals = {**base_locals, **params} if params else base_locals
         written = source_annotations(base.__module__, base.__qualname__)
         yield from ((name, written[name], base_globals, scope_locals) for name in names & written.keys())
-
-
-# an annotation evaluates in the globals of the code defining it, and in those again unless the caller passes locals
-def _scope(
-    obj: Documented, globalns: dict[str, Documented] | None, localns: Mapping[str, Documented] | None
-) -> tuple[dict[str, Documented], Mapping[str, Documented]]:
-    scope_globals = annotation_globals(obj) if globalns is None else globalns
-    return scope_globals, scope_globals if localns is None else localns
 
 
 __all__ = [

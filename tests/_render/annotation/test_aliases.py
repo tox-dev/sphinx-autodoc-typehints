@@ -8,8 +8,9 @@ from typing import TYPE_CHECKING, TypeAliasType, TypeVar
 import typing_extensions  # its TypeAliasType backport is tested next to typing's
 from pytest import MonkeyPatch, fixture, mark, param
 
-from sphinx_autodoc_typehints._render import annotation_state, format_annotation
 from sphinx_autodoc_typehints._render.annotation.aliases import alias_name_reference
+from sphinx_autodoc_typehints._render.annotation.walker import format_annotation
+from sphinx_autodoc_typehints._render.context import annotation_state
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -33,13 +34,15 @@ BackportPair = typing_extensions.TypeAliasType(  # ruff:ignore[non-pep695-type-a
 )
 
 
+type Rejected = Rejecting[int]
+
+
 class Rejecting[Element]:
     def __class_getitem__(cls, item: type) -> type[Rejecting]:
         msg = f"cannot take {item}"
         raise ValueError(msg)
 
 
-type Rejected = Rejecting[int]
 # only a type checker runs the import, so evaluating the value raises NameError
 type Unevaluable = Decimal
 type RecType = int | list[RecType]

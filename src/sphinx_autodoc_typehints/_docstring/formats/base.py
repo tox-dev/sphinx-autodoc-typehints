@@ -5,18 +5,18 @@ from __future__ import annotations
 from dataclasses import dataclass
 from inspect import Parameter
 from itertools import pairwise
-from re import match
+from re import VERBOSE, match
 from typing import TYPE_CHECKING
 
 from sphinx.util.inspect import object_description
 
-from sphinx_autodoc_typehints._render import value_markup
+from ..._render.value import value_markup
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, kw_only=True)
 class InsertIndexInfo:
     """Where the return type goes, and which field or block of the docstring sits there."""
 
@@ -26,7 +26,12 @@ class InsertIndexInfo:
     deferred: bool = False
 
 
-def format_default(app: Sphinx, default: object, *, annotated: bool) -> str | None:
+def format_default(
+    app: Sphinx,
+    default: object,  # simplint: ignore[SMP602]  # a parameter default is any value
+    *,
+    annotated: bool,
+) -> str | None:
     """Describe a default the way `typehints_defaults` asks, after a type when `annotated` or on its own."""
     if default is Parameter.empty:
         return None
@@ -62,7 +67,15 @@ def last_paragraph_end(lines: list[str], at: int) -> int:
         if not (
             lines[previous[-1]].endswith("::")
             or line_indent(first) > indent
-            or match(r"\s*(?:[-*+]|\d+[.)]|#\.|\.\.)\s", first)
+            or match(
+                r"""
+                \s*
+                (?:[-*+]|\d+[.)]|\#\.|\.\.)  # a bullet, an enumerator, an auto-numbered item, or an explicit markup
+                \s
+                """,
+                first,
+                VERBOSE,
+            )
         ):
             end = block[-1]
     return end

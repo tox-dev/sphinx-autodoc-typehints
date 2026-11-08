@@ -21,18 +21,20 @@ if typing.TYPE_CHECKING:
 
 
 if TYPE_CHECKING:  # bad import
-    from functools import missing  # ruff:ignore[unused-import]
+    from functools import missing  # ruff:ignore[unused-import]  # the name does not exist, so the guard binds nothing
 
 
-def a[AnyStr: (bytes, str)](f: Decimal, s: AnyStr) -> Sequence[AnyStr | Decimal]:
+def a[AnyStr: (bytes, str)](  # simplint: ignore[SMP101]  # renaming it empties the guard runner's namespace
+    first: Decimal, second: AnyStr
+) -> Sequence[AnyStr | Decimal]:
     """
     Do.
 
-    :param f: first
-    :param s: second
+    :param first: first
+    :param second: second
     :return: result
     """
-    return [f, s]
+    return [first, second]
 
 
 class SomeClass:

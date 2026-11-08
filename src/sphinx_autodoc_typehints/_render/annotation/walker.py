@@ -107,11 +107,6 @@ def format_annotation(annotation: RenderNode, config: Config, *, short_literals:
             rendered = None
 
 
-@dataclass(frozen=True, slots=True)
-class _Rendered:
-    text: str
-
-
 def _format_node(annotation: RenderNode, config: Config, *, short_literals: bool) -> _Frame:
     formatter: TypehintsFormatter | ContextualTypehintsFormatter | None = config.typehints_formatter
     subject = annotation.value if isinstance(annotation, WrittenTypeAlias) else annotation
@@ -123,20 +118,20 @@ def _format_node(annotation: RenderNode, config: Config, *, short_literals: bool
             else cast("TypehintsFormatter", formatter)(subject, config)
         )
     if (text := formatted) is not None or (text := _atom(annotation, config)) is not None:
-        yield _Rendered(text)
+        yield _Rendered(text=text)
     elif (unstarred := unstar(annotation)) is not None:
         # render it the way `*Ts` renders
         unpacked = typing.Unpack[
             unstarred  # ty: ignore[invalid-type-form]  # https://github.com/astral-sh/ty/issues/727
         ]
-        yield _Rendered((yield unpacked))
+        yield _Rendered(text=(yield unpacked))
     elif isinstance(annotation, (tuple, list)):
         parts: list[str] = []
         yield from _format_into(parts, annotation)
         if isinstance(annotation, list):
-            yield _Rendered(f"\\[{', '.join(parts)}]")
+            yield _Rendered(text=f"\\[{', '.join(parts)}]")
         else:
-            yield _Rendered(f"({parts[0]}, )" if len(parts) == 1 else f"({', '.join(parts)})")
+            yield _Rendered(text=f"({parts[0]}, )" if len(parts) == 1 else f"({', '.join(parts)})")
     elif isinstance(annotation, TypeAliasForwardRef):
         yield from _forward_alias(annotation, config)
     elif is_type_alias(annotation):
@@ -175,7 +170,7 @@ def _format_mock_argument(part: str) -> str:
     if fullmatch(r"[\w.]+", part):
         return f":py:class:`{'~' if '.' in part else ''}{part}`"
     # an argument is itself subscripted, as `dict[str, typing.Any]`, or a list of them, as `Callable` takes
-    if match := fullmatch(r"([\w.]*)\[(.*)\]", part):
+    if match := fullmatch(r"(?P<name>[\w.]*)\[(?P<arguments>.*)\]", part):
         name, arguments = match.groups()
         subscript = f"\\[{_format_mock_arguments(arguments)}]"
         return f"{_format_mock_argument(name)}\\ {subscript}" if name else subscript
@@ -192,13 +187,6 @@ def unstar(annotation: RenderNode) -> GenericAlias | None:
     return None
 
 
-# a generator cannot hand back a list without ending, so the caller passes the one to fill
-def _format_into(parts: list[str], nodes: Iterable[RenderNode]) -> _Frame:
-    for annotation in nodes:
-        rendered = yield annotation
-        parts.append(rendered)
-
-
 def _forward_alias(annotation: TypeAliasForwardRef, config: Config) -> _Frame:
     prefix = name_prefix(config)
     context = render_context(config)
@@ -208,7 +196,7 @@ def _forward_alias(annotation: TypeAliasForwardRef, config: Config) -> _Frame:
         for candidate in reversed(alias_lookup_names(module_prefix, annotation.name)):
             linked = f":py:type:`{prefix}{candidate}`"
             rendered = defer_alias_choice(config, linked, rendered, objtype="type") or rendered
-        yield _Rendered(rendered)
+        yield _Rendered(text=rendered)
     elif (env := context.env) is not None and (
         documented := next(
             (
@@ -219,32 +207,32 @@ def _forward_alias(annotation: TypeAliasForwardRef, config: Config) -> _Frame:
             None,
         )
     ) is not None:
-        yield _Rendered(f":py:type:`{prefix}{documented}`")
+        yield _Rendered(text=f":py:type:`{prefix}{documented}`")
     elif isinstance(annotation, WrittenTypeAlias):
         # signature text is final once written, so only an alias documented by now can show
-        yield _Rendered((yield annotation.value))
+        yield _Rendered(text=(yield annotation.value))
     elif isinstance(annotation, MyTypeAliasForwardRef) and annotation.crossref:
-        yield _Rendered(f":py:type:`{prefix}{annotation.name}`")
+        yield _Rendered(text=f":py:type:`{prefix}{annotation.name}`")
     elif isinstance(annotation, MyTypeAliasForwardRef) and annotation.configured:
         # the target may have its documentation as data or in a document Sphinx reads later, and the value may be
         # display text alone, so link it only where the reference resolves once Sphinx has read every document
         linked = f":py:obj:`{prefix}{annotation.name}`"
-        yield _Rendered(defer_alias_choice(config, linked, annotation.name) or annotation.name)
+        yield _Rendered(text=defer_alias_choice(config, linked, annotation.name) or annotation.name)
     else:
-        yield _Rendered(annotation.name)
+        yield _Rendered(text=annotation.name)
 
 
 def _type_alias(annotation: TypeAliasType, config: Config) -> _Frame:
     if (crossref := alias_crossref(annotation, config)) is not None:
-        yield _Rendered(crossref)
+        yield _Rendered(text=crossref)
     else:
         # named before the value evaluates, which can run a TYPE_CHECKING block that imports the module re-exporting it
         reference = alias_name_reference(annotation, config)
         if can_expand_alias(annotation, config):
             expanded = yield annotation.__value__
-            yield _Rendered(defer_alias_choice(config, reference, expanded) or expanded)
+            yield _Rendered(text=defer_alias_choice(config, reference, expanded) or expanded)
         else:
-            yield _Rendered(reference)
+            yield _Rendered(text=reference)
 
 
 # `NDArray[np.void]` of `type NDArray[ScalarT] = ...` is a plain types.GenericAlias, which would otherwise render
@@ -278,7 +266,9 @@ def _subscripted_alias(
     parts: list[str] = []
     yield from _format_into(parts, args)
     subscripted = f"{rendered_alias}\\ \\[{', '.join(parts)}]"
-    yield _Rendered(subscripted if expanded is None else defer_alias_choice(config, subscripted, expanded) or expanded)
+    yield _Rendered(
+        text=subscripted if expanded is None else defer_alias_choice(config, subscripted, expanded) or expanded
+    )
 
 
 def _class_reference(annotation: Hint | NewType | None, config: Config, *, short_literals: bool) -> _Frame:
@@ -287,18 +277,9 @@ def _class_reference(annotation: Hint | NewType | None, config: Config, *, short
         class_name = get_annotation_class_name(annotation, module)
         args = get_annotation_args(annotation, module, class_name)
     except ValueError:
-        yield _Rendered(annotation.__qualname__ if isclass(annotation) else str(annotation).strip("'"))
+        yield _Rendered(text=annotation.__qualname__ if isclass(annotation) else str(annotation).strip("'"))
     else:
-        # where the docs place a class Python defines elsewhere, such as pathlib.Path living in pathlib._local from
-        # 3.13; the types module names its own classes, which Sphinx would turn from FunctionType into LambdaType
-        if module != "types" and (documented := is_invalid_builtin_class(annotation)):
-            module, _, class_name = documented.rpartition(".")
-        module = fixup_module_name(config, module)
-        # typing_extensions backports names to older Pythons, and the Python docs list a backported name under typing
-        if module == "typing_extensions" and hasattr(typing, class_name):
-            module = "typing"
-        if config.typehints_modernize_annotations and module == "typing" and isclass(origin := get_origin(annotation)):
-            module, class_name = origin.__module__, origin.__qualname__
+        module, class_name = _documented_location(annotation, config, module, class_name)
         internal_path = f"{module}.{class_name}"
         local_path: str | None = None
         if mapped := mapped_name(config, internal_path):
@@ -313,19 +294,12 @@ def _class_reference(annotation: Hint | NewType | None, config: Config, *, short
             or (config.typehints_modernize_annotations and full_name in {"typing.Union", "typing.Optional"})
             or getattr(annotation, "__typehints_bars__", False)
         )
-        # the inventory may document another Python version, and intersphinx resolves only the role its entry has
-        documented = inventory(render_context(config).env)
-        # a typing_extensions name is the same kind of object as its typing counterpart
-        pydata_key = ("typing" if module == "typing_extensions" else module, class_name)
-        role = next((kind for kind in ("class", "data") if full_name in documented.get(f"py:{kind}", {})), None) or (
-            "data" if pydata_key in PYDATA_ANNOTATIONS else "class"
-        )
         yield from _named_class(
             _Reference(
                 annotation=annotation,
                 config=config,
                 full_name="" if is_bars_union else full_name,
-                role=role,
+                role=_reference_role(config, module, class_name, full_name),
                 prefix="" if fully_qualified or full_name == class_name else "~",
                 fully_qualified=fully_qualified,
                 local_path=local_path,
@@ -336,20 +310,20 @@ def _class_reference(annotation: Hint | NewType | None, config: Config, *, short
         )
 
 
-@dataclass(slots=True)
-class _Reference:
-    annotation: Hint | NewType | None
-    config: Config
-    full_name: str
-    role: str
-    prefix: str
-    fully_qualified: bool
-    local_path: str | None
-    args: tuple[RenderNode, ...]
-    is_bars_union: bool
-    short_literals: bool
-    args_format: str = "\\[{}]"
-    formatted_args: str | None = ""
+def _documented_location(
+    annotation: Hint | NewType | None, config: Config, module: str, class_name: str
+) -> tuple[str, str]:
+    # where the docs place a class Python defines elsewhere, such as pathlib.Path living in pathlib._local from
+    # 3.13; the types module names its own classes, which Sphinx would turn from FunctionType into LambdaType
+    if module != "types" and (documented := is_invalid_builtin_class(annotation)):
+        module, _, class_name = documented.rpartition(".")
+    module = fixup_module_name(config, module)
+    # typing_extensions backports names to older Pythons, and the Python docs list a backported name under typing
+    if module == "typing_extensions" and hasattr(typing, class_name):
+        module = "typing"
+    if config.typehints_modernize_annotations and module == "typing" and isclass(origin := get_origin(annotation)):
+        module, class_name = origin.__module__, origin.__qualname__
+    return module, class_name
 
 
 def _named_class(reference: _Reference) -> _Frame:
@@ -367,7 +341,45 @@ def _named_class(reference: _Reference) -> _Frame:
         # a type the project documents itself links there, the intersphinx name is only the fallback
         local = f":py:{reference.role}:`{name_prefix(reference.config)}{reference.local_path}`"
         text = defer_alias_choice(reference.config, local, text) or text
-    yield _Rendered(f"{text}{'\\ ' if reference.formatted_args else ''}{reference.formatted_args}")
+    yield _Rendered(text=f"{text}{'\\ ' if reference.formatted_args else ''}{reference.formatted_args}")
+
+
+@dataclass(slots=True, kw_only=True)  # simplint: ignore[SMP701]  # the renderer reassigns fields while it walks
+class _Reference:
+    annotation: Hint | NewType | None
+    config: Config
+    full_name: str
+    role: str
+    prefix: str
+    fully_qualified: bool
+    local_path: str | None
+    args: tuple[RenderNode, ...]
+    is_bars_union: bool
+    short_literals: bool
+    args_format: str = "\\[{}]"
+    formatted_args: str | None = ""
+
+
+def _reference_role(config: Config, module: str, class_name: str, full_name: str) -> str:
+    # the inventory may document another Python version, and intersphinx resolves only the role its entry has
+    documented = inventory(render_context(config).env)
+    # a typing_extensions name is the same kind of object as its typing counterpart
+    pydata_key = ("typing" if module == "typing_extensions" else module, class_name)
+    return next((kind for kind in ("class", "data") if full_name in documented.get(f"py:{kind}", {})), None) or (
+        "data" if pydata_key in PYDATA_ANNOTATIONS else "class"
+    )
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class _Rendered:
+    text: str
+
+
+# a generator cannot hand back a list without ending, so the caller passes the one to fill
+def _format_into(parts: list[str], nodes: Iterable[RenderNode]) -> _Frame:
+    for annotation in nodes:
+        rendered = yield annotation
+        parts.append(rendered)
 
 
 def _new_type(reference: _Reference) -> _Frame:
@@ -380,9 +392,9 @@ def _new_type(reference: _Reference) -> _Frame:
     text = f":py:class:`{'' if reference.fully_qualified or not module else '~'}{qualified}`"
     # a signature names the type alone, as Python writes it
     if render_context(config).signature:
-        yield _Rendered(text)
+        yield _Rendered(text=text)
     else:
-        yield _Rendered(f"{text} ({(yield annotation.__supertype__)})")
+        yield _Rendered(text=f"{text} ({(yield annotation.__supertype__)})")
 
 
 def _annotated(reference: _Reference) -> _Frame:
@@ -399,7 +411,7 @@ def _annotated(reference: _Reference) -> _Frame:
             )
         ]
         yield _Rendered(
-            f":py:data:`~typing.Annotated`\\ \\[{rendered}, {', '.join(selected)}]" if selected else rendered
+            text=f":py:data:`~typing.Annotated`\\ \\[{rendered}, {', '.join(selected)}]" if selected else rendered
         )
 
 
@@ -409,9 +421,9 @@ def _type_variable(reference: _Reference) -> _Frame:
         return
     if annotation in render_context(reference.config).declared_type_params:
         # the signature lists it with its bound, constraints and default already
-        yield _Rendered(f"``{annotation.__name__}``")
+        yield _Rendered(text=f"``{annotation.__name__}``")
     else:
-        yield _Rendered(_variable_name(annotation, reference.config))
+        yield _Rendered(text=_variable_name(annotation, reference.config))
 
 
 def _variable_name(param: TypeParam, config: Config, suffix: str = "") -> str:
@@ -422,11 +434,11 @@ def _variable_name(param: TypeParam, config: Config, suffix: str = "") -> str:
     # a module-level one reads as a PEP 695 parameter does, its own entry showing the bound and constraints, and
     # :py:obj: matches that entry whether autodoc documents it as a class or as data
     target = f"{fixup_module_name(config, param.__module__)}.{param.__name__}"
-    if suffix:
-        shown = target if config.typehints_fully_qualified else param.__name__
-        linked = f":py:obj:`{shown}{suffix} <{target}>`"
-    else:
-        linked = f":py:obj:`{name_prefix(config)}{target}`"
+    linked = (
+        f":py:obj:`{target if config.typehints_fully_qualified else param.__name__}{suffix} <{target}>`"
+        if suffix
+        else f":py:obj:`{name_prefix(config)}{target}`"
+    )
     return defer_alias_choice(config, linked, plain) or plain
 
 
@@ -448,15 +460,15 @@ def _param_spec_component(reference: _Reference) -> _Frame:
         return
     if annotation.__origin__ in (context := render_context(reference.config)).declared_type_params or context.signature:
         # its repr is the P.args form a signature writes
-        yield _Rendered(f"``{annotation!r}``")
+        yield _Rendered(text=f"``{annotation!r}``")
     else:
         suffix = ".args" if isinstance(annotation, ParamSpecArgs) else ".kwargs"
-        yield _Rendered(_variable_name(annotation.__origin__, reference.config, suffix))
+        yield _Rendered(text=_variable_name(annotation.__origin__, reference.config, suffix))
 
 
 def _star(reference: _Reference) -> _Frame:
     # escaped, the star is no emphasis, and the escaped space lets the markup after it start
-    yield _Rendered(f"\\*\\ {(yield reference.args[0])}")
+    yield _Rendered(text=f"\\*\\ {(yield reference.args[0])}")
 
 
 def _optional(reference: _Reference) -> None:  # pragma: <3.14 cover
@@ -505,7 +517,7 @@ def _literal(reference: _Reference) -> _Frame:
         else:
             literal_parts.append(value_markup(repr(arg)))
     if reference.short_literals:
-        yield _Rendered(" | ".join(literal_parts))
+        yield _Rendered(text=" | ".join(literal_parts))
     else:
         reference.formatted_args = f"\\[{', '.join(literal_parts)}]"
 
@@ -514,9 +526,9 @@ def _bars_union(reference: _Reference) -> _Frame:
     if reference.args:
         parts: list[str] = []
         yield from _format_into(parts, reference.args)
-        yield _Rendered(" | ".join(parts))
+        yield _Rendered(text=" | ".join(parts))
     else:
-        yield _Rendered(f":py:{'class' if version_info >= (3, 14) else 'data'}:`{reference.prefix}typing.Union`")
+        yield _Rendered(text=f":py:{'class' if version_info >= (3, 14) else 'data'}:`{reference.prefix}typing.Union`")
 
 
 # built once, as every class reference walks it; the first test to match picks the handler, so the order matters

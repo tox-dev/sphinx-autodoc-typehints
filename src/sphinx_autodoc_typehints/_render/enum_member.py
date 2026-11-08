@@ -23,13 +23,13 @@ _ENUM_MEMBER_KEY: Final[str] = "sphinx_autodoc_typehints_enum_member"
 _ATTR_ROLE: Final[PyXRefRole] = PyXRefRole()
 
 
-def enum_member_role(
+def enum_member_role(  # simplint: ignore[SMP602]  # docutils passes options of any value
     _role: str,
     rawtext: str,
     text: str,
     lineno: int,
     inliner: states.Inliner,
-    options: dict[str, object] | None = None,
+    options: dict[str, object] | None = None,  # simplint: ignore[SMP602]  # docutils passes options of any value
     content: list[str] | None = None,
 ) -> tuple[list[Node], list[system_message]]:
     refs, messages = _ATTR_ROLE("py:attr", rawtext, text, lineno, inliner, options or {}, content or [])

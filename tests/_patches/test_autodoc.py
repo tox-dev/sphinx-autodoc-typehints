@@ -9,13 +9,13 @@ from pytest import mark, param
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from conftest import BuildText
+    from conftest import BuildText, MakeApp
     from sphinx.testing.util import SphinxTestApp
 
 
 @mark.sphinx("text", testroot="dummy")
 def test_overloads_stay_visible_to_an_app_without_the_extension(
-    build_text: BuildText, app: SphinxTestApp, make_app: Callable[..., SphinxTestApp]
+    build_text: BuildText, app: SphinxTestApp, make_app: MakeApp
 ) -> None:
     build_text(".. automethod:: dummy_module.ClassWithOverloadedMethods.convert")
     plain = make_app("text", srcdir=app.srcdir, confoverrides={"extensions": ["sphinx.ext.autodoc"]}, freshenv=True)
@@ -31,7 +31,7 @@ def test_overloads_stay_visible_to_an_app_without_the_extension(
 
 @mark.sphinx("text", testroot="dummy")
 def test_overloads_stay_visible_beside_an_app_with_the_extension_never_built(
-    app: SphinxTestApp, write_rst: Callable[[str], None], make_app: Callable[..., SphinxTestApp]
+    app: SphinxTestApp, write_rst: Callable[[str], None], make_app: MakeApp
 ) -> None:
     write_rst(".. automethod:: dummy_module.ClassWithOverloadedMethods.convert")
     plain = make_app("text", srcdir=app.srcdir, confoverrides={"extensions": ["sphinx.ext.autodoc"]}, freshenv=True)

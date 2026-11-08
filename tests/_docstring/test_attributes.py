@@ -11,7 +11,7 @@ import attr  # attr.s and attr.ib are the classic spelling under test
 from attrs import define
 from pytest import MarkDecorator, MonkeyPatch, fixture, mark, param
 
-from _docstring.conftest import INT, STR
+from .conftest import INT, STR
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
     from conftest import BuildText, MakeModule
 
-    from _docstring.conftest import Process
+    from .conftest import Process
 
 pytestmark: Final[MarkDecorator] = mark.sphinx("text", testroot="dummy")
 
@@ -418,11 +418,11 @@ def test_attrs_class_whose_annotations_fail_documents_its_fields_untyped(  # pra
                    :undoc-members:
             """),
             dedent("""\
-                class attrs_mod.Outer.Bar(foo)
+                class attrs_mod.Outer.Bar(child)
 
                    An attrs class referencing a sibling nested class.
 
-                   foo: Foo
+                   child: Foo
             """),
             id="nested-forward-reference",
         ),
@@ -475,7 +475,8 @@ def test_build_documents_the_fields_of_an_attrs_class(build_text: BuildText, rst
 
 
 def test_instance_variable_of_a_class_whose_init_a_mock_decorates_stays_as_written(
-    process: Process, mocked_object: Callable[..., object]
+    process: Process,
+    mocked_object: Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
 ) -> None:
     widget = type("Widget", (), {"__init__": mocked_object})
     assert process("class", "mod.Widget", widget, [":ivar size: the size"]) == [":ivar size: the size"]

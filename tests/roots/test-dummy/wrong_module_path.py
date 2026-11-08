@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 
-class A:
+class Result:
     pass
 
 
-def f() -> A:
+def make() -> Result:
     pass

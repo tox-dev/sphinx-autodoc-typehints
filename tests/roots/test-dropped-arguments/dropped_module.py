@@ -3,17 +3,20 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, Any, overload
+from typing import TYPE_CHECKING, Annotated, Any, Final, overload
 
 from attrs import define
 
 if TYPE_CHECKING:
     from engines import Engine
 
-PAIRS = [(1, 2), (3, 4)]
+PAIRS: Final[list[tuple[int, int]]] = [(1, 2), (3, 4)]
 
 
-def compare(kind: Engine[Any] | None, spare: Engine[str] | Engine[bytes]) -> Engine[int]:
+def compare(
+    kind: Engine[Any] | None,  # simplint: ignore[SMP602]  # the rendered Any is the case under test
+    spare: Engine[str] | Engine[bytes],
+) -> Engine[int]:
     """
     Compare.
 
@@ -35,7 +38,7 @@ def quoted(kind: "Engine[int]") -> None:  # ruff:ignore[quoted-annotation]  # a 
 def pick(kind: Engine[int]) -> int: ...
 @overload
 def pick(kind: Engine[str]) -> str: ...
-def pick(kind: Any) -> Any:
+def pick(kind: Any) -> Any:  # simplint: ignore[SMP602]  # the rendered Any is the case under test
     """Pick."""
     return kind
 
@@ -49,7 +52,7 @@ class Column:
     :ivar limited: capped count
     """
 
-    kind: Engine[Any]
+    kind: Engine[Any]  # simplint: ignore[SMP602]  # the rendered Any is the case under test
 
     def __init__(self) -> None:
         self.other: Engine[str] | None = None
@@ -86,7 +89,7 @@ def aliased(kind: Engines) -> None:
     """
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)  # simplint: ignore[SMP703]  # the docs assert the positional constructor signature
 class Record:
     """
     A record.
@@ -138,11 +141,11 @@ class Commented:
         """
 
 
-class Holder[T]:
+class Holder[ItemT]:
     """
     A holder.
 
     :ivar kind: held engine
     """
 
-    kind: Engine[T]
+    kind: Engine[ItemT]

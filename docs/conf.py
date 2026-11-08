@@ -22,7 +22,7 @@ project, company = "sphinx-autodoc-typehints", "tox-dev"
 now = datetime.now(tz=UTC)
 release = package_version(project)
 version = ".".join(release.split(".")[:2])
-copyright = f"2016-{now.date().year}, {company}"  # ruff:ignore[builtin-variable-shadowing]  # the name Sphinx reads
+copyright: Final[str] = f"2016-{now.date().year}, {company}"  # ruff:ignore[builtin-variable-shadowing]  # the name Sphinx reads
 extensions = [
     "live_example",
     "option_reference",
@@ -40,39 +40,39 @@ extensions = [
 ]
 # raw output lets the browser render the diagrams, so they follow furo's light and dark toggle; neutral pairs grays with
 # the semantic tints docs/_static/custom.css applies
-mermaid_output_format = "raw"
-mermaid_light_theme = "neutral"
+mermaid_output_format: Final[str] = "raw"
+mermaid_light_theme: Final[str] = "neutral"
 # the default fixed 500px height pads a wide diagram with empty bands, let each keep its own aspect ratio
-mermaid_height = "auto"
+mermaid_height: Final[str] = "auto"
 
-towncrier_draft_autoversion_mode = "draft"
+towncrier_draft_autoversion_mode: Final[str] = "draft"
 # keep the build green right after a release, when no fragments remain
-towncrier_draft_include_empty = True
+towncrier_draft_include_empty: Final[bool] = True
 towncrier_draft_working_directory = _HERE.parent
 
 # build the markdown for llms.txt after the HTML, from the same doctrees, so the live examples render once
-llms_txt_build_parallel = False
+llms_txt_build_parallel: Final[bool] = False
 
-copybutton_prompt_is_regexp = True
-copybutton_prompt_text = r">>> |\.\.\. |\$ "
+copybutton_prompt_is_regexp: Final[bool] = True
+copybutton_prompt_text: Final[str] = r">>> |\.\.\. |\$ "
 
 # Read the Docs serves pages under /<language>/<version>/, a bare domain would point the canonical link, og:url and
 # sitemap at pages that 404
 html_baseurl = os.environ.get("READTHEDOCS_CANONICAL_URL", "https://sphinx-autodoc-typehints.readthedocs.io/en/stable/")
-sitemap_url_scheme = "{link}"
+sitemap_url_scheme: Final[str] = "{link}"
 
 ogp_site_url = html_baseurl
 ogp_social_cards = {"enable": False}
-ogp_description_length = 200
-ogp_image = f"{html_baseurl}_static/icon-tile.svg"
+ogp_description_length: Final[int] = 200
+ogp_image: Final[str] = f"{html_baseurl}_static/icon-tile.svg"
 
-html_theme = "furo"
+html_theme: Final[str] = "furo"
 html_logo, html_favicon = "_static/icon.svg", "_static/favicon.svg"
 html_static_path = ["_static"]
 html_css_files = ["custom.css"]
 html_title, html_last_updated_fmt = project, now.isoformat()
 pygments_style, pygments_dark_style = "sphinx", "monokai"
-autosectionlabel_prefix_document = True
+autosectionlabel_prefix_document: Final[bool] = True
 
 intersphinx_mapping = {
     "attrs": ("https://www.attrs.org/en/stable", None),
@@ -80,7 +80,7 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "sphinx": ("https://www.sphinx-doc.org/en/master", None),
 }
-nitpicky = True
+nitpicky: Final[bool] = True
 # towncrier news fragments are rST snippets folded into changelog.rst at release, not standalone pages
 exclude_patterns = ["changelog/*"]
 extlinks = {

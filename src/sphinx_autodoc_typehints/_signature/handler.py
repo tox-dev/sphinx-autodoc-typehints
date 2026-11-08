@@ -8,17 +8,12 @@ from typing import TYPE_CHECKING
 from sphinx.util.inspect import is_builtin_class_method, safe_getattr, stringify_signature
 from sphinx.util.inspect import signature as sphinx_signature
 
-from .._documented import (
-    Entry,
-    as_written,
-    class_member_type,
-    documenting_class,
-    overload_skip,
-    render_scope,
-    resolved_type_hints,
-    show_factory_defaults,
-    typed_overloads,
-)
+from .._documented.entry import Entry
+from .._documented.factory_defaults import show_factory_defaults
+from .._documented.hints import as_written, documenting_class, resolved_type_hints
+from .._documented.members import class_member_type, overload_skip
+from .._documented.overloads import typed_overloads
+from .._documented.scope import render_scope
 from .._objects import (
     callable_target,
     constructor_name,
@@ -26,10 +21,10 @@ from .._objects import (
     prefix_of,
 )
 from .._private_imports import METACLASS_CALL_BLACKLIST, suppress_logging
-from .._resolve import bound_type_args
+from .._resolve.generics import bound_type_args
 from .._state import add_signature_lines, note_documented, written_signatures
 from .._warnings import warn
-from .header import signature_overloads
+from .header.overloads import signature_overloads
 from .text import directive_text, names_other_parameters, signature_type
 
 if TYPE_CHECKING:
@@ -63,9 +58,15 @@ def process_signature(
         return None
     callee, annotated = target
     overloads = signature_overloads(app, what, obj, callee, options)
-    if not _annotates(annotated) and declared_signature(callee) is None and not overloads:
+    try:
+        annotates = bool(annotated.__annotations__)
+    except Exception:  # ruff:ignore[blind-except]  # an annotation runs user code, which may raise anything
+        # PEP 649 runs an annotation on access, where a name a TYPE_CHECKING block binds or a subscripted non-generic
+        # class fails; __annotate__ still shows annotations exist, and sphinx_signature renders them as FORWARDREF
+        annotates = getattr(annotated, "__annotate__", None) is not None
+    if not annotates and declared_signature(callee) is None and not overloads:
         return None
-    entry = Entry(app, what, name, obj)
+    entry = Entry(app=app, what=what, name=name, obj=obj)
     full_signature = sphinx_signature(callee, type_aliases=app.config["autodoc_type_aliases"])
     if isclass(obj):
         full_signature = show_factory_defaults(obj, full_signature)
@@ -103,7 +104,9 @@ def process_signature(
     return directive_text(app, formatted), None
 
 
-def _target(obj: Callable[..., object]) -> tuple[QualifiedCallable, QualifiedCallable] | None:
+def _target(
+    obj: Callable[..., object],  # simplint: ignore[SMP603]  # a class with a metaclass __call__, or any callable
+) -> tuple[QualifiedCallable, QualifiedCallable] | None:
     if isclass(obj) and declared_signature(obj) is None:
         # autodoc takes a class signature from the `__call__` of its metaclass ahead of the constructor
         call = None
@@ -122,15 +125,6 @@ def _target(obj: Callable[..., object]) -> tuple[QualifiedCallable, QualifiedCal
                 call = found
         obj = call or getattr(obj, constructor_name(obj))
     return callable_target(obj)
-
-
-def _annotates(annotated: QualifiedCallable) -> bool:
-    try:
-        return bool(annotated.__annotations__)
-    except Exception:  # ruff:ignore[blind-except]  # an annotation runs user code, which may raise anything
-        # PEP 649 runs an annotation on access, where a name a TYPE_CHECKING block binds or a subscripted non-generic
-        # class fails; __annotate__ still shows annotations exist, and sphinx_signature renders them as FORWARDREF
-        return getattr(annotated, "__annotate__", None) is not None
 
 
 def _shown_types(

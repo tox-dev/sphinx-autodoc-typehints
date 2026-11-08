@@ -9,12 +9,12 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from decimal import Decimal
 
-U = TypeVar("U")
+CellT = TypeVar("CellT")
 
-LIMIT: Annotated[int, "a cap"] = 3
+LIMIT: Annotated[int, "a cap"] = 3  # simplint: ignore[SMP601]  # header tests render the annotation as written
 """The limit."""
 
-RATE: Decimal | None = None
+RATE: Decimal | None = None  # simplint: ignore[SMP601]  # header tests render the annotation as written
 """The rate."""
 
 
@@ -52,7 +52,11 @@ class Proxy:
         self.wrapped = wrapped
         self.__doc__ = wrapped.__doc__
 
-    def __get__(self, instance: object, owner: type | None = None) -> object:
+    def __get__(
+        self,
+        instance: object,  # simplint: ignore[SMP602]  # descriptors get any instance
+        owner: type | None = None,
+    ) -> object:  # simplint: ignore[SMP602]  # descriptors get any instance
         return self.wrapped if instance is None else self.wrapped.__get__(instance, owner)
 
 
@@ -69,11 +73,6 @@ class Proxied:
 class Vault:
     """Holds members autodoc reaches through their mangled names."""
 
-    @property
-    def __code(self) -> int:
-        """The code."""
-        return 0
-
     class __Lock:
         """A lock."""
 
@@ -82,18 +81,23 @@ class Vault:
             """The pins."""
             return 0
 
+    @property
+    def __code(self) -> int:
+        """The code."""
+        return 0
 
-class Box[T]:
+
+class Box[ItemT]:
     """Holds a value."""
 
-    value: T
+    value: ItemT
     """The value."""
 
-    label: tuple[T, ...] = ()
+    label: tuple[ItemT, ...] = ()
     """The label."""
 
     @property
-    def first(self) -> T:
+    def first(self) -> ItemT:
         """The first."""
         raise NotImplementedError
 
@@ -102,10 +106,10 @@ class IntBox(Box[int]):
     """Holds an integer."""
 
 
-class Legacy(Generic[U]):  # ruff:ignore[non-pep695-generic-class]  # the legacy form under test
+class Legacy(Generic[CellT]):  # ruff:ignore[non-pep695-generic-class]  # the legacy form under test
     """Holds items the legacy way."""
 
-    items: list[U]
+    items: list[CellT]
     """The items."""
 
 
@@ -115,10 +119,10 @@ class StrLegacy(Legacy[str]):
 
 Num = int | float
 
-SCORE: Num = 1
+SCORE: Num = 1  # simplint: ignore[SMP601]  # header tests render the annotation as written
 """The score."""
 
-LOW: Num = 0
+LOW: Num = 0  # simplint: ignore[SMP601]  # header tests render the annotation as written
 """The lowest score."""
 
 
@@ -174,7 +178,7 @@ class SubEngined(Engined):
     """Inherits engines."""
 
 
-INSTANCE = Engined()
+INSTANCE = Engined()  # simplint: ignore[SMP601]  # header tests render the annotation as written
 """An instance holding engines."""
 
 Generated = type("Generated", (Engined,), {"__module__": "generated", "__doc__": "Made where no source is at hand."})

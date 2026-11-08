@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Literal
 
 from pytest import mark, param
 
-from sphinx_autodoc_typehints._render import as_field_type, as_signature_type
+from sphinx_autodoc_typehints._render.annotation.rendered import as_field_type, as_signature_type
 
 if TYPE_CHECKING:
     from collections.abc import Callable

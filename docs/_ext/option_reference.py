@@ -14,9 +14,9 @@ from docutils.nodes import field, field_body, field_list, field_name, paragraph
 from docutils.parsers.rst import directives
 from sphinx.domains.std import ConfigurationValue
 
-from sphinx_autodoc_typehints._render import format_annotation
+from sphinx_autodoc_typehints._render.annotation.walker import format_annotation
 from sphinx_autodoc_typehints._render.context import ContextualTypehintsFormatter, FixupModuleName, TypehintsFormatter
-from sphinx_autodoc_typehints._resolve import resolve_annotations
+from sphinx_autodoc_typehints._resolve.hints import resolve_annotations
 from sphinx_autodoc_typehints._types import RenderNode
 
 if TYPE_CHECKING:
@@ -49,6 +49,32 @@ OPTION_TYPES: Final[dict[str, RenderNode]] = {
 }
 
 
+def setup(app: Sphinx) -> ExtensionMetadata:
+    """Replace the `confval` directive with one that renders the type and shows the rebuild value."""
+    app.add_directive_to_domain("std", "confval", _OptionReference, override=True)
+    return {"parallel_read_safe": True, "parallel_write_safe": True}
+
+
+class _OptionReference(ConfigurationValue):
+    """Show an option's type as this extension renders its annotation, and what a change to the option rebuilds."""
+
+    option_spec: ClassVar[OptionSpec] = {**ConfigurationValue.option_spec, "rebuild": directives.unchanged_required}
+
+    def transform_content(self, content_node: desc_content) -> None:
+        """Fill the type in from `OPTION_TYPES`, then add the rebuild field after the type and the default."""
+        self.options["type"] = format_annotation(documented_type(self.names[0]), self.config)
+        super().transform_content(content_node)
+        if rebuild := self.options.get("rebuild"):
+            parsed, messages = self.parse_inline(rebuild, lineno=self.lineno)
+            fields = next(content_node.findall(field_list))
+            fields += [field("", field_name("", "Rebuild"), field_body("", paragraph("", "", *parsed))), *messages]
+
+    def format_type(self, type_: str) -> tuple[field, list[system_message]]:
+        """Wrap the type in a paragraph, as the HTML writer accepts a link only inside one."""
+        parsed, messages = self.parse_inline(type_, lineno=self.lineno)
+        return field("", field_name("", "Type"), field_body("", paragraph("", "", *parsed))), messages
+
+
 def documented_type(name: str) -> RenderNode:
     """Return the type the reference shows for option `name`, each protocol replaced by the signature it calls."""
     if get_origin(annotation := OPTION_TYPES[name]) in {Union, UnionType}:
@@ -69,34 +95,4 @@ def _as_callable(member: RenderNode) -> RenderNode:
     return getitem(Callable, (list(hints.values()), returns))  # ty: ignore[no-matching-overload]  # a special form
 
 
-class OptionReference(ConfigurationValue):
-    """Show an option's type as this extension renders its annotation, and what a change to the option rebuilds."""
-
-    option_spec: ClassVar[OptionSpec] = {**ConfigurationValue.option_spec, "rebuild": directives.unchanged_required}
-
-    def transform_content(self, content_node: desc_content) -> None:
-        """Fill the type in from `OPTION_TYPES`, then add the rebuild field after the type and the default."""
-        self.options["type"] = format_annotation(documented_type(self.names[0]), self.config)
-        super().transform_content(content_node)
-        if rebuild := self.options.get("rebuild"):
-            parsed, messages = self.parse_inline(rebuild, lineno=self.lineno)
-            fields = next(content_node.findall(field_list))
-            fields += [field("", field_name("", "Rebuild"), field_body("", paragraph("", "", *parsed))), *messages]
-
-    def format_type(self, type_: str) -> tuple[field, list[system_message]]:
-        """Wrap the type in a paragraph, as the HTML writer accepts a link only inside one."""
-        parsed, messages = self.parse_inline(type_, lineno=self.lineno)
-        return field("", field_name("", "Type"), field_body("", paragraph("", "", *parsed))), messages
-
-
-def setup(app: Sphinx) -> ExtensionMetadata:
-    """Replace the `confval` directive with one that renders the type and shows the rebuild value."""
-    app.add_directive_to_domain("std", "confval", OptionReference, override=True)
-    return {"parallel_read_safe": True, "parallel_write_safe": True}
-
-
-__all__ = [
-    "OPTION_TYPES",
-    "OptionReference",
-    "documented_type",
-]
+__all__ = []

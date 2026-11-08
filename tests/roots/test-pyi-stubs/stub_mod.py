@@ -8,13 +8,13 @@ def greet(name, greeting):
 class Calculator:
     value = 0
 
-    def add(self, x):
-        self.value += x
-        return self
-
     class Inner:
         def process(self, data):
             return data
+
+    def add(self, value):
+        self.value += value
+        return self
 
 
 class Converter:

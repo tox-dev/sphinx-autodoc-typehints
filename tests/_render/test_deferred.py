@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING, Final
 from pytest import MarkDecorator, mark, param
 from sphinx.errors import NoUri
 
-from sphinx_autodoc_typehints._render import ALIAS_CHOICE_ROLE, annotation_state
-from sphinx_autodoc_typehints._render.deferred import defer_alias_choice
+from sphinx_autodoc_typehints._render.context import annotation_state
+from sphinx_autodoc_typehints._render.deferred import ALIAS_CHOICE_ROLE, defer_alias_choice
 from sphinx_autodoc_typehints._state import alias_choices, document_alias_choices
 
 if TYPE_CHECKING:
@@ -112,10 +112,24 @@ def _int_as_unknown_role(annotation: Annotation, _config: Config) -> str | None:
     return ":unknown:`bool`" if annotation is int else None
 
 
+@mark.parametrize(
+    "rendered",
+    [
+        param(
+            '"bool" | "str"',
+            id="bars",
+            marks=mark.skipif(version_info < (3, 14), reason="a union renders with bars from Python 3.14"),
+        ),
+        param(
+            '"Union"["bool", "str"]',
+            id="union",
+            marks=mark.skipif(version_info >= (3, 14), reason="a union renders as typing.Union before 3.14"),
+        ),
+    ],
+)
 @mark.sphinx("text", testroot="integration", confoverrides={"typehints_formatter": _int_as_bool_class})
-def test_deferred_alias_value_keeps_the_roles_a_formatter_writes(build_text: BuildText) -> None:
+def test_deferred_alias_value_keeps_the_roles_a_formatter_writes(build_text: BuildText, rendered: str) -> None:
     lines = build_text(".. autofunction:: mod_eager.get_user_eager").splitlines()
-    rendered = '"bool" | "str"' if version_info >= (3, 14) else '"Union"["bool", "str"]'
     assert lines[lines.index("   Parameters:") + 1] == f"      **user_id** ({rendered}) -- The user identifier"
 
 
@@ -146,9 +160,23 @@ def _int_as_bare_bool(annotation: Annotation, _config: Config) -> str | None:
         ),
     ],
 )
-def test_deferred_alias_value_keeps_the_default_role(build_text: BuildText, index: str) -> None:
+@mark.parametrize(
+    "rendered",
+    [
+        param(
+            '"bool" | "str"',
+            id="bars",
+            marks=mark.skipif(version_info < (3, 14), reason="a union renders with bars from Python 3.14"),
+        ),
+        param(
+            '"Union"["bool", "str"]',
+            id="union",
+            marks=mark.skipif(version_info >= (3, 14), reason="a union renders as typing.Union before 3.14"),
+        ),
+    ],
+)
+def test_deferred_alias_value_keeps_the_default_role(build_text: BuildText, index: str, rendered: str) -> None:
     lines = build_text(index).splitlines()
-    rendered = '"bool" | "str"' if version_info >= (3, 14) else '"Union"["bool", "str"]'
     assert lines[lines.index("   Parameters:") + 1] == f"      **user_id** ({rendered}) -- The user identifier"
 
 

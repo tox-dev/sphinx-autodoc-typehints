@@ -28,8 +28,8 @@ from typing import (  # ruff:ignore[deprecated-import]  # the legacy aliases are
 from pytest import mark, param, raises
 from typing_extensions import ParamSpec, TypeVar
 
-from sphinx_autodoc_typehints._render import fixup_module_name
 from sphinx_autodoc_typehints._render.annotation.names import (
+    fixup_module_name,
     get_annotation_args,
     get_annotation_class_name,
     get_annotation_module,
@@ -93,7 +93,9 @@ class AliasedOrigin:
     __origin__ = Aliased()
 
 
-_NAMES: Final[list[tuple[str, object, str, str, tuple[object, ...]]]] = [
+_NAMES: Final[
+    list[tuple[str, object, str, str, tuple[object, ...]]]  # simplint: ignore[SMP602]  # rows mix type forms and values
+] = [
     ("str", str, "builtins", "str", ()),
     ("None", None, "builtins", "None", ()),
     ("ModuleType", ModuleType, "types", "ModuleType", ()),
@@ -112,7 +114,13 @@ _NAMES: Final[list[tuple[str, object, str, str, tuple[object, ...]]]] = [
     ("Literal", Literal["a", 1], "typing", "Literal", ("a", 1)),
     ("Generic", Generic[Item], "typing", "Generic", (Item,)),
     ("Callable", Callable, "collections.abc", "Callable", ()),
-    ("Callable-Ellipsis", Callable[..., str], "collections.abc", "Callable", (..., str)),
+    (
+        "Callable-Ellipsis",
+        Callable[..., str],  # simplint: ignore[SMP603]  # the rendered Callable[...] is the case under test
+        "collections.abc",
+        "Callable",
+        (..., str),
+    ),
     ("Callable-int-str", Callable[[int, str], str], "collections.abc", "Callable", (int, str, str)),
     ("Pattern", Pattern, "re", "Pattern", ()),
     ("Pattern-str", Pattern[str], "re", "Pattern", (str,)),
@@ -136,7 +144,7 @@ _NAMES: Final[list[tuple[str, object, str, str, tuple[object, ...]]]] = [
 ]
 
 
-_FILLED_IN_FROM_313: Final = version_info >= (3, 13)
+_FILLED_IN_FROM_313: Final[bool] = version_info >= (3, 13)
 
 
 @mark.parametrize(
@@ -264,20 +272,20 @@ def test_fixup_module_name_links_the_path_the_docs_document(build_text: BuildTex
     assert (
         build_text(
             dedent("""\
-                .. class:: export_module.A
+                .. class:: export_module.Result
 
-                .. autofunction:: export_module.f
+                .. autofunction:: export_module.make
             """)
         ),
         warning.getvalue(),
     ) == (
         dedent("""\
-            class export_module.A
+            class export_module.Result
 
-            export_module.f()
+            export_module.make()
 
                Return type:
-                  "A"
+                  "Result"
         """),
         "",
     )

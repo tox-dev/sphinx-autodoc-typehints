@@ -39,4 +39,4 @@ class Outer:
     class Bar:
         """An attrs class referencing a sibling nested class."""
 
-        foo: Outer.Foo
+        child: Outer.Foo

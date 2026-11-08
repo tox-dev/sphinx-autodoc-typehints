@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Final, TypeAliasType, TypeVar, Union, get_args
 from pytest import FixtureRequest, fixture, mark, param
 
 from sphinx_autodoc_typehints._refs import MyTypeAliasForwardRef
-from sphinx_autodoc_typehints._resolve import get_all_type_hints, get_descriptor_type_hint, resolve_annotations
+from sphinx_autodoc_typehints._resolve.hints import get_all_type_hints, get_descriptor_type_hint, resolve_annotations
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -20,8 +20,9 @@ if TYPE_CHECKING:
     from _pytest.mark import ParameterSet
     from conftest import BuildText
 
-    from _resolve.conftest import AsWritten, MakeStubbedModule
     from sphinx_autodoc_typehints._types import Annotation, Hint
+
+    from .conftest import AsWritten, MakeStubbedModule
 
     type Descriptor = GetSetDescriptorType | MemberDescriptorType
 
@@ -432,7 +433,10 @@ def test_get_all_type_hints_resolves_a_type_parameter(
 def test_get_all_type_hints_reads_a_stub(
     request: FixtureRequest,
     fixture_name: str,
-    owner: Callable[[ModuleType], Callable[..., object]],
+    owner: Callable[
+        [ModuleType],
+        Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+    ],
     expected: dict[str, Annotation],
 ) -> None:
     assert get_all_type_hints([], owner(request.getfixturevalue(fixture_name)), "mod.documented", {}) == expected
@@ -537,12 +541,16 @@ def test_get_all_type_hints_resolves_a_backfilled_object_again_without_warning(
 def test_get_all_type_hints_cross_references_a_name_of_the_stub(
     request: FixtureRequest,
     fixture_name: str,
-    owner: Callable[[ModuleType], Callable[..., object]],
+    owner: Callable[
+        [ModuleType],
+        Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+    ],
     key: str,
     alias: str,
 ) -> None:
     hint = get_all_type_hints([], owner(request.getfixturevalue(fixture_name)), "mod.documented", {})[key]
-    assert (type(hint), vars(hint)) == (MyTypeAliasForwardRef, {"name": alias, "configured": False, "crossref": True})
+    assert type(hint) is MyTypeAliasForwardRef
+    assert hint.__dict__ == {"name": alias, "configured": False, "crossref": True}
 
 
 def test_get_all_type_hints_reads_the_stub_of_a_c_extension_allocator(c_ext_mod: ModuleType) -> None:
@@ -677,20 +685,36 @@ def slotted(make_stubbed_module: MakeStubbedModule) -> ModuleType:
             marks=mark.sphinx("text", testroot="resolve-stubs"),
             id="native-submodule-class",
         ),
+    ],
+)
+@mark.sphinx(exception_on_warning=True)
+def test_build_documents_the_types_of_a_stub(
+    request: FixtureRequest,
+    build_text: BuildText,
+    fixture_name: str,
+    rst: str,
+    expected: str,
+) -> None:
+    request.getfixturevalue(fixture_name)
+    assert build_text(rst) == expected
+
+
+@mark.parametrize(
+    ("rst", "expected"),
+    [
         param(
-            None,
             ".. autofunction:: dummy_module_future_annotations.function_with_py310_annotations",
             dedent("""\
-                dummy_module_future_annotations.function_with_py310_annotations(self, x, y, z=None)
+                dummy_module_future_annotations.function_with_py310_annotations(self, value, other, extra=None)
 
                    Method docstring.
 
                    Parameters:
-                      * **x** ("bool" | "None") -- foo
+                      * **value** ("bool" | "None") -- foo
 
-                      * **y** ("int" | "str" | "float") -- bar
+                      * **other** ("int" | "str" | "float") -- bar
 
-                      * **z** ("str" | "None") -- baz
+                      * **extra** ("str" | "None") -- baz
 
                    Return type:
                       "str"
@@ -699,7 +723,6 @@ def slotted(make_stubbed_module: MakeStubbedModule) -> ModuleType:
             id="union-syntax-as-strings",
         ),
         param(
-            None,
             dedent("""\
                 .. autoclass:: mod_forward_ref.Tree
                    :members:
@@ -723,16 +746,7 @@ def slotted(make_stubbed_module: MakeStubbedModule) -> ModuleType:
     ],
 )
 @mark.sphinx(exception_on_warning=True)
-def test_build_documents_the_types_of_a_stub_or_a_string(
-    request: FixtureRequest,
-    build_text: BuildText,
-    fixture_name: str | None,
-    rst: str,
-    expected: str,
-) -> None:
-    # pytest.param cannot carry usefixtures, so each case names the fixture importing its module
-    if fixture_name is not None:
-        request.getfixturevalue(fixture_name)
+def test_build_documents_the_types_of_a_string(build_text: BuildText, rst: str, expected: str) -> None:
     assert build_text(rst) == expected
 
 

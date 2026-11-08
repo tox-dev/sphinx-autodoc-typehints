@@ -17,9 +17,10 @@ from ast import (
 from typing import TYPE_CHECKING, ClassVar, Final, get_args, get_origin
 
 from .._objects import unwrapped
-from .evaluate import evaluate_annotation, type_hints
+from .evaluate.expression import evaluate_annotation
+from .evaluate.type_hints import type_hints
 from .generics import type_params_of
-from .guards import annotation_globals, guarded_names
+from .guards.overlay import annotation_globals, guarded_names
 from .source import parsed_source
 
 if TYPE_CHECKING:
@@ -39,6 +40,23 @@ def get_instance_var_annotations(cls: type) -> dict[str, Annotation | str]:
     """
     if (init := unwrapped(cls.__init__)) is None or init is object.__init__ or (tree := parsed_source(init)) is None:
         return {}
+    if not (raw := _self_annotation_sources(tree)):
+        return {}
+    # an inherited or re-exported `__init__` sees the names of the module defining it, not those of the class's
+    globalns = annotation_globals(init)
+    # the PEP 695 type parameters of the class defining `__init__` live in no module namespace
+    definer = next(base for base in cls.__mro__ if "__init__" in base.__dict__)
+    localns = {param.__name__: param for param in type_params_of(definer, legacy=False)}
+    resolved: dict[str, Annotation | str] = {}
+    for attribute, source in raw.items():
+        try:
+            resolved[attribute] = evaluate_annotation(source, globalns, localns)
+        except Exception:  # ruff:ignore[blind-except]  # an annotation runs user code, which may raise anything
+            resolved[attribute] = source
+    return resolved
+
+
+def _self_annotation_sources(tree: AST) -> dict[str, str]:
     raw: dict[str, str] = {}
     for node in walk(tree):
         if isinstance(node, FunctionDef) and node.name == "__init__":
@@ -53,20 +71,7 @@ def get_instance_var_annotations(cls: type) -> dict[str, Annotation | str]:
                 ):
                     raw[statement.target.attr] = unparse(statement.annotation)
             break
-    if not raw:
-        return {}
-    # an inherited or re-exported `__init__` sees the names of the module defining it, not those of the class's
-    globalns = annotation_globals(init)
-    # the PEP 695 type parameters of the class defining `__init__` live in no module namespace
-    definer = next(base for base in cls.__mro__ if "__init__" in vars(base))
-    localns = {param.__name__: param for param in type_params_of(definer, legacy=False)}
-    resolved: dict[str, Annotation | str] = {}
-    for attribute, source in raw.items():
-        try:
-            resolved[attribute] = evaluate_annotation(source, globalns, localns)
-        except Exception:  # ruff:ignore[blind-except]  # an annotation runs user code, which may raise anything
-            resolved[attribute] = source
-    return resolved
+    return raw
 
 
 def _own_nodes(node: AST) -> Iterator[AST]:
@@ -93,7 +98,7 @@ def get_body_annotations(owner: type | ModuleType) -> dict[str, Annotation]:
     return {name: hint for name, hint in held.items() if not _is_qualifier(hint)}
 
 
-def _is_qualifier(hint: object) -> bool:
+def _is_qualifier(hint: Annotation | None) -> bool:
     # matched by identity, as a set lookup would hash the annotation, which Annotated with dict metadata cannot do
     return hint is ClassVar or hint is Final
 

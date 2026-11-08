@@ -7,9 +7,10 @@ from typing import TYPE_CHECKING, Annotated, Final, overload, override
 
 from pytest import MarkDecorator, fixture, mark, param
 
-from _docstring.conftest import BOOL, INT, NONE, STR, hide_type
 from sphinx_autodoc_typehints._docstring.object_fields import inject_overloads, summary_end
-from sphinx_autodoc_typehints._documented import Entry
+from sphinx_autodoc_typehints._documented.entry import Entry
+
+from .conftest import BOOL, INT, NONE, STR, hide_type
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -19,7 +20,7 @@ if TYPE_CHECKING:
     from conftest import BuildText, MakeModule
     from sphinx.testing.util import SphinxTestApp
 
-    from _docstring.conftest import Process
+    from .conftest import Process
 
 pytestmark: Final[MarkDecorator] = mark.sphinx(
     "text", testroot="dummy", confoverrides={"typehints_document_rtype": False}
@@ -143,14 +144,16 @@ _PICK: Final[list[str]] = [
 def test_inject_overloads_lists_them(
     app: SphinxTestApp, func: FunctionType, lines: list[str], expected: list[str]
 ) -> None:
-    has_overloads = inject_overloads(Entry(app, "function", f"{__name__}.{func.__name__}", func), func, lines)
+    has_overloads = inject_overloads(
+        Entry(app=app, what="function", name=f"{__name__}.{func.__name__}", obj=func), func, lines
+    )
     assert (has_overloads, lines) == (True, expected)
 
 
 @mark.sphinx(confoverrides={"typehints_formatter": hide_type})
 def test_inject_overloads_leaves_out_types_a_formatter_hides(app: SphinxTestApp) -> None:
     lines: list[str] = []
-    inject_overloads(Entry(app, "function", f"{__name__}._pick", _pick), _pick, lines)
+    inject_overloads(Entry(app=app, what="function", name=f"{__name__}._pick", obj=_pick), _pick, lines)
     assert lines == ["", ":Overloads:", "   * **value**", "   * **value**", ""]
 
 
@@ -180,15 +183,25 @@ def test_inject_overloads_leaves_out_types_a_formatter_hides(app: SphinxTestApp)
     ],
 )
 def test_inject_overloads_lists_none(
-    app: SphinxTestApp, what: str, func: Callable[..., object], lines: list[str], expected: list[str]
+    app: SphinxTestApp,
+    what: str,
+    func: Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+    lines: list[str],
+    expected: list[str],
 ) -> None:
-    assert (inject_overloads(Entry(app, what, f"{__name__}._pick", func), func, lines), lines) == (False, expected)
+    assert (inject_overloads(Entry(app=app, what=what, name=f"{__name__}._pick", obj=func), func, lines), lines) == (
+        False,
+        expected,
+    )
 
 
 @mark.sphinx(confoverrides={"typehints_use_signature": True})
 def test_inject_overloads_leaves_them_to_the_signature(app: SphinxTestApp) -> None:
     lines = ["Docs."]
-    assert (inject_overloads(Entry(app, "function", f"{__name__}._pick", _pick), _pick, lines), lines) == (
+    assert (
+        inject_overloads(Entry(app=app, what="function", name=f"{__name__}._pick", obj=_pick), _pick, lines),
+        lines,
+    ) == (
         True,
         ["Docs."],
     )
@@ -332,21 +345,21 @@ def test_class_doc_from_class_ignores_the_constructor_opting_out_of_overloads(bu
 
 
 class _OverrideBase:
+    @property
+    def size(self) -> int: ...
+
     def run(self) -> str: ...
 
     def __hook(self) -> None: ...
 
-    @property
-    def size(self) -> int: ...
-
 
 class _OverrideChild(_OverrideBase):
-    @override
-    def run(self) -> str: ...
-
     @property
     @override
     def size(self) -> int: ...
+
+    @override
+    def run(self) -> str: ...
 
     @override
     def extra(self) -> str: ...  # ty: ignore[invalid-explicit-override]  # the case under test
@@ -514,13 +527,13 @@ def test_override_without_public_target_keeps_warning(build_text: BuildText, war
     assert "py:meth reference target not found: argparse._ActionsContainer.add_argument" in warning.getvalue()
 
 
-def _get_int(self: object) -> int: ...
+def _get_int(self: object) -> int: ...  # simplint: ignore[SMP602]  # any instance
 
 
-def _set_int(self: object, new: int) -> None: ...
+def _set_int(self: object, new: int) -> None: ...  # simplint: ignore[SMP602]  # any instance
 
 
-def _set_int_or_str(self: object, new: int | str) -> None: ...
+def _set_int_or_str(self: object, new: int | str) -> None: ...  # simplint: ignore[SMP602]  # any instance
 
 
 class _Ambiguous:
@@ -531,10 +544,13 @@ class _Ambiguous:
         raise ValueError(msg)
 
 
-def _get_ambiguous(self: object) -> Annotated[int, _Ambiguous()]: ...
+def _get_ambiguous(self: object) -> Annotated[int, _Ambiguous()]: ...  # simplint: ignore[SMP602]  # any instance
 
 
-def _set_ambiguous(self: object, new: Annotated[int, _Ambiguous()]) -> None: ...
+def _set_ambiguous(
+    self: object,  # simplint: ignore[SMP602]  # any instance
+    new: Annotated[int, _Ambiguous()],
+) -> None: ...
 
 
 class _Unreadable:
@@ -781,7 +797,8 @@ def test_overloads_name_an_alias_as_written(build_text: BuildText, index: str, e
 
 
 def test_property_whose_setter_a_mock_decorates_shows_no_setter_type(
-    process: Process, mocked_object: Callable[..., None]
+    process: Process,
+    mocked_object: Callable[..., None],  # simplint: ignore[SMP603]  # any callable is passed
 ) -> None:
     assert process("property", f"{__name__}.Holder.value", property(_get_int, mocked_object), ["Summary."]) == [
         "Summary."

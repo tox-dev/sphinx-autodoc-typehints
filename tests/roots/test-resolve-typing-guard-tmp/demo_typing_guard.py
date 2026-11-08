@@ -44,7 +44,7 @@ class SomeClass:
         """
         return cls(input_value)
 
-    def calculate_thing(self, number: float) -> dt.timedelta:  # ruff:ignore[no-self-use]
+    def calculate_thing(self, number: float) -> dt.timedelta:  # ruff:ignore[no-self-use]  # the fixture documents a method, which keeps `self`
         """
         Calculate a thing
 
@@ -54,4 +54,6 @@ class SomeClass:
         return dt.timedelta(number)
 
 
-__all__ = ["SomeClass"]
+__all__ = [
+    "SomeClass",
+]

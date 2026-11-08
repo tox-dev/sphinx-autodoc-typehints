@@ -7,14 +7,10 @@ from inspect import isclass, isfunction
 from typing import TYPE_CHECKING
 
 from .._objects import constructor_name, declared_signature, documented_owner, prefix_of
-from .._resolve import (
-    bound_type_args,
-    declared_type_params,
-    get_all_type_hints,
-    resolve_string_annotations,
-    specialize,
-    type_alias_namespace,
-)
+from .._resolve.aliases import type_alias_namespace
+from .._resolve.evaluate.expression import resolve_string_annotations
+from .._resolve.generics import bound_type_args, declared_type_params, specialize
+from .._resolve.hints import get_all_type_hints
 from .._types import frozendict
 
 if TYPE_CHECKING:
@@ -24,7 +20,7 @@ if TYPE_CHECKING:
 
     from .._objects import QualifiedCallable
     from .._refs import WrittenTypeAlias
-    from .._render import TypeParamScope
+    from .._render.context import TypeParamScope
     from .._types import Documented, Hint
 
 

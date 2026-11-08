@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Protocol
 from pytest import fixture
 from sphinx.ext.autodoc import Options
 
-from sphinx_autodoc_typehints._signature import process_signature
+from sphinx_autodoc_typehints._signature.handler import process_signature
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -19,13 +19,22 @@ type BuildDoctree = Callable[[str], nodes.document]
 
 class SignatureOf(Protocol):
     def __call__(
-        self, what: str, name: str, obj: Callable[..., object], given: str | None = ""
+        self,
+        what: str,
+        name: str,
+        obj: Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+        given: str | None = "",
     ) -> tuple[str, None] | None: ...
 
 
 @fixture
 def signature_of(app: SphinxTestApp) -> SignatureOf:
-    def process(what: str, name: str, obj: Callable[..., object], given: str | None = "") -> tuple[str, None] | None:
+    def process(
+        what: str,
+        name: str,
+        obj: Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+        given: str | None = "",
+    ) -> tuple[str, None] | None:
         return process_signature(app, what, name, obj, Options(), given, "")
 
     return process

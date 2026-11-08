@@ -9,13 +9,9 @@ from typing import TYPE_CHECKING
 
 from pytest import mark, param
 
-from sphinx_autodoc_typehints._resolve import get_all_type_hints
-from sphinx_autodoc_typehints._resolve.guards import (
-    annotation_globals,
-    guarded_names,
-    guarded_names_bound,
-    resolve_type_guarded_imports,
-)
+from sphinx_autodoc_typehints._resolve.guards.overlay import annotation_globals, guarded_names, guarded_names_bound
+from sphinx_autodoc_typehints._resolve.guards.run import resolve_type_guarded_imports
+from sphinx_autodoc_typehints._resolve.hints import get_all_type_hints
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -66,7 +62,7 @@ def test_annotation_globals_of_generated_code_fills_in_the_names_of_its_module(
             Late = int
         """)
     )
-    assert annotation_globals(module.GENERATED["init"]) == {**vars(module), **module.GENERATED}
+    assert annotation_globals(module.GENERATED["init"]) == {**module.__dict__, **module.GENERATED}
 
 
 def test_annotation_globals_of_code_without_a_module() -> None:
@@ -153,9 +149,9 @@ def test_guarded_names_bound_keeps_a_name_rebound_while_the_block_runs(
     )
     resolve_type_guarded_imports([], module)
     with guarded_names_bound(module):
-        bound = vars(module)["Decimal"]
-        vars(module)["Decimal"] = float
-    assert (bound, vars(module)["Decimal"]) == (Decimal, float)
+        bound = module.__dict__["Decimal"]
+        module.__dict__["Decimal"] = float
+    assert (bound, module.__dict__["Decimal"]) == (Decimal, float)
 
 
 def test_annotation_globals_types_the_generated_init_of_an_attrs_class(

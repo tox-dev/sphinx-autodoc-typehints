@@ -5,7 +5,7 @@ from json import loads
 from pathlib import Path
 from re import findall, search, sub
 from textwrap import dedent, indent
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Final, TypedDict
 from zlib import compress
 
 from pytest import MonkeyPatch, fixture, mark, param
@@ -13,6 +13,7 @@ from pytest import MonkeyPatch, fixture, mark, param
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from conftest import MakeApp
     from sphinx.testing.util import SphinxTestApp
 
 _EXTENSION_DIR: Final[Path] = Path(__file__).parents[1] / "docs" / "_ext"
@@ -72,7 +73,7 @@ def project_fixture(tmp_path: Path, monkeypatch: MonkeyPatch) -> Path:
 
 
 @fixture(name="build")
-def build_fixture(project: Path, make_app: Callable[..., SphinxTestApp]) -> Build:
+def build_fixture(project: Path, make_app: MakeApp) -> Build:
     def build(index: str) -> SphinxTestApp:
         (project / "index.rst").write_text(f"Example\n=======\n\n{index}")
         app = make_app("html", srcdir=project, freshenv=True)
@@ -125,9 +126,8 @@ def test_live_example_tab_order(build: Build) -> None:
 
 
 def test_live_example_builtin_tab_renders_without_the_extension(build: Build) -> None:
-    app = build(_EXAMPLE)
 
-    builtin = _tab(app, "Sphinx built-in")
+    builtin = _tab(build(_EXAMPLE), "Sphinx built-in")
 
     assert "scale" in builtin
     assert "sphinx_autodoc_typehints-type" not in builtin
@@ -237,14 +237,33 @@ def _picked(source: str = _PICKED_SOURCE, conf: str = _SHARED_CONF) -> str:
     return f".. live-example::\n\n{indent(f'{conf}\n---\n{source}', '    ')}\n"
 
 
-def _about(app: SphinxTestApp) -> dict[str, Any]:
+class _Option(TypedDict):
+    name: str
+    values: list[str | bool]
+    dependsOn: str | None
+    lines: list[str]
+
+
+class _About(TypedDict):
+    options: list[_Option]
+    conf: str
+    data: str
+
+
+class _Variants(TypedDict):
+    bodies: list[str]
+    relevant: list[list[int]]
+    examples: list[dict[str, int]]
+
+
+def _about(app: SphinxTestApp) -> _About:
     page = (Path(app.outdir) / "index.html").read_text()
-    found = search(r'<script type="application/json" id="live-example-picker">(.*?)</script>', page)
+    found = search(r'<script type="application/json" id="live-example-picker">(?P<config>.*?)</script>', page)
     assert found is not None
-    return loads(found[1])
+    return loads(found["config"])
 
 
-def _variants(app: SphinxTestApp) -> dict[str, Any]:
+def _variants(app: SphinxTestApp) -> _Variants:
     script = (Path(app.outdir) / _about(app)["data"]).read_text()
     return loads(script[script.index("(") + 1 : script.rindex(")")])
 
@@ -254,9 +273,8 @@ def _without_prefixes(html: str) -> str:
 
 
 def test_live_example_picker_puts_its_controls_above_the_rendered_page(build: Build) -> None:
-    app = build(f"{_PICKER}{_picked()}")
 
-    conf = _tab(app, "sphinx-autodoc-typehints")
+    conf = _tab(build(f"{_PICKER}{_picked()}"), "sphinx-autodoc-typehints")
 
     assert (
         'role="switch" class="lep-switch" id="lep-0-typehints_fully_qualified" name="typehints_fully_qualified">'
@@ -317,9 +335,8 @@ def test_live_example_picker_publishes_the_variants(build: Build) -> None:
 
 
 def test_live_example_picker_lists_the_options_with_their_conf_lines(build: Build) -> None:
-    app = build(f"{_PICKER}{_picked()}")
 
-    options = _about(app)["options"]
+    options = _about(build(f"{_PICKER}{_picked()}"))["options"]
 
     assert [option["name"] for option in options] == [
         "typehints_fully_qualified",
@@ -344,12 +361,15 @@ def test_live_example_picker_lists_the_options_with_their_conf_lines(build: Buil
         ),
     ],
 )
-def test_live_example_picker_variant_matches_a_build_with_that_conf(picked: dict[str, object], build: Build) -> None:
+def test_live_example_picker_variant_matches_a_build_with_that_conf(
+    picked: dict[str, str | bool], build: Build
+) -> None:
     about, variants = _about(app := build(f"{_PICKER}{_picked()}")), _variants(app)
     combination = [
         option["values"].index(picked.get(option["name"], option["values"][0])) for option in about["options"]
     ]
-    key = "".join(str(at if index in variants["relevant"][0] else 0) for index, at in enumerate(combination))
+    chosen = {index: at for index, at in enumerate(combination) if index in variants["relevant"][0]}
+    key = "".join(str(chosen.get(index, 0)) for index in range(len(combination)))
     variant = variants["bodies"][variants["examples"][0][key]]
 
     alone = build(_picked(conf="\n".join([_SHARED_CONF, *(f"{name} = {value!r}" for name, value in picked.items())])))

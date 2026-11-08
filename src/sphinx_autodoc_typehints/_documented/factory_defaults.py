@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 def show_factory_defaults(cls: type, signature: Signature) -> Signature:
     """Replace the placeholder default of each dataclass or attrs field built by a factory with the factory's call."""
-    calls: dict[str, tuple[object, str]] = {}
+    calls: dict[str, tuple[object, str]] = {}  # simplint: ignore[SMP602]  # the placeholder is a private sentinel
     if is_dataclass(cls):
         for field in fields(cls):
             if field.default_factory is not MISSING:
@@ -41,7 +41,11 @@ def show_factory_defaults(cls: type, signature: Signature) -> Signature:
     )
 
 
-def _call_text(factory: Callable[..., object], *, takes_self: bool) -> str:
+def _call_text(
+    factory: Callable[..., object],  # simplint: ignore[SMP603]  # a dataclass default factory may be any callable
+    *,
+    takes_self: bool,
+) -> str:
     # a lambda or a function local to another has no name the reader could look up, and its source may not be
     # recoverable, so it keeps the placeholder autodoc shows for a dataclass field
     if "<" in (name := getattr(factory, "__qualname__", "<")):

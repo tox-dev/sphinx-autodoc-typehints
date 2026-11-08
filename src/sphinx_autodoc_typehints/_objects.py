@@ -21,18 +21,24 @@ if TYPE_CHECKING:
 
     from attrs import AttrsInstance
 
-    from ._types import Documented
+    from ._types import Annotation, Documented
 
 
 class QualifiedCallable(Protocol):
     __qualname__: str
     __module__: str
-    __annotations__: dict[str, object]
+    __annotations__: dict[str, Annotation]
 
-    def __call__(self, *args: object, **kwargs: object) -> object: ...
+    def __call__(
+        self,
+        *args: object,  # simplint: ignore[SMP602]  # the proxy forwards calls of any shape
+        **kwargs: object,  # simplint: ignore[SMP602]  # the proxy forwards calls of any shape
+    ) -> object: ...  # simplint: ignore[SMP602]  # the proxy forwards calls of any shape
 
 
-def callable_target(obj: Callable[..., object]) -> tuple[QualifiedCallable, QualifiedCallable] | None:
+def callable_target(
+    obj: Callable[..., object],  # simplint: ignore[SMP603]  # a documented object, any callable autodoc finds
+) -> tuple[QualifiedCallable, QualifiedCallable] | None:
     """
     Return the function callers call through `obj` and the function holding its annotations.
 
@@ -41,7 +47,7 @@ def callable_target(obj: Callable[..., object]) -> tuple[QualifiedCallable, Qual
     """
     if (callee := unwrapped(obj, stop=lambda func: declared_signature(func) is not None)) is None:
         return None
-    annotated: Callable[..., object] = callee
+    annotated: Callable[..., object] = callee  # simplint: ignore[SMP603]  # the wrapped callee takes any arguments
     # a partial or a partialmethod holds its annotations on the function it calls, and the method a partialmethod
     # builds keeps it under a private name before Python 3.13
     while True:
@@ -61,7 +67,11 @@ def callable_target(obj: Callable[..., object]) -> tuple[QualifiedCallable, Qual
 
 
 def unwrapped(
-    obj: Callable[..., object], stop: Callable[[Callable[..., object]], bool] = lambda _: False
+    obj: Callable[..., object],  # simplint: ignore[SMP603]  # the wrapper chain may hold any callable, mocks included
+    stop: Callable[
+        [Callable[..., object]],  # simplint: ignore[SMP603]  # the chain's stop predicate receives any callable
+        bool,
+    ] = lambda _: False,
 ) -> QualifiedCallable | None:
     """Return the callable `obj` wraps, `None` when that is a mock or the `__wrapped__` chain loops."""
     # a mock answers __wrapped__ with a new mock, so inspect.unwrap would build mocks up to the recursion limit
@@ -78,7 +88,9 @@ def declared_signature(obj: Documented) -> Signature | None:
     return signature if isinstance(signature := safe_getattr(obj, "__signature__", None), Signature) else None
 
 
-def property_getter(member: Documented) -> Callable[..., object] | None:
+def property_getter(
+    member: Documented,
+) -> Callable[..., object] | None:  # simplint: ignore[SMP603]  # the fget takes any arguments
     """Return the getter of a `property` or a `functools.cached_property`, `None` for any other member."""
     if isinstance(member, cached_property):
         return member.func
@@ -88,7 +100,7 @@ def property_getter(member: Documented) -> Callable[..., object] | None:
 def constructor_name(cls: type) -> Literal["__new__", "__init__"]:
     """Choose the constructor as `inspect.signature` does: the one defined lowest in the MRO, `__new__` on a tie."""
     depth = {
-        name: next(at for at, klass in enumerate(cls.__mro__) if name in vars(klass))
+        name: next(at for at, klass in enumerate(cls.__mro__) if name in klass.__dict__)
         for name in ("__new__", "__init__")
     }
     # a __new__ that only wraps object's, as @warnings.deprecated adds, is no constructor of its own to inspect
@@ -140,16 +152,20 @@ def prefix_of(name: str) -> str:
     return name.rpartition(".")[0]
 
 
-def alias_lookup_names(module_prefix: str, name: str, *, guarded: Mapping[str, object] | None = None) -> list[str]:
+def alias_lookup_names(
+    module_prefix: str,
+    name: str,
+    *,
+    guarded: Mapping[str, object] | None = None,  # simplint: ignore[SMP602]  # guarded bindings hold any value
+) -> list[str]:
     """Return the names a `py:type` documenting an alias used under `module_prefix` may have, innermost first."""
     scopes = enclosing_scopes(module_prefix)
     missing = object()
 
-    def binding(scope: str) -> object:
+    def binding(scope: str) -> object:  # simplint: ignore[SMP602]  # a binding is any attribute value
         if (prefix := imported_prefix(scope.split("."))) is None:
             return missing
-        owner = object_at(*prefix)
-        return vars(owner).get(name, missing) if hasattr(owner, "__dict__") else missing
+        return getattr(object_at(*prefix), "__dict__", {}).get(name, missing)
 
     guarded_binding = guarded is not None and name in guarded
     visible = (

@@ -26,5 +26,6 @@ def warn(subtype: WarningSubtype, message: str, *args: object, at: Documented) -
 
 
 __all__ = [
+    "WarningSubtype",
     "warn",
 ]

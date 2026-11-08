@@ -16,55 +16,55 @@ EPILOG: Final[str] = dedent("""\
 EXPECTED: Final[dict[str, str]] = {
     "get_local_function": "mod.get_local_function()",
     "Class": dedent("""\
-        class mod.Class(x, y, z=None)
+        class mod.Class(flag, count, label=None)
 
            Initializer docstring.
 
            Parameters:
-              * **x** ("bool") -- initializer flag
+              * **flag** ("bool") -- initializer flag
 
-              * **y** ("int") -- bar
+              * **count** ("int") -- bar
 
-              * **z** ("str" | "None") -- baz
+              * **label** ("str" | "None") -- baz
 
            class InnerClass
 
               Inner class.
 
-              inner_method(x)
+              inner_method(flag)
 
                  Inner method.
 
                  Parameters:
-                    **x** ("bool") -- foo
+                    **flag** ("bool") -- foo
 
                  Return type:
                     "str"
 
-           classmethod a_classmethod(x, y, z=None)
+           classmethod a_classmethod(flag, count, label=None)
 
               Classmethod docstring.
 
               Parameters:
-                 * **x** ("bool") -- classmethod flag
+                 * **flag** ("bool") -- classmethod flag
 
-                 * **y** ("int") -- bar
+                 * **count** ("int") -- bar
 
-                 * **z** ("str" | "None") -- baz
+                 * **label** ("str" | "None") -- baz
 
               Return type:
                  "str"
 
-           a_method(x, y, z=None)
+           a_method(flag, count, label=None)
 
               Method docstring.
 
               Parameters:
-                 * **x** ("bool") -- method flag
+                 * **flag** ("bool") -- method flag
 
-                 * **y** ("int") -- bar
+                 * **count** ("int") -- bar
 
-                 * **z** ("str" | "None") -- baz
+                 * **label** ("str" | "None") -- baz
 
               Return type:
                  "str"
@@ -73,16 +73,16 @@ EXPECTED: Final[dict[str, str]] = {
 
               Property docstring
 
-           static a_staticmethod(x, y, z=None)
+           static a_staticmethod(flag, count, label=None)
 
               Staticmethod docstring.
 
               Parameters:
-                 * **x** ("bool") -- staticmethod flag
+                 * **flag** ("bool") -- staticmethod flag
 
-                 * **y** ("int") -- bar
+                 * **count** ("int") -- bar
 
-                 * **z** ("str" | "None") -- baz
+                 * **label** ("str" | "None") -- baz
 
               Return type:
                  "str"
@@ -103,14 +103,14 @@ EXPECTED: Final[dict[str, str]] = {
               **message** ("str") -- blah
     """),
     "function": dedent("""\
-        mod.function(x, y, z_=None)
+        mod.function(flag, count, z_=None)
 
            Function docstring.
 
            Parameters:
-              * **x** ("bool") -- foo
+              * **flag** ("bool") -- foo
 
-              * **y** ("int") -- bar
+              * **count** ("int") -- bar
 
               * **z_** ("str" | "None") -- baz
 
@@ -121,12 +121,12 @@ EXPECTED: Final[dict[str, str]] = {
               "str"
     """),
     "function_with_trailing_underscore_numpy": dedent("""\
-        mod.function_with_trailing_underscore_numpy(a, lambda_=None)
+        mod.function_with_trailing_underscore_numpy(value, lambda_=None)
 
            Do nothing.
 
            Parameters:
-              * **a** ("int") -- Description for a.
+              * **value** ("int") -- Description for a.
 
               * **lambda_** ("float" | "None", default: "None") -- Description
                 for lambda.
@@ -135,12 +135,12 @@ EXPECTED: Final[dict[str, str]] = {
               "None"
     """),
     "function_with_trailing_underscore_google": dedent("""\
-        mod.function_with_trailing_underscore_google(a, lambda_=None)
+        mod.function_with_trailing_underscore_google(value, lambda_=None)
 
            Do nothing.
 
            Parameters:
-              * **a** ("int") -- Description for a.
+              * **value** ("int") -- Description for a.
 
               * **lambda_** ("float" | "None", default: "None") -- Description
                 for lambda.
@@ -163,67 +163,67 @@ EXPECTED: Final[dict[str, str]] = {
               * ****kwargs** ("str") -- bar
     """),
     "function_with_escaped_default": dedent("""\
-        mod.function_with_escaped_default(x='\\x08')
+        mod.function_with_escaped_default(flag='\\x08')
 
            Function docstring.
 
            Parameters:
-              **x** ("str") -- foo
+              **flag** ("str") -- foo
     """),
     "function_with_multiline_param_defaults": dedent("""\
-        mod.function_with_multiline_param_defaults(x=5, y=10, z=15)
+        mod.function_with_multiline_param_defaults(flag=5, count=10, label=15)
 
            Function docstring.
 
            Parameters:
-              * **x** ("int") -- optional specifier line 2 (default: "5")
+              * **flag** ("int") -- optional specifier line 2 (default: "5")
 
-              * **y** ("int") --
+              * **count** ("int") --
 
                 another optional line 4
 
                 second paragraph for y (default: "10")
 
-              * **z** ("int") -- yet another optional s line 6 (default: "15")
+              * **label** ("int") -- yet another optional s line 6 (default:
+                "15")
 
            Returns:
               something
 
            Return type:
               "str"
-
     """),
     "function_with_eq_metaclass": dedent("""\
-        mod.function_with_eq_metaclass(s)
+        mod.function_with_eq_metaclass(text)
 
            Do something.
 
            Parameters:
-              **s** ("Schema") -- Some schema.
+              **text** ("Schema") -- Some schema.
 
            Return type:
               "Schema"
     """),
     "function_with_aliased_class": dedent("""\
-        mod.function_with_aliased_class(s)
+        mod.function_with_aliased_class(text)
 
            Do something.
 
            Parameters:
-              **s** ("Class Alias") -- Some schema.
+              **text** ("Class Alias") -- Some schema.
 
            Return type:
               "Class Alias"
     """),
     "function_with_type_aliases": dedent("""\
-        mod.function_with_type_aliases(x, y)
+        mod.function_with_type_aliases(flag, count)
 
            Function docstring.
 
            Parameters:
-              * **x** (Array | "None") -- foo
+              * **flag** (Array | "None") -- foo
 
-              * **y** ("Schema") -- boo
+              * **count** ("Schema") -- boo
 
            Returns:
               something
@@ -233,59 +233,59 @@ EXPECTED: Final[dict[str, str]] = {
 
     """),
     "function_with_unresolvable_annotation": dedent("""\
-        mod.function_with_unresolvable_annotation(x)
+        mod.function_with_unresolvable_annotation(flag)
 
            Function docstring.
 
            Parameters:
-              **x** (a.b.c) -- foo
+              **flag** (a.b.c) -- foo
     """),
     "function_with_typehint_comment": dedent("""\
-        mod.function_with_typehint_comment(x, y)
+        mod.function_with_typehint_comment(flag, count)
 
            Function docstring.
 
            Parameters:
-              * **x** ("int") -- foo
+              * **flag** ("int") -- foo
 
-              * **y** ("str") -- bar
+              * **count** ("str") -- bar
 
            Return type:
               "None"
     """),
     "ClassWithTypehints": dedent("""\
-        class mod.ClassWithTypehints(x)
+        class mod.ClassWithTypehints(flag)
 
            Class docstring.
 
            Parameters:
-              **x** ("int") -- foo
+              **flag** ("int") -- foo
 
-           foo(x)
+           foo(flag)
 
               Method docstring.
 
               Parameters:
-                 **x** ("str") -- foo
+                 **flag** ("str") -- foo
 
               Return type:
                  "int"
 
-           method_without_typehint(x)
+           method_without_typehint(flag)
 
               Method docstring.
     """),
     "function_with_typehint_comment_not_inline": dedent("""\
-        mod.function_with_typehint_comment_not_inline(x=None, *y, z, **kwargs)
+        mod.function_with_typehint_comment_not_inline(flag=None, *count, label, **kwargs)
 
            Function docstring.
 
            Parameters:
-              * **x** ("str" | "bytes" | "None") -- foo
+              * **flag** ("str" | "bytes" | "None") -- foo
 
-              * **y** ("str") -- bar
+              * **count** ("str") -- bar
 
-              * **z** ("bytes") -- baz
+              * **label** ("bytes") -- baz
 
               * **kwargs** ("int") -- some kwargs
 
@@ -293,35 +293,36 @@ EXPECTED: Final[dict[str, str]] = {
               "None"
     """),
     "ClassWithTypehintsNotInline": dedent("""\
-        class mod.ClassWithTypehintsNotInline(x=None)
+        class mod.ClassWithTypehintsNotInline(flag=None)
 
            Class docstring.
 
            Parameters:
-              **x** ("Callable"[["int", "bytes"], "int"] | "None") -- foo
+              **flag** ("Callable"[["int", "bytes"], "int"] | "None") -- foo
 
-           foo(x=1)
+           foo(flag=1)
 
               Method docstring.
 
               Parameters:
-                 **x** ("Callable"[["int", "bytes"], "int"]) -- callback
+                 **flag** ("Callable"[["int", "bytes"], "int"]) -- callback
 
               Return type:
                  "int"
 
-           classmethod mk(x=None)
+           classmethod mk(flag=None)
 
               Method docstring.
 
               Parameters:
-                 **x** ("Callable"[["int", "bytes"], "int"] | "None") -- foo
+                 **flag** ("Callable"[["int", "bytes"], "int"] | "None") --
+                 foo
 
               Return type:
                  "ClassWithTypehintsNotInline"
     """),
     "undocumented_function": dedent("""\
-        mod.undocumented_function(x)
+        mod.undocumented_function(flag)
 
            Hi
 
@@ -329,7 +330,7 @@ EXPECTED: Final[dict[str, str]] = {
               "str"
     """),
     "DataClass": dedent("""\
-        class mod.DataClass(x)
+        class mod.DataClass(flag)
 
            Class docstring.
     """),
@@ -342,12 +343,12 @@ EXPECTED: Final[dict[str, str]] = {
               **func** ("Callable"[["int", "str"], "str"]) -- function
     """),
     "mocked_import": dedent("""\
-        mod.mocked_import(x)
+        mod.mocked_import(flag)
 
            A docstring.
 
            Parameters:
-              **x** ("Mailbox") -- function
+              **flag** ("Mailbox") -- function
     """),
     "func_with_examples": dedent("""\
         mod.func_with_examples()
@@ -362,73 +363,73 @@ EXPECTED: Final[dict[str, str]] = {
               "int"
     """),
     "func_with_overload": dedent("""\
-        mod.func_with_overload(a, b)
+        mod.func_with_overload(value, other)
 
            f does the thing. The arguments can either be ints or strings but
            they must both have the same type.
 
            Overloads:
-              * **a** ("int"), **b** ("int") \N{RIGHTWARDS ARROW} "None"
+              * **value** ("int"), **other** ("int") \N{RIGHTWARDS ARROW} "None"
 
-              * **a** ("str"), **b** ("str") \N{RIGHTWARDS ARROW} "None"
+              * **value** ("str"), **other** ("str") \N{RIGHTWARDS ARROW} "None"
 
            Parameters:
-              * **a** ("int" | "str") -- The first thing
+              * **value** ("int" | "str") -- The first thing
 
-              * **b** ("int" | "str") -- The second thing
+              * **other** ("int" | "str") -- The second thing
     """),
     "overload_with_complex_types": dedent("""\
-        mod.overload_with_complex_types(x)
+        mod.overload_with_complex_types(flag)
 
            Function with overloaded complex types.
 
            Overloads:
-              * **x** ("list"["int"]) \N{RIGHTWARDS ARROW} "dict"["str", "int"]
+              * **flag** ("list"["int"]) \N{RIGHTWARDS ARROW} "dict"["str", "int"]
 
-              * **x** ("dict"["str", "int"]) \N{RIGHTWARDS ARROW} "list"["int"]
+              * **flag** ("dict"["str", "int"]) \N{RIGHTWARDS ARROW} "list"["int"]
 
            Parameters:
-              **x** ("list"["int"] | "dict"["str", "int"]) -- Input value
+              **flag** ("list"["int"] | "dict"["str", "int"]) -- Input value
     """),
     "func_with_overload_no_overloads": dedent("""\
-        mod.func_with_overload_no_overloads(a, b)
+        mod.func_with_overload_no_overloads(value, other)
 
            Accepts int or str pairs, see docs for details.
 
            Parameters:
-              * **a** ("int" | "str") -- The first thing
+              * **value** ("int" | "str") -- The first thing
 
-              * **b** ("int" | "str") -- The second thing
+              * **other** ("int" | "str") -- The second thing
 
            Return type:
               "None"
     """),
     "func_literals_long_format": dedent("""\
-        mod.func_literals_long_format(a, b)
+        mod.func_literals_long_format(value, other)
 
            A docstring.
 
            Parameters:
-              * **a** ("Literal"["'arg1'", "'arg2'"]) -- Argument that can
+              * **value** ("Literal"["'arg1'", "'arg2'"]) -- Argument that can
                 take either of two literal values.
 
-              * **b** ("Literal"["'arg1'", "'arg2'"]) -- Argument that can
+              * **other** ("Literal"["'arg1'", "'arg2'"]) -- Argument that can
                 take either of two literal values.
 
            Return type:
               "None"
     """),
     "func_literals_short_format": dedent("""\
-        mod.func_literals_short_format(a, b)
+        mod.func_literals_short_format(value, other)
 
            A docstring.
 
            Parameters:
-              * **a** ("'arg1'" | "'arg2'") -- Argument that can take either
-                of two literal values.
+              * **value** ("'arg1'" | "'arg2'") -- Argument that can take
+                either of two literal values.
 
-              * **b** ("'arg1'" | "'arg2'") -- Argument that can take either
-                of two literal values.
+              * **other** ("'arg1'" | "'arg2'") -- Argument that can take
+                either of two literal values.
 
            Return type:
               "None"
@@ -480,14 +481,14 @@ EXPECTED: Final[dict[str, str]] = {
               The index of the widget
     """),
     "func_with_parameters_and_stuff_after": dedent("""\
-        mod.func_with_parameters_and_stuff_after(a, b)
+        mod.func_with_parameters_and_stuff_after(value, other)
 
            A func
 
            Parameters:
-              * **a** ("int") -- a tells us something
+              * **value** ("int") -- a tells us something
 
-              * **b** ("int") -- b tells us something
+              * **other** ("int") -- b tells us something
 
            Return type:
               "int"
@@ -495,14 +496,14 @@ EXPECTED: Final[dict[str, str]] = {
            More info about the function here.
     """),
     "func_with_rtype_in_weird_spot": dedent("""\
-        mod.func_with_rtype_in_weird_spot(a, b)
+        mod.func_with_rtype_in_weird_spot(value, other)
 
            A func
 
            Parameters:
-              * **a** ("int") -- a tells us something
+              * **value** ("int") -- a tells us something
 
-              * **b** ("int") -- b tells us something
+              * **other** ("int") -- b tells us something
 
            -[ Examples ]-
 
@@ -517,12 +518,12 @@ EXPECTED: Final[dict[str, str]] = {
               "int"
     """),
     "empty_line_between_parameters": dedent("""\
-        mod.empty_line_between_parameters(a, b)
+        mod.empty_line_between_parameters(value, other)
 
            A func
 
            Parameters:
-              * **a** ("int") --
+              * **value** ("int") --
 
                 One of the following possibilities:
 
@@ -532,7 +533,7 @@ EXPECTED: Final[dict[str, str]] = {
 
                 * c
 
-              * **b** ("int") --
+              * **other** ("int") --
 
                 Whatever else we have to say.
 
@@ -574,12 +575,12 @@ EXPECTED: Final[dict[str, str]] = {
               "int"
     """),
     "decorator_2": dedent("""\
-        mod.decorator_2(f)
+        mod.decorator_2(func)
 
            Run the decorated function with *asyncio.run*.
 
            Parameters:
-              **f** ("Any") -- The function to wrap.
+              **func** ("Any") -- The function to wrap.
 
            Return type:
               "Any"
@@ -751,15 +752,15 @@ EXPECTED: Final[dict[str, str]] = {
            -[ Example ]-
     """),
     "has_typevar": dedent("""\
-        mod.has_typevar[T](param)
+        mod.has_typevar[ItemT](param)
 
            Do something.
 
            Parameters:
-              **param** ("T") -- Value of the type parameter.
+              **param** ("ItemT") -- Value of the type parameter.
 
            Return type:
-              "T"
+              "ItemT"
 
     """),
     "has_newtype": dedent("""\
@@ -768,19 +769,19 @@ EXPECTED: Final[dict[str, str]] = {
            Do something.
 
            Parameters:
-              **param** ("W" ("str")) -- A string of the new type.
+              **param** ("Word" ("str")) -- A string of the new type.
 
            Return type:
-              "W" ("str")
+              "Word" ("str")
 
     """),
     "typehints_use_signature": dedent("""\
-        mod.typehints_use_signature(a: AsyncGenerator) -> AsyncGenerator
+        mod.typehints_use_signature(value: AsyncGenerator) -> AsyncGenerator
 
            Do something.
 
            Parameters:
-              **a** ("AsyncGenerator") -- blah
+              **value** ("AsyncGenerator") -- blah
 
            Return type:
               "AsyncGenerator"
@@ -841,9 +842,9 @@ EXPECTED: Final[dict[str, str]] = {
            Test that the return type follows a doctest in the function.
 
            >>> this is a fake doctest
-           a
+           value
            >>> more doctest
-           b
+           other
 
            Return type:
               "None"

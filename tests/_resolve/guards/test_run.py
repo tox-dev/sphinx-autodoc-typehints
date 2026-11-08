@@ -12,8 +12,9 @@ from typing import TYPE_CHECKING, Final, Protocol, get_overloads
 from pytest import MonkeyPatch, fixture, mark, param, raises
 
 from sphinx_autodoc_typehints._refs import MyTypeAliasForwardRef
-from sphinx_autodoc_typehints._resolve import get_all_type_hints
-from sphinx_autodoc_typehints._resolve.guards import SHADOWED_BY_GUARD, guarded_names, resolve_type_guarded_imports
+from sphinx_autodoc_typehints._resolve.guards.overlay import SHADOWED_BY_GUARD, guarded_names
+from sphinx_autodoc_typehints._resolve.guards.run import resolve_type_guarded_imports
+from sphinx_autodoc_typehints._resolve.hints import get_all_type_hints
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -54,7 +55,10 @@ def test_resolve_type_guarded_imports_records_nothing_for_a_module_without_sourc
 def test_resolve_type_guarded_imports_records_the_guard_of_the_module(
     make_module: Callable[[str], ModuleType],
     guarded: Callable[[str, str], str],
-    target: Callable[[ModuleType], ModuleType | Callable[..., object]],
+    target: Callable[
+        [ModuleType],
+        ModuleType | Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+    ],
 ) -> None:
     module = make_module(
         guarded(
@@ -86,7 +90,20 @@ def test_resolve_type_guarded_imports_skips_a_false_compound_guard(make_module: 
     assert "Ghost" not in guarded_names(module.consume)
 
 
-def test_resolve_type_guarded_imports_uses_the_build_platform(make_module: Callable[[str], ModuleType]) -> None:
+@mark.parametrize(
+    "expected",
+    [
+        param(date, id="windows", marks=mark.skipif(platform != "win32", reason="the guard binds date on Windows")),
+        param(
+            Decimal,
+            id="other-platforms",
+            marks=mark.skipif(platform == "win32", reason="the guard binds Decimal off Windows"),
+        ),
+    ],
+)
+def test_resolve_type_guarded_imports_uses_the_build_platform(
+    make_module: Callable[[str], ModuleType], expected: type
+) -> None:
     module = make_module(
         dedent("""\
             from __future__ import annotations
@@ -101,7 +118,6 @@ def test_resolve_type_guarded_imports_uses_the_build_platform(make_module: Calla
             def consume(value: PlatformType) -> None: ...
         """)
     )
-    expected = date if platform == "win32" else Decimal
     assert get_all_type_hints([], module.consume, "mod.consume", {})["value"] is expected
 
 
@@ -434,9 +450,9 @@ def test_resolve_type_guarded_imports_leaves_the_module_as_it_runs(
     make_module: Callable[[str], ModuleType], source: str
 ) -> None:
     module = make_module(f"{source}def func(value: Decimal) -> None: ...")
-    runtime = dict(vars(module))
+    runtime = dict(module.__dict__)
     resolve_type_guarded_imports([], module.func)
-    assert (vars(module), guarded_names(module.func)["Decimal"]) == (runtime, Decimal)
+    assert (module.__dict__, guarded_names(module.func)["Decimal"]) == (runtime, Decimal)
 
 
 def test_resolve_type_guarded_imports_registers_no_overload_for_a_runtime_function(
@@ -693,14 +709,14 @@ def test_build_lists_no_member_the_guard_of_an_imported_member_adds(
 
                    Inappropriate argument value (of correct type).
 
-                demo_typing_guard.a[AnyStr: (bytes, str)](f, s)
+                demo_typing_guard.a[AnyStr: (bytes, str)](first, second)
 
                    Do.
 
                    Parameters:
-                      * **f** ("Decimal") -- first
+                      * **first** ("Decimal") -- first
 
-                      * **s** ("AnyStr") -- second
+                      * **second** ("AnyStr") -- second
 
                    Return type:
                       "Sequence"[{

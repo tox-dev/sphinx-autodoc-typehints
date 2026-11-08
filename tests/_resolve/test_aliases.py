@@ -40,17 +40,22 @@ def _crossref(name: str) -> dict[str, str | bool]:
 @mark.parametrize(
     ("aliases", "owner", "module", "documented", "expected"),
     [
-        param({}, lambda _: len, "mymod", ("other.Foo",), {}, id="other-module"),
-        param({}, lambda _: len, "mymod", ("mymod.sub.Foo",), {}, id="submodule"),
-        param({}, lambda _: len, "mymod", ("Foo",), {}, id="unqualified"),
+        param({}, lambda _: len, "mymod", lambda document: document("other.Foo"), {}, id="other-module"),
+        param({}, lambda _: len, "mymod", lambda document: document("mymod.sub.Foo"), {}, id="submodule"),
+        param({}, lambda _: len, "mymod", lambda document: document("Foo"), {}, id="unqualified"),
         param(
-            {}, lambda _: len, "am.Ops", ("am.Vector",), {"Vector": _crossref("Vector")}, id="module-around-a-method"
+            {},
+            lambda _: len,
+            "am.Ops",
+            lambda document: document("am.Vector"),
+            {"Vector": _crossref("Vector")},
+            id="module-around-a-method",
         ),
         param(
             {},
             lambda _: len,
             "am.Ops",
-            ("am.Ops.Vector",),
+            lambda document: document("am.Ops.Vector"),
             {"Vector": _crossref("Vector")},
             id="class-body-around-a-method",
         ),
@@ -58,7 +63,7 @@ def _crossref(name: str) -> dict[str, str | bool]:
             {},
             attrgetter("quoted"),
             "elsewhere",
-            ("elsewhere.MyType",),
+            lambda document: document("elsewhere.MyType"),
             {"MyType": _crossref("MyType")},
             id="string-naming-a-type",
         ),
@@ -66,7 +71,7 @@ def _crossref(name: str) -> dict[str, str | bool]:
             {"Configured": "pkg.Configured"},
             lambda _: len,
             "mymod",
-            None,
+            lambda _: None,
             {"Configured": _CONFIGURED},
             id="configured-without-an-environment",
         ),
@@ -74,7 +79,7 @@ def _crossref(name: str) -> dict[str, str | bool]:
             {"Configured": "pkg.Configured"},
             lambda _: len,
             "mymod",
-            ("mymod.Hook", "mymod.Tag"),
+            lambda document: document("mymod.Hook", "mymod.Tag"),
             {"Configured": _CONFIGURED, "Hook": _crossref("Hook"), "Tag": _crossref("Tag")},
             id="configured-with-an-environment",
         ),
@@ -84,14 +89,16 @@ def test_type_alias_namespace(
     aliased_module: ModuleType,
     documented_types: _DocumentTypes,
     aliases: dict[str, str],
-    owner: Callable[[ModuleType], Callable[..., object]],
+    owner: Callable[
+        [ModuleType],
+        Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+    ],
     module: str,
-    documented: tuple[str, ...] | None,
+    documented: Callable[[_DocumentTypes], BuildEnvironment | None],
     expected: dict[str, dict[str, str | bool]],
 ) -> None:
-    env = None if documented is None else documented_types(*documented)
-    deferred, written = type_alias_namespace(aliases, owner(aliased_module), module, env)
-    assert ({name: vars(ref) for name, ref in deferred.items()}, written) == (expected, {})
+    deferred, written = type_alias_namespace(aliases, owner(aliased_module), module, documented(documented_types))
+    assert ({name: ref.__dict__ for name, ref in deferred.items()}, written) == (expected, {})
 
 
 @fixture(name="documented_types")
@@ -164,24 +171,28 @@ def test_type_alias_namespace_of_annotations_that_raise(documented_types: _Docum
             raise error
 
     deferred, written = type_alias_namespace({}, AnnotationsRaiser(), "mymod", documented_types("mymod.MyType"))
-    assert ({name: vars(ref) for name, ref in deferred.items()}, written) == (
+    assert ({name: ref.__dict__ for name, ref in deferred.items()}, written) == (
         {"MyType": {"name": "MyType", "configured": False, "crossref": True}},
         {},
     )
 
 
+def test_written_type_alias_names_the_alias() -> None:
+    alias = written_type_alias("Count", int, {"Count": int})
+    assert alias is not None
+    assert (alias.name, alias.value) == ("Count", int)
+
+
 @mark.parametrize(
-    ("written", "namespace", "expected"),
+    ("written", "namespace"),
     [
-        param("Count", {"Count": int}, ("Count", int), id="alias"),
-        param("_Count", {"_Count": int}, None, id="private"),
-        param("Count", {}, None, id="not-in-the-namespace"),
-        param("Count", {"Count": str}, None, id="other-value"),
+        param("_Count", {"_Count": int}, id="private"),
+        param("Count", {}, id="not-in-the-namespace"),
+        param("Count", {"Count": str}, id="other-value"),
     ],
 )
-def test_written_type_alias(written: str, namespace: dict[str, type], expected: tuple[str, type] | None) -> None:
-    alias = written_type_alias(written, int, namespace)
-    assert (None if alias is None else (alias.name, alias.value)) == expected
+def test_written_type_alias_names_nothing_else(written: str, namespace: dict[str, type]) -> None:
+    assert written_type_alias(written, int, namespace) is None
 
 
 def _special_formatter(annotation: Annotation, _config: Config) -> str | None:

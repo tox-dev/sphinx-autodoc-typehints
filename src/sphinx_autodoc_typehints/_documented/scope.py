@@ -5,15 +5,15 @@ from __future__ import annotations
 from functools import partial
 from typing import TYPE_CHECKING, Unpack
 
-from .._render import annotation_state
-from .._resolve import guard_bound
+from .._render.context import annotation_state
+from .._resolve.guards.run import guard_bound
 
 if TYPE_CHECKING:
     from contextlib import AbstractContextManager
 
     from sphinx.application import Sphinx
 
-    from .._render import ScopeExtras
+    from .._render.context import ScopeExtras
 
 
 def render_scope(app: Sphinx, module_prefix: str, **extra: Unpack[ScopeExtras]) -> AbstractContextManager[None]:

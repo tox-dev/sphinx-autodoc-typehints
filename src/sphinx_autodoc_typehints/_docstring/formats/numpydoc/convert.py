@@ -120,7 +120,7 @@ def _parse_numpydoc_entries(lines: list[str], start: int) -> list[_NumpydocEntry
     return entries
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, kw_only=True)
 class _NumpydocEntry:
     name: str
     type: str

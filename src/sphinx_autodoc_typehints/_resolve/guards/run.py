@@ -72,14 +72,8 @@ def resolve_type_guarded_imports(autodoc_mock_imports: list[str], obj: Documente
             _execute_guarded_code(autodoc_mock_imports, obj, module_code, shadowed)
         finally:
             _RUNNING_GUARDS.pop()
-            # what a guard imported from a guard still running binds once every guard it waited on finished
             if not _RUNNING_GUARDS:
-                while _IMPORTS_FROM_RUNNING_GUARDS:
-                    pending = _IMPORTS_FROM_RUNNING_GUARDS.pop()
-                    # a guard may have taken the module out of sys.modules since, leaving only what its own guard bound
-                    module_globals = vars(source_module) if (source_module := modules.get(pending.source)) else {}
-                    if pending.name in (names := ChainMap(SHADOWED_BY_GUARD[pending.source], module_globals)):
-                        pending.importer[pending.bound] = names[pending.name]
+                _bind_deferred_imports()
 
 
 def _execute_guarded_code(
@@ -117,14 +111,6 @@ def _execute_guarded_code(
     })
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
-class _PendingImport:
-    importer: dict[str, Documented]
-    bound: str
-    source: str
-    name: str
-
-
 def _warn_guarded_import(obj: Documented, exc: Exception) -> None:
     warn(
         "guarded_import",
@@ -151,21 +137,7 @@ def _run_guarded_import(
         except ImportError as exc:
             if not exc.name:
                 return
-            if (
-                isinstance(exc, ModuleNotFoundError)
-                and exc.name not in mocked
-                and any(
-                    module == exc.name or module.startswith(f"{exc.name}.")
-                    for node in walk(statement)
-                    for module in (
-                        [alias.name for alias in node.names]
-                        if isinstance(node, Import)
-                        else [_source_module(node, namespace)]
-                        if isinstance(node, ImportFrom)
-                        else []
-                    )
-                )
-            ):
+            if _is_absent_guarded_dependency(exc, statement, namespace, mocked):
                 # the guard lets the code run without the dependency, so mock it as autodoc_mock_imports would (#768)
                 _LOGGER.debug("Mocked absent guarded dependency %r for %r", exc.name, getattr(obj, "__module__", "?"))
                 mocked.append(exc.name)
@@ -173,24 +145,28 @@ def _run_guarded_import(
             resolve_type_guarded_imports(autodoc_mock_imports, import_module(exc.name))
             with mock(mocked), suppress(ImportError):
                 exec(guarded_code, namespace)  # ruff:ignore[exec-builtin]  # runs the guard's statement
-        if (
-            not isinstance(statement, ImportFrom)
-            or (module := modules.get(source := _source_module(statement, namespace))) is None
-        ):
-            return
-        # when the guards of two modules import from each other, the one still running is half-built, so read it once it
-        # finishes
-        if source in _RUNNING_GUARDS:
-            deferred.extend((alias.asname or alias.name, source, alias.name) for alias in statement.names)
-            return
-        # running the guard of every module a guard imports from would warn about what nothing here reads
-        if source not in SHADOWED_BY_GUARD and guard_binds(module, {alias.name for alias in statement.names}):
-            resolve_type_guarded_imports(autodoc_mock_imports, module)
-        shadowed = SHADOWED_BY_GUARD.get(source, {})
-        namespace.update({
-            alias.asname or alias.name: shadowed[alias.name] for alias in statement.names if alias.name in shadowed
-        })
+        _bind_guarded_import(autodoc_mock_imports, statement, namespace, deferred)
         return
+
+
+def _is_absent_guarded_dependency(
+    exc: ImportError, statement: stmt, namespace: dict[str, Documented], mocked: list[str]
+) -> bool:
+    return (
+        isinstance(exc, ModuleNotFoundError)
+        and exc.name not in mocked
+        and any(
+            module == exc.name or module.startswith(f"{exc.name}.")
+            for node in walk(statement)
+            for module in (
+                [alias.name for alias in node.names]
+                if isinstance(node, Import)
+                else [_source_module(node, namespace)]
+                if isinstance(node, ImportFrom)
+                else []
+            )
+        )
+    )
 
 
 def _source_module(statement: ImportFrom, namespace: dict[str, Documented]) -> str:
@@ -198,6 +174,49 @@ def _source_module(statement: ImportFrom, namespace: dict[str, Documented]) -> s
         "." * statement.level + (statement.module or ""),
         package if isinstance(package := namespace.get("__package__"), str) else None,
     )
+
+
+def _bind_guarded_import(
+    autodoc_mock_imports: list[str],
+    statement: stmt,
+    namespace: dict[str, Documented],
+    deferred: list[tuple[str, str, str]],
+) -> None:
+    if (
+        not isinstance(statement, ImportFrom)
+        or (module := modules.get(source := _source_module(statement, namespace))) is None
+    ):
+        return
+    # when the guards of two modules import from each other, the one still running is half-built, so read it once it
+    # finishes
+    if source in _RUNNING_GUARDS:
+        deferred.extend((alias.asname or alias.name, source, alias.name) for alias in statement.names)
+        return
+    # running the guard of every module a guard imports from would warn about what nothing here reads
+    if source not in SHADOWED_BY_GUARD and guard_binds(module, {alias.name for alias in statement.names}):
+        resolve_type_guarded_imports(autodoc_mock_imports, module)
+    shadowed = SHADOWED_BY_GUARD.get(source, {})
+    namespace.update({
+        alias.asname or alias.name: shadowed[alias.name] for alias in statement.names if alias.name in shadowed
+    })
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class _PendingImport:
+    importer: dict[str, Documented]
+    bound: str
+    source: str
+    name: str
+
+
+def _bind_deferred_imports() -> None:
+    # what a guard imported from a guard still running binds once every guard it waited on finished
+    while _IMPORTS_FROM_RUNNING_GUARDS:
+        pending = _IMPORTS_FROM_RUNNING_GUARDS.pop()
+        # a guard may have taken the module out of sys.modules since, leaving only what its own guard bound
+        module_globals = source_module.__dict__ if (source_module := modules.get(pending.source)) else {}
+        if pending.name in (names := ChainMap(SHADOWED_BY_GUARD[pending.source], module_globals)):
+            pending.importer[pending.bound] = names[pending.name]
 
 
 __all__ = [

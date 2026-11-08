@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from render_scopes import Count
+    from . import Count
 
 
 def consume(value: Count) -> None:

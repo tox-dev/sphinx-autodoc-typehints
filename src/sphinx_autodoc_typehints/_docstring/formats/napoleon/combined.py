@@ -9,8 +9,7 @@ from typing import TYPE_CHECKING, Literal
 
 from sphinx.locale import _  # ruff:ignore[import-private-name]  # Sphinx documents it as public
 
-from sphinx_autodoc_typehints._render import as_field_type
-
+from ...._render.annotation.rendered import as_field_type
 from ..base import format_default, last_paragraph_end, line_indent
 
 if TYPE_CHECKING:
@@ -23,7 +22,11 @@ if TYPE_CHECKING:
 
 
 def type_combined_field_entry(
-    app: Sphinx, lines: list[str], arg_name: str, annotation: Hint | WrittenTypeAlias | None, default: object
+    app: Sphinx,
+    lines: list[str],
+    arg_name: str,
+    annotation: Hint | WrittenTypeAlias | None,
+    default: object,  # simplint: ignore[SMP602]  # a parameter default is any value
 ) -> bool:
     """
     Type the `**name** -- text` entry of a combined field, where one field lists every parameter.

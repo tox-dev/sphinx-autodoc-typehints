@@ -8,7 +8,7 @@ from typing_extensions import Doc
 UserId = Union[int, str]
 RequestData = dict[str, Any]
 Count = int
-T = TypeVar("T")
+ItemT = TypeVar("ItemT")
 Described = Annotated[int, Doc("an int value")]
 Counter = Generator[int, None, str]
 Ticket = NewType("Ticket", int)
@@ -37,6 +37,11 @@ def count_eager(amount: Count, limit: int) -> None:
 class Users:
     """A user registry."""
 
+    @property
+    def size(self) -> Count:
+        """The number of users."""
+        return 0
+
     def get(self, user_id: UserId) -> str:
         """
         Get a user by ID.
@@ -45,11 +50,6 @@ class Users:
             user_id: The user identifier
         """
         return f"{type(self).__name__} {user_id}"
-
-    @property
-    def size(self) -> Count:
-        """The number of users."""
-        return 0
 
 
 class Special:
@@ -106,10 +106,10 @@ def scale(amount: Count | str) -> Count | str:
     return amount
 
 
-class Base(Generic[T]):
+class Base(Generic[ItemT]):
     """A base."""
 
-    def echo(self, value: T) -> T:
+    def echo(self, value: ItemT) -> ItemT:
         """
         Echo a value.
 

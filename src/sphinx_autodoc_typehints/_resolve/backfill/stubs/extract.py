@@ -13,7 +13,10 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 
-def stub_annotations(obj: Callable[..., object], name: str = "") -> dict[str, str]:
+def stub_annotations(
+    obj: Callable[..., object],  # simplint: ignore[SMP603]  # a stub may describe a callable of any signature
+    name: str = "",
+) -> dict[str, str]:
     """Return the annotations the stub describing `obj`, documented as `name`, writes for it, empty without one."""
     if (
         not (path := stub_path(obj, name))
@@ -53,11 +56,6 @@ def stub_annotations(obj: Callable[..., object], name: str = "") -> dict[str, st
     }
 
 
-def find_ast_node(body: list[stmt], parts: list[str]) -> stmt | None:
-    """Return the first statement `parts` names in `body`, following classes inward, `None` when none does."""
-    return next(iter(_find_ast_nodes(body, parts)), None)
-
-
 def _find_ast_nodes(body: list[stmt], parts: list[str]) -> list[stmt]:
     target, *rest = parts
     functions: list[stmt] = []
@@ -67,6 +65,11 @@ def _find_ast_nodes(body: list[stmt], parts: list[str]) -> list[stmt]:
         if isinstance(node, FunctionDef | AsyncFunctionDef) and node.name == target and not rest:
             functions.append(node)
     return functions
+
+
+def find_ast_node(body: list[stmt], parts: list[str]) -> stmt | None:
+    """Return the first statement `parts` names in `body`, following classes inward, `None` when none does."""
+    return next(iter(_find_ast_nodes(body, parts)), None)
 
 
 __all__ = [

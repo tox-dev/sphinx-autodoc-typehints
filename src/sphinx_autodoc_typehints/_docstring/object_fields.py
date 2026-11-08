@@ -8,18 +8,16 @@ from typing import TYPE_CHECKING
 
 from sphinx.util.inspect import object_description
 
-from .._documented import (
-    OVERLOADED_KINDS,
-    as_written,
-    documenting_class,
-    overload_skip,
-    resolved_type_hints,
-    typed_overloads,
-)
+from .._documented.hints import as_written, documenting_class, resolved_type_hints
+from .._documented.members import overload_skip
+from .._documented.overloads import OVERLOADED_KINDS, typed_overloads
 from .._objects import documented_owner, stored_name, unwrapped
-from .._render import as_field_type, fixup_module_name, value_markup
+from .._render.annotation.names import fixup_module_name
+from .._render.annotation.rendered import as_field_type
 from .._render.intersphinx import inventory
-from .._resolve import bound_type_args, resolve_overloads
+from .._render.value import value_markup
+from .._resolve.generics import bound_type_args
+from .._resolve.overloads import resolve_overloads
 from .._state import written_signatures
 from .parameters import VARIADIC_STARS
 
@@ -28,11 +26,16 @@ if TYPE_CHECKING:
 
     from sphinx.application import Sphinx
 
-    from .._documented import Entry
+    from .._documented.entry import Entry
+    from .._refs import WrittenTypeAlias
     from .._types import Documented, Hint
 
 
-def inject_overloads(entry: Entry, obj: Callable[..., object], lines: list[str]) -> bool:
+def inject_overloads(
+    entry: Entry,
+    obj: Callable[..., object],  # simplint: ignore[SMP603]  # autodoc documents any callable, function or method
+    lines: list[str],
+) -> bool:
     """
     List the overloads of `obj`, the callable `entry` documents, below the summary, and return whether it has some.
 
@@ -61,31 +64,48 @@ def inject_overloads(entry: Entry, obj: Callable[..., object], lines: list[str])
     render = partial(as_field_type, config=app.config)
     listed = ["", ":Overloads:"]
     for parameters, hints in typed_overloads(app, name, obj, overloads, overload_skip(entry), arguments):
-        entries: list[str] = []
-        for at, param in enumerate(parameters):
-            if param.kind is param.KEYWORD_ONLY and (
-                not at or parameters[at - 1].kind in {param.POSITIONAL_ONLY, param.POSITIONAL_OR_KEYWORD}
-            ):
-                entries.append("\\*")
-            hint = hints[param.name]
-            entries.append(
-                f"**{VARIADIC_STARS.get(param.kind.name, '')}{param.name}**"
-                f"{f' ({typed})' if hint is not Parameter.empty and (typed := render(hint)) else ''}"
-                f"{'' if param.default is param.empty else f' = {value_markup(object_description(param.default))}'}"
-            )
-            if param.kind is param.POSITIONAL_ONLY and (
-                at + 1 == len(parameters) or parameters[at + 1].kind is not param.POSITIONAL_ONLY
-            ):
-                entries.append("/")
-        returned = (
-            f" → {return_type}"
-            if (return_hint := hints["return"]) is not Signature.empty and (return_type := render(return_hint))
-            else ""
-        )
-        listed.append(f"   * {', '.join(entries) or '()'}{returned}")
+        listed.append(_overload_line(parameters, hints, render))
     summary_at = summary_end(lines)
     lines[summary_at:summary_at] = [*listed, ""]
     return True
+
+
+def _overload_line(
+    parameters: list[Parameter],
+    hints: Mapping[str, Hint | WrittenTypeAlias],
+    render: Callable[[Hint | WrittenTypeAlias], str],
+) -> str:
+    entries = _overload_parameters(parameters, hints, render)
+    returned = (
+        f" → {return_type}"
+        if (return_hint := hints["return"]) is not Signature.empty and (return_type := render(return_hint))
+        else ""
+    )
+    return f"   * {', '.join(entries) or '()'}{returned}"
+
+
+def _overload_parameters(
+    parameters: list[Parameter],
+    hints: Mapping[str, Hint | WrittenTypeAlias],
+    render: Callable[[Hint | WrittenTypeAlias], str],
+) -> list[str]:
+    entries: list[str] = []
+    for at, param in enumerate(parameters):
+        if param.kind is param.KEYWORD_ONLY and (
+            not at or parameters[at - 1].kind in {param.POSITIONAL_ONLY, param.POSITIONAL_OR_KEYWORD}
+        ):
+            entries.append("\\*")
+        hint = hints[param.name]
+        entries.append(
+            f"**{VARIADIC_STARS.get(param.kind.name, '')}{param.name}**"
+            f"{f' ({typed})' if hint is not Parameter.empty and (typed := render(hint)) else ''}"
+            f"{'' if param.default is param.empty else f' = {value_markup(object_description(param.default))}'}"
+        )
+        if param.kind is param.POSITIONAL_ONLY and (
+            at + 1 == len(parameters) or parameters[at + 1].kind is not param.POSITIONAL_ONLY
+        ):
+            entries.append("/")
+    return entries
 
 
 def summary_end(lines: list[str]) -> int:
@@ -132,7 +152,13 @@ def inject_setter_type(
     lines.extend(["", f":Setter accepts: {accepted_type}"])
 
 
-def inject_override(app: Sphinx, what: str, name: str, obj: Callable[..., object], lines: list[str]) -> None:
+def inject_override(
+    app: Sphinx,
+    what: str,
+    name: str,
+    obj: Callable[..., object],  # simplint: ignore[SMP603]  # a method or property of any signature
+    lines: list[str],
+) -> None:
     if what not in {"method", "property"} or getattr(obj, "__override__", False) is not True:
         return
     owner, attribute = documented_owner(name)
@@ -140,7 +166,7 @@ def inject_override(app: Sphinx, what: str, name: str, obj: Callable[..., object
         return
     stored = stored_name(owner, attribute)
     # an inherited member overrides what its defining class's bases define, not what that class itself does
-    if (base := next(iter([klass for klass in owner.__mro__ if stored in vars(klass)][1:]), None)) is None:
+    if (base := next(iter([klass for klass in owner.__mro__ if stored in klass.__dict__][1:]), None)) is None:
         return
     target = f"{fixup_module_name(app.config, base.__module__)}.{base.__qualname__}.{attribute}"
     linked_owner = base

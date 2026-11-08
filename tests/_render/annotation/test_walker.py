@@ -6,7 +6,7 @@ from dataclasses import InitVar
 from enum import Enum
 from io import StringIO
 from pydoc import locate
-from re import Pattern, findall
+from re import VERBOSE, Pattern, findall
 from sys import version_info
 from textwrap import dedent
 from threading import local
@@ -20,7 +20,9 @@ from pytest import mark, param, skip
 from sphinx.util.inspect import TypeAliasForwardRef
 
 from sphinx_autodoc_typehints._refs import MyTypeAliasForwardRef, WrittenTypeAlias
-from sphinx_autodoc_typehints._render import ENUM_MEMBER_ROLE, annotation_state, format_annotation
+from sphinx_autodoc_typehints._render.annotation.walker import format_annotation
+from sphinx_autodoc_typehints._render.context import annotation_state
+from sphinx_autodoc_typehints._render.enum_member import ENUM_MEMBER_ROLE
 
 if TYPE_CHECKING:
     from _pytest.mark import ParameterSet
@@ -30,8 +32,8 @@ if TYPE_CHECKING:
     from sphobjinv import Inventory
 
     from _render.conftest import MakeConfig
-    from sphinx_autodoc_typehints._render.context import TypehintsFormatter
-    from sphinx_autodoc_typehints._types import Annotation
+    from sphinx_autodoc_typehints._render.context import AnnotationKind, TypehintsFormatter
+    from sphinx_autodoc_typehints._types import Annotation, RenderNode
 
 Item = TypeVar("Item")
 Out_co = TypeVar("Out_co", covariant=True)
@@ -237,7 +239,7 @@ _CASES: Final[list[ParameterSet]] = [
         id="MutualRecA",
     ),
     param(
-        Callable[..., int],
+        Callable[..., int],  # simplint: ignore[SMP603]  # the rendered Callable[...] is the case under test
         r":py:class:`~collections.abc.Callable`\ \[:py:data:`...<Ellipsis>`, :py:class:`int`]",
         id="Callable-Ellipsis-int",
     ),
@@ -464,12 +466,16 @@ def test_format_annotation_modern_spelling_overrides_unsimplified_union(make_con
 def test_format_annotation_both_libs(
     config: Config, library: ModuleType, name: str, params: Annotation, expected: str
 ) -> None:
-    if (form := getattr(library, name, None)) is None:  # pragma: no cover -- typing gained some of these after 3.12
+    form = getattr(library, name, None)
+    if form is None:  # pragma: no cover -- typing gained some of these  # simplint: ignore[SMP803]  # Python-dependent
         skip(f"{name} not available in the {library.__name__} module")
-    if library is typing_extensions and not hasattr(typing, name):
+    if library is typing_extensions and not hasattr(typing, name):  # simplint: ignore[SMP803]  # Python-dependent rows
         # the docs list a name under typing_extensions while typing on this Python lacks it
         expected = expected.replace("~typing.", "~typing_extensions.")
-    assert format_annotation(form if params is None else form[params], config) == expected
+    assert (
+        format_annotation(form if params is None else form[params], config)  # simplint: ignore[SMP803]  # None is bare
+        == expected
+    )
 
 
 @mark.parametrize(
@@ -609,16 +615,27 @@ def test_format_annotation_alias_union_keeps_its_bars(
     assert format_annotation(make_union(MyTypeAliasForwardRef("Json")), config) == expected
 
 
-def test_format_annotation_alias_union_leaves_optional_alone(config: Config) -> None:
+@mark.parametrize(
+    "expected",
+    [
+        param(
+            "Json | :sphinx_autodoc_typehints_constant:`None`",
+            id="bars",
+            marks=mark.skipif(version_info < (3, 14), reason="Optional renders with bars from Python 3.14"),
+        ),
+        param(
+            r":py:data:`~typing.Optional`\ \[Json]",
+            id="optional",
+            marks=mark.skipif(version_info >= (3, 14), reason="Optional renders as typing.Optional before 3.14"),
+        ),
+    ],
+)
+def test_format_annotation_alias_union_leaves_optional_alone(config: Config, expected: str) -> None:
     alias = MyTypeAliasForwardRef("Json")
     # the | form renders first, and the Union typing caches for both must not keep its mark
     format_annotation(alias | None, config)
     optional_alias = typing.Optional[alias]  # ty: ignore[invalid-type-form]  # the cached Optional is under test
-    assert format_annotation(optional_alias, config) == (
-        "Json | :sphinx_autodoc_typehints_constant:`None`"
-        if version_info >= (3, 14)
-        else r":py:data:`~typing.Optional`\ \[Json]"
-    )
+    assert format_annotation(optional_alias, config) == expected
 
 
 @mark.parametrize(
@@ -671,7 +688,14 @@ def test_format_annotation_type_variable_reads_as_its_name(build_text: BuildText
 def test_format_annotation_type_variable_links_to_its_entry(build_text: BuildText, directive: str) -> None:
     html = build_text(f".. {directive}:: dummy_module.Bounded\n\n.. autofunction:: dummy_module.bounded")
     assert (
-        findall(r'href="([^"]*)"[^>]*><code class="xref py py-obj[^"]*"><span class="pre">Bounded<', html)
+        findall(
+            r"""
+            href="([^"]*)"                                  # the link to the entry
+            [^>]*><code\ class="xref\ py\ py-obj[^"]*"><span\ class="pre">Bounded<
+            """,
+            html,
+            VERBOSE,
+        )
         == ["#dummy_module.Bounded"] * 2
     )
 
@@ -679,7 +703,7 @@ def test_format_annotation_type_variable_links_to_its_entry(build_text: BuildTex
 @mark.sphinx("text", testroot="type-params")
 def test_format_annotation_unpacked_type_variable_reads_as_starred(build_text: BuildText) -> None:
     assert build_text(".. autofunction:: type_params_module.variadic") == dedent("""\
-        type_params_module.variadic[*Ts, **P](*args)
+        type_params_module.variadic[*Ts, **Params](*args)
 
            Take variadic type parameters.
 
@@ -721,10 +745,14 @@ def test_format_annotation_param_spec_component_reads_as_written(build_text: Bui
 )
 def test_format_annotation_param_spec_component_links_to_its_entry(build_text: BuildText, shown: str) -> None:
     html = build_text(".. py:data:: type_params_module.DP\n\n.. autofunction:: type_params_module.relay")
-    assert findall(r'href="#type_params_module\.DP"[^>]*><code[^>]*><span class="pre">([^<]*)<', html) == [
-        f"{shown}.args",
-        f"{shown}.kwargs",
-    ]
+    assert findall(
+        r"""
+        href="\#type_params_module\.DP"  # the link to the parameter spec
+        [^>]*><code[^>]*><span\ class="pre">([^<]*)<
+        """,
+        html,
+        VERBOSE,
+    ) == [f"{shown}.args", f"{shown}.kwargs"]
 
 
 @mark.sphinx("html", testroot="type-params")
@@ -839,7 +867,7 @@ def test_format_annotation_formatter_replaces_the_types_it_formats_in_a_build(
         """)
 
 
-def _format_by_kind(annotation: object, _config: object, kind: str) -> str | None:
+def _format_by_kind(annotation: RenderNode, _config: Config, kind: AnnotationKind) -> str | None:
     return kind.upper() if annotation is int or kind == "base" else None
 
 

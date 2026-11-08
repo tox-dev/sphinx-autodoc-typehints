@@ -15,6 +15,8 @@ from .._types import frozendict
 
 if version_info >= (3, 14):  # pragma: >=3.14 cover
     from annotationlib import Format, get_annotations
+else:  # pragma: <3.14 cover
+    from inspect import get_annotations
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
@@ -31,7 +33,9 @@ class Subscriptable(Protocol):
 
 
 def declared_type_params(
-    documented: Documented, function: Callable[..., object] | None, documenting: Documented
+    documented: Documented,
+    function: Callable[..., object] | None,  # simplint: ignore[SMP603]  # any function that declares type parameters
+    documenting: Documented,
 ) -> frozenset[TypeParam]:
     """
     Return the type parameters the signatures of `documented` declare.
@@ -79,7 +83,7 @@ def bound_type_args(documenting: Documented, attribute: str) -> dict[TypeParam, 
     if not isinstance(documenting, type):
         return {}
     for definer in documenting.__mro__:
-        if attribute in vars(definer):
+        if attribute in definer.__dict__:
             break
         # an attribute only annotated in the class body, as `value: T` is, counts too; the annotation may name what
         # only a type checker imports, so read it without evaluating, and a class may define __annotations__ as
@@ -90,7 +94,10 @@ def bound_type_args(documenting: Documented, attribute: str) -> dict[TypeParam, 
             except ValueError:
                 declared = {}
         else:  # pragma: <3.14 cover
-            declared = vars(definer).get("__annotations__")
+            try:
+                declared = get_annotations(definer)
+            except ValueError:
+                declared = {}
         if isinstance(declared, dict) and attribute in declared:
             break
     else:
@@ -98,6 +105,13 @@ def bound_type_args(documenting: Documented, attribute: str) -> dict[TypeParam, 
     if definer is documenting or not getattr(definer, "__parameters__", ()):
         return {}
     return type_arguments(definer, _parametrized(documenting, definer))
+
+
+def type_arguments(cls: type, alias: Documented) -> dict[TypeParam, Annotation]:
+    """Map the type parameters of `cls` to the arguments `alias` subscripting it gives them, none for `cls`."""
+    params = getattr(cls, "__parameters__", ())
+    # a TypeVarTuple takes any number of arguments, leaving no one-to-one match, and a bare base binds none
+    return dict(zip(params, args, strict=True)) if len(params) == len(args := get_args(alias)) else {}
 
 
 def _parametrized(cls: type, target: type) -> Annotation:
@@ -114,13 +128,6 @@ def _parametrized(cls: type, target: type) -> Annotation:
     if (origin := get_origin(base) or base) is target:
         return base
     return specialize(_parametrized(origin, target), type_arguments(origin, base))
-
-
-def type_arguments(cls: type, alias: Documented) -> dict[TypeParam, Annotation]:
-    """Map the type parameters of `cls` to the arguments `alias` subscripting it gives them, none for `cls`."""
-    params = getattr(cls, "__parameters__", ())
-    # a TypeVarTuple takes any number of arguments, leaving no one-to-one match, and a bare base binds none
-    return dict(zip(params, args, strict=True)) if len(params) == len(args := get_args(alias)) else {}
 
 
 def specialize[Value](annotation: Value, arguments: Mapping[TypeParam, Annotation]) -> Value | Annotation:

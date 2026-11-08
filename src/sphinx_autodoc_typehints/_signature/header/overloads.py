@@ -7,8 +7,9 @@ from typing import TYPE_CHECKING
 
 from sphinx.util.inspect import getdoc
 
-from sphinx_autodoc_typehints._documented import OVERLOADED_KINDS, class_doc_choice
-from sphinx_autodoc_typehints._resolve import resolve_overloads
+from ..._documented.members import class_doc_choice
+from ..._documented.overloads import OVERLOADED_KINDS
+from ..._resolve.overloads import resolve_overloads
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -20,7 +21,11 @@ if TYPE_CHECKING:
 
 
 def signature_overloads(
-    app: Sphinx, what: str, documented: Callable[..., object], obj: QualifiedCallable, options: Options
+    app: Sphinx,
+    what: str,
+    documented: Callable[..., object],  # simplint: ignore[SMP603]  # the documented callable may be any function
+    obj: QualifiedCallable,
+    options: Options,
 ) -> list[Signature]:
     if (
         not app.config.typehints_use_signature

@@ -26,7 +26,7 @@ from typing import TYPE_CHECKING, Final, ForwardRef, Union
 
 from sphinx.util import logging
 
-from ..guards import annotation_globals, guarded_names
+from ..guards.overlay import annotation_globals, guarded_names
 from ..source import names_read
 
 if version_info >= (3, 14):  # pragma: >=3.14 cover
@@ -58,7 +58,7 @@ def resolve_string_annotations(
     """
     # the __module__ of a C extension function may name a child (cbor2._cbor2) of the package its stub describes
     # (cbor2/__init__.pyi); the module defining obj is the one the evaluation that failed before this one used
-    globalns = vars(modules[owner_module]) if owner_module in modules else annotation_globals(obj)
+    globalns = modules[owner_module].__dict__ if owner_module in modules else annotation_globals(obj)
     resolved: dict[str, Hint] = {}
     for name, value in hints.items():
         resolved[name] = value
@@ -106,7 +106,7 @@ class _KeepArguments(NodeTransformer):
         return Call(func=Name(id=_SUBSCRIPT, ctx=Load()), args=[node.value, node.slice], keywords=[])
 
 
-def _subscript(value: Subscriptable, item: object) -> Annotation | GenericAlias:
+def _subscript(value: Subscriptable, item: Annotation) -> Annotation | GenericAlias:
     # a generic alias renders as the subscription written, and links the class
     return (
         GenericAlias(value, item) if (subscripted := value[item]) is value and isinstance(value, type) else subscripted
