@@ -31,7 +31,7 @@ from ast import (
 )
 from functools import cache
 from inspect import getsource
-from re import MULTILINE, VERBOSE, findall
+from re import match
 from typing import TYPE_CHECKING
 from warnings import catch_warnings, simplefilter
 
@@ -64,15 +64,7 @@ def guarded_statements(module_code: str) -> tuple[tuple[stmt, ...], tuple[Syntax
             nodes, errors = [], []
             # a statement of the module body starting with `if`, with its indented lines and its `elif` and
             # `else` branches
-            for block in findall(
-                r"""
-                ^if\b.*(?:\n|\Z)                   # the `if` line
-                (?:(?:[ \t]+.*|(?:elif|else)\b.*)?  # an indented line, or an `elif` or `else` line
-                (?:\n|\Z))*                        # the end of each such line
-                """,
-                module_code,
-                MULTILINE | VERBOSE,
-            ):
+            for block in _if_blocks(module_code):
                 if "TYPE_CHECKING" in block:
                     try:
                         nodes.extend(parse(block).body)
@@ -94,6 +86,20 @@ def guarded_statements(module_code: str) -> tuple[tuple[stmt, ...], tuple[Syntax
 
 
 # `None` when `TYPE_CHECKING` plays no part in the test
+def _if_blocks(module_code: str) -> list[str]:
+    blocks: list[str] = []
+    open_block = False
+    for line in module_code.splitlines(keepends=True):
+        if match(r"if\b", line):
+            blocks.append(line)
+            open_block = True
+        elif open_block and (not line.strip() or line[0] in " \t" or match(r"(?:elif|else)\b", line)):
+            blocks[-1] += line
+        else:
+            open_block = False
+    return blocks
+
+
 def _holds_when_type_checking(test: expr) -> bool | None:
     if isinstance(test, Constant):
         return bool(test.value)
