@@ -73,24 +73,24 @@ class Plain:
     year: int
 
 
-class Options[T](TypedDict):
+class Options[ItemT](TypedDict):
     """Generic over the type of its keys."""
 
-    limit: T
-    extra: NotRequired[list[T]]
+    limit: ItemT
+    extra: NotRequired[list[ItemT]]
 
 
 class IntOptions(Options[int]):
     """Binds the type parameter of its base."""
 
 
-U = TypeVar("U")
+ExtraT = TypeVar("ExtraT")
 
 
-class LegacyOptions(TypedDict, Generic[U]):  # ruff:ignore[non-pep695-generic-class]  # the legacy form under test
+class LegacyOptions(TypedDict, Generic[ExtraT]):  # ruff:ignore[non-pep695-generic-class]  # the legacy form under test
     """Generic over the type of its keys the pre-PEP 695 way."""
 
-    limit: U
+    limit: ExtraT
 
 
 class StrOptions(LegacyOptions[str]):
