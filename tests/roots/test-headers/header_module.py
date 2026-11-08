@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from decimal import Decimal
 
-U = TypeVar("U")
+ElemT = TypeVar("ElemT")
 
 LIMIT: Annotated[int, "a cap"] = 3  # simplint: ignore[SMP601]  # header tests render the annotation as written
 """The limit."""
@@ -87,17 +87,17 @@ class Vault:
         return 0
 
 
-class Box[T]:
+class Box[ItemT]:
     """Holds a value."""
 
-    value: T
+    value: ItemT
     """The value."""
 
-    label: tuple[T, ...] = ()
+    label: tuple[ItemT, ...] = ()
     """The label."""
 
     @property
-    def first(self) -> T:
+    def first(self) -> ItemT:
         """The first."""
         raise NotImplementedError
 
@@ -106,10 +106,10 @@ class IntBox(Box[int]):
     """Holds an integer."""
 
 
-class Legacy(Generic[U]):  # ruff:ignore[non-pep695-generic-class]  # the legacy form under test
+class Legacy(Generic[ElemT]):  # ruff:ignore[non-pep695-generic-class]  # the legacy form under test
     """Holds items the legacy way."""
 
-    items: list[U]
+    items: list[ElemT]
     """The items."""
 
 
