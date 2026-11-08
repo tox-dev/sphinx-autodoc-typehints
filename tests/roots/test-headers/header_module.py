@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from decimal import Decimal
 
-ElemT = TypeVar("ElemT")
+CellT = TypeVar("CellT")
 
 LIMIT: Annotated[int, "a cap"] = 3  # simplint: ignore[SMP601]  # header tests render the annotation as written
 """The limit."""
@@ -106,10 +106,10 @@ class IntBox(Box[int]):
     """Holds an integer."""
 
 
-class Legacy(Generic[ElemT]):  # ruff:ignore[non-pep695-generic-class]  # the legacy form under test
+class Legacy(Generic[CellT]):  # ruff:ignore[non-pep695-generic-class]  # the legacy form under test
     """Holds items the legacy way."""
 
-    items: list[ElemT]
+    items: list[CellT]
     """The items."""
 
 

@@ -84,13 +84,13 @@ class IntOptions(Options[int]):
     """Binds the type parameter of its base."""
 
 
-ExtraT = TypeVar("ExtraT")
+TagT = TypeVar("TagT")
 
 
-class LegacyOptions(TypedDict, Generic[ExtraT]):  # ruff:ignore[non-pep695-generic-class]  # the legacy form under test
+class LegacyOptions(TypedDict, Generic[TagT]):  # ruff:ignore[non-pep695-generic-class]  # the legacy form under test
     """Generic over the type of its keys the pre-PEP 695 way."""
 
-    limit: ExtraT
+    limit: TagT
 
 
 class StrOptions(LegacyOptions[str]):

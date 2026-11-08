@@ -28,7 +28,7 @@ if TYPE_CHECKING:
         param(".. automethod:: type_params_module.IntBox.get", '"int"', id="legacy"),
         param(".. automethod:: type_params_module.IntStack.peek", '"int"', id="pep695"),
         param(".. automethod:: type_params_module.IntListing.get", '"list"["int"]', id="through-two-bases"),
-        param(".. automethod:: type_params_module.Listing.get", '"list"["ElemT"]', id="to-own-param"),
+        param(".. automethod:: type_params_module.Listing.get", '"list"["CellT"]', id="to-own-param"),
         param(".. automethod:: type_params_module.Restack.peek", '"ValueT"', id="to-own-param-of-the-name"),
         param(".. automethod:: type_params_module.IntFeed.pull", '"int"', id="protocol-not-runtime-checkable"),
         param(".. automethod:: type_params_module.IntSink.put", '"int"', id="past-a-registered-base"),

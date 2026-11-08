@@ -159,7 +159,7 @@ class IntBox(Box[int]):
     """Binds the type parameter of its base."""
 
 
-class Listing[ElemT](Box[list[ElemT]]):
+class Listing[CellT](Box[list[CellT]]):
     """Fills the type parameter of its base with a list of its own type parameter."""
 
 
