@@ -523,13 +523,13 @@ def test_override_without_public_target_keeps_warning(build_text: BuildText, war
     assert "py:meth reference target not found: argparse._ActionsContainer.add_argument" in warning.getvalue()
 
 
-def _get_int(self: object) -> int: ...
+def _get_int(self: object) -> int: ...  # simplint: ignore[SMP602]  # any instance
 
 
-def _set_int(self: object, new: int) -> None: ...
+def _set_int(self: object, new: int) -> None: ...  # simplint: ignore[SMP602]  # any instance
 
 
-def _set_int_or_str(self: object, new: int | str) -> None: ...
+def _set_int_or_str(self: object, new: int | str) -> None: ...  # simplint: ignore[SMP602]  # any instance
 
 
 class _Ambiguous:
@@ -540,10 +540,13 @@ class _Ambiguous:
         raise ValueError(msg)
 
 
-def _get_ambiguous(self: object) -> Annotated[int, _Ambiguous()]: ...
+def _get_ambiguous(self: object) -> Annotated[int, _Ambiguous()]: ...  # simplint: ignore[SMP602]  # any instance
 
 
-def _set_ambiguous(self: object, new: Annotated[int, _Ambiguous()]) -> None: ...
+def _set_ambiguous(
+    self: object,  # simplint: ignore[SMP602]  # any instance
+    new: Annotated[int, _Ambiguous()],
+) -> None: ...
 
 
 class _Unreadable:

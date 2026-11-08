@@ -118,7 +118,8 @@ def _type_yields(annotation: Hint, description: str | None, app: Sphinx, lines: 
 
 
 def description_from_doc(
-    annotation: Hint | None, extractor: Callable[[object], str | None] | None = None
+    annotation: Hint | None,
+    extractor: Callable[[object], str | None] | None = None,  # simplint: ignore[SMP602]  # callback gets any metadata
 ) -> str | None:
     """Return a `Doc` description, or one the configured metadata callback extracts."""
     if get_origin(annotation) is not Annotated:

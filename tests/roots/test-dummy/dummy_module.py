@@ -208,7 +208,7 @@ class DocumentedTwiceThroughNew:
 
 
 @singledispatch
-def dispatch(arg: object, flag: bool = False) -> str:
+def dispatch(arg: object, flag: bool = False) -> str:  # simplint: ignore[SMP602]  # the docs render object as written
     """
     Dispatch on the argument type.
 

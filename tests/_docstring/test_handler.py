@@ -192,7 +192,11 @@ def test_function_takes_the_params_of_what_it_calls(process: Process, func: Docu
 
 @mark.sphinx(confoverrides={"always_document_param_types": True, "typehints_defaults": "comma"})
 def test_wrapper_lists_the_parameters_it_states(process: Process) -> None:
-    def handle(ctx: object, name: str, count: int = 1) -> bool: ...
+    def handle(
+        ctx: object,  # simplint: ignore[SMP602]  # the injected context may be any value
+        name: str,
+        count: int = 1,
+    ) -> bool: ...
 
     @wraps(handle)
     def injected(*args: object, **kwargs: object) -> bool: ...

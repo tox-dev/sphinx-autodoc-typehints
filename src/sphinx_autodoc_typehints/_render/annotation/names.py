@@ -21,11 +21,11 @@ from typing import (
 from sphinx_autodoc_typehints._types import frozendict
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Hashable, Mapping
 
     from sphinx.config import Config
 
-    from sphinx_autodoc_typehints._types import Hint, RenderNode
+    from sphinx_autodoc_typehints._types import Annotation, Hint, RenderNode
 
     from ..context import FixupModuleName
 
@@ -60,7 +60,7 @@ PYDATA_ANNOTATIONS: Final[set[tuple[str, str]]] = {
     ),
 }
 # built once, as every annotation rendered looks itself up in it
-_TYPES_NAMES: Final[Mapping[object, str]] = frozendict(
+_TYPES_NAMES: Final[Mapping[Hashable, str]] = frozendict(
     {getattr(types, name): name for name in types.__all__} | {types.FunctionType: "FunctionType"}
 )
 
@@ -140,7 +140,7 @@ def get_annotation_args(annotation: Hint | NewType | None, module: str, class_na
 
 # subscripting fills in the PEP 696 defaults the source leaves out, so a trailing argument the generic gives back
 # when subscripted without it is a default, whether written or filled in, and type checkers read both the same
-def _subscript_args(annotation: object, generic: object) -> tuple[RenderNode, ...]:
+def _subscript_args(annotation: Annotation, generic: Annotation) -> tuple[RenderNode, ...]:
     kept = len(args := getattr(annotation, "__args__", ()))
     while kept > 1:
         try:

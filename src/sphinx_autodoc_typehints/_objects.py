@@ -21,15 +21,19 @@ if TYPE_CHECKING:
 
     from attrs import AttrsInstance
 
-    from ._types import Documented
+    from ._types import Annotation, Documented
 
 
 class QualifiedCallable(Protocol):
     __qualname__: str
     __module__: str
-    __annotations__: dict[str, object]
+    __annotations__: dict[str, Annotation]
 
-    def __call__(self, *args: object, **kwargs: object) -> object: ...
+    def __call__(
+        self,
+        *args: object,  # simplint: ignore[SMP602]  # the proxy forwards calls of any shape
+        **kwargs: object,  # simplint: ignore[SMP602]  # the proxy forwards calls of any shape
+    ) -> object: ...  # simplint: ignore[SMP602]  # the proxy forwards calls of any shape
 
 
 def callable_target(obj: Callable[..., object]) -> tuple[QualifiedCallable, QualifiedCallable] | None:
@@ -140,12 +144,17 @@ def prefix_of(name: str) -> str:
     return name.rpartition(".")[0]
 
 
-def alias_lookup_names(module_prefix: str, name: str, *, guarded: Mapping[str, object] | None = None) -> list[str]:
+def alias_lookup_names(
+    module_prefix: str,
+    name: str,
+    *,
+    guarded: Mapping[str, object] | None = None,  # simplint: ignore[SMP602]  # guarded bindings hold any value
+) -> list[str]:
     """Return the names a `py:type` documenting an alias used under `module_prefix` may have, innermost first."""
     scopes = enclosing_scopes(module_prefix)
     missing = object()
 
-    def binding(scope: str) -> object:
+    def binding(scope: str) -> object:  # simplint: ignore[SMP602]  # a binding is any attribute value
         if (prefix := imported_prefix(scope.split("."))) is None:
             return missing
         return getattr(object_at(*prefix), "__dict__", {}).get(name, missing)

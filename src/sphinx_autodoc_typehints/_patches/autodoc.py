@@ -63,7 +63,7 @@ def patch_signature_lines() -> None:
     original_get_signatures = ObjectDescription.get_signatures
 
     @wraps(original_get_signatures)
-    def get_signatures(self: ObjectDescription[object]) -> list[str]:
+    def get_signatures(self: ObjectDescription[object]) -> list[str]:  # simplint: ignore[SMP602]  # any directive
         line = self.arguments[0]
         if signatures := signature_lines(self.env).pop(f"{self.options.get('module')}.{line}", None):
             name = line.removesuffix(signatures[0])
@@ -88,8 +88,8 @@ def patch_autodoc_type_hints() -> None:
 @wraps(get_type_hints)
 def _guarded_type_hints(
     obj: Documented,
-    globalns: dict[str, object] | None = None,
-    localns: Mapping[str, object] | None = None,
+    globalns: dict[str, object] | None = None,  # simplint: ignore[SMP602]  # namespaces hold any value
+    localns: Mapping[str, object] | None = None,  # simplint: ignore[SMP602]  # namespaces hold any value
     # ruff:ignore[boolean-type-hint-positional-argument, boolean-default-value-positional-argument]  # as it replaces
     include_extras: bool = False,
 ) -> dict[str, Annotation]:

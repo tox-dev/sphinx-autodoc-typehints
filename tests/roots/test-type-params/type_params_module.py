@@ -301,7 +301,7 @@ class Forwarding:
     """Forwards its annotations to the object it wraps."""
 
     @property
-    def __annotations__(self) -> dict[str, Any]:  # ruff:ignore[bad-dunder-method-name]  # the case under test
+    def __annotations__(self) -> dict[str, Any]:  # ruff:ignore[bad-dunder-method-name]  # the case under test  # simplint: ignore[SMP602]  # the case under test
         return {}
 
     def unwrap(self) -> int:

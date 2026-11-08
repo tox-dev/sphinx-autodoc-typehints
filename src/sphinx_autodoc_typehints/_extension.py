@@ -101,13 +101,13 @@ def setup(app: Sphinx) -> dict[str, bool | int | str]:
     }
 
 
-def _sphinx_autodoc_typehints_type_role(
+def _sphinx_autodoc_typehints_type_role(  # simplint: ignore[SMP602]  # docutils passes options of any value
     _role: str,
     _rawtext: str,
     text: str,
     lineno: int,
     inliner: states.Inliner,
-    _options: dict[str, object] | None = None,
+    _options: dict[str, object] | None = None,  # simplint: ignore[SMP602]  # docutils passes options of any value
     _content: list[str] | None = None,
 ) -> tuple[list[Node], list[Node]]:
     # a type is inline text, a block parse would turn one such as `- item` into a list

@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 def show_factory_defaults(cls: type, signature: Signature) -> Signature:
     """Replace the placeholder default of each dataclass or attrs field built by a factory with the factory's call."""
-    calls: dict[str, tuple[object, str]] = {}
+    calls: dict[str, tuple[object, str]] = {}  # simplint: ignore[SMP602]  # the placeholder is a private sentinel
     if is_dataclass(cls):
         for field in fields(cls):
             if field.default_factory is not MISSING:

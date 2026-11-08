@@ -22,7 +22,11 @@ if TYPE_CHECKING:
 
 
 def type_combined_field_entry(
-    app: Sphinx, lines: list[str], arg_name: str, annotation: Hint | WrittenTypeAlias | None, default: object
+    app: Sphinx,
+    lines: list[str],
+    arg_name: str,
+    annotation: Hint | WrittenTypeAlias | None,
+    default: object,  # simplint: ignore[SMP602]  # a parameter default is any value
 ) -> bool:
     """
     Type the `**name** -- text` entry of a combined field, where one field lists every parameter.

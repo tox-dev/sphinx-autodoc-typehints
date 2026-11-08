@@ -93,7 +93,9 @@ class AliasedOrigin:
     __origin__ = Aliased()
 
 
-_NAMES: Final[list[tuple[str, object, str, str, tuple[object, ...]]]] = [
+_NAMES: Final[
+    list[tuple[str, object, str, str, tuple[object, ...]]]  # simplint: ignore[SMP602]  # rows mix type forms and values
+] = [
     ("str", str, "builtins", "str", ()),
     ("None", None, "builtins", "None", ()),
     ("ModuleType", ModuleType, "types", "ModuleType", ()),

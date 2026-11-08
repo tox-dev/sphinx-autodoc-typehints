@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 pytestmark: Final[MarkDecorator] = mark.sphinx("text", testroot="dummy")
 
 
-def _field_description(metadata: object) -> str | None:
+def _field_description(metadata: object) -> str | None:  # simplint: ignore[SMP602]  # metadata may be any object
     return metadata.description if isinstance(metadata, FieldInfo) else None
 
 

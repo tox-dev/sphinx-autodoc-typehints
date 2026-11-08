@@ -223,7 +223,7 @@ def _described(first: Annotated[int, Doc("the first")], second: str) -> None: ..
 def _described_external(first: Annotated[int, AnnotatedDoc("the first")], second: str) -> None: ...
 
 
-def _field_description(metadata: object) -> str | None:
+def _field_description(metadata: object) -> str | None:  # simplint: ignore[SMP602]  # metadata may be any object
     return metadata.description if isinstance(metadata, FieldInfo) else None
 
 

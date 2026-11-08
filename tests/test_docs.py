@@ -91,7 +91,7 @@ def option_reference_fixture(monkeypatch: MonkeyPatch) -> ModuleType:
     return import_module("option_reference")
 
 
-def _admits(annotation: object, value: object) -> bool:
+def _admits(annotation: object, value: object) -> bool:  # simplint: ignore[SMP602]  # value may be any object
     if (origin := get_origin(annotation)) in {Union, UnionType}:
         return any(_admits(member, value) for member in get_args(annotation))
     if origin is Literal:
@@ -188,7 +188,10 @@ def test_docs_warnings_table_lists_the_categories() -> None:
     ],
 )
 def test_docs_typing_construct_renders_as_shown(
-    annotation: str, rendered: str, docs_namespace: dict[str, object], extension_config: Config
+    annotation: str,
+    rendered: str,
+    docs_namespace: dict[str, object],  # simplint: ignore[SMP602]  # the reference defines any values
+    extension_config: Config,
 ) -> None:
     hint = eval(annotation, docs_namespace)  # ruff:ignore[suspicious-eval-usage]  # an annotation the reference writes
 
@@ -196,9 +199,9 @@ def test_docs_typing_construct_renders_as_shown(
 
 
 @fixture(name="docs_namespace", scope="module")
-def docs_namespace_fixture() -> dict[str, object]:
+def docs_namespace_fixture() -> dict[str, object]:  # simplint: ignore[SMP602]  # the reference defines any values
     block = _section("Typing constructs").split(".. code-block:: python\n", 1)[1].split("\n.. ", 1)[0]
-    namespace: dict[str, object] = {"__name__": "reference"}
+    namespace: dict[str, object] = {"__name__": "reference"}  # simplint: ignore[SMP602]  # any values
     exec(dedent(block), namespace)  # ruff:ignore[exec-builtin]  # the table names what the reference's own code defines
     return namespace
 

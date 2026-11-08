@@ -52,7 +52,11 @@ class Proxy:
         self.wrapped = wrapped
         self.__doc__ = wrapped.__doc__
 
-    def __get__(self, instance: object, owner: type | None = None) -> object:
+    def __get__(
+        self,
+        instance: object,  # simplint: ignore[SMP602]  # descriptors get any instance
+        owner: type | None = None,
+    ) -> object:  # simplint: ignore[SMP602]  # descriptors get any instance
         return self.wrapped if instance is None else self.wrapped.__get__(instance, owner)
 
 

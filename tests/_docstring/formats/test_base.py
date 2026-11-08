@@ -60,7 +60,11 @@ class _MultiLineRepr:
         param("x\\y", r"'x\\\\y'", id="backslash"),
     ],
 )
-def test_format_default_describes_it_like_the_signature(app: SphinxTestApp, default: object, expected: str) -> None:
+def test_format_default_describes_it_like_the_signature(
+    app: SphinxTestApp,
+    default: object,  # simplint: ignore[SMP602]  # parametrized defaults are any value
+    expected: str,
+) -> None:
     app.config.typehints_defaults = "comma"
     assert format_default(app, default, annotated=True) == f", default: :sphinx_autodoc_typehints_value:`{expected}`"
 

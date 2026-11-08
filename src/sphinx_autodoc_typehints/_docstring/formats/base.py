@@ -26,7 +26,12 @@ class InsertIndexInfo:
     deferred: bool = False
 
 
-def format_default(app: Sphinx, default: object, *, annotated: bool) -> str | None:
+def format_default(
+    app: Sphinx,
+    default: object,  # simplint: ignore[SMP602]  # a parameter default is any value
+    *,
+    annotated: bool,
+) -> str | None:
     """Describe a default the way `typehints_defaults` asks, after a type when `annotated` or on its own."""
     if default is Parameter.empty:
         return None

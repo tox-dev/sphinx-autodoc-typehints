@@ -106,7 +106,7 @@ class _KeepArguments(NodeTransformer):
         return Call(func=Name(id=_SUBSCRIPT, ctx=Load()), args=[node.value, node.slice], keywords=[])
 
 
-def _subscript(value: Subscriptable, item: object) -> Annotation | GenericAlias:
+def _subscript(value: Subscriptable, item: Annotation) -> Annotation | GenericAlias:
     # a generic alias renders as the subscription written, and links the class
     return (
         GenericAlias(value, item) if (subscripted := value[item]) is value and isinstance(value, type) else subscripted

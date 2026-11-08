@@ -142,7 +142,7 @@ def _written(typed_dict: type) -> dict[str, Annotation | ForwardRef]:
 # part by part, as a string annotation evaluates anew for each class holding it, so the parts may be equal objects
 # rather than one, and comparing a whole `Annotated` asks its metadata, such as an array, for a truth value it may not
 # have
-def _same(left: object, right: object) -> bool:
+def _same(left: object, right: object) -> bool:  # simplint: ignore[SMP602]  # Annotated metadata may be any object
     if left is right:
         return True
     if (origin := get_origin(left)) is not None:
@@ -156,7 +156,7 @@ def _same(left: object, right: object) -> bool:
 
 def _item_type(hint: Annotation, *, optional: bool) -> Annotation:
     annotation = hint
-    metadata: list[object] = []
+    metadata: list[object] = []  # simplint: ignore[SMP602]  # Annotated metadata may be any object
     read_only = None
     while True:
         item_origin = get_origin(annotation)

@@ -216,7 +216,7 @@ class _Fields:
 class _Parameter:
     annotation: Hint | None
     shown: Hint | WrittenTypeAlias | None
-    default: object
+    default: object  # simplint: ignore[SMP602]  # a parameter default is any value
     stars: str
 
 
