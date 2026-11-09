@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Final, NamedTuple, ParamSpec, TypeVar, TypeVar
 from sphinx.ext.autodoc.mock import mock
 
 from sphinx_autodoc_typehints._refs import MyTypeAliasForwardRef
-from sphinx_autodoc_typehints._types import frozendict
+from sphinx_autodoc_typehints.types import frozendict
 
 from .extract import find_ast_node
 from .find import find_stub_owner, import_module_or_none, parse_stub_ast, resolve_import_from, stub_owner_package
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
     from types import GetSetDescriptorType, MemberDescriptorType, ModuleType
 
-    from sphinx_autodoc_typehints._types import Documented
+    from sphinx_autodoc_typehints.types import Documented
 
 # built once rather than for every stub read
 _FACTORIES: Final[Mapping[type[ast.type_param], Callable[[str], TypeVar | ParamSpec | TypeVarTuple]]] = frozendict({

@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from sphinx.application import Sphinx
     from sphinx.ext.autodoc import Options
 
-    from sphinx_autodoc_typehints._types import Documented
+    from sphinx_autodoc_typehints.types import Documented
 
 
 def mark_numpy_returns(

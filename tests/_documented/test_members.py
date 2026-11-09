@@ -12,7 +12,7 @@ from sphinx_autodoc_typehints._documented.members import class_doc_choice, class
 if TYPE_CHECKING:
     from sphinx.testing.util import SphinxTestApp
 
-    from sphinx_autodoc_typehints._types import Documented
+    from sphinx_autodoc_typehints.types import Documented
 
 
 def _helper(value: int) -> str: ...

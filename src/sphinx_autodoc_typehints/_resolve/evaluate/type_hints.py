@@ -36,7 +36,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping
     from typing import TypeAliasType
 
-    from sphinx_autodoc_typehints._types import Annotation, Documented
+    from sphinx_autodoc_typehints.types import Annotation, Documented
 
 
 _DROPS_ARGUMENTS: Final[WeakKeyDictionary[type | TypeAliasType, bool]] = WeakKeyDictionary()

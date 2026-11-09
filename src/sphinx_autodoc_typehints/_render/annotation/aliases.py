@@ -15,7 +15,7 @@ from .names import fixup_module_name, name_prefix
 if TYPE_CHECKING:
     from sphinx.config import Config
 
-    from sphinx_autodoc_typehints._types import RenderNode, TypeParam
+    from sphinx_autodoc_typehints.types import RenderNode, TypeParam
 
 
 def reaches_itself(alias: TypeAliasType) -> bool:

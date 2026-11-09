@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
     from conftest import MakeModule
 
-    from sphinx_autodoc_typehints._types import Documented
+    from sphinx_autodoc_typehints.types import Documented
 
 
 @mark.parametrize(

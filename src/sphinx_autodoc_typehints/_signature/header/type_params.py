@@ -12,7 +12,7 @@ from sphinx.util.typing import stringify_annotation
 
 from sphinx_autodoc_typehints._objects import object_at
 from sphinx_autodoc_typehints._private_imports import parse_annotation, parse_type_list
-from sphinx_autodoc_typehints._types import sentinel
+from sphinx_autodoc_typehints.types import sentinel
 
 from ..._render.annotation.walker import type_param_fields, unstar
 from ..._resolve.generics import TYPE_PARAM_KINDS, type_params_of
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from sphinx.application import Sphinx
     from sphinx.environment import BuildEnvironment
 
-    from sphinx_autodoc_typehints._types import Hint, TypeParam
+    from sphinx_autodoc_typehints.types import Hint, TypeParam
 
 
 type _Mode = Literal["fully-qualified-except-typing", "smart"]

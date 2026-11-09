@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from types import ModuleType
 
-    from sphinx_autodoc_typehints._types import Annotation
+    from sphinx_autodoc_typehints.types import Annotation
 
 
 @mark.parametrize(

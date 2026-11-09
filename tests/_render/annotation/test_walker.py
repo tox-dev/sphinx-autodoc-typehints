@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 
     from _render.conftest import MakeConfig
     from sphinx_autodoc_typehints._render.context import AnnotationKind, TypehintsFormatter
-    from sphinx_autodoc_typehints._types import Annotation, RenderNode
+    from sphinx_autodoc_typehints.types import Annotation, RenderNode
 
 Item = TypeVar("Item")
 Out_co = TypeVar("Out_co", covariant=True)

@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
     from conftest import BuildText
 
-    from sphinx_autodoc_typehints._types import Annotation
+    from sphinx_autodoc_typehints.types import Annotation
 
 
 @mark.parametrize(

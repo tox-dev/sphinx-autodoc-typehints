@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from sphinx.application import Sphinx
 
     from sphinx_autodoc_typehints._refs import WrittenTypeAlias
-    from sphinx_autodoc_typehints._types import Hint
+    from sphinx_autodoc_typehints.types import Hint
 
 
 def type_combined_field_entry(

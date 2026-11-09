@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from sphinx.environment import BuildEnvironment
     from sphinx.testing.util import SphinxTestApp
 
-    from sphinx_autodoc_typehints._types import Annotation
+    from sphinx_autodoc_typehints.types import Annotation
 
 # the workers fork from a process pytest-xdist already runs threads in
 _FORKS_WORKERS: Final[MarkDecorator] = mark.filterwarnings(

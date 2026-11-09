@@ -26,9 +26,10 @@ if TYPE_CHECKING:
 
     from sphinx.application import Sphinx
 
+    from sphinx_autodoc_typehints.types import Documented, Hint
+
     from .._documented.entry import Entry
     from .._refs import WrittenTypeAlias
-    from .._types import Documented, Hint
 
 
 def inject_overloads(

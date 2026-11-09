@@ -24,7 +24,7 @@ from sphinx_autodoc_typehints._resolve.forget import forget_reads
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from sphinx_autodoc_typehints._types import Documented
+    from sphinx_autodoc_typehints.types import Documented
 
 
 def test_stub_path_of_a_module_with_a_stub_beside_it(stub_mod: ModuleType) -> None:

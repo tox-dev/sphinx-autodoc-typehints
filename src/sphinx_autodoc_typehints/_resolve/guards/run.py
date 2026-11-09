@@ -30,7 +30,7 @@ from .parse import defined_names, guard_binds, guarded_statements, module_source
 if TYPE_CHECKING:
     from collections.abc import Generator
 
-    from sphinx_autodoc_typehints._types import Documented
+    from sphinx_autodoc_typehints.types import Documented
 
 
 _LOGGER: Final[logging.SphinxLoggerAdapter] = logging.getLogger(__name__)

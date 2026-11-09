@@ -12,10 +12,11 @@ from inspect import Parameter, Signature
 from keyword import iskeyword
 from typing import TYPE_CHECKING, Final, Literal, Unpack, get_args, get_origin
 
+from sphinx_autodoc_typehints.types import frozendict
+
 from .._documented.hints import as_written
 from .._render.annotation.rendered import as_field_type
 from .._resolve.typed_dict import typed_dict_keys
-from .._types import frozendict
 from .formats.base import format_default, last_paragraph_end
 from .formats.field_list.keywords import STAR_PREFIXES, field_keyword_and_argument
 from .formats.napoleon.combined import add_combined_field_entry, type_combined_field_entry
@@ -26,9 +27,10 @@ if TYPE_CHECKING:
 
     from sphinx.application import Sphinx
 
+    from sphinx_autodoc_typehints.types import Hint
+
     from .._documented.hints import ResolvedHints
     from .._refs import WrittenTypeAlias
-    from .._types import Hint
     from .formats.field_list.edit import FieldListFormat
 
 VARIADIC_STARS: Final[Mapping[str, str]] = frozendict({"VAR_POSITIONAL": "\\*", "VAR_KEYWORD": "\\*\\*"})

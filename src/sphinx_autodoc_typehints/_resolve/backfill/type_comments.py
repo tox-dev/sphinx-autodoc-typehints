@@ -14,7 +14,7 @@ from sphinx_autodoc_typehints._warnings import warn
 from ..source import parameters
 
 if TYPE_CHECKING:
-    from sphinx_autodoc_typehints._types import Documented
+    from sphinx_autodoc_typehints.types import Documented
 
 
 def backfill_type_hints(obj: Documented, name: str) -> dict[str, str]:
