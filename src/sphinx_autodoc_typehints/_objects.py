@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
     from attrs import AttrsInstance
 
-    from ._types import Annotation, Documented
+    from .shared_types import Annotation, Documented
 
 
 class QualifiedCallable(Protocol):
