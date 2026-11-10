@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
     from sphinx.application import Sphinx
 
-    from sphinx_autodoc_typehints.types import Hint
+    from sphinx_autodoc_typehints.shared_types import Hint
 
     from .._documented.entry import Entry
     from .._documented.hints import ResolvedHints

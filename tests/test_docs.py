@@ -18,7 +18,7 @@ from sphinx_autodoc_typehints._config import OPTIONS
 from sphinx_autodoc_typehints._render.annotation.rendered import as_signature_type
 from sphinx_autodoc_typehints._render.annotation.walker import format_annotation
 from sphinx_autodoc_typehints._warnings import warn
-from sphinx_autodoc_typehints.types import Documented
+from sphinx_autodoc_typehints.shared_types import Documented
 
 if TYPE_CHECKING:
     from conftest import MakeApp

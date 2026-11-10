@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from sphinx.environment import BuildEnvironment
     from sphinx.ext.autodoc import Options
 
-    from sphinx_autodoc_typehints.types import Documented
+    from sphinx_autodoc_typehints.shared_types import Documented
 
 
 def docstring_part(

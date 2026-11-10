@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from types import ModuleType
 
     from _resolve.conftest import MakeStubbedModule
-    from sphinx_autodoc_typehints.types import Documented
+    from sphinx_autodoc_typehints.shared_types import Documented
 
 type StubNamespace = tuple[dict[str, Documented], set[str]]
 

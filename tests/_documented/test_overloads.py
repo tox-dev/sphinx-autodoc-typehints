@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from conftest import BuildText
     from sphinx.testing.util import SphinxTestApp
 
-    from sphinx_autodoc_typehints.types import Annotation, TypeParam
+    from sphinx_autodoc_typehints.shared_types import Annotation, TypeParam
 
 pytestmark: Final[MarkDecorator] = mark.sphinx("text", testroot="dummy")
 

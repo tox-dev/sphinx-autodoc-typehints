@@ -12,7 +12,7 @@ from .._render.annotation.rendered import as_signature_type
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
 
-    from sphinx_autodoc_typehints.types import Hint
+    from sphinx_autodoc_typehints.shared_types import Hint
 
     from .._refs import WrittenTypeAlias
     from .._render.context import AnnotationKind

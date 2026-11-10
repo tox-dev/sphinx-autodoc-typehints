@@ -24,7 +24,7 @@ from .._state import signature_lines
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
-    from sphinx_autodoc_typehints.types import Annotation, Documented
+    from sphinx_autodoc_typehints.shared_types import Annotation, Documented
 
 
 BUILDING: Final[set[int]] = set()

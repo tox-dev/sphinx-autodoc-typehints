@@ -14,7 +14,7 @@ from typing import (
     get_origin,
 )
 
-from sphinx_autodoc_typehints.types import sentinel
+from sphinx_autodoc_typehints.shared_types import sentinel
 
 from .evaluate.type_hints import type_hints
 from .generics import specialize, type_arguments
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
     from typing import ForwardRef
 
-    from sphinx_autodoc_typehints.types import Annotation, Documented, TypeParam
+    from sphinx_autodoc_typehints.shared_types import Annotation, Documented, TypeParam
 
 
 OPEN = sentinel("OPEN")  # simplint: ignore[SMP601]  # ty rejects Final sentinels as types, astral-sh/ty#4737

@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from sphinx.config import Config
 
     from sphinx_autodoc_typehints._refs import WrittenTypeAlias
-    from sphinx_autodoc_typehints.types import Hint
+    from sphinx_autodoc_typehints.shared_types import Hint
 
     from ..context import AnnotationKind
 

@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
     from types import ModuleType
 
-    from sphinx_autodoc_typehints.types import Annotation
+    from sphinx_autodoc_typehints.shared_types import Annotation
 
 
 def get_instance_var_annotations(cls: type) -> dict[str, Annotation | str]:

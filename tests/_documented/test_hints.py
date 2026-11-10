@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from sphinx.testing.util import SphinxTestApp
 
     from sphinx_autodoc_typehints._objects import QualifiedCallable
-    from sphinx_autodoc_typehints.types import Annotation, Documented
+    from sphinx_autodoc_typehints.shared_types import Annotation, Documented
 
 pytestmark: Final[MarkDecorator] = mark.sphinx("text", testroot="dummy")
 

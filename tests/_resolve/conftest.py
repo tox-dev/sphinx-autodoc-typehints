@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Mapping
     from types import ModuleType
 
-    from sphinx_autodoc_typehints.types import Hint
+    from sphinx_autodoc_typehints.shared_types import Hint
 
 type MakeModule = Callable[[str], ModuleType]
 type MakeStubbedModule = Callable[[str, str], ModuleType]

@@ -19,7 +19,7 @@ from warnings import catch_warnings, simplefilter
 from sphinx.errors import PycodeError
 from sphinx.pycode import ModuleAnalyzer
 
-from sphinx_autodoc_typehints.types import frozendict
+from sphinx_autodoc_typehints.shared_types import frozendict
 
 from .._private_imports import VariableCommentPicker
 
@@ -29,7 +29,7 @@ if version_info >= (3, 14):  # pragma: >=3.14 cover
 if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping
 
-    from sphinx_autodoc_typehints.types import Annotation, Documented
+    from sphinx_autodoc_typehints.shared_types import Annotation, Documented
 
 
 def written_annotations(obj: Documented) -> dict[str, str]:

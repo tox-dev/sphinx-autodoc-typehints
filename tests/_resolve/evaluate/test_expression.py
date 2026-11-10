@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from _resolve.conftest import AsWritten
-    from sphinx_autodoc_typehints.types import Annotation, Documented, Hint
+    from sphinx_autodoc_typehints.shared_types import Annotation, Documented, Hint
 
 
 class _Engine:

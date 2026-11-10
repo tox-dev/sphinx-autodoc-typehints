@@ -36,7 +36,7 @@ from sphinx.util.typing import is_invalid_builtin_class
 
 from sphinx_autodoc_typehints._objects import alias_lookup_names
 from sphinx_autodoc_typehints._refs import MyTypeAliasForwardRef, WrittenTypeAlias, is_type_alias, split_arguments
-from sphinx_autodoc_typehints.types import sentinel
+from sphinx_autodoc_typehints.shared_types import sentinel
 
 from ..context import render_context
 from ..deferred import defer_alias_choice
@@ -65,7 +65,7 @@ if TYPE_CHECKING:
 
     from sphinx.config import Config
 
-    from sphinx_autodoc_typehints.types import Hint, RenderNode, TypeParam
+    from sphinx_autodoc_typehints.shared_types import Hint, RenderNode, TypeParam
 
     from ..context import ContextualTypehintsFormatter, TypehintsFormatter
 

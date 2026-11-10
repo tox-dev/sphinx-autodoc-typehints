@@ -12,7 +12,7 @@ from inspect import Parameter, Signature
 from keyword import iskeyword
 from typing import TYPE_CHECKING, Final, Literal, Unpack, get_args, get_origin
 
-from sphinx_autodoc_typehints.types import frozendict
+from sphinx_autodoc_typehints.shared_types import frozendict
 
 from .._documented.hints import as_written
 from .._render.annotation.rendered import as_field_type
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
     from sphinx.application import Sphinx
 
-    from sphinx_autodoc_typehints.types import Hint
+    from sphinx_autodoc_typehints.shared_types import Hint
 
     from .._documented.hints import ResolvedHints
     from .._refs import WrittenTypeAlias

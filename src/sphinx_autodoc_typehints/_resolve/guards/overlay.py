@@ -15,7 +15,7 @@ from sphinx_autodoc_typehints._objects import defining_module
 if TYPE_CHECKING:
     from collections.abc import Generator
 
-    from sphinx_autodoc_typehints.types import Documented
+    from sphinx_autodoc_typehints.shared_types import Documented
 
 
 #: Per module, what its `TYPE_CHECKING` block binds a name to that the module lacks or binds to something else at

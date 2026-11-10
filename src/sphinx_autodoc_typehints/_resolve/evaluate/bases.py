@@ -10,7 +10,7 @@ from ..guards.overlay import annotation_globals
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Mapping
 
-    from sphinx_autodoc_typehints.types import Annotation, Documented
+    from sphinx_autodoc_typehints.shared_types import Annotation, Documented
 
 
 def hints_of_bases(

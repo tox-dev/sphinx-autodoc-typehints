@@ -12,7 +12,7 @@ from sphinx_autodoc_typehints._objects import object_at, prefix_of, property_get
 from sphinx_autodoc_typehints._private_imports import parse_annotation, suppress_logging
 from sphinx_autodoc_typehints._refs import WrittenTypeAlias
 from sphinx_autodoc_typehints._state import note_type_documented, types_documented
-from sphinx_autodoc_typehints.types import sentinel
+from sphinx_autodoc_typehints.shared_types import sentinel
 
 from ..._documented.scope import render_scope
 from ..._render.annotation.rendered import as_header_type
@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     from sphinx.application import Sphinx
     from sphinx.environment import _CurrentDocument
 
-    from sphinx_autodoc_typehints.types import Documented, Hint
+    from sphinx_autodoc_typehints.shared_types import Documented, Hint
 
 
 # The hints resolved per owner while one document is read, keyed by that document; resolving an owner evaluates every

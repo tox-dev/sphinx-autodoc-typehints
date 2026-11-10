@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from inspect import isclass, isfunction
 from typing import TYPE_CHECKING
 
-from sphinx_autodoc_typehints.types import frozendict
+from sphinx_autodoc_typehints.shared_types import frozendict
 
 from .._objects import constructor_name, declared_signature, documented_owner, prefix_of
 from .._resolve.aliases import type_alias_namespace
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
     from sphinx.application import Sphinx
 
-    from sphinx_autodoc_typehints.types import Documented, Hint
+    from sphinx_autodoc_typehints.shared_types import Documented, Hint
 
     from .._objects import QualifiedCallable
     from .._refs import WrittenTypeAlias
