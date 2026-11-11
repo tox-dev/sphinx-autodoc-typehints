@@ -224,6 +224,7 @@ def _compile(source: Path, target: Path) -> None:
         *linker.split(),
         f"-I{get_path('include')}",
         *(get_config_var("CFLAGS") or "").split(),
+        *(get_config_var("CCSHARED") or "").split(),
         "-o",
         f"{target}{get_config_var('EXT_SUFFIX')}",
         str(source),

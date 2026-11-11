@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import Counter
 from json import loads
 from pathlib import Path
-from re import findall, search, sub
+from re import VERBOSE, findall, finditer, search, sub
 from textwrap import dedent, indent
 from typing import TYPE_CHECKING, Final, TypedDict
 from zlib import compress
@@ -95,9 +95,27 @@ def build_linked_fixture(project: Path, build: Build) -> Build:
     return build
 
 
-def _tab(app: SphinxTestApp, label: str) -> str:
+def _tabs(app: SphinxTestApp) -> list[tuple[str, str]]:
     page = (Path(app.outdir) / "index.html").read_text()
-    return page.split(f"\n{label}</label>", 1)[1].split('<label class="sd-tab-label"', 1)[0]
+    labels = list(
+        finditer(
+            r"""
+            <label\b[^>]*                    # attributes can precede the class
+            \bclass="sd-tab-label"[^>]*>      # tab label with any later attributes
+            \s*([^<]+?)\s*</label>            # displayed tab name
+            """,
+            page,
+            VERBOSE,
+        )
+    )
+    return [
+        (match.group(1), page[match.end() : labels[index + 1].start() if index + 1 < len(labels) else len(page)])
+        for index, match in enumerate(labels)
+    ]
+
+
+def _tab(app: SphinxTestApp, label: str) -> str:
+    return next(content for name, content in _tabs(app) if name == label)
 
 
 @mark.parametrize(
@@ -118,9 +136,7 @@ def test_live_example_shows(fragment: str, build: Build) -> None:
 def test_live_example_tab_order(build: Build) -> None:
     app = build(_EXAMPLE)
 
-    labels = findall(
-        r'<label class="sd-tab-label"[^>]*>\s*([^<]+?)\s*</label>', (Path(app.outdir) / "index.html").read_text()
-    )
+    labels = [name for name, _ in _tabs(app)]
 
     assert labels == ["conf.py", "demo.py", "sphinx-autodoc-typehints", "Sphinx built-in"]
 
@@ -314,9 +330,7 @@ def test_live_example_picker_warns_of_an_option_the_reference_leaves_out(build: 
 def test_live_example_picker_drops_the_conf_tab(build: Build) -> None:
     app = build(f"{_PICKER}{_picked()}")
 
-    labels = findall(
-        r'<label class="sd-tab-label"[^>]*>\s*([^<]+?)\s*</label>', (Path(app.outdir) / "index.html").read_text()
-    )
+    labels = [name for name, _ in _tabs(app)]
 
     assert labels == ["demo.py", "sphinx-autodoc-typehints", "Sphinx built-in"]
 
