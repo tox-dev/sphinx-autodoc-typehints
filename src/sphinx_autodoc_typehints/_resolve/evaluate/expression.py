@@ -35,7 +35,7 @@ if version_info >= (3, 14):  # pragma: >=3.14 cover
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
-    from sphinx_autodoc_typehints._types import Annotation, Documented, Hint
+    from sphinx_autodoc_typehints.shared_types import Annotation, Documented, Hint
 
     from ..generics import Subscriptable
 

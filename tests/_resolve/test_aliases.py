@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from sphinx.environment import BuildEnvironment
     from sphinx.testing.util import SphinxTestApp
 
-    from sphinx_autodoc_typehints._types import Annotation
+    from sphinx_autodoc_typehints.shared_types import Annotation
 
 pytestmark: Final[MarkDecorator] = mark.sphinx("text", testroot="resolve-stubs")
 

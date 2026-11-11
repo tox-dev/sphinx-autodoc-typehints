@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from conftest import BuildText, MakeModule
     from sphinx.config import Config
 
-    from sphinx_autodoc_typehints._types import Annotation
+    from sphinx_autodoc_typehints.shared_types import Annotation
 
     from .conftest import SignatureOf
 

@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from _pytest.mark import ParameterSet
     from conftest import BuildText
 
-    from sphinx_autodoc_typehints._types import Annotation, Hint
+    from sphinx_autodoc_typehints.shared_types import Annotation, Hint
 
     from .conftest import AsWritten, MakeStubbedModule
 

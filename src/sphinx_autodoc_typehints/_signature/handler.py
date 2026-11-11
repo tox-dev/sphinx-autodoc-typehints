@@ -33,8 +33,9 @@ if TYPE_CHECKING:
     from sphinx.application import Sphinx
     from sphinx.ext.autodoc import Options
 
+    from sphinx_autodoc_typehints.shared_types import Documented
+
     from .._objects import QualifiedCallable
-    from .._types import Documented
 
 
 def process_signature(

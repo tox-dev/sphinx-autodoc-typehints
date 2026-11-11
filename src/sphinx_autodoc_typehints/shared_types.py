@@ -22,18 +22,21 @@ else:  # pragma: <3.15 cover
 
     from typing_extensions import Sentinel
 
+    #: Constructor for read-only mappings on Python versions before 3.15.
     frozendict = MappingProxyType
+    #: Sentinel factory on Python versions before 3.15.
     sentinel = Sentinel
 
 # only type checkers evaluate the alias value, so `TypeForm` needs no runtime import
+#: Any expression accepted as a type annotation.
 type Annotation = TypeForm[object]  # simplint: ignore[SMP602]  # a type form admits every annotation
+#: An object whose documentation may be inspected.
 type Documented = object  # simplint: ignore[SMP602]  # a documented object may be any value
-# a type parameter is a type form only when written, a value holding one is not
+#: A type parameter declaration, rather than its runtime value.
 type TypeParam = TypeVar | ParamSpec | TypeVarTuple
-# what reading a hint yields when evaluating it failed, leaving the reference or the text as written
+#: A resolved annotation or its unevaluated forward reference.
 type Hint = Annotation | ForwardRef | str
-# a value holding a NewType or an alias is no type form, and a subscript holds parameter lists and tuples, all of which
-# rendering walks
+#: A value the renderer may traverse while formatting an annotation.
 type RenderNode = (
     Hint | NewType | TypeAliasType | TypeAliasForwardRef | list[RenderNode] | tuple[RenderNode, ...] | None
 )

@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
     from types import ModuleType
 
-    from sphinx_autodoc_typehints._types import Documented
+    from sphinx_autodoc_typehints.shared_types import Documented
 
 
 _STUB_AST_CACHE: Final[dict[tuple[Path, int], Module | None]] = {}

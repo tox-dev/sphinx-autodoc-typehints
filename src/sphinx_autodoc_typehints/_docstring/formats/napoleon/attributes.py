@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from sphinx.application import Sphinx
     from sphinx.ext.autodoc import Options
 
-    from sphinx_autodoc_typehints._types import Documented
+    from sphinx_autodoc_typehints.shared_types import Documented
 
 
 #: the attributes each docstring documented before napoleon rewrote it, by the id of its line list

@@ -10,8 +10,9 @@ from sys import version_info
 from types import get_original_bases
 from typing import TYPE_CHECKING, Final, Protocol, TypeGuard, get_args, get_origin
 
+from sphinx_autodoc_typehints.shared_types import frozendict
+
 from .._objects import object_at
-from .._types import frozendict
 
 if version_info >= (3, 14):  # pragma: >=3.14 cover
     from annotationlib import Format, get_annotations
@@ -22,7 +23,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
     from typing import TypeIs
 
-    from .._types import Annotation, Documented, TypeParam
+    from sphinx_autodoc_typehints.shared_types import Annotation, Documented, TypeParam
 
 
 TYPE_PARAM_KINDS: Final[Mapping[str, str]] = frozendict({"TypeVar": "", "TypeVarTuple": "*", "ParamSpec": "**"})

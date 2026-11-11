@@ -15,7 +15,7 @@ from sphinx.util.inspect import TypeAliasForwardRef
 if TYPE_CHECKING:
     from typing import TypeIs
 
-    from ._types import Annotation, Hint
+    from .shared_types import Annotation, Hint
 
 
 class MyTypeAliasForwardRef(TypeAliasForwardRef):

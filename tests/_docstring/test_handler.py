@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from conftest import BuildText
     from sphinx.testing.util import SphinxTestApp
 
-    from sphinx_autodoc_typehints._types import Documented
+    from sphinx_autodoc_typehints.shared_types import Documented
 
     from .conftest import Process
 

@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from sphinx.config import Config
 
     from _render.conftest import MakeConfig
-    from sphinx_autodoc_typehints._types import Annotation
+    from sphinx_autodoc_typehints.shared_types import Annotation
 
 
 @mark.parametrize(

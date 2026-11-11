@@ -27,7 +27,7 @@ from .guards.run import guard_bound, resolve_type_guarded_imports
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
 
-    from .._types import Documented, Hint
+    from sphinx_autodoc_typehints.shared_types import Documented, Hint
 
 
 def get_all_type_hints(

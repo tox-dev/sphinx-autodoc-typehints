@@ -17,7 +17,7 @@ from sphinx.domains.std import ConfigurationValue
 from sphinx_autodoc_typehints._render.annotation.walker import format_annotation
 from sphinx_autodoc_typehints._render.context import ContextualTypehintsFormatter, FixupModuleName, TypehintsFormatter
 from sphinx_autodoc_typehints._resolve.hints import resolve_annotations
-from sphinx_autodoc_typehints._types import RenderNode
+from sphinx_autodoc_typehints.shared_types import RenderNode
 
 if TYPE_CHECKING:
     from docutils.nodes import system_message

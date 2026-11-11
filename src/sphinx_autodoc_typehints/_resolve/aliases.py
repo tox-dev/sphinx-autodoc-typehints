@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
     from sphinx.environment import BuildEnvironment
 
-    from .._types import Documented, Hint
+    from sphinx_autodoc_typehints.shared_types import Documented, Hint
 
 
 def type_alias_namespace(

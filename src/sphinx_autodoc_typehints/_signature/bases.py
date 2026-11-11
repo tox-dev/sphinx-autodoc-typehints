@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from sphinx.application import Sphinx
     from sphinx.ext.autodoc import Options
 
-    from sphinx_autodoc_typehints._types import Hint
+    from sphinx_autodoc_typehints.shared_types import Hint
 
 
 def process_bases(app: Sphinx, name: str, _obj: type, _options: Options, bases: list[Hint | str]) -> None:

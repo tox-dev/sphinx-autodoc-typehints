@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
     from sphinx.application import Sphinx
 
-    from .._types import Annotation
+    from sphinx_autodoc_typehints.shared_types import Annotation
 
 # the lazy type leaves the last token before the closing colon to the name; a line this does not match, such as a bare
 # `:ivar :`, is no field to type and must not crash the parse (#683)

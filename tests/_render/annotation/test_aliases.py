@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from sphinx.testing.util import SphinxTestApp
 
     from _render.conftest import MakeConfig
-    from sphinx_autodoc_typehints._types import Annotation
+    from sphinx_autodoc_typehints.shared_types import Annotation
 
 Item = TypeVar("Item")
 BackportIntList = typing_extensions.TypeAliasType(  # ruff:ignore[non-pep695-type-alias]  # the backport is under test

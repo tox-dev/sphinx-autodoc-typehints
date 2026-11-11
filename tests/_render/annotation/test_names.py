@@ -41,7 +41,7 @@ if TYPE_CHECKING:
     from conftest import BuildText, MakeModule
 
     from _render.conftest import MakeConfig
-    from sphinx_autodoc_typehints._types import Hint, RenderNode
+    from sphinx_autodoc_typehints.shared_types import Hint, RenderNode
 
 
 Item = TypeVar("Item")

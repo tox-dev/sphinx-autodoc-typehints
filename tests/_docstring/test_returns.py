@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
     from conftest import BuildText, MakeModule
 
-    from sphinx_autodoc_typehints._types import Annotation, Documented
+    from sphinx_autodoc_typehints.shared_types import Annotation, Documented
 
     from .conftest import Process
 

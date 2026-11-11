@@ -6,22 +6,24 @@ from dataclasses import dataclass
 from inspect import isclass, isfunction
 from typing import TYPE_CHECKING
 
+from sphinx_autodoc_typehints.shared_types import frozendict
+
 from .._objects import constructor_name, declared_signature, documented_owner, prefix_of
 from .._resolve.aliases import type_alias_namespace
 from .._resolve.evaluate.expression import resolve_string_annotations
 from .._resolve.generics import bound_type_args, declared_type_params, specialize
 from .._resolve.hints import get_all_type_hints
-from .._types import frozendict
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
     from sphinx.application import Sphinx
 
+    from sphinx_autodoc_typehints.shared_types import Documented, Hint
+
     from .._objects import QualifiedCallable
     from .._refs import WrittenTypeAlias
     from .._render.context import TypeParamScope
-    from .._types import Documented, Hint
 
 
 def resolved_type_hints(

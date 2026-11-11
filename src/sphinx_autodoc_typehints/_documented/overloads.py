@@ -18,8 +18,9 @@ if TYPE_CHECKING:
 
     from sphinx.application import Sphinx
 
+    from sphinx_autodoc_typehints.shared_types import Annotation, Hint, TypeParam
+
     from .._refs import WrittenTypeAlias
-    from .._types import Annotation, Hint, TypeParam
 
 
 OVERLOADED_KINDS: Final[frozenset[str]] = frozenset({"function", "method", "class", "exception"})

@@ -13,7 +13,7 @@ from sphinx.util import logging
 from ._objects import get_obj_location
 
 if TYPE_CHECKING:
-    from ._types import Documented
+    from .shared_types import Documented
 
 type WarningSubtype = Literal["comment", "forward_reference", "guarded_import", "local_function", "multiple_ast_nodes"]
 

@@ -18,14 +18,14 @@ from typing import (
     TypeVarTuple,
 )
 
-from sphinx_autodoc_typehints._types import frozendict
+from sphinx_autodoc_typehints.shared_types import frozendict
 
 if TYPE_CHECKING:
     from collections.abc import Hashable, Mapping
 
     from sphinx.config import Config
 
-    from sphinx_autodoc_typehints._types import Annotation, Hint, RenderNode
+    from sphinx_autodoc_typehints.shared_types import Annotation, Hint, RenderNode
 
     from ..context import FixupModuleName
 
