@@ -4,7 +4,9 @@ from textwrap import dedent
 from typing import TYPE_CHECKING, Final
 
 if TYPE_CHECKING:
-    from sphinx_autodoc_typehints._render.context import TypehintsFormatter
+    from sphinx_autodoc_typehints._render.context import (  # simplint: ignore[private-import-path]  # formatter fixture
+        TypehintsFormatter,
+    )
 
 PROLOG: Final[str] = dedent("""\
     .. |test_node_start| replace:: test_start

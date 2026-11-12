@@ -5,7 +5,9 @@ from __future__ import annotations
 from ast import AnnAssign, AsyncFunctionDef, ClassDef, FunctionDef, Name, stmt, unparse
 from typing import TYPE_CHECKING
 
-from sphinx_autodoc_typehints._resolve.source import function_annotations
+from sphinx_autodoc_typehints._resolve.source import (  # simplint: ignore[private-import-path]  # package init cycle
+    function_annotations,
+)
 
 from .find import live_statements, parse_stub_ast, stub_path
 
@@ -14,7 +16,7 @@ if TYPE_CHECKING:
 
 
 def stub_annotations(
-    obj: Callable[..., object],  # simplint: ignore[SMP603]  # a stub may describe a callable of any signature
+    obj: Callable[..., object],  # simplint: ignore[callable-ellipsis]  # stubs may describe any callable
     name: str = "",
 ) -> dict[str, str]:
     """Return the annotations the stub describing `obj`, documented as `name`, writes for it, empty without one."""

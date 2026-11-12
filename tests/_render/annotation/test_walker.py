@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import re
 import typing  # passed as a library and probed at runtime
 from collections.abc import Callable, Mapping
 from dataclasses import InitVar
 from enum import Enum
 from io import StringIO
 from pydoc import locate
-from re import VERBOSE, Pattern, findall
+from re import VERBOSE, Pattern
 from sys import version_info
 from textwrap import dedent
 from threading import local
@@ -19,21 +20,34 @@ import typing_extensions  # passed as a library and compared by identity
 from pytest import mark, param, skip
 from sphinx.util.inspect import TypeAliasForwardRef
 
-from sphinx_autodoc_typehints._refs import MyTypeAliasForwardRef, WrittenTypeAlias
+# constructs alias references
+from sphinx_autodoc_typehints._refs import (
+    MyTypeAliasForwardRef,
+    WrittenTypeAlias,
+)
 from sphinx_autodoc_typehints._render.annotation.walker import format_annotation
 from sphinx_autodoc_typehints._render.context import annotation_state
-from sphinx_autodoc_typehints._render.enum_member import ENUM_MEMBER_ROLE
 
 if TYPE_CHECKING:
-    from _pytest.mark import ParameterSet
     from conftest import BuildText, MakeModule
+    from pytest import ParameterSet
     from sphinx.config import Config
     from sphinx.testing.util import SphinxTestApp
     from sphobjinv import Inventory
 
-    from _render.conftest import MakeConfig
-    from sphinx_autodoc_typehints._render.context import AnnotationKind, TypehintsFormatter
-    from sphinx_autodoc_typehints._types import Annotation, RenderNode
+    from _render.conftest import (  # simplint: ignore[private-import-path]  # shared config fixture
+        MakeConfig,
+    )
+    from sphinx_autodoc_typehints._render.context import (  # simplint: ignore[private-import-path]  # walker context
+        AnnotationKind,
+        TypehintsFormatter,
+    )
+    from sphinx_autodoc_typehints._types import (  # simplint: ignore[private-import-path]  # internal node tests
+        Annotation,
+        RenderNode,
+    )
+
+_ENUM_MEMBER_ROLE: Final[str] = "sphinx_autodoc_typehints_enum_member"
 
 Item = TypeVar("Item")
 Out_co = TypeVar("Out_co", covariant=True)
@@ -239,7 +253,7 @@ _CASES: Final[list[ParameterSet]] = [
         id="MutualRecA",
     ),
     param(
-        Callable[..., int],  # simplint: ignore[SMP603]  # the rendered Callable[...] is the case under test
+        Callable[..., int],  # simplint: ignore[callable-ellipsis]  # the rendered Callable[...] is the case under test
         r":py:class:`~collections.abc.Callable`\ \[:py:data:`...<Ellipsis>`, :py:class:`int`]",
         id="Callable-Ellipsis-int",
     ),
@@ -427,7 +441,7 @@ def test_format_annotation_modern_spelling_overrides_unsimplified_union(make_con
         param(
             "Literal",
             (SomeEnum.VALUE,),
-            rf":py:data:`~typing.Literal`\ \[:{ENUM_MEMBER_ROLE}:`SomeEnum.VALUE <{__name__}.SomeEnum.VALUE>`]",
+            rf":py:data:`~typing.Literal`\ \[:{_ENUM_MEMBER_ROLE}:`SomeEnum.VALUE <{__name__}.SomeEnum.VALUE>`]",
             id="Literal-enum",
         ),
         param(
@@ -467,13 +481,18 @@ def test_format_annotation_both_libs(
     config: Config, library: ModuleType, name: str, params: Annotation, expected: str
 ) -> None:
     form = getattr(library, name, None)
-    if form is None:  # pragma: no cover -- typing gained some of these  # simplint: ignore[SMP803]  # Python-dependent
+    if form is None:  # simplint: ignore[conditional-in-test]  # Some forms exist only in typing_extensions
         skip(f"{name} not available in the {library.__name__} module")
-    if library is typing_extensions and not hasattr(typing, name):  # simplint: ignore[SMP803]  # Python-dependent rows
+    if library is typing_extensions and not hasattr(  # simplint: ignore[conditional-in-test]  # missing in typing
+        typing, name
+    ):
         # the docs list a name under typing_extensions while typing on this Python lacks it
         expected = expected.replace("~typing.", "~typing_extensions.")
     assert (
-        format_annotation(form if params is None else form[params], config)  # simplint: ignore[SMP803]  # None is bare
+        format_annotation(
+            form if params is None else form[params],  # simplint: ignore[conditional-in-test]  # None is bare
+            config,
+        )
         == expected
     )
 
@@ -580,13 +599,13 @@ def test_format_annotation_formatter(
         param(
             Literal[OtherEnum.VALUE],
             {"typehints_fully_qualified": True},
-            f":{ENUM_MEMBER_ROLE}:`{__name__}.OtherEnum.VALUE`",
+            f":{_ENUM_MEMBER_ROLE}:`{__name__}.OtherEnum.VALUE`",
             id="enum-member-fully-qualified",
         ),
         param(
             Literal[SomeEnum.VALUE],
             {"typehints_fixup_module_name": lambda module: "" if module == __name__ else module},
-            f":{ENUM_MEMBER_ROLE}:`SomeEnum.VALUE`",
+            f":{_ENUM_MEMBER_ROLE}:`SomeEnum.VALUE`",
             id="enum-member-without-module",
         ),
     ],
@@ -683,20 +702,21 @@ def test_format_annotation_type_variable_reads_as_its_name(build_text: BuildText
     )
 
 
+_TEST_FORMAT_ANNOTATION_TYPE_VARIABLE_LINKS_TO_ITS_ENTRY_PATTERN: Final[re.Pattern[str]] = re.compile(
+    r"""
+            href="([^"]*)"                                  # the link to the entry
+            [^>]*><code\ class="xref\ py\ py-obj[^"]*"><span\ class="pre">Bounded<
+            """,
+    VERBOSE,
+)
+
+
 @mark.parametrize("directive", [param("py:class", id="class"), param("py:data", id="data")])
 @mark.sphinx("html", testroot="dummy")
 def test_format_annotation_type_variable_links_to_its_entry(build_text: BuildText, directive: str) -> None:
     html = build_text(f".. {directive}:: dummy_module.Bounded\n\n.. autofunction:: dummy_module.bounded")
     assert (
-        findall(
-            r"""
-            href="([^"]*)"                                  # the link to the entry
-            [^>]*><code\ class="xref\ py\ py-obj[^"]*"><span\ class="pre">Bounded<
-            """,
-            html,
-            VERBOSE,
-        )
-        == ["#dummy_module.Bounded"] * 2
+        _TEST_FORMAT_ANNOTATION_TYPE_VARIABLE_LINKS_TO_ITS_ENTRY_PATTERN.findall(html) == ["#dummy_module.Bounded"] * 2
     )
 
 
@@ -732,6 +752,15 @@ def test_format_annotation_param_spec_component_reads_as_written(build_text: Bui
         """)
 
 
+_TEST_FORMAT_ANNOTATION_PARAM_SPEC_COMPONENT_LINKS_TO_ITS_ENTRY_PATTERN: Final[re.Pattern[str]] = re.compile(
+    r"""
+        href="\#type_params_module\.DP"  # the link to the parameter spec
+        [^>]*><code[^>]*><span\ class="pre">([^<]*)<
+        """,
+    VERBOSE,
+)
+
+
 @mark.parametrize(
     "shown",
     [
@@ -745,14 +774,10 @@ def test_format_annotation_param_spec_component_reads_as_written(build_text: Bui
 )
 def test_format_annotation_param_spec_component_links_to_its_entry(build_text: BuildText, shown: str) -> None:
     html = build_text(".. py:data:: type_params_module.DP\n\n.. autofunction:: type_params_module.relay")
-    assert findall(
-        r"""
-        href="\#type_params_module\.DP"  # the link to the parameter spec
-        [^>]*><code[^>]*><span\ class="pre">([^<]*)<
-        """,
-        html,
-        VERBOSE,
-    ) == [f"{shown}.args", f"{shown}.kwargs"]
+    assert _TEST_FORMAT_ANNOTATION_PARAM_SPEC_COMPONENT_LINKS_TO_ITS_ENTRY_PATTERN.findall(html) == [
+        f"{shown}.args",
+        f"{shown}.kwargs",
+    ]
 
 
 @mark.sphinx("html", testroot="type-params")
@@ -803,6 +828,11 @@ def test_format_annotation_module_alias_in_a_signature(build_text: BuildText, rs
     assert header in build_text(rst).splitlines()
 
 
+_TEST_FORMAT_ANNOTATION_MAPPED_TYPE_PREFERS_THE_LOCAL_TARGET_PATTERN: Final[re.Pattern[str]] = re.compile(
+    r'href="([^"]*Widget)"'
+)
+
+
 @mark.parametrize(
     ("rst", "href"),
     [
@@ -820,7 +850,7 @@ def test_format_annotation_module_alias_in_a_signature(build_text: BuildText, rs
 )
 @mark.sphinx("html", testroot="intersphinx-local-target")
 def test_format_annotation_mapped_type_prefers_the_local_target(build_text: BuildText, rst: str, href: str) -> None:
-    assert set(findall(r'href="([^"]*Widget)"', build_text(rst))) == {href}
+    assert set(_TEST_FORMAT_ANNOTATION_MAPPED_TYPE_PREFERS_THE_LOCAL_TARGET_PATTERN.findall(build_text(rst))) == {href}
 
 
 def _int_as_count(annotation: Annotation, _config: Config) -> str | None:

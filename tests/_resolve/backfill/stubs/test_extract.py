@@ -16,7 +16,9 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from types import ModuleType
 
-    from _resolve.conftest import MakeStubbedModule
+    from _resolve.conftest import (  # simplint: ignore[private-import-path]  # Shared test fixture
+        MakeStubbedModule,
+    )
 
 
 @mark.parametrize(
@@ -87,7 +89,7 @@ def test_stub_annotations(
     fixture: str,
     owner: Callable[
         [ModuleType],
-        Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+        Callable[..., object],  # simplint: ignore[callable-ellipsis]  # any callable is passed
     ],
     expected: dict[str, str],
 ) -> None:

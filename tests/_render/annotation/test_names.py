@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 from dataclasses import InitVar
 from importlib.machinery import ModuleSpec
-from re import Match, Pattern, escape, findall
+from re import Match, Pattern, escape
 from sys import version_info
 from textwrap import dedent
 from types import CodeType, CoroutineType, FunctionType, ModuleType
@@ -40,8 +41,13 @@ if TYPE_CHECKING:
 
     from conftest import BuildText, MakeModule
 
-    from _render.conftest import MakeConfig
-    from sphinx_autodoc_typehints._types import Hint, RenderNode
+    from _render.conftest import (  # simplint: ignore[private-import-path]  # shared config fixture
+        MakeConfig,
+    )
+    from sphinx_autodoc_typehints._types import (  # simplint: ignore[private-import-path]  # internal node tests
+        Hint,
+        RenderNode,
+    )
 
 
 Item = TypeVar("Item")
@@ -94,7 +100,9 @@ class AliasedOrigin:
 
 
 _NAMES: Final[
-    list[tuple[str, object, str, str, tuple[object, ...]]]  # simplint: ignore[SMP602]  # rows mix type forms and values
+    list[
+        tuple[str, object, str, str, tuple[object, ...]]  # simplint: ignore[imprecise-annotation]  # mixed values
+    ]
 ] = [
     ("str", str, "builtins", "str", ()),
     ("None", None, "builtins", "None", ()),
@@ -116,7 +124,7 @@ _NAMES: Final[
     ("Callable", Callable, "collections.abc", "Callable", ()),
     (
         "Callable-Ellipsis",
-        Callable[..., str],  # simplint: ignore[SMP603]  # the rendered Callable[...] is the case under test
+        Callable[..., str],  # simplint: ignore[callable-ellipsis]  # the rendered Callable[...] is the case under test
         "collections.abc",
         "Callable",
         (..., str),
@@ -238,6 +246,9 @@ def test_fixup_module_name(
     assert fixup_module_name(make_config(**overrides), module) == expected
 
 
+_TEST_INVENTORY_ROLE_FOLLOWS_THE_INVENTORY_PATTERN: Final[re.Pattern[str]] = re.compile(r'href="([^"]*FunctionType)"')
+
+
 @mark.parametrize(
     "role",
     [
@@ -254,9 +265,9 @@ def test_fixup_module_name(
     ],
 )
 def test_inventory_role_follows_the_inventory(build_text: BuildText, role: str) -> None:
-    assert set(findall(r'href="([^"]*FunctionType)"', build_text(".. autofunction:: role_module.call"))) == {
-        f"https://example.org/{role}/library/types.html#types.FunctionType"
-    }
+    assert set(
+        _TEST_INVENTORY_ROLE_FOLLOWS_THE_INVENTORY_PATTERN.findall(build_text(".. autofunction:: role_module.call"))
+    ) == {f"https://example.org/{role}/library/types.html#types.FunctionType"}
 
 
 def _fixup_wrong_module_path(module: str) -> str:

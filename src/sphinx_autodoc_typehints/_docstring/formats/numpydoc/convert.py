@@ -7,7 +7,9 @@ from dataclasses import dataclass, replace
 from textwrap import dedent
 from typing import TYPE_CHECKING, Final
 
-from sphinx_autodoc_typehints._types import frozendict
+from sphinx_autodoc_typehints._types import (  # simplint: ignore[private-import-path]  # init cycle
+    frozendict,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping

@@ -15,13 +15,15 @@ from os import PathLike
 from pathlib import Path
 from typing import TYPE_CHECKING, Final
 
-from sphinx_autodoc_typehints._objects import imported_prefix
+from sphinx_autodoc_typehints._objects import (  # simplint: ignore[private-import-path]  # init cycle
+    imported_prefix,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
     from types import ModuleType
 
-    from sphinx_autodoc_typehints._types import Documented
+    from . import Documented
 
 
 _STUB_AST_CACHE: Final[dict[tuple[Path, int], Module | None]] = {}

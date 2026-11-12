@@ -5,7 +5,10 @@ from typing import TYPE_CHECKING, Final
 
 from pytest import MarkDecorator, mark, param
 
-from _docstring.conftest import INT, STR
+from _docstring.conftest import (  # simplint: ignore[private-import-path]  # keep test fixtures local
+    INT,
+    STR,
+)
 from sphinx_autodoc_typehints._docstring.formats.base import InsertIndexInfo
 from sphinx_autodoc_typehints._docstring.formats.field_list.edit import FieldListFormat, write_rtype
 from sphinx_autodoc_typehints._docstring.formats.field_list.rtype import RTYPE_MARKER
@@ -16,7 +19,9 @@ if TYPE_CHECKING:
     from conftest import BuildText
     from sphinx.testing.util import SphinxTestApp
 
-    from _docstring.conftest import Process
+    from _docstring.conftest import (  # simplint: ignore[private-import-path]  # keep test fixtures local
+        Process,
+    )
 
 pytestmark: Final[MarkDecorator] = mark.sphinx("text", testroot="dummy")
 

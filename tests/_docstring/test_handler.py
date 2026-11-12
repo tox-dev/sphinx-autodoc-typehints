@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from functools import cached_property, cmp_to_key, partial, update_wrapper, wraps
 from inspect import Parameter, Signature, signature
 from os import utime
 from pathlib import Path
-from re import findall
 from typing import TYPE_CHECKING, Final, Self
 
 import typing_extensions  # its Self is tested next to typing.Self
@@ -22,7 +22,9 @@ if TYPE_CHECKING:
     from conftest import BuildText
     from sphinx.testing.util import SphinxTestApp
 
-    from sphinx_autodoc_typehints._types import Documented
+    from sphinx_autodoc_typehints._types import (  # simplint: ignore[private-import-path]  # keep types private
+        Documented,
+    )
 
     from .conftest import Process
 
@@ -44,7 +46,7 @@ class _Joiner:
 )
 def test_callable_takes_the_types_of_what_it_calls(
     process: Process,
-    obj: Callable[..., str],  # simplint: ignore[SMP603]  # any callable is passed
+    obj: Callable[..., str],  # simplint: ignore[callable-ellipsis]  # any callable is passed
 ) -> None:
     assert process("function", "mod.joined", obj, [":param sep: the separator"]) == [
         f":type sep: {STR}",
@@ -196,7 +198,7 @@ def test_function_takes_the_params_of_what_it_calls(process: Process, func: Docu
 @mark.sphinx(confoverrides={"always_document_param_types": True, "typehints_defaults": "comma"})
 def test_wrapper_lists_the_parameters_it_states(process: Process) -> None:
     def handle(
-        ctx: object,  # simplint: ignore[SMP602]  # the injected context may be any value
+        ctx: object,  # simplint: ignore[imprecise-annotation]  # the injected context may be any value
         name: str,
         count: int = 1,
     ) -> bool: ...
@@ -274,6 +276,11 @@ def test_process_docstring_shows_a_dataclass_factory_as_its_call(process: Proces
     ]
 
 
+_TEST_PROCESS_DOCSTRING_REREADS_THE_PAGES_A_STUB_TYPES_ONCE_IT_CHANGES_PATTERN: Final[re.Pattern[str]] = re.compile(
+    r"(?P<added>\d+) added, (?P<changed>\d+) changed, (?P<removed>\d+) removed"
+)
+
+
 @mark.sphinx("text", testroot="pyi-stubs")
 def test_process_docstring_rereads_the_pages_a_stub_types_once_it_changes(
     build_text: BuildText, app: SphinxTestApp, status: StringIO
@@ -287,7 +294,9 @@ def test_process_docstring_rereads_the_pages_a_stub_types_once_it_changes(
     app.build()
 
     # the module this process already imported keeps the first types, so only the reread shows
-    assert findall(r"(?P<added>\d+) added, (?P<changed>\d+) changed, (?P<removed>\d+) removed", status.getvalue()) == [
+    assert _TEST_PROCESS_DOCSTRING_REREADS_THE_PAGES_A_STUB_TYPES_ONCE_IT_CHANGES_PATTERN.findall(
+        status.getvalue()
+    ) == [
         ("1", "0", "0"),
         ("0", "1", "0"),
     ]

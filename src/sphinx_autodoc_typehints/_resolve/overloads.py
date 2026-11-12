@@ -17,7 +17,8 @@ OVERLOADS: Final[dict[str, dict[str, list[Signature]]]] = {}
 
 
 def resolve_overloads(
-    obj: Callable[..., object],  # simplint: ignore[SMP603]  # any callable autodoc documents may carry overloads
+    # any callable autodoc documents may carry overloads
+    obj: Callable[..., object],  # simplint: ignore[callable-ellipsis]
 ) -> list[Signature] | None:
     """Return the overloads the source of the module of `obj` declares for it, `None` when it declares none."""
     if not (module_name := getattr(obj, "__module__", None)) or not (qualname := getattr(obj, "__qualname__", None)):

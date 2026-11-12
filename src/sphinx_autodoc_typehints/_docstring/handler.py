@@ -7,23 +7,30 @@ from typing import TYPE_CHECKING
 
 from sphinx.util.inspect import signature as sphinx_signature
 
-from .._documented.entry import Entry
-from .._documented.factory_defaults import show_factory_defaults
-from .._documented.hints import resolved_type_hints
-from .._documented.scope import render_scope
-from .._objects import (
+from .._documented import (  # simplint: ignore[private-import-path]  # root API stays unchanged
+    Entry,
+    render_scope,
+    resolved_type_hints,
+    show_factory_defaults,
+)
+from .._objects import (  # simplint: ignore[private-import-path]  # init cycle
     callable_target,
     constructor_name,
     declared_signature,
     prefix_of,
     property_getter,
 )
-from .._render.annotation.rendered import as_field_type
-from .._resolve.attributes import get_body_annotations
-from .._resolve.backfill.stubs.find import stub_path
-from .._resolve.guards.run import resolve_type_guarded_imports
-from .._resolve.hints import get_descriptor_type_hint
-from .._resolve.typed_dict import OPEN, extra_items_type
+from .._render import (  # simplint: ignore[private-import-path]  # root API stays unchanged
+    as_field_type,
+)
+from .._resolve import (  # simplint: ignore[private-import-path]  # root API stays unchanged
+    OPEN,
+    extra_items_type,
+    get_body_annotations,
+    get_descriptor_type_hint,
+    resolve_type_guarded_imports,
+    stub_path,
+)
 from .attributes import (
     class_attribute_annotations,
     documented_attributes,
@@ -44,7 +51,7 @@ if TYPE_CHECKING:
     from sphinx.application import Sphinx
     from sphinx.ext.autodoc import Options
 
-    from .._types import Documented
+    from . import Documented
 
 
 def process_docstring(
@@ -92,7 +99,7 @@ def process_docstring(
 # `declared` is the callable before unwrapping, as decorators mark that one
 def _type_callable(
     entry: Entry,
-    declared: Callable[..., object],  # simplint: ignore[SMP603]  # any callable a decorator may have wrapped
+    declared: Callable[..., object],  # simplint: ignore[callable-ellipsis]  # any callable a decorator may have wrapped
     options: Options | None,
     lines: list[str],
     written: frozenset[str] | None,

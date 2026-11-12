@@ -12,8 +12,12 @@ if TYPE_CHECKING:
 
     from sphinx.config import Config
 
-    from _render.conftest import MakeConfig
-    from sphinx_autodoc_typehints._types import Annotation
+    from _render.conftest import (  # simplint: ignore[private-import-path]  # shared config fixture
+        MakeConfig,
+    )
+    from sphinx_autodoc_typehints._types import (  # simplint: ignore[private-import-path]  # internal annotation tests
+        Annotation,
+    )
 
 
 @mark.parametrize(

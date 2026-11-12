@@ -4,10 +4,18 @@ from typing import TYPE_CHECKING, Final
 
 from pytest import MarkDecorator, mark, param
 
-from _docstring.conftest import FLOAT, INT, STR, hide_type, without_rtype
+from _docstring.conftest import (  # simplint: ignore[private-import-path]  # keep test fixtures local
+    FLOAT,
+    INT,
+    STR,
+    hide_type,
+    without_rtype,
+)
 
 if TYPE_CHECKING:
-    from _docstring.conftest import Process
+    from _docstring.conftest import (  # simplint: ignore[private-import-path]  # keep test fixtures local
+        Process,
+    )
 
 
 pytestmark: Final[list[MarkDecorator]] = [mark.sphinx("text", testroot="dummy"), without_rtype()]

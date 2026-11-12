@@ -20,8 +20,14 @@ from sphinx.transforms.post_transforms import SphinxPostTransform
 from sphinx.util import logging
 from sphinx.util.rst import default_role
 
-from .._private_imports import sphinx_domains
-from .._state import alias_choices, document_alias_choices, recorded_alias_choices
+from .._private_imports import (  # simplint: ignore[private-import-path]  # init cycle
+    sphinx_domains,
+)
+from .._state import (  # simplint: ignore[private-import-path]  # init cycle
+    alias_choices,
+    document_alias_choices,
+    recorded_alias_choices,
+)
 from .context import render_context
 from .rst import parse, unescape
 
@@ -47,13 +53,14 @@ _REF_CONTEXT_KEY: Final[str] = "sphinx_autodoc_typehints_ref_context"
 _BUILDERS: Final[WeakValueDictionary[int, Builder]] = WeakValueDictionary()
 
 
-def alias_choice_role(  # simplint: ignore[SMP602]  # docutils passes options of any value
+def alias_choice_role(
     _role: str,
     _rawtext: str,
     text: str,
     lineno: int,
     inliner: states.Inliner,
-    _options: dict[str, object] | None = None,  # simplint: ignore[SMP602]  # docutils passes options of any value
+    _options: dict[str, object]  # simplint: ignore[imprecise-annotation]  # docutils passes options of any value
+    | None = None,
     _content: list[str] | None = None,
 ) -> tuple[list[Node], list[Node]]:
     # `replace_self` would copy any classes onto whichever rendering wins

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from re import findall
+import re
 from shutil import copytree
 from typing import TYPE_CHECKING, Final
 
@@ -13,6 +13,11 @@ if TYPE_CHECKING:
 
 
 _SUBTYPES: Final[set[str]] = {"comment", "forward_reference", "guarded_import", "multiple_ast_nodes"}
+
+
+_TEST_WARNINGS_CARRY_SUPPRESSIBLE_CATEGORIES_PATTERN: Final[re.Pattern[str]] = re.compile(
+    r"\[sphinx_autodoc_typehints\.(\w+)\]"
+)
 
 
 @mark.parametrize(
@@ -37,4 +42,4 @@ def test_warnings_carry_suppressible_categories(
     app = make_app("text", srcdir=srcdir, confoverrides={"suppress_warnings": suppressed})
     app.build()
 
-    assert set(findall(r"\[sphinx_autodoc_typehints\.(\w+)\]", app.warning.getvalue())) == expected
+    assert set(_TEST_WARNINGS_CARRY_SUPPRESSIBLE_CATEGORIES_PATTERN.findall(app.warning.getvalue())) == expected

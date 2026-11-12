@@ -26,8 +26,8 @@ else:  # pragma: <3.15 cover
     sentinel = Sentinel
 
 # only type checkers evaluate the alias value, so `TypeForm` needs no runtime import
-type Annotation = TypeForm[object]  # simplint: ignore[SMP602]  # a type form admits every annotation
-type Documented = object  # simplint: ignore[SMP602]  # a documented object may be any value
+type Annotation = TypeForm[object]  # simplint: ignore[imprecise-annotation]  # a type form admits every annotation
+type Documented = object  # simplint: ignore[imprecise-annotation]  # a documented object may be any value
 # a type parameter is a type form only when written, a value holding one is not
 type TypeParam = TypeVar | ParamSpec | TypeVarTuple
 # what reading a hint yields when evaluating it failed, leaving the reference or the text as written

@@ -14,7 +14,7 @@ PAIRS: Final[list[tuple[int, int]]] = [(1, 2), (3, 4)]
 
 
 def compare(
-    kind: Engine[Any] | None,  # simplint: ignore[SMP602]  # the rendered Any is the case under test
+    kind: Engine[Any] | None,  # simplint: ignore[imprecise-annotation]  # the rendered Any is the case under test
     spare: Engine[str] | Engine[bytes],
 ) -> Engine[int]:
     """
@@ -38,7 +38,7 @@ def quoted(kind: "Engine[int]") -> None:  # ruff:ignore[quoted-annotation]  # a 
 def pick(kind: Engine[int]) -> int: ...
 @overload
 def pick(kind: Engine[str]) -> str: ...
-def pick(kind: Any) -> Any:  # simplint: ignore[SMP602]  # the rendered Any is the case under test
+def pick(kind: Any) -> Any:  # simplint: ignore[imprecise-annotation]  # the rendered Any is the case under test
     """Pick."""
     return kind
 
@@ -52,7 +52,7 @@ class Column:
     :ivar limited: capped count
     """
 
-    kind: Engine[Any]  # simplint: ignore[SMP602]  # the rendered Any is the case under test
+    kind: Engine[Any]  # simplint: ignore[imprecise-annotation]  # the rendered Any is the case under test
 
     def __init__(self) -> None:
         self.other: Engine[str] | None = None
@@ -89,7 +89,8 @@ def aliased(kind: Engines) -> None:
     """
 
 
-@dataclass(frozen=True, slots=True)  # simplint: ignore[SMP703]  # the docs assert the positional constructor signature
+# the docs assert the positional constructor signature
+@dataclass(frozen=True, slots=True)  # simplint: ignore[dataclass-kw-only]
 class Record:
     """
     A record.

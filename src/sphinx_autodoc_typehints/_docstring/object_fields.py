@@ -8,17 +8,30 @@ from typing import TYPE_CHECKING
 
 from sphinx.util.inspect import object_description
 
-from .._documented.hints import as_written, documenting_class, resolved_type_hints
-from .._documented.members import overload_skip
-from .._documented.overloads import OVERLOADED_KINDS, typed_overloads
-from .._objects import documented_owner, stored_name, unwrapped
-from .._render.annotation.names import fixup_module_name
-from .._render.annotation.rendered import as_field_type
-from .._render.intersphinx import inventory
-from .._render.value import value_markup
-from .._resolve.generics import bound_type_args
-from .._resolve.overloads import resolve_overloads
-from .._state import written_signatures
+from .._documented import (  # simplint: ignore[private-import-path]  # root API stays unchanged
+    OVERLOADED_KINDS,
+    as_written,
+    documenting_class,
+    overload_skip,
+    resolved_type_hints,
+    typed_overloads,
+)
+from .._objects import (  # simplint: ignore[private-import-path]  # init cycle
+    documented_owner,
+    stored_name,
+    unwrapped,
+)
+from .._render import (  # simplint: ignore[private-import-path]  # root API stays unchanged
+    as_field_type,
+    fixup_module_name,
+    inventory,
+    value_markup,
+)
+from .._resolve import (  # simplint: ignore[private-import-path]  # root API stays unchanged
+    bound_type_args,
+    resolve_overloads,
+)
+from .._state import written_signatures  # simplint: ignore[private-import-path]  # init cycle
 from .parameters import VARIADIC_STARS
 
 if TYPE_CHECKING:
@@ -26,14 +39,17 @@ if TYPE_CHECKING:
 
     from sphinx.application import Sphinx
 
-    from .._documented.entry import Entry
-    from .._refs import WrittenTypeAlias
-    from .._types import Documented, Hint
+    from .._documented import (  # simplint: ignore[private-import-path]  # root API stays unchanged
+        Entry,
+    )
+    from . import Documented, Hint, WrittenTypeAlias
 
 
 def inject_overloads(
     entry: Entry,
-    obj: Callable[..., object],  # simplint: ignore[SMP603]  # autodoc documents any callable, function or method
+    obj: Callable[  # simplint: ignore[callable-ellipsis]  # autodoc documents any callable, function or method
+        ..., object
+    ],
     lines: list[str],
 ) -> bool:
     """
@@ -156,7 +172,7 @@ def inject_override(
     app: Sphinx,
     what: str,
     name: str,
-    obj: Callable[..., object],  # simplint: ignore[SMP603]  # a method or property of any signature
+    obj: Callable[..., object],  # simplint: ignore[callable-ellipsis]  # a method or property of any signature
     lines: list[str],
 ) -> None:
     if what not in {"method", "property"} or getattr(obj, "__override__", False) is not True:

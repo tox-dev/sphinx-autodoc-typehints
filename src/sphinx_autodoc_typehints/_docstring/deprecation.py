@@ -19,7 +19,9 @@ DEPRECATED_DIRECTIVE: Final[str] = "sphinx_autodoc_typehints_deprecated"
 
 
 def inject_deprecation(
-    obj: Callable[..., object],  # simplint: ignore[SMP603]  # autodoc documents any callable, function or class
+    obj: Callable[  # simplint: ignore[callable-ellipsis]  # autodoc documents any callable, function or class
+        ..., object
+    ],
     lines: list[str],
     summary_end: int,
 ) -> None:

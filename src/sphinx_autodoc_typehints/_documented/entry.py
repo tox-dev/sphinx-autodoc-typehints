@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
 
-    from .._types import Documented
+    from . import Documented
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

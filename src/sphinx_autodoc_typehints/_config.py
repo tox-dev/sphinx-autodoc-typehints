@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Final, Literal
 
 from sphinx.errors import ConfigError
 
-from ._render.intersphinx import keep_type_mapping
+from ._render import keep_type_mapping
 
 if TYPE_CHECKING:
     from collections.abc import Callable

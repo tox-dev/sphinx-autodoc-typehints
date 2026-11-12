@@ -36,7 +36,8 @@ class MyNamedTupleWithPath(NamedTuple):
     version: str
 
 
-@dataclass(frozen=True, slots=True)  # simplint: ignore[SMP703]  # the docs assert the positional constructor signature
+# the docs assert the positional constructor signature
+@dataclass(frozen=True, slots=True)  # simplint: ignore[dataclass-kw-only]
 class DataClass:
     """Class docstring."""
 
@@ -208,7 +209,10 @@ class DocumentedTwiceThroughNew:
 
 
 @singledispatch
-def dispatch(arg: object, flag: bool = False) -> str:  # simplint: ignore[SMP602]  # the docs render object as written
+def dispatch(
+    arg: object,  # simplint: ignore[imprecise-annotation]  # the docs render object as written
+    flag: bool = False,
+) -> str:
     """
     Dispatch on the argument type.
 
@@ -258,7 +262,7 @@ def bounded(value: Bounded) -> Bounded:  # ruff:ignore[non-pep695-generic-functi
     return value
 
 
-def unresolvable(value: Undefined) -> None:  # ruff:ignore[undefined-name]  # ty: ignore[unresolved-reference]  # the case under test
+def unresolvable(value: Undefined) -> None:  # ruff:ignore[undefined-name]  # the case under test
     """
     Name something undefined.
 

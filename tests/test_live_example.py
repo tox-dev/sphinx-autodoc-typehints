@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import re
 from collections import Counter
 from json import loads
 from pathlib import Path
-from re import VERBOSE, findall, finditer, search, sub
+from re import VERBOSE
 from textwrap import dedent, indent
 from typing import TYPE_CHECKING, Final, TypedDict
 from zlib import compress
@@ -95,19 +96,19 @@ def build_linked_fixture(project: Path, build: Build) -> Build:
     return build
 
 
-def _tabs(app: SphinxTestApp) -> list[tuple[str, str]]:
-    page = (Path(app.outdir) / "index.html").read_text()
-    labels = list(
-        finditer(
-            r"""
+_TABS_PATTERN: Final[re.Pattern[str]] = re.compile(
+    r"""
             <label\b[^>]*                    # attributes can precede the class
             \bclass="sd-tab-label"[^>]*>      # tab label with any later attributes
             \s*([^<]+?)\s*</label>            # displayed tab name
             """,
-            page,
-            VERBOSE,
-        )
-    )
+    VERBOSE,
+)
+
+
+def _tabs(app: SphinxTestApp) -> list[tuple[str, str]]:
+    page = (Path(app.outdir) / "index.html").read_text()
+    labels = list(_TABS_PATTERN.finditer(page))
     return [
         (match.group(1), page[match.end() : labels[index + 1].start() if index + 1 < len(labels) else len(page)])
         for index, match in enumerate(labels)
@@ -164,10 +165,15 @@ def test_live_example_shows_why_the_builtin_build_fails(build_linked: Build) -> 
     assert "ERROR" not in app.warning.getvalue()
 
 
+_TEST_LIVE_EXAMPLE_KEEPS_ANCHORS_UNIQUE_PATTERN: Final[re.Pattern[str]] = re.compile(r'\bid="([^"]+)"')
+
+
 def test_live_example_keeps_anchors_unique(build: Build) -> None:
     app = build(f"{_EXAMPLE}\n{_EXAMPLE.replace('comma', 'braces')}")
 
-    ids = Counter(findall(r'\bid="([^"]+)"', (Path(app.outdir) / "index.html").read_text()))
+    ids = Counter(
+        _TEST_LIVE_EXAMPLE_KEEPS_ANCHORS_UNIQUE_PATTERN.findall((Path(app.outdir) / "index.html").read_text())
+    )
 
     assert [anchor for anchor, count in ids.items() if count > 1] == []
 
@@ -272,9 +278,13 @@ class _Variants(TypedDict):
     examples: list[dict[str, int]]
 
 
+_FOUND_PATTERN: Final[re.Pattern[str]] = re.compile(
+    r'<script type="application/json" id="live-example-picker">(?P<config>.*?)</script>'
+)
+
+
 def _about(app: SphinxTestApp) -> _About:
-    page = (Path(app.outdir) / "index.html").read_text()
-    found = search(r'<script type="application/json" id="live-example-picker">(?P<config>.*?)</script>', page)
+    found = _FOUND_PATTERN.search((Path(app.outdir) / "index.html").read_text())
     assert found is not None
     return loads(found["config"])
 
@@ -284,8 +294,11 @@ def _variants(app: SphinxTestApp) -> _Variants:
     return loads(script[script.index("(") + 1 : script.rindex(")")])
 
 
+_WITHOUT_PREFIXES_PATTERN: Final[re.Pattern[str]] = re.compile(r'(id="|href="#)[0-9a-f]{12}-')
+
+
 def _without_prefixes(html: str) -> str:
-    return sub(r'(id="|href="#)[0-9a-f]{12}-', r"\1", html)
+    return _WITHOUT_PREFIXES_PATTERN.sub(r"\1", html)
 
 
 def test_live_example_picker_puts_its_controls_above_the_rendered_page(build: Build) -> None:

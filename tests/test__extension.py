@@ -78,7 +78,8 @@ def test_integration(
     log_conf: dict[str, str],
 ) -> None:
     srcdir = copytree(rootdir / "test-foundation-extension", tmp_path / "src")
-    if isclass(documented := getattr(cases_module, name)):  # simplint: ignore[SMP803]  # the kind picks the directive
+    # the directive follows the object kind
+    if isclass(documented := getattr(cases_module, name)):  # simplint: ignore[conditional-in-test]
         directive = {True: "autoexception", False: "autoclass"}[issubclass(documented, BaseException)]
         rst = dedent(f"""\
             .. {directive}:: mod.{name}

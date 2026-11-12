@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from sphinx.config import Config
     from sphinx.environment import BuildEnvironment
 
-    from .._types import RenderNode, TypeParam
+    from . import RenderNode, TypeParam
 
 
 _ATTRIBUTE: Final[str] = "_typehints_render_context"
@@ -75,13 +75,13 @@ class ScopeExtras(TypeParamScope, total=False):
     kind: AnnotationKind
 
 
-class RenderChanges(ScopeExtras, total=False):
+class RenderChanges(ScopeExtras, total=False):  # simplint: ignore[missing-from-all]  # module-local type
     env: BuildEnvironment | None
     module_prefix: str
     guard_bound: GuardBinder | None
 
 
-class GuardBinder(Protocol):
+class GuardBinder(Protocol):  # simplint: ignore[missing-from-all]  # module-local type
     def __call__(self, module: ModuleType | None, /) -> AbstractContextManager[None]: ...
 
 
@@ -109,8 +109,6 @@ __all__ = [
     "AnnotationKind",
     "ContextualTypehintsFormatter",
     "FixupModuleName",
-    "GuardBinder",
-    "RenderChanges",
     "RenderContext",
     "ScopeExtras",
     "TypeParamScope",

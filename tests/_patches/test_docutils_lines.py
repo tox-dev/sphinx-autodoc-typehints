@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
-from re import findall
 from textwrap import dedent
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from pytest import mark
 
@@ -30,6 +30,11 @@ def test_doctest_failure_reports_the_example_line(build_text: BuildText) -> None
         """),
         output="output.txt",
     )
+
+
+_TEST_DEFINITION_LIST_WARNING_NAMES_ITS_FIRST_LINE_PATTERN: Final[re.Pattern[str]] = re.compile(
+    r"other\.rst:(\d+): WARNING: duplicate label"
+)
 
 
 @mark.sphinx("text", testroot="dummy")
@@ -59,4 +64,4 @@ def test_definition_list_warning_names_its_first_line(app: SphinxTestApp) -> Non
     )
     app.build()
 
-    assert findall(r"other\.rst:(\d+): WARNING: duplicate label", app.warning.getvalue()) == ["6"]
+    assert _TEST_DEFINITION_LIST_WARNING_NAMES_ITS_FIRST_LINE_PATTERN.findall(app.warning.getvalue()) == ["6"]

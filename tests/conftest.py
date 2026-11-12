@@ -26,7 +26,10 @@ if TYPE_CHECKING:
 
     from sphinx.testing.util import SphinxTestApp
 
-    from sphinx_autodoc_typehints._render.context import FixupModuleName, TypehintsFormatter
+    from sphinx_autodoc_typehints._render.context import (  # simplint: ignore[private-import-path]  # fixture types
+        FixupModuleName,
+        TypehintsFormatter,
+    )
 
 
 pytest_plugins: Final[str] = "sphinx.testing.fixtures"
@@ -148,7 +151,7 @@ def sphinx_test_tempdir(tmp_path: Path) -> Path:
 
 
 @fixture
-def mocked_object() -> Callable[..., object]:  # simplint: ignore[SMP603]  # any callable is passed
+def mocked_object() -> Callable[..., object]:  # simplint: ignore[callable-ellipsis]  # any callable is passed
     with mock(["mocked_dependency"]):
         return import_module("mocked_dependency").Thing
 

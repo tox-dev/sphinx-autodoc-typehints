@@ -5,7 +5,12 @@ from typing import TYPE_CHECKING, Final
 
 from pytest import MarkDecorator, fixture, mark, param
 
-from _docstring.conftest import BOOL, FLOAT, INT, STR
+from _docstring.conftest import (  # simplint: ignore[private-import-path]  # keep test fixtures local
+    BOOL,
+    FLOAT,
+    INT,
+    STR,
+)
 from sphinx_autodoc_typehints._docstring.formats.numpydoc.convert import convert_to_field_list, is_numpydoc_section
 
 if TYPE_CHECKING:
@@ -13,7 +18,9 @@ if TYPE_CHECKING:
 
     from conftest import BuildText, MakeModule
 
-    from _docstring.conftest import Process
+    from _docstring.conftest import (  # simplint: ignore[private-import-path]  # keep test fixtures local
+        Process,
+    )
 
 pytestmark: Final[MarkDecorator] = mark.sphinx("text", testroot="dummy")
 
@@ -526,7 +533,7 @@ def _annotated_ratio(value: int) -> float: ...
 )
 def test_numpydoc_unnamed_return_keeps_its_type(
     process: Process,
-    func: Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+    func: Callable[..., object],  # simplint: ignore[callable-ellipsis]  # any callable is passed
     rtype: str,
 ) -> None:
     lines = [":Returns:", "", "    float", "        The ratio.", ""]

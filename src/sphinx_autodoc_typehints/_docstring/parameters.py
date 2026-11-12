@@ -12,10 +12,16 @@ from inspect import Parameter, Signature
 from keyword import iskeyword
 from typing import TYPE_CHECKING, Final, Literal, Unpack, get_args, get_origin
 
-from .._documented.hints import as_written
-from .._render.annotation.rendered import as_field_type
-from .._resolve.typed_dict import typed_dict_keys
-from .._types import frozendict
+from .._documented import (  # simplint: ignore[private-import-path]  # root API stays unchanged
+    as_written,
+)
+from .._render import (  # simplint: ignore[private-import-path]  # root API stays unchanged
+    as_field_type,
+)
+from .._resolve import (  # simplint: ignore[private-import-path]  # root API stays unchanged
+    typed_dict_keys,
+)
+from .._types import frozendict  # simplint: ignore[private-import-path]  # init cycle
 from .formats.base import format_default, last_paragraph_end
 from .formats.field_list.keywords import STAR_PREFIXES, field_keyword_and_argument
 from .formats.napoleon.combined import add_combined_field_entry, type_combined_field_entry
@@ -26,9 +32,10 @@ if TYPE_CHECKING:
 
     from sphinx.application import Sphinx
 
-    from .._documented.hints import ResolvedHints
-    from .._refs import WrittenTypeAlias
-    from .._types import Hint
+    from .._documented import (  # simplint: ignore[private-import-path]  # root API stays unchanged
+        ResolvedHints,
+    )
+    from . import Hint, WrittenTypeAlias
     from .formats.field_list.edit import FieldListFormat
 
 VARIADIC_STARS: Final[Mapping[str, str]] = frozendict({"VAR_POSITIONAL": "\\*", "VAR_KEYWORD": "\\*\\*"})
@@ -216,7 +223,7 @@ class _Fields:
 class _Parameter:
     annotation: Hint | None
     shown: Hint | WrittenTypeAlias | None
-    default: object  # simplint: ignore[SMP602]  # a parameter default is any value
+    default: object  # simplint: ignore[imprecise-annotation]  # a parameter default is any value
     stars: str
 
 

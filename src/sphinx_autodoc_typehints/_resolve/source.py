@@ -19,8 +19,10 @@ from warnings import catch_warnings, simplefilter
 from sphinx.errors import PycodeError
 from sphinx.pycode import ModuleAnalyzer
 
-from .._private_imports import VariableCommentPicker
-from .._types import frozendict
+from .._private_imports import (  # simplint: ignore[private-import-path]  # init cycle
+    VariableCommentPicker,
+)
+from .._types import frozendict  # simplint: ignore[private-import-path]  # init cycle
 
 if version_info >= (3, 14):  # pragma: >=3.14 cover
     from annotationlib import Format, get_annotations
@@ -28,7 +30,7 @@ if version_info >= (3, 14):  # pragma: >=3.14 cover
 if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping
 
-    from .._types import Annotation, Documented
+    from . import Annotation, Documented
 
 
 def written_annotations(obj: Documented) -> dict[str, str]:

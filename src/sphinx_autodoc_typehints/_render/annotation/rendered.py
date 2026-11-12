@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from re import DOTALL, Match, fullmatch, sub
-from typing import TYPE_CHECKING
+import re
+from re import DOTALL, Match, sub
+from typing import TYPE_CHECKING, Final
 
 from ..context import annotation_state
 from .markup import add_type_css_class
@@ -12,10 +13,8 @@ from .walker import format_annotation
 if TYPE_CHECKING:
     from sphinx.config import Config
 
-    from sphinx_autodoc_typehints._refs import WrittenTypeAlias
-    from sphinx_autodoc_typehints._types import Hint
-
     from ..context import AnnotationKind
+    from . import Hint, WrittenTypeAlias
 
 
 def as_field_type(hint: Hint | WrittenTypeAlias, config: Config, *, kind: AnnotationKind = "other") -> str:
@@ -47,8 +46,8 @@ def as_header_type(
 
     def plain(match: Match[str]) -> str:
         if (role := match["role"]) is not None:
-            text = sub(r"\\(.)", r"\1", role)
-            titled = fullmatch(r"(?P<title>.*?)\s*<(?P<target>.+)>", text, DOTALL)
+            text = _TEXT_PATTERN.sub(r"\1", role)
+            titled = _TITLED_PATTERN.fullmatch(text)
             if (name := match["name"]).startswith("py:"):
                 roles[(titled["target"] if titled else text).lstrip("~.")] = name.removeprefix("py:").removesuffix(":")
             return titled["title"] if titled else text
@@ -60,6 +59,11 @@ def as_header_type(
     rendered = _render(hint, config, kind)
     markup = r":(?P<name>(?:[\w-]+:)+)`(?P<role>(?:[^`\\]|\\.)*)`|``(?P<literal>.+?)``|\\(?P<escaped>.)"
     return sub(markup, plain, rendered, flags=DOTALL), roles
+
+
+_TEXT_PATTERN: Final[re.Pattern[str]] = re.compile(r"\\(.)")
+
+_TITLED_PATTERN: Final[re.Pattern[str]] = re.compile(r"(?P<title>.*?)\s*<(?P<target>.+)>", DOTALL)
 
 
 __all__ = [

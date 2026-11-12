@@ -7,7 +7,9 @@ The package root exports `setup`, which `_extension` defines, and the installed 
 from __future__ import annotations
 
 # a cached environment from an earlier release pickled the fixup function wrapper under the package root
-from ._config import _FixupModuleName as _FixupModuleName
+from ._config import (
+    _FixupModuleName as _FixupModuleName,  # simplint: ignore[private-import-path]  # cached environments reference it
+)
 from ._extension import setup
 from .version import __version__
 

@@ -18,7 +18,10 @@ if TYPE_CHECKING:
     from conftest import BuildText
     from sphinx.testing.util import SphinxTestApp
 
-    from sphinx_autodoc_typehints._types import Annotation, TypeParam
+    from sphinx_autodoc_typehints._types import (  # simplint: ignore[private-import-path]  # keep types private
+        Annotation,
+        TypeParam,
+    )
 
 pytestmark: Final[MarkDecorator] = mark.sphinx("text", testroot="dummy")
 
@@ -79,7 +82,7 @@ def _fetch(session: str, key: int | str) -> int | str: ...
 
 
 # a decorator supplying `session` hides it from callers by stating the signature without it
-_FETCH: Final = update_wrapper(  # simplint: ignore[SMP601]  # an overload set has no spelling
+_FETCH: Final = update_wrapper(  # simplint: ignore[missing-final]  # an overload set has no spelling
     partial(_fetch, "session"), _fetch
 )
 _FETCH.__dict__["__signature__"] = signature(_fetch).replace(parameters=list(signature(_fetch).parameters.values())[1:])
@@ -117,7 +120,7 @@ _FETCH.__dict__["__signature__"] = signature(_fetch).replace(parameters=list(sig
 def test_typed_overloads_types_each_overload(
     app: SphinxTestApp,
     name: str,
-    target: Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+    target: Callable[..., object],  # simplint: ignore[callable-ellipsis]  # any callable is passed
     skip: int,
     arguments: dict[TypeParam, Annotation],
     expected: list[tuple[list[str], dict[str, Annotation]]],
@@ -149,7 +152,7 @@ def test_typed_overloads_types_each_overload(
 def test_typed_overloads_declares_the_type_params_of_each_overload(
     app: SphinxTestApp,
     name: str,
-    target: Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+    target: Callable[..., object],  # simplint: ignore[callable-ellipsis]  # any callable is passed
     expected: list[frozenset[TypeParam]],
 ) -> None:
     overloads = resolve_overloads(target)
@@ -186,7 +189,7 @@ def test_typed_overloads_name_an_alias_in_the_signature(build_text: BuildText) -
 def test_typed_overloads_of_functions_wrapping_a_mock_keep_their_types(
     app: SphinxTestApp,
     monkeypatch: MonkeyPatch,
-    mocked_object: Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+    mocked_object: Callable[..., object],  # simplint: ignore[callable-ellipsis]  # any callable is passed
 ) -> None:
     for function in get_overloads(_pick):
         monkeypatch.setattr(function, "__wrapped__", mocked_object, raising=False)
@@ -199,7 +202,7 @@ def test_typed_overloads_of_functions_wrapping_a_mock_keep_their_types(
 def test_typed_overloads_stating_a_signature_over_a_mock_keep_every_parameter(
     app: SphinxTestApp,
     monkeypatch: MonkeyPatch,
-    mocked_object: Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+    mocked_object: Callable[..., object],  # simplint: ignore[callable-ellipsis]  # any callable is passed
 ) -> None:
     monkeypatch.setattr(_FETCH, "__wrapped__", mocked_object)
     overloads = resolve_overloads(_FETCH)

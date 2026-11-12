@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from re import sub
+import re
+from typing import Final
+
+_READS_AS_TYPE_PATTERN: Final[re.Pattern[str]] = re.compile(r"\[[^\[\]]*\]")
 
 
 def reads_as_type(entry: str) -> bool:
@@ -13,7 +16,7 @@ def reads_as_type(entry: str) -> bool:
     """
     if (text := entry.split(" -- ", 1)[0]).startswith(("*", ":", "`")):
         return True
-    while (unbracketed := sub(r"\[[^\[\]]*\]", "", text)) != text:
+    while (unbracketed := _READS_AS_TYPE_PATTERN.sub("", text)) != text:
         text = unbracketed
     return " " not in text
 

@@ -22,7 +22,9 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from types import ModuleType
 
-    from sphinx_autodoc_typehints._types import Annotation
+    from sphinx_autodoc_typehints._types import (  # simplint: ignore[private-import-path]  # Shared test types
+        Annotation,
+    )
 
 
 @mark.parametrize(
@@ -37,7 +39,7 @@ def test_written_annotations(
     written: ModuleType,
     owner: Callable[
         [ModuleType],
-        Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+        Callable[..., object],  # simplint: ignore[callable-ellipsis]  # any callable is passed
     ],
     expected: dict[str, str],
 ) -> None:
@@ -45,8 +47,8 @@ def test_written_annotations(
 
 
 @fixture(name="written")
-def written_fixture(make_module: Callable[[str], ModuleType]) -> ModuleType:
-    return make_module(
+def written_fixture(resolve_module: Callable[[str], ModuleType]) -> ModuleType:
+    return resolve_module(
         dedent("""\
             from __future__ import annotations
 
@@ -76,13 +78,13 @@ def written_fixture(make_module: Callable[[str], ModuleType]) -> ModuleType:
     ],
 )
 def test_parsed_source_without_a_tree(
-    make_module: Callable[[str], ModuleType],
+    resolve_module: Callable[[str], ModuleType],
     owner: Callable[
         [Callable[[str], ModuleType]],
-        Callable[..., object] | property,  # simplint: ignore[SMP603]  # any callable is passed
+        Callable[..., object] | property,  # simplint: ignore[callable-ellipsis]  # any callable is passed
     ],
 ) -> None:
-    assert parsed_source(owner(make_module)) is None
+    assert parsed_source(owner(resolve_module)) is None
 
 
 @mark.parametrize(
@@ -128,8 +130,8 @@ def test_source_annotations(
 
 
 @fixture(name="annotated_module")
-def annotated_module_fixture(make_module: Callable[[str], ModuleType]) -> ModuleType:
-    return make_module(
+def annotated_module_fixture(resolve_module: Callable[[str], ModuleType]) -> ModuleType:
+    return resolve_module(
         dedent("""\
             import sys
 
@@ -173,9 +175,9 @@ def test_names_read(source: str, expected: list[str]) -> None:
     ],
 )
 def test_annotations_as_written(  # pragma: >=3.14 cover
-    make_module: Callable[[str], ModuleType], owner: str, expected: dict[str, Annotation | str]
+    resolve_module: Callable[[str], ModuleType], owner: str, expected: dict[str, Annotation | str]
 ) -> None:
-    module = make_module(
+    module = resolve_module(
         dedent("""\
             from decimal import Decimal
             from typing import TYPE_CHECKING
@@ -202,9 +204,9 @@ def test_annotations_as_written(  # pragma: >=3.14 cover
     ],
 )
 def test_annotations_as_written_reads_the_source_of_values_autodoc_stored(  # pragma: >=3.14 cover
-    make_module: Callable[[str], ModuleType], owner: Callable[[ModuleType], type | ModuleType]
+    resolve_module: Callable[[str], ModuleType], owner: Callable[[ModuleType], type | ModuleType]
 ) -> None:
-    module = make_module(
+    module = resolve_module(
         dedent("""\
             from decimal import Decimal
 

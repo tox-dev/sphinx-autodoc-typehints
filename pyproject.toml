@@ -162,20 +162,21 @@ lint.ignore = [
   "CPY",                                       # No copyright statements
   "DOC",                                       # no sphinx support
   "hardcoded-bind-all-interfaces",             # Possible binding to all interface
-  "incorrect-blank-line-before-class",         # `one-blank-line-before-class` (D203) and `no-blank-line-before-class` (D211) are incompatible
+  "incorrect-blank-line-before-class",         # Conflicts with `blank-line-before-class`
   "missing-trailing-comma",                    # Conflict with formatter
-  "multi-line-summary-first-line",             # `multi-line-summary-first-line` (D212) and `multi-line-summary-second-line` (D213) are incompatible
+  "multi-line-summary-first-line",             # Conflicts with `multi-line-summary-second-line`
   "non-empty-init-module",                     # `__init__` module should only contain docstrings and re-exports
   "relative-imports",                          # intra-package imports climb at most two levels, deeper ones stay absolute
   "single-line-implicit-string-concatenation", # Conflict with formatter
-  "undocumented-magic-method",                 # undocumented-public-api (simplint SMP903) covers the public API instead
-  "undocumented-public-class",                 # undocumented-public-api (simplint SMP903) covers the public API instead
-  "undocumented-public-function",              # undocumented-public-api (simplint SMP903) covers the public API instead
-  "undocumented-public-init",                  # undocumented-public-api (simplint SMP903) covers the public API instead
-  "undocumented-public-method",                # undocumented-public-api (simplint SMP903) covers the public API instead
-  "undocumented-public-nested-class",          # undocumented-public-api (simplint SMP903) covers the public API instead
+  "undocumented-magic-method",                 # undocumented-public-api (simplint) covers the public API instead
+  "undocumented-public-class",                 # undocumented-public-api (simplint) covers the public API instead
+  "undocumented-public-function",              # undocumented-public-api (simplint) covers the public API instead
+  "undocumented-public-init",                  # undocumented-public-api (simplint) covers the public API instead
+  "undocumented-public-method",                # undocumented-public-api (simplint) covers the public API instead
+  "undocumented-public-nested-class",          # undocumented-public-api (simplint) covers the public API instead
+  "unnecessary-regular-expression-compile",    # conflicts with simplint inline-regex
 ]
-lint.per-file-ignores."src/sphinx_autodoc_typehints/_patches/*.py" = [
+lint.per-file-ignores."src/sphinx_autodoc_typehints/_patches/napoleon.py" = [
   "private-member-access", # the module exists to monkeypatch docutils and napoleon internals
 ]
 lint.per-file-ignores."tests/**/*.py" = [
@@ -228,7 +229,6 @@ lint.per-file-ignores."tests/roots/test-pyi-stubs/stub_mod.py" = [
 ]
 lint.per-file-ignores."tests/roots/test-pyi-stubs/stub_mod.pyi" = [
   "complex-if-statement-in-stub", # third-party stubs gate on more than sys.version_info, which the resolver must survive
-  "missing-required-import",      # stub files don't use `from __future__ import annotations`
 ]
 lint.per-file-ignores."tests/roots/test-unexecutable-guard/demo_unexecutable_guard.py" = [
   "non-pep695-generic-function", # the legacy TypeVar spelling is what the guard cannot execute

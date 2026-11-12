@@ -10,8 +10,9 @@ from typing import TYPE_CHECKING
 from pytest import mark, param
 
 from sphinx_autodoc_typehints._resolve.guards.overlay import annotation_globals, guarded_names, guarded_names_bound
-from sphinx_autodoc_typehints._resolve.guards.run import resolve_type_guarded_imports
-from sphinx_autodoc_typehints._resolve.hints import get_all_type_hints
+from sphinx_autodoc_typehints._resolve.guards.run import (
+    resolve_type_guarded_imports,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -20,17 +21,17 @@ if TYPE_CHECKING:
 
 
 def test_annotation_globals_reads_the_guarded_type_over_its_runtime_fallback(
-    make_module: Callable[[str], ModuleType], decimal_fallback: str
+    resolve_module: Callable[[str], ModuleType], decimal_fallback: str
 ) -> None:
-    module = make_module(f"{decimal_fallback}def func(): ...")
+    module = resolve_module(f"{decimal_fallback}def func(): ...")
     resolve_type_guarded_imports([], module.func)
     assert (annotation_globals(module.func)["Decimal"], module.Decimal) == (Decimal, float)
 
 
 def test_annotation_globals_reads_a_guarded_class_shadowing_a_runtime_one(
-    make_module: Callable[[str], ModuleType],
+    resolve_module: Callable[[str], ModuleType],
 ) -> None:
-    module = make_module(
+    module = resolve_module(
         dedent("""\
             from collections import OrderedDict
             from typing import TYPE_CHECKING
@@ -52,10 +53,10 @@ def test_annotation_globals_reads_a_guarded_class_shadowing_a_runtime_one(
 
 
 def test_annotation_globals_of_generated_code_fills_in_the_names_of_its_module(
-    make_module: Callable[[str], ModuleType],
+    resolve_module: Callable[[str], ModuleType],
 ) -> None:
     # an attrs __init__ runs in a globals dict of its own, which misses the names the module binds afterwards
-    module = make_module(
+    module = resolve_module(
         dedent("""\
             GENERATED = {"__name__": __name__}
             exec("def init(): ...", GENERATED)
@@ -72,7 +73,7 @@ def test_annotation_globals_of_code_without_a_module() -> None:
 
 
 def test_guarded_names_reads_an_aliased_module_as_its_guard_binds_it(
-    module_dir: Path, make_module: Callable[[str], ModuleType]
+    module_dir: Path, resolve_module: Callable[[str], ModuleType]
 ) -> None:
     (module_dir / "guard_rebinding_types.py").write_text(
         dedent("""\
@@ -84,7 +85,7 @@ def test_guarded_names_reads_an_aliased_module_as_its_guard_binds_it(
                 from decimal import Decimal as Rebound
         """)
     )
-    module = make_module(
+    module = resolve_module(
         dedent("""\
             from typing import TYPE_CHECKING
 
@@ -106,7 +107,7 @@ def test_guarded_names_reads_an_aliased_module_as_its_guard_binds_it(
 )
 def test_guarded_names_bound_binds_what_the_module_lacks_while_the_block_runs(
     module_dir: Path,
-    make_module: Callable[[str], ModuleType],
+    resolve_module: Callable[[str], ModuleType],
     owner: Callable[[ModuleType, ModuleType], ModuleType | type],
 ) -> None:
     (module_dir / "bound_base.py").write_text(
@@ -123,7 +124,7 @@ def test_guarded_names_bound_binds_what_the_module_lacks_while_the_block_runs(
         """)
     )
     base = import_module("bound_base")
-    child = make_module(
+    child = resolve_module(
         dedent("""\
             from bound_base import Base
 
@@ -137,9 +138,9 @@ def test_guarded_names_bound_binds_what_the_module_lacks_while_the_block_runs(
 
 
 def test_guarded_names_bound_keeps_a_name_rebound_while_the_block_runs(
-    make_module: Callable[[str], ModuleType],
+    resolve_module: Callable[[str], ModuleType],
 ) -> None:
-    module = make_module(
+    module = resolve_module(
         dedent("""\
             from typing import TYPE_CHECKING
 
@@ -152,27 +153,3 @@ def test_guarded_names_bound_keeps_a_name_rebound_while_the_block_runs(
         bound = module.__dict__["Decimal"]
         module.__dict__["Decimal"] = float
     assert (bound, module.__dict__["Decimal"]) == (Decimal, float)
-
-
-def test_annotation_globals_types_the_generated_init_of_an_attrs_class(
-    make_module: Callable[[str], ModuleType],
-    logged_warnings: Callable[[], list[tuple[str, ...]]],
-    annotations_header: str,
-) -> None:
-    module = make_module(
-        annotations_header
-        + dedent("""\
-            from typing import TYPE_CHECKING
-
-            import attrs
-
-            if TYPE_CHECKING:
-                from decimal import Decimal
-
-            @attrs.define
-            class Price:
-                amount: Decimal
-        """)
-    )
-    hints = get_all_type_hints([], module.Price.__init__, "mod.Price", {})
-    assert (hints, logged_warnings()) == ({"amount": Decimal, "return": type(None)}, [])

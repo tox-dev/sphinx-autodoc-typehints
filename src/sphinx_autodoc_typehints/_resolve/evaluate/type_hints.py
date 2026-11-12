@@ -14,7 +14,11 @@ from types import GenericAlias, ModuleType
 from typing import TYPE_CHECKING, Final, get_args, get_origin, get_type_hints
 from weakref import WeakKeyDictionary
 
-from sphinx_autodoc_typehints._objects import defining_module, is_attrs_class, object_at
+from sphinx_autodoc_typehints._objects import (  # simplint: ignore[private-import-path]  # init cycle
+    defining_module,
+    is_attrs_class,
+    object_at,
+)
 
 from ..guards.overlay import annotation_globals, guarded_names
 from ..source import (
@@ -36,7 +40,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping
     from typing import TypeAliasType
 
-    from sphinx_autodoc_typehints._types import Annotation, Documented
+    from . import Annotation, Documented
 
 
 _DROPS_ARGUMENTS: Final[WeakKeyDictionary[type | TypeAliasType, bool]] = WeakKeyDictionary()

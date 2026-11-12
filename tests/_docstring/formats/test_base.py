@@ -62,7 +62,7 @@ class _MultiLineRepr:
 )
 def test_format_default_describes_it_like_the_signature(
     app: SphinxTestApp,
-    default: object,  # simplint: ignore[SMP602]  # parametrized defaults are any value
+    default: object,  # simplint: ignore[imprecise-annotation]  # parametrized defaults are any value
     expected: str,
 ) -> None:
     app.config.typehints_defaults = "comma"

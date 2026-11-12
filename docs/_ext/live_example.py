@@ -8,12 +8,12 @@ lists, and the `conf.py` tab of each holds the controls that pick the combinatio
 
 from __future__ import annotations
 
+import re
 from hashlib import sha256
 from html import escape
 from json import dumps, loads
 from os import environ, sep
 from pathlib import Path
-from re import sub
 from shutil import copyfile
 from subprocess import PIPE, STDOUT, CalledProcessError, run  # ruff:ignore[suspicious-subprocess-import]  # runs Sphinx
 from sys import executable, version
@@ -208,7 +208,7 @@ def _render(cache: Path, conf: str, source: str, inventories: Inventories) -> st
             body = loads((project / "_build" / "index.fjson").read_text(encoding="utf-8"))["body"]
         cache.mkdir(parents=True, exist_ok=True)
         # every example documents a module named demo, so its anchors need a prefix to stay unique on the page
-        unique = sub(r'\b(id="|href="#)', rf"\g<1>{digest[:12]}-", body)
+        unique = _UNIQUE_PATTERN.sub(rf"\g<1>{digest[:12]}-", body)
         cached.write_text(f'<div class="live-example-output">{unique}</div>', encoding="utf-8")
     return cached.read_text(encoding="utf-8")
 
@@ -346,3 +346,6 @@ def _copy_picker_data(
                 parents=True, exist_ok=True
             )
             copyfile(stored, target)
+
+
+_UNIQUE_PATTERN: Final[re.Pattern[str]] = re.compile(r'\b(id="|href="#)')

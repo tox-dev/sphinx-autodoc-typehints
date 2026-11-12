@@ -15,7 +15,9 @@ from ._objects import get_obj_location
 if TYPE_CHECKING:
     from ._types import Documented
 
-type WarningSubtype = Literal["comment", "forward_reference", "guarded_import", "local_function", "multiple_ast_nodes"]
+type WarningSubtype = Literal[  # simplint: ignore[missing-from-all]  # module-local type
+    "comment", "forward_reference", "guarded_import", "local_function", "multiple_ast_nodes"
+]
 
 
 def warn(subtype: WarningSubtype, message: str, *args: object, at: Documented) -> None:
@@ -26,6 +28,5 @@ def warn(subtype: WarningSubtype, message: str, *args: object, at: Documented) -
 
 
 __all__ = [
-    "WarningSubtype",
     "warn",
 ]

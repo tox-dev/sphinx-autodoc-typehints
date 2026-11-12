@@ -1,12 +1,9 @@
 from __future__ import annotations
 
 from decimal import Decimal
-from fractions import Fraction
-from operator import attrgetter
-from sys import version_info
 from textwrap import dedent
 from types import GenericAlias, ModuleType
-from typing import TYPE_CHECKING, Union, get_args, get_origin
+from typing import TYPE_CHECKING
 from warnings import catch_warnings, simplefilter
 
 from pytest import MonkeyPatch, mark, param
@@ -14,15 +11,12 @@ from sphinx import addnodes
 from sphinx.pycode import ModuleAnalyzer
 
 from sphinx_autodoc_typehints._resolve.evaluate.type_hints import type_hints
-from sphinx_autodoc_typehints._resolve.hints import get_all_type_hints
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from conftest import BuildText
     from sphinx.testing.util import SphinxTestApp
-
-    from _resolve.conftest import MakeSubclassOfAGuardedBase
 
 
 @mark.parametrize(
@@ -153,12 +147,12 @@ def test_kept_signature_links_the_class_whose_subscription_drops_the_arguments(
 
 
 def test_type_hints_reads_a_module_with_syntax_warnings_analyzed_where_they_were_ignored(
-    make_module: Callable[[str], ModuleType], monkeypatch: MonkeyPatch
+    resolve_module: Callable[[str], ModuleType], monkeypatch: MonkeyPatch
 ) -> None:
     monkeypatch.setattr(ModuleAnalyzer, "cache", {})
     with catch_warnings():
         simplefilter("ignore", SyntaxWarning)
-        module = make_module(
+        module = resolve_module(
             dedent("""\
                 class Engine:
                     def __class_getitem__(cls, item):
@@ -178,187 +172,8 @@ def test_type_hints_of_a_base_ignores_the_guard_of_the_module_of_a_subclass(guar
     assert type_hints(guarded_subclass, None, None) == {"inherited": int, "own": Decimal}
 
 
-@mark.skipif(version_info < (3, 14), reason="annotations evaluate lazily from Python 3.14")
-@mark.parametrize(
-    ("declaration", "owner"),
-    [
-        param("def func(value: Decimal) -> None: ...", "func", id="function"),
-        param(
-            dedent("""\
-                class Holder:
-                    def method(self, value: Decimal) -> None: ...
-            """),
-            "Holder.method",
-            id="method",
-        ),
-        param(
-            dedent("""\
-                class Holder:
-                    value: Decimal
-            """),
-            "Holder",
-            id="class",
-        ),
-        param(
-            "def func(value: Decimal, other: Undefined) -> None: ...", "func", id="function-beside-an-undefined-name"
-        ),
-        param(
-            dedent("""\
-                class Holder:
-                    value: Decimal
-                    other: Undefined
-            """),
-            "Holder",
-            id="class-beside-an-undefined-name",
-        ),
-    ],
-)
-def test_lazy_annotation_reads_the_guarded_type_over_its_runtime_fallback(  # pragma: >=3.14 cover
-    make_module: Callable[[str], ModuleType], declaration: str, owner: str, decimal_fallback: str
-) -> None:
-    module = make_module(f"{decimal_fallback}{declaration}")
-    assert get_all_type_hints([], attrgetter(owner)(module), f"mod.{owner}", {})["value"] is Decimal
-
-
-@mark.skipif(version_info < (3, 14), reason="annotations evaluate lazily from Python 3.14")
-def test_lazy_annotation_of_a_base_reads_the_guard_of_its_own_module(  # pragma: >=3.14 cover
-    make_subclass_of_a_guarded_base: MakeSubclassOfAGuardedBase,
-) -> None:
-    child = make_subclass_of_a_guarded_base(
-        "",
-        dedent("""\
-            from typing import TYPE_CHECKING
-            from guarded_base import Base
-
-            if TYPE_CHECKING:
-                from fractions import Fraction
-            else:
-                Fraction = int
-
-            class Child(Base):
-                ratio: Fraction
-        """),
-    )
-    assert get_all_type_hints([], child, "mod.Child", {}) == {"amount": Decimal, "ratio": Fraction}
-
-
-@mark.skipif(version_info < (3, 14), reason="annotations evaluate lazily from Python 3.14")
-def test_lazy_annotation_keeps_the_values_of_a_base_without_source(  # pragma: >=3.14 cover
-    make_module: Callable[[str], ModuleType], decimal_fallback: str
-) -> None:
-    module = make_module(
-        decimal_fallback
-        + dedent("""\
-            Plain = type("Plain", (), {"__annotations__": {"count": int}})
-
-            class Child(Plain):
-                amount: Decimal
-        """)
-    )
-    assert get_all_type_hints([], module.Child, "mod.Child", {}) == {"count": int, "amount": Decimal}
-
-
-@mark.skipif(version_info < (3, 14), reason="annotations evaluate lazily from Python 3.14")
-def test_lazy_annotation_naming_no_shadowed_name_keeps_its_closure(  # pragma: >=3.14 cover
-    make_module: Callable[[str], ModuleType],
-    logged_warnings: Callable[[], list[tuple[str, ...]]],
-    decimal_fallback: str,
-) -> None:
-    module = make_module(
-        decimal_fallback
-        + dedent("""\
-            def make():
-                Local = int
-                def func(value: Local) -> None: ...
-                return func
-        """)
-    )
-    hints = get_all_type_hints([], module.make(), "mod.func", {})
-    assert (hints, logged_warnings()) == ({"value": int, "return": type(None)}, [])
-
-
-@mark.skipif(version_info < (3, 14), reason="annotations evaluate lazily from Python 3.14")
-@mark.parametrize(
-    ("declaration", "owner"),
-    [
-        param("def func(*args: *Ts, value: Decimal) -> None: ...", "func", id="starred"),
-        param("def func(check: Annotated[int, lambda v: v], value: Decimal) -> None: ...", "func", id="lambda-first"),
-        param("def func(value: Decimal, check: Annotated[int, lambda v: v]) -> None: ...", "func", id="lambda-last"),
-        param(
-            dedent("""\
-                class Holder:
-                    check: Annotated[int, lambda v: v]
-                    value: Decimal
-            """),
-            "Holder",
-            id="class",
-        ),
-    ],
-)
-def test_lazy_annotation_beside_one_without_source_reads_the_guarded_type(  # pragma: >=3.14 cover
-    make_module: Callable[[str], ModuleType],
-    logged_warnings: Callable[[], list[tuple[str, ...]]],
-    declaration: str,
-    owner: str,
-    decimal_fallback: str,
-) -> None:
-    # a lambda prints by its repr, which does not parse, and *Ts parses only inside a tuple
-    module = make_module(
-        decimal_fallback
-        + dedent("""\
-            from typing import Annotated, TypeVarTuple
-
-            Ts = TypeVarTuple("Ts")
-        """)
-        + declaration
-    )
-    hints = get_all_type_hints([], getattr(module, owner), f"mod.{owner}", {})
-    assert (hints["value"], logged_warnings()) == (Decimal, [])
-
-
-@mark.skipif(version_info < (3, 14), reason="annotations evaluate lazily from Python 3.14")
-def test_lazy_annotation_stringified_union_of_a_mocked_type_evaluates_as_union(  # pragma: >=3.14 cover
-    make_module: Callable[[str], ModuleType],
-) -> None:
-    module = make_module(
-        dedent("""\
-            from __future__ import annotations
-            from typing import TYPE_CHECKING
-
-            if TYPE_CHECKING:
-                from absent_buffers import Buffer
-            else:
-                Buffer = object
-
-            def func(value: Buffer | str) -> None: ...
-        """)
-    )
-    hint = get_all_type_hints(["absent_buffers"], module.func, "mod.func", {})["value"]
-    assert (get_origin(hint), [str(arg) for arg in get_args(hint)]) == (Union, ["absent_buffers.Buffer", str(str)])
-
-
-@mark.skipif(version_info < (3, 14), reason="annotations evaluate lazily from Python 3.14")
-def test_lazy_annotation_neither_source_nor_runtime_evaluates_warns(  # pragma: >=3.14 cover
-    make_module: Callable[[str], ModuleType],
-    logged_warnings: Callable[[], list[tuple[str, ...]]],
-    decimal_fallback: str,
-) -> None:
-    module = make_module(
-        decimal_fallback
-        + dedent("""\
-            class Holder:
-                value: Decimal
-                other: Missing
-
-            Holder.__annotations__ = {"value": float}
-        """)
-    )
-    get_all_type_hints([], module.Holder, "mod.Holder", {})
-    assert [warning[-1] for warning in logged_warnings()] == ["name 'Missing' is not defined"]
-
-
-def test_type_hints_of_a_class_with_an_unhashable_metaclass(make_module: Callable[[str], ModuleType]) -> None:
-    module = make_module(
+def test_type_hints_of_a_class_with_an_unhashable_metaclass(resolve_module: Callable[[str], ModuleType]) -> None:
+    module = resolve_module(
         dedent("""\
             class Meta(type):
                 def __eq__(cls, other):

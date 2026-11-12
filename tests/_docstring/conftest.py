@@ -12,7 +12,10 @@ if TYPE_CHECKING:
     from sphinx.config import Config
     from sphinx.testing.util import SphinxTestApp
 
-    from sphinx_autodoc_typehints._types import Annotation, Documented
+    from sphinx_autodoc_typehints._types import (  # simplint: ignore[private-import-path]  # keep types private
+        Annotation,
+        Documented,
+    )
 
 type Process = Callable[[str, str, Documented, list[str]], list[str]]
 

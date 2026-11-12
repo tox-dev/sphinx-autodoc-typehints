@@ -8,13 +8,17 @@ from typing import TYPE_CHECKING, Annotated, Optional
 from pytest import fixture, mark, param
 
 from sphinx_autodoc_typehints._resolve.attributes import get_body_annotations, get_instance_var_annotations
-from sphinx_autodoc_typehints._resolve.guards.run import resolve_type_guarded_imports
+from sphinx_autodoc_typehints._resolve.guards.run import (
+    resolve_type_guarded_imports,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
     from types import ModuleType
 
-    from sphinx_autodoc_typehints._types import Annotation
+    from sphinx_autodoc_typehints._types import (  # simplint: ignore[private-import-path]  # Shared test types
+        Annotation,
+    )
 
     from .conftest import MakeSubclassOfAGuardedBase
 
@@ -52,8 +56,8 @@ def test_get_instance_var_annotations(
 
 
 @fixture(name="instance_module")
-def instance_module_fixture(make_module: Callable[[str], ModuleType]) -> ModuleType:
-    return make_module(
+def instance_module_fixture(resolve_module: Callable[[str], ModuleType]) -> ModuleType:
+    return resolve_module(
         dedent("""\
             import contextlib
             from typing import Optional
@@ -161,8 +165,8 @@ def test_get_body_annotations(
 
 
 @fixture(name="body_module")
-def body_module_fixture(make_module: Callable[[str], ModuleType]) -> ModuleType:
-    return make_module(
+def body_module_fixture(resolve_module: Callable[[str], ModuleType]) -> ModuleType:
+    return resolve_module(
         dedent("""\
             from __future__ import annotations
             from typing import Annotated, ClassVar, Final
@@ -190,9 +194,9 @@ def body_module_fixture(make_module: Callable[[str], ModuleType]) -> ModuleType:
 
 
 def test_get_body_annotations_reads_the_guarded_type_over_its_runtime_fallback(
-    make_module: Callable[[str], ModuleType], annotations_header: str, decimal_fallback: str
+    resolve_module: Callable[[str], ModuleType], annotations_header: str, decimal_fallback: str
 ) -> None:
-    module = make_module(
+    module = resolve_module(
         annotations_header
         + decimal_fallback
         + dedent("""\

@@ -6,17 +6,23 @@ from typing import TYPE_CHECKING
 
 from sphinx.ext.autodoc.mock import ismock
 
-from sphinx_autodoc_typehints._objects import prefix_of
+from sphinx_autodoc_typehints._objects import (  # simplint: ignore[private-import-path]  # init cycle
+    prefix_of,
+)
 
-from .._documented.scope import render_scope
-from .._render.annotation.walker import format_annotation
-from .._render.context import annotation_state
+from .._documented import (  # simplint: ignore[private-import-path]  # root API stays unchanged
+    render_scope,
+)
+from .._render import (  # simplint: ignore[private-import-path]  # root API stays unchanged
+    annotation_state,
+    format_annotation,
+)
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
     from sphinx.ext.autodoc import Options
 
-    from sphinx_autodoc_typehints._types import Hint
+    from . import Hint
 
 
 def process_bases(app: Sphinx, name: str, _obj: type, _options: Options, bases: list[Hint | str]) -> None:

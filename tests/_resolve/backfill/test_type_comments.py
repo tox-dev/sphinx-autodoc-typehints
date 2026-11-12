@@ -217,14 +217,14 @@ if TYPE_CHECKING:
     ],
 )
 def test_backfill_type_hints(
-    make_module: Callable[[str], ModuleType],
+    resolve_module: Callable[[str], ModuleType],
     logged_warnings: Callable[[], list[tuple[str, ...]]],
     source: str,
     owner: str,
     expected: dict[str, str],
     warnings: list[tuple[str, ...]],
 ) -> None:
-    module = make_module(source)
+    module = resolve_module(source)
     assert (backfill_type_hints(attrgetter(owner)(module), "mod.func"), logged_warnings()) == (
         expected,
         [(warning[0], f"{module.__file__}:1", *warning[1:]) for warning in warnings],
@@ -233,6 +233,6 @@ def test_backfill_type_hints(
 
 @mark.parametrize("obj", [param(len, id="builtin"), param(property(), id="not-callable")])
 def test_backfill_type_hints_of_an_object_without_source(
-    obj: Callable[..., object] | property,  # simplint: ignore[SMP603]  # any callable is passed
+    obj: Callable[..., object] | property,
 ) -> None:
     assert backfill_type_hints(obj, "mod.obj") == {}

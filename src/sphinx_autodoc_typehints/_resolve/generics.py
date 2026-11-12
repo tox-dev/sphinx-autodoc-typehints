@@ -10,8 +10,8 @@ from sys import version_info
 from types import get_original_bases
 from typing import TYPE_CHECKING, Final, Protocol, TypeGuard, get_args, get_origin
 
-from .._objects import object_at
-from .._types import frozendict
+from .._objects import object_at  # simplint: ignore[private-import-path]  # init cycle
+from .._types import frozendict  # simplint: ignore[private-import-path]  # init cycle
 
 if version_info >= (3, 14):  # pragma: >=3.14 cover
     from annotationlib import Format, get_annotations
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
     from typing import TypeIs
 
-    from .._types import Annotation, Documented, TypeParam
+    from . import Annotation, Documented, TypeParam
 
 
 TYPE_PARAM_KINDS: Final[Mapping[str, str]] = frozendict({"TypeVar": "", "TypeVarTuple": "*", "ParamSpec": "**"})
@@ -34,7 +34,8 @@ class Subscriptable(Protocol):
 
 def declared_type_params(
     documented: Documented,
-    function: Callable[..., object] | None,  # simplint: ignore[SMP603]  # any function that declares type parameters
+    function: Callable[..., object]  # simplint: ignore[callable-ellipsis]  # any function that declares type parameters
+    | None,
     documenting: Documented,
 ) -> frozenset[TypeParam]:
     """
