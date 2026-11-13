@@ -23,6 +23,7 @@ from sphinx_autodoc_typehints._warnings import warn
 
 if TYPE_CHECKING:
     from conftest import MakeApp
+    from pytest import MarkDecorator
     from sphinx.config import Config
     from sphobjinv import Inventory
 
@@ -179,6 +180,23 @@ def test_docs_warnings_table_lists_the_categories() -> None:
 _TEST_DOCS_TYPING_CONSTRUCT_RENDERS_AS_SHOWN_PATTERN: Final[re.Pattern[str]] = re.compile(r"~(?:\w+\.)+")
 
 
+_VERSION_MARKS_PATTERN: Final[re.Pattern[str]] = re.compile(
+    r"""
+    ^(?P<less><)?                # a bound that the version has to exceed
+    (?P<major>\d+)\.(?P<minor>\d+)\+?$  # the version, with an optional `+` for later releases
+    """,
+    VERBOSE,
+)
+
+
+# a version cell, as `3.13+` or `<3.14`, skips the row on the versions it does not hold on
+def _version_marks(versions: str) -> list[MarkDecorator]:
+    return [
+        mark.skipif((version_info >= (int(found[2]), int(found[3]))) == bool(found[1]), reason=f"holds on {versions}")
+        for found in _VERSION_MARKS_PATTERN.finditer(versions)
+    ]
+
+
 @mark.parametrize(
     ("annotation", "rendered"),
     [
@@ -186,19 +204,7 @@ _TEST_DOCS_TYPING_CONSTRUCT_RENDERS_AS_SHOWN_PATTERN: Final[re.Pattern[str]] = r
             row[1],
             row[2],
             id=" ".join(filter(None, (row[1], row[3]))),
-            marks=[
-                mark.skipif(
-                    (version_info >= (int(found[2]), int(found[3]))) == bool(found[1]), reason=f"holds on {row[3]}"
-                )
-                for found in finditer(
-                    r"""
-                    ^(?P<less><)?                # a bound that the version has to exceed
-                    (?P<major>\d+)\.(?P<minor>\d+)\+?$  # the version, with an optional `+` for later releases
-                    """,
-                    row[3],
-                    VERBOSE,
-                )
-            ],
+            marks=_version_marks(row[3]),
         )
         for row in _list_table("Typing constructs")
     ],

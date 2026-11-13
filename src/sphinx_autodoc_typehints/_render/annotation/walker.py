@@ -73,6 +73,7 @@ if TYPE_CHECKING:
     from typing import TypeAliasType
 
     from sphinx.config import Config
+    from sphinx.environment import BuildEnvironment
 
     from ..context import ContextualTypehintsFormatter, TypehintsFormatter
     from . import Hint, RenderNode, TypeParam
@@ -206,14 +207,7 @@ def _forward_alias(annotation: TypeAliasForwardRef, config: Config) -> _Frame:
             rendered = defer_alias_choice(config, linked, rendered, objtype="type") or rendered
         yield _Rendered(text=rendered)
     elif (env := context.env) is not None and (
-        documented := next(
-            (
-                candidate
-                for candidate in alias_lookup_names(module_prefix, annotation.name)
-                if (entry := env.domains.python_domain.objects.get(candidate)) is not None and entry.objtype == "type"
-            ),
-            None,
-        )
+        documented := _documented_alias(env, module_prefix, annotation.name)
     ) is not None:
         yield _Rendered(text=f":py:type:`{prefix}{documented}`")
     elif isinstance(annotation, WrittenTypeAlias):
@@ -228,6 +222,19 @@ def _forward_alias(annotation: TypeAliasForwardRef, config: Config) -> _Frame:
         yield _Rendered(text=defer_alias_choice(config, linked, annotation.name) or annotation.name)
     else:
         yield _Rendered(text=annotation.name)
+
+
+# the first name the alias goes by that Sphinx documents as a type alias
+def _documented_alias(env: BuildEnvironment, module_prefix: str, name: str) -> str | None:
+    objects = env.domains.python_domain.objects
+    return next(
+        (
+            candidate
+            for candidate in alias_lookup_names(module_prefix, name)
+            if (entry := objects.get(candidate)) is not None and entry.objtype == "type"
+        ),
+        None,
+    )
 
 
 def _type_alias(annotation: TypeAliasType, config: Config) -> _Frame:

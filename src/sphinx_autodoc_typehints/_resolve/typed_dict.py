@@ -102,13 +102,7 @@ class _Hierarchy:
             name: hint
             for name, hint in hints.items()
             if name not in inherited
-            or not (
-                _same(inherited[name], hint)
-                or any(
-                    name in base_written and _same(base_written[name], written[name])
-                    for base_written in declared_by_base
-                )
-            )
+            or not (_same(inherited[name], hint) or _declared_alike(name, written, declared_by_base))
         }
         found = self._items[typed_dict] = inherited | own, own
         return found
@@ -155,6 +149,15 @@ def _same(
         return type(left) is type(right) and (left == right) is True
     except Exception:  # ruff:ignore[blind-except]  # metadata compares through user code, which may raise anything
         return False
+
+
+# whether a base writes the item `name` as `written` does
+def _declared_alike(
+    name: str,
+    written: dict[str, Annotation | ForwardRef],
+    declared_by_base: list[dict[str, Annotation | ForwardRef]],
+) -> bool:
+    return any(name in base_written and _same(base_written[name], written[name]) for base_written in declared_by_base)
 
 
 def _item_type(hint: Annotation, *, optional: bool) -> Annotation:
