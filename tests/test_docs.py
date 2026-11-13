@@ -98,6 +98,15 @@ def option_reference_fixture(monkeypatch: MonkeyPatch) -> ModuleType:
     return import_module("option_reference")
 
 
+def test_docs_option_types_cover_the_documented_options(option_reference: ModuleType) -> None:
+    assert set(option_reference.OPTION_TYPES) == set(_OPTIONS)
+
+
+@mark.parametrize("name", [param(name, id=name) for name in _OPTIONS])
+def test_docs_option_type_admits_the_default(name: str, option_reference: ModuleType, extension_config: Config) -> None:
+    assert _admits(option_reference.documented_type(name), extension_config[name])
+
+
 def _admits(
     annotation: object,  # simplint: ignore[imprecise-annotation]  # reference values vary
     value: object,  # simplint: ignore[imprecise-annotation]  # reference values vary
@@ -111,15 +120,6 @@ def _admits(
     if origin is tuple:
         return isinstance(value, tuple) and all(_admits(get_args(annotation)[0], item) for item in value)
     return isinstance(value, annotation)  # ty: ignore[invalid-argument-type]  # what remains is a class
-
-
-def test_docs_option_types_cover_the_documented_options(option_reference: ModuleType) -> None:
-    assert set(option_reference.OPTION_TYPES) == set(_OPTIONS)
-
-
-@mark.parametrize("name", [param(name, id=name) for name in _OPTIONS])
-def test_docs_option_type_admits_the_default(name: str, option_reference: ModuleType, extension_config: Config) -> None:
-    assert _admits(option_reference.documented_type(name), extension_config[name])
 
 
 @mark.parametrize("name", [param(name, id=name) for name in _OPTIONS])

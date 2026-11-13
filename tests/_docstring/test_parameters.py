@@ -229,9 +229,6 @@ def _field_description(
     return metadata.description if isinstance(metadata, FieldInfo) else None
 
 
-def _described_field(first: Annotated[int, Field(description="the first")], second: str) -> None: ...
-
-
 @mark.parametrize(
     ("func", "lines", "expected"),
     [
@@ -289,6 +286,9 @@ def test_pydantic_metadata_adds_parameter_description(process: Process) -> None:
         _FIRST_TYPE,
         ":param first: the first",
     ]
+
+
+def _described_field(first: Annotated[int, Field(description="the first")], second: str) -> None: ...
 
 
 def test_param_without_annotation_or_description_gets_no_field(process: Process) -> None:

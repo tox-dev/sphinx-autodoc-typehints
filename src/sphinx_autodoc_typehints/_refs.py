@@ -50,14 +50,6 @@ class MyTypeAliasForwardRef(TypeAliasForwardRef):
         return GenericAlias(self, item)  # ty: ignore[invalid-argument-type]  # any origin works at runtime
 
 
-class WrittenTypeAlias(MyTypeAliasForwardRef):
-    """A module-level alias such as `Count = int` that an annotation names; it stands for `value`."""
-
-    def __init__(self, name: str, value: Hint) -> None:
-        super().__init__(name)
-        self.value = value
-
-
 def _written_with_bars(union: Annotation) -> Annotation:
     if version_info >= (3, 14):  # pragma: >=3.14 cover
         return union
@@ -68,6 +60,14 @@ def _written_with_bars(union: Annotation) -> Annotation:
     marked = type(union)(union.__origin__, union.__args__)  # pragma: <3.14 cover
     marked.__typehints_bars__ = True  # pragma: <3.14 cover
     return marked  # pragma: <3.14 cover
+
+
+class WrittenTypeAlias(MyTypeAliasForwardRef):
+    """A module-level alias such as `Count = int` that an annotation names; it stands for `value`."""
+
+    def __init__(self, name: str, value: Hint) -> None:
+        super().__init__(name)
+        self.value = value
 
 
 def split_arguments(text: str) -> list[str]:

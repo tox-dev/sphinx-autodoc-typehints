@@ -212,10 +212,6 @@ def _format_first(_annotation: RenderNode, _config: Config) -> str:
     return "First"
 
 
-def _format_second(_annotation: RenderNode, _config: Config) -> str:
-    return "Second"
-
-
 @mark.sphinx("text", testroot="dummy", confoverrides={"typehints_formatter": _format_first})
 def test_formatter_change_rereads_documents(build_text: BuildText, app: SphinxTestApp, make_app: MakeApp) -> None:
     build_text(".. autofunction:: dummy_module.undocumented_function")
@@ -224,6 +220,10 @@ def test_formatter_change_rereads_documents(build_text: BuildText, app: SphinxTe
     output = (Path(app.outdir) / "index.txt").read_text()
     assert "Second" in output
     assert "First" not in output
+
+
+def _format_second(_annotation: RenderNode, _config: Config) -> str:
+    return "Second"
 
 
 @mark.sphinx("text", testroot="dummy", confoverrides={"typehints_formatter": _format_first})
