@@ -22,7 +22,7 @@ from sphinx.domains.python import PyXRefRole
 if TYPE_CHECKING:
     from docutils.nodes import Node, system_message
     from docutils.parsers.rst import states
-    from pygments.token import _TokenType
+    from pygments.token import _TokenType  # simplint: ignore[private-import-path]  # Pygments lacks public type
 
 VALUE_ROLE: Final[str] = "sphinx_autodoc_typehints_value"
 CONSTANT_ROLE: Final[str] = "sphinx_autodoc_typehints_constant"
@@ -37,13 +37,14 @@ def value_markup(text: str) -> str:
     return f":{VALUE_ROLE}:`{text.replace('\\', '\\\\').replace('`', '\\`')}`"
 
 
-def value_role(  # simplint: ignore[SMP602]  # docutils passes options of any value
+def value_role(
     _role: str,
     rawtext: str,
     text: str,
     _lineno: int,
     _inliner: states.Inliner,
-    _options: dict[str, object] | None = None,  # simplint: ignore[SMP602]  # docutils passes options of any value
+    _options: dict[str, object]  # simplint: ignore[imprecise-annotation]  # docutils passes options of any value
+    | None = None,
     _content: list[str] | None = None,
 ) -> tuple[list[Node], list[system_message]]:
     return [_scope(_color(nodes.literal(rawtext), unescape(text)))], []
@@ -70,13 +71,14 @@ def _token_class(ttype: _TokenType) -> str:
     return next(STANDARD_TYPES[kind] for kind in reversed(ttype.split()) if kind in STANDARD_TYPES)
 
 
-def constant_role(  # simplint: ignore[SMP602]  # docutils passes options of any value
+def constant_role(
     _role: str,
     rawtext: str,
     text: str,
     lineno: int,
     inliner: states.Inliner,
-    options: dict[str, object] | None = None,  # simplint: ignore[SMP602]  # docutils passes options of any value
+    options: dict[str, object]  # simplint: ignore[imprecise-annotation]  # docutils passes options of any value
+    | None = None,
     content: list[str] | None = None,
 ) -> tuple[list[Node], list[system_message]]:
     # the Python docs list True and False as data on their constants page

@@ -10,7 +10,9 @@ if TYPE_CHECKING:
     from conftest import BuildText
     from docutils import nodes
 
-    from _signature.conftest import BuildDoctree
+    from _signature.conftest import (  # simplint: ignore[private-import-path]  # Shared test fixture
+        BuildDoctree,
+    )
 
 pytestmark: Final[MarkDecorator] = mark.sphinx(
     "text", testroot="dummy", confoverrides={"typehints_use_signature": True}

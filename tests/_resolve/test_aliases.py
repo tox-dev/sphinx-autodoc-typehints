@@ -21,7 +21,9 @@ if TYPE_CHECKING:
     from sphinx.environment import BuildEnvironment
     from sphinx.testing.util import SphinxTestApp
 
-    from sphinx_autodoc_typehints._types import Annotation
+    from sphinx_autodoc_typehints._types import (  # simplint: ignore[private-import-path]  # Shared test types
+        Annotation,
+    )
 
 pytestmark: Final[MarkDecorator] = mark.sphinx("text", testroot="resolve-stubs")
 
@@ -91,7 +93,7 @@ def test_type_alias_namespace(
     aliases: dict[str, str],
     owner: Callable[
         [ModuleType],
-        Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+        Callable[..., object],  # simplint: ignore[callable-ellipsis]  # any callable is passed
     ],
     module: str,
     documented: Callable[[_DocumentTypes], BuildEnvironment | None],
@@ -132,8 +134,8 @@ def test_type_alias_namespace_of_an_annotation_written_as_an_alias(
 
 
 @fixture(name="aliased_module")
-def aliased_module_fixture(make_module: Callable[[str], ModuleType]) -> ModuleType:
-    return make_module(
+def aliased_module_fixture(resolve_module: Callable[[str], ModuleType]) -> ModuleType:
+    return resolve_module(
         dedent("""\
             from dataclasses import dataclass
 

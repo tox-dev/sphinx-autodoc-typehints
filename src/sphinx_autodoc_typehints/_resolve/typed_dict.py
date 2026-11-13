@@ -14,7 +14,7 @@ from typing import (
     get_origin,
 )
 
-from .._types import sentinel
+from .._types import sentinel  # simplint: ignore[private-import-path]  # init cycle
 from .evaluate.type_hints import type_hints
 from .generics import specialize, type_arguments
 from .guards.overlay import guarded_names
@@ -26,10 +26,10 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
     from typing import ForwardRef
 
-    from .._types import Annotation, Documented, TypeParam
+    from . import Annotation, Documented, TypeParam
 
 
-OPEN = sentinel("OPEN")  # simplint: ignore[SMP601]  # ty rejects Final sentinels as types, astral-sh/ty#4737
+OPEN = sentinel("OPEN")  # simplint: ignore[missing-final]  # ty rejects Final sentinels as types, astral-sh/ty#4737
 
 
 def typed_dict_keys(typed_dict: Documented, localns: Mapping[str, Documented]) -> dict[str, Annotation]:
@@ -142,7 +142,10 @@ def _written(typed_dict: type) -> dict[str, Annotation | ForwardRef]:
 # part by part, as a string annotation evaluates anew for each class holding it, so the parts may be equal objects
 # rather than one, and comparing a whole `Annotated` asks its metadata, such as an array, for a truth value it may not
 # have
-def _same(left: object, right: object) -> bool:  # simplint: ignore[SMP602]  # Annotated metadata may be any object
+def _same(
+    left: object,  # simplint: ignore[imprecise-annotation]  # Annotated metadata may be any object
+    right: object,  # simplint: ignore[imprecise-annotation]  # Annotated metadata may be any object
+) -> bool:
     if left is right:
         return True
     if (origin := get_origin(left)) is not None:
@@ -156,7 +159,7 @@ def _same(left: object, right: object) -> bool:  # simplint: ignore[SMP602]  # A
 
 def _item_type(hint: Annotation, *, optional: bool) -> Annotation:
     annotation = hint
-    metadata: list[object] = []  # simplint: ignore[SMP602]  # Annotated metadata may be any object
+    metadata: list[object] = []  # simplint: ignore[imprecise-annotation]  # Annotated metadata may be any object
     read_only = None
     while True:
         item_origin = get_origin(annotation)

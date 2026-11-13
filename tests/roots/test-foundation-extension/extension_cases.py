@@ -82,14 +82,14 @@ class Class:
         :param label: baz
         """
 
-    def _private_method(self, flag: str) -> str:  # simplint: ignore[SMP409]  # documented private member
+    def _private_method(self, flag: str) -> str:  # simplint: ignore[unused-definition]  # documented private member
         """
         Private method docstring.
 
         :param flag: foo
         """
 
-    def __dunder_method(self, flag: str) -> str:  # simplint: ignore[SMP409]  # documented dunder member
+    def __dunder_method(self, flag: str) -> str:  # simplint: ignore[unused-definition]  # documented dunder member
         """
         Dunder method docstring.
 
@@ -343,7 +343,8 @@ def undocumented_function(flag: int) -> str:
     """Hi"""
 
 
-@dataclass(frozen=True, slots=True)  # simplint: ignore[SMP703]  # the docs assert the positional constructor signature
+# the docs assert the positional constructor signature
+@dataclass(frozen=True, slots=True)  # simplint: ignore[dataclass-kw-only]
 class DataClass:
     """Class docstring."""
 

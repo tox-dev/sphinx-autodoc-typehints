@@ -10,12 +10,14 @@ from contextlib import contextmanager
 from types import ModuleType
 from typing import TYPE_CHECKING, Final
 
-from sphinx_autodoc_typehints._objects import defining_module
+from sphinx_autodoc_typehints._objects import (  # simplint: ignore[private-import-path]  # init cycle
+    defining_module,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Generator
 
-    from sphinx_autodoc_typehints._types import Documented
+    from . import Documented
 
 
 #: Per module, what its `TYPE_CHECKING` block binds a name to that the module lacks or binds to something else at

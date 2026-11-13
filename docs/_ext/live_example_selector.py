@@ -3,9 +3,10 @@
 
 from __future__ import annotations
 
+import re
 from html import escape
 from itertools import groupby
-from re import MULTILINE, VERBOSE, split
+from re import MULTILINE, VERBOSE
 from re import compile as compile_regex
 from typing import TYPE_CHECKING, Final
 
@@ -45,11 +46,14 @@ def describe(reference: str) -> dict[str, str]:
 
 def _first_sentence(text: str) -> str:
     plain = _ROLE.sub(lambda match: match["title"] or match["short"] or match["name"], text)
-    sentence = split(r"(?<=\.)\s|;\s", plain, maxsplit=1)[0].removesuffix(".")
+    sentence = _FIRST_SENTENCE_PATTERN.split(plain, maxsplit=1)[0].removesuffix(".")
     # the literals of reST alternate with the text around them
     parts = sentence.split("``")
     html = "".join(f"<code>{escape(part)}</code>" if at % 2 else escape(part) for at, part in enumerate(parts))
     return f"{html}."
+
+
+_FIRST_SENTENCE_PATTERN: Final[re.Pattern[str]] = re.compile(r"(?<=\.)\s|;\s")
 
 
 def selector(options: list[Option], conf: str, descriptions: dict[str, str], reference: str, example: int) -> str:

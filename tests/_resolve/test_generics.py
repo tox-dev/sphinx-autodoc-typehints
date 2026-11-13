@@ -19,7 +19,9 @@ if TYPE_CHECKING:
 
     from conftest import BuildText
 
-    from sphinx_autodoc_typehints._types import Annotation
+    from sphinx_autodoc_typehints._types import (  # simplint: ignore[private-import-path]  # Shared test types
+        Annotation,
+    )
 
 
 @mark.parametrize(
@@ -44,9 +46,9 @@ def test_type_params_bound_by_the_documenting_subclass_return(
 
 @mark.sphinx("text", testroot="type-params")
 def test_generic_subclass_inherited_special_members_build(
-    build_text: BuildText, make_module: Callable[[str], ModuleType]
+    build_text: BuildText, resolve_module: Callable[[str], ModuleType]
 ) -> None:
-    module = make_module(
+    module = resolve_module(
         dedent('''\
             from typing import Generic, TypeVar
 
@@ -161,8 +163,8 @@ def test_type_params_of(generic_module: ModuleType, owner: str, legacy: bool, ex
 
 
 @fixture(name="generic_module")
-def generic_module_fixture(make_module: Callable[[str], ModuleType]) -> ModuleType:
-    return make_module(
+def generic_module_fixture(resolve_module: Callable[[str], ModuleType]) -> ModuleType:
+    return resolve_module(
         dedent("""\
             from typing import Generic, TypeVar, TypeVarTuple
 
@@ -226,9 +228,9 @@ def test_bound_type_args(
 
 
 def test_bound_type_args_past_a_class_whose_annotations_are_no_dict(
-    make_module: Callable[[str], ModuleType],
+    resolve_module: Callable[[str], ModuleType],
 ) -> None:
-    module = make_module(
+    module = resolve_module(
         dedent("""\
             class Box[T]:
                 def get(self) -> T: ...

@@ -7,7 +7,9 @@ from sys import modules
 from types import ModuleType
 from typing import TYPE_CHECKING, TypeAliasType, get_args, get_origin
 
-from sphinx_autodoc_typehints._objects import enclosing_scopes
+from sphinx_autodoc_typehints._objects import (  # simplint: ignore[private-import-path]  # init cycle
+    enclosing_scopes,
+)
 
 from ..context import render_context
 from .names import fixup_module_name, name_prefix
@@ -15,7 +17,7 @@ from .names import fixup_module_name, name_prefix
 if TYPE_CHECKING:
     from sphinx.config import Config
 
-    from sphinx_autodoc_typehints._types import RenderNode, TypeParam
+    from . import RenderNode, TypeParam
 
 
 def reaches_itself(alias: TypeAliasType) -> bool:

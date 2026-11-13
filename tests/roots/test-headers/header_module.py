@@ -11,10 +11,10 @@ if TYPE_CHECKING:
 
 CellT = TypeVar("CellT")
 
-LIMIT: Annotated[int, "a cap"] = 3  # simplint: ignore[SMP601]  # header tests render the annotation as written
+LIMIT: Annotated[int, "a cap"] = 3  # simplint: ignore[missing-final]  # header tests render the annotation as written
 """The limit."""
 
-RATE: Decimal | None = None  # simplint: ignore[SMP601]  # header tests render the annotation as written
+RATE: Decimal | None = None  # simplint: ignore[missing-final]  # header tests render the annotation as written
 """The rate."""
 
 
@@ -54,9 +54,9 @@ class Proxy:
 
     def __get__(
         self,
-        instance: object,  # simplint: ignore[SMP602]  # descriptors get any instance
+        instance: object,
         owner: type | None = None,
-    ) -> object:  # simplint: ignore[SMP602]  # descriptors get any instance
+    ) -> object:  # simplint: ignore[imprecise-annotation]  # descriptors get any instance
         return self.wrapped if instance is None else self.wrapped.__get__(instance, owner)
 
 
@@ -119,10 +119,10 @@ class StrLegacy(Legacy[str]):
 
 Num = int | float
 
-SCORE: Num = 1  # simplint: ignore[SMP601]  # header tests render the annotation as written
+SCORE: Num = 1  # simplint: ignore[missing-final]  # header tests render the annotation as written
 """The score."""
 
-LOW: Num = 0  # simplint: ignore[SMP601]  # header tests render the annotation as written
+LOW: Num = 0  # simplint: ignore[missing-final]  # header tests render the annotation as written
 """The lowest score."""
 
 
@@ -178,7 +178,7 @@ class SubEngined(Engined):
     """Inherits engines."""
 
 
-INSTANCE = Engined()  # simplint: ignore[SMP601]  # header tests render the annotation as written
+INSTANCE = Engined()  # simplint: ignore[missing-final]  # header tests render the annotation as written
 """An instance holding engines."""
 
 Generated = type("Generated", (Engined,), {"__module__": "generated", "__doc__": "Made where no source is at hand."})

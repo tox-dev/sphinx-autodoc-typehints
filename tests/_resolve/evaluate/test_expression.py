@@ -16,13 +16,21 @@ from sphinx_autodoc_typehints._resolve.evaluate.expression import (
     resolve_string_annotations,
     unevaluated_annotations,
 )
-from sphinx_autodoc_typehints._resolve.guards.run import resolve_type_guarded_imports
+from sphinx_autodoc_typehints._resolve.guards.run import (
+    resolve_type_guarded_imports,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from _resolve.conftest import AsWritten
-    from sphinx_autodoc_typehints._types import Annotation, Documented, Hint
+    from _resolve.conftest import (  # simplint: ignore[private-import-path]  # Shared test fixture
+        AsWritten,
+    )
+    from sphinx_autodoc_typehints._types import (  # simplint: ignore[private-import-path]  # Shared test types
+        Annotation,
+        Documented,
+        Hint,
+    )
 
 
 class _Engine:
@@ -101,8 +109,8 @@ def test_resolve_string_annotations(
 
 
 @fixture(name="path_function")
-def path_function_fixture(make_module: Callable[[str], ModuleType]) -> Callable[[], None]:
-    return make_module(
+def path_function_fixture(resolve_module: Callable[[str], ModuleType]) -> Callable[[], None]:
+    return resolve_module(
         dedent("""\
             from pathlib import Path
 
@@ -160,9 +168,9 @@ def test_resolve_string_annotations_reads_the_globals_of_the_module_defining_a_r
     ],
 )
 def test_unevaluated_annotations(
-    make_module: Callable[[str], ModuleType], as_written: AsWritten, source: str, expected: dict[str, Hint]
+    resolve_module: Callable[[str], ModuleType], as_written: AsWritten, source: str, expected: dict[str, Hint]
 ) -> None:
-    assert as_written(unevaluated_annotations(make_module(source).func)) == expected
+    assert as_written(unevaluated_annotations(resolve_module(source).func)) == expected
 
 
 @mark.skipif(version_info < (3, 14), reason="annotations evaluate lazily from Python 3.14")
@@ -186,12 +194,12 @@ def test_unevaluated_annotations(
     ],
 )
 def test_unevaluated_annotations_after_the_guard_ran(  # pragma: >=3.14 cover
-    make_module: Callable[[str], ModuleType],
+    resolve_module: Callable[[str], ModuleType],
     decimal_fallback: str,
     as_written: AsWritten,
     source: str,
     expected: dict[str, Hint],
 ) -> None:
-    module = make_module(source.format(fallback=decimal_fallback))
+    module = resolve_module(source.format(fallback=decimal_fallback))
     resolve_type_guarded_imports([], module.func)
     assert as_written(unevaluated_annotations(module.func)) == expected

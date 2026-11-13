@@ -19,7 +19,9 @@ if TYPE_CHECKING:
     from conftest import BuildText, MakeModule
     from sphinx.config import Config
 
-    from sphinx_autodoc_typehints._types import Annotation
+    from sphinx_autodoc_typehints._types import (  # simplint: ignore[private-import-path]  # Shared test types
+        Annotation,
+    )
 
     from .conftest import SignatureOf
 
@@ -109,7 +111,7 @@ _LOCAL_CLASS: Final[type] = _make_local_class()
 def test_process_signature_first_parameter_by_member_kind(
     signature_of: SignatureOf,
     name: str,
-    method: Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+    method: Callable[..., object],
     expected: str,
 ) -> None:
     assert signature_of("method", name, method) == (expected, None)
@@ -151,7 +153,7 @@ def test_process_signature_leaves_the_signature(
     signature_of: SignatureOf,
     what: str,
     name: str,
-    obj: Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+    obj: Callable[..., object],
     given: str | None,
 ) -> None:
     assert signature_of(what, name, obj, given) is None
@@ -169,7 +171,8 @@ class _Point(NamedTuple):
     right: str
 
 
-@dataclass(frozen=True, slots=True)  # simplint: ignore[SMP703]  # the expected signature lists positional arguments
+# the expected signature lists positional arguments
+@dataclass(frozen=True, slots=True)  # simplint: ignore[dataclass-kw-only]
 class _Made:
     value: list[int] = field(default_factory=list)
 
@@ -279,7 +282,7 @@ def test_process_signature_strips_the_types(
     signature_of: SignatureOf,
     what: str,
     name: str,
-    obj: Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+    obj: Callable[..., object],
     given: str,
     expected: str,
 ) -> None:
@@ -310,7 +313,7 @@ def _counted(count: int) -> str: ...
 def test_process_signature_omits_only_a_constructor_return(
     signature_of: SignatureOf,
     what: str,
-    obj: Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+    obj: Callable[..., object],
     expected: str,
 ) -> None:
     assert signature_of(what, "mod.documented", obj) == (expected, None)
@@ -344,7 +347,7 @@ def _kept_literal(value: Literal["a", 1]) -> None: ...
 
 
 def _kept_callable(
-    value: Callable[..., int],  # simplint: ignore[SMP603]  # any callable is passed
+    value: Callable[..., int],
 ) -> None: ...
 
 

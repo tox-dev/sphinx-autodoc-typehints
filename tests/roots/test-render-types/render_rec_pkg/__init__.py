@@ -1,11 +1,11 @@
 """A package using a recursive alias of its submodule."""
 
-from __future__ import annotations  # simplint: ignore[SMP407]  # tests read the names from the package itself
+from __future__ import annotations
 
-from .other import RecType  # simplint: ignore[SMP407]  # tests read the names from the package itself
+from .other import RecType
 
 
-def some_func(some_param: RecType) -> None:  # simplint: ignore[SMP407]  # tests read the names from the package itself
+def some_func(some_param: RecType) -> None:
     """
     Take the recursive alias.
 
@@ -16,7 +16,7 @@ def some_func(some_param: RecType) -> None:  # simplint: ignore[SMP407]  # tests
     """
 
 
-__all__ = [  # simplint: ignore[SMP407]  # tests read the names from the package itself
+__all__ = [
     "RecType",
     "some_func",
 ]

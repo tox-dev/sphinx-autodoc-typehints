@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
-from re import findall
 from sys import version_info
 from textwrap import dedent
 from typing import TYPE_CHECKING, Final
@@ -11,7 +11,10 @@ from sphinx.errors import NoUri
 
 from sphinx_autodoc_typehints._render.context import annotation_state
 from sphinx_autodoc_typehints._render.deferred import ALIAS_CHOICE_ROLE, defer_alias_choice
-from sphinx_autodoc_typehints._state import alias_choices, document_alias_choices
+from sphinx_autodoc_typehints._state import (
+    alias_choices,
+    document_alias_choices,
+)
 
 if TYPE_CHECKING:
     from io import StringIO
@@ -23,7 +26,9 @@ if TYPE_CHECKING:
     from sphinx.environment import BuildEnvironment
     from sphinx.testing.util import SphinxTestApp
 
-    from sphinx_autodoc_typehints._types import Annotation
+    from sphinx_autodoc_typehints._types import (  # simplint: ignore[private-import-path]  # deferred annotation tests
+        Annotation,
+    )
 
 # the workers fork from a process pytest-xdist already runs threads in
 _FORKS_WORKERS: Final[MarkDecorator] = mark.filterwarnings(
@@ -61,6 +66,11 @@ def test_defer_alias_choice_records_the_choice_its_marker_names(
         marker = defer_alias_choice(app.config, ":py:type:`~mod.Alias`", ":py:class:`int`", objtype=objtype)
     choices = alias_choices(app.env)
     assert (marker, list(choices.values())) == (f":{ALIAS_CHOICE_ROLE}:`{next(iter(choices))}`", [expected])
+
+
+_TEST_DEFERRED_CONFIGURED_ALIAS_LINKS_ITS_DATA_ENTRY_PATTERN: Final[re.Pattern[str]] = re.compile(
+    r'class="reference internal" href="([^"]*ConfiguredAlias)"'
+)
 
 
 @mark.parametrize(
@@ -101,7 +111,7 @@ def test_defer_alias_choice_records_the_choice_its_marker_names(
 def test_deferred_configured_alias_links_its_data_entry(
     build_text: BuildText, documents: dict[str, str], href: str
 ) -> None:
-    assert set(findall(r'class="reference internal" href="([^"]*ConfiguredAlias)"', build_text(**documents))) == {href}
+    assert set(_TEST_DEFERRED_CONFIGURED_ALIAS_LINKS_ITS_DATA_ENTRY_PATTERN.findall(build_text(**documents))) == {href}
 
 
 def _int_as_bool_class(annotation: Annotation, _config: Config) -> str | None:

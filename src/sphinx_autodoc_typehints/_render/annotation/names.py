@@ -18,16 +18,17 @@ from typing import (
     TypeVarTuple,
 )
 
-from sphinx_autodoc_typehints._types import frozendict
+from sphinx_autodoc_typehints._types import (  # simplint: ignore[private-import-path]  # init cycle
+    frozendict,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Hashable, Mapping
 
     from sphinx.config import Config
 
-    from sphinx_autodoc_typehints._types import Annotation, Hint, RenderNode
-
     from ..context import FixupModuleName
+    from . import Annotation, Hint, RenderNode
 
 
 PYDATA_ANNOTATIONS: Final[set[tuple[str, str]]] = {

@@ -15,7 +15,9 @@ if TYPE_CHECKING:
     from sphinx.config import Config
     from sphinx.testing.util import SphinxTestApp
 
-    from sphinx_autodoc_typehints._types import RenderNode
+    from sphinx_autodoc_typehints._types import (  # simplint: ignore[private-import-path]  # internal render nodes
+        RenderNode,
+    )
 
 
 @mark.sphinx("text", testroot="public-api")

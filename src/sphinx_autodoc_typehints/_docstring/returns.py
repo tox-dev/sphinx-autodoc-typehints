@@ -7,8 +7,12 @@ from inspect import isclass, isdatadescriptor
 from types import NoneType
 from typing import TYPE_CHECKING, Annotated, Final, get_args, get_origin
 
-from .._documented.hints import as_written
-from .._render.annotation.rendered import as_field_type
+from .._documented import (  # simplint: ignore[private-import-path]  # root API stays unchanged
+    as_written,
+)
+from .._render import (  # simplint: ignore[private-import-path]  # root API stays unchanged
+    as_field_type,
+)
 from .formats.field_list.edit import write_rtype
 from .formats.napoleon.typed import reads_as_type
 
@@ -17,9 +21,11 @@ if TYPE_CHECKING:
 
     from sphinx.application import Sphinx
 
-    from .._documented.entry import Entry
-    from .._documented.hints import ResolvedHints
-    from .._types import Hint
+    from .._documented import (  # simplint: ignore[private-import-path]  # root API stays unchanged
+        Entry,
+        ResolvedHints,
+    )
+    from . import Hint
     from .formats.field_list.edit import FieldListFormat
 
 _YIELDS_FIELDS: Final[tuple[str, ...]] = (":Yields:", ":yields:", ":yield:")
@@ -119,7 +125,8 @@ def _type_yields(annotation: Hint, description: str | None, app: Sphinx, lines: 
 
 def description_from_doc(
     annotation: Hint | None,
-    extractor: Callable[[object], str | None] | None = None,  # simplint: ignore[SMP602]  # callback gets any metadata
+    extractor: Callable[[object], str | None]  # simplint: ignore[imprecise-annotation]  # callback gets any metadata
+    | None = None,
 ) -> str | None:
     """Return a `Doc` description, or one the configured metadata callback extracts."""
     if get_origin(annotation) is not Annotated:

@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import re
 from ast import literal_eval
 from contextlib import contextmanager
 from hashlib import sha256
@@ -248,7 +249,7 @@ class _Nested(NamedTuple):
 def _rewrite(body: str, documented: str, example: str, module: str) -> str:
     named = _OTHER_PAGE.sub('href="#', sub(rf"\b{documented}\b", module, body))
     # the variants of an example share one prefix for their anchors, as only one of them shows at a time
-    return sub(r'\b(id="|href="#)', rf"\g<1>{sha256(example.encode()).hexdigest()[:12]}-", named)
+    return _REWRITE_PATTERN.sub(rf"\g<1>{sha256(example.encode()).hexdigest()[:12]}-", named)
 
 
 def _build(
@@ -298,6 +299,9 @@ class Variants(NamedTuple):
     bodies: list[str]
     relevant: list[list[int]]
     examples: list[dict[str, int]]
+
+
+_REWRITE_PATTERN: Final[re.Pattern[str]] = re.compile(r'\b(id="|href="#)')
 
 
 __all__ = [

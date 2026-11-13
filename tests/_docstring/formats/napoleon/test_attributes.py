@@ -6,7 +6,9 @@ from typing import TYPE_CHECKING, Final
 
 from pytest import MarkDecorator, mark, param
 
-from _docstring.conftest import INT
+from _docstring.conftest import (  # simplint: ignore[private-import-path]  # keep test fixtures local
+    INT,
+)
 from sphinx_autodoc_typehints._docstring.formats.napoleon.attributes import note_attributes_before_napoleon
 from sphinx_autodoc_typehints._docstring.handler import process_docstring
 

@@ -9,7 +9,9 @@ import typing_extensions  # its TypeAliasType backport is tested next to typing'
 from pytest import MonkeyPatch, fixture, mark, param
 
 from sphinx_autodoc_typehints._render.annotation.aliases import alias_name_reference
-from sphinx_autodoc_typehints._render.annotation.walker import format_annotation
+from sphinx_autodoc_typehints._render.annotation.walker import (
+    format_annotation,
+)
 from sphinx_autodoc_typehints._render.context import annotation_state
 
 if TYPE_CHECKING:
@@ -22,8 +24,12 @@ if TYPE_CHECKING:
     from sphinx.config import Config
     from sphinx.testing.util import SphinxTestApp
 
-    from _render.conftest import MakeConfig
-    from sphinx_autodoc_typehints._types import Annotation
+    from _render.conftest import (  # simplint: ignore[private-import-path]  # shared config fixture
+        MakeConfig,
+    )
+    from sphinx_autodoc_typehints._types import (  # simplint: ignore[private-import-path]  # internal annotation tests
+        Annotation,
+    )
 
 Item = TypeVar("Item")
 BackportIntList = typing_extensions.TypeAliasType(  # ruff:ignore[non-pep695-type-alias]  # the backport is under test

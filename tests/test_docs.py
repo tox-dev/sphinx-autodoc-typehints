@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import re
 import typing
 from ast import literal_eval
 from collections.abc import Callable
 from importlib import import_module
 from pathlib import Path
-from re import MULTILINE, VERBOSE, escape, findall, finditer, search, split, sub
+from re import MULTILINE, VERBOSE, escape, findall, finditer, search
 from sys import version_info
 from textwrap import dedent
 from types import ModuleType, UnionType
@@ -46,9 +47,14 @@ def _section(title: str) -> str:
     return _REFERENCE[start.end() :].split("\n***", 1)[0]
 
 
+_LIST_TABLE_PATTERN: Final[re.Pattern[str]] = re.compile(r"^ *\* ", flags=MULTILINE)
+
+_LIST_TABLE_PATTERN_2: Final[re.Pattern[str]] = re.compile(r"^ *-(?: |$)", flags=MULTILINE)
+
+
 def _list_table(title: str) -> list[list[str]]:
-    rows = split(r"^ *\* ", _section(title), flags=MULTILINE)[2:]
-    return [[cell.strip().strip("`") for cell in split(r"^ *-(?: |$)", row, flags=MULTILINE)[1:]] for row in rows]
+    rows = _LIST_TABLE_PATTERN.split(_section(title))[2:]
+    return [[cell.strip().strip("`") for cell in _LIST_TABLE_PATTERN_2.split(row)[1:]] for row in rows]
 
 
 @fixture(name="project")
@@ -91,7 +97,10 @@ def option_reference_fixture(monkeypatch: MonkeyPatch) -> ModuleType:
     return import_module("option_reference")
 
 
-def _admits(annotation: object, value: object) -> bool:  # simplint: ignore[SMP602]  # value may be any object
+def _admits(
+    annotation: object,  # simplint: ignore[imprecise-annotation]  # reference values vary
+    value: object,  # simplint: ignore[imprecise-annotation]  # reference values vary
+) -> bool:
     if (origin := get_origin(annotation)) in {Union, UnionType}:
         return any(_admits(member, value) for member in get_args(annotation))
     if origin is Literal:
@@ -119,6 +128,15 @@ def test_docs_option_type_admits_the_registered_types(name: str, option_referenc
     assert all(_admits(option_reference.documented_type(name), kind()) for kind in registered)
 
 
+_TEST_DOCS_OPTION_TYPE_REFERENCES_USE_PUBLIC_PYTHON_NAMES_PATTERN: Final[re.Pattern[str]] = re.compile(
+    r"""
+            :py:(?P<role>class|data|func|obj|type):  # the role of a Python cross reference
+            `(?P<target>[^`]+)`                      # its target
+            """,
+    flags=VERBOSE,
+)
+
+
 def test_docs_option_type_references_use_public_python_names(
     option_reference: ModuleType, extension_config: Config, inv: Inventory
 ) -> None:
@@ -126,13 +144,8 @@ def test_docs_option_type_references_use_public_python_names(
     generated = {
         (role, target.rsplit("<", 1)[-1].rstrip(">").lstrip("~"))
         for name in _OPTIONS
-        for role, target in findall(
-            r"""
-            :py:(?P<role>class|data|func|obj|type):  # the role of a Python cross reference
-            `(?P<target>[^`]+)`                      # its target
-            """,
-            format_annotation(option_reference.documented_type(name), extension_config),
-            flags=VERBOSE,
+        for role, target in _TEST_DOCS_OPTION_TYPE_REFERENCES_USE_PUBLIC_PYTHON_NAMES_PATTERN.findall(
+            format_annotation(option_reference.documented_type(name), extension_config)
         )
     }
 
@@ -163,6 +176,9 @@ def test_docs_warnings_table_lists_the_categories() -> None:
     ])
 
 
+_TEST_DOCS_TYPING_CONSTRUCT_RENDERS_AS_SHOWN_PATTERN: Final[re.Pattern[str]] = re.compile(r"~(?:\w+\.)+")
+
+
 @mark.parametrize(
     ("annotation", "rendered"),
     [
@@ -190,32 +206,41 @@ def test_docs_warnings_table_lists_the_categories() -> None:
 def test_docs_typing_construct_renders_as_shown(
     annotation: str,
     rendered: str,
-    docs_namespace: dict[str, object],  # simplint: ignore[SMP602]  # the reference defines any values
+    docs_namespace: dict[str, object],  # simplint: ignore[imprecise-annotation]  # the reference defines any values
     extension_config: Config,
 ) -> None:
     hint = eval(annotation, docs_namespace)  # ruff:ignore[suspicious-eval-usage]  # an annotation the reference writes
 
-    assert sub(r"~(?:\w+\.)+", "", as_signature_type(hint, extension_config)) == rendered
+    assert (
+        _TEST_DOCS_TYPING_CONSTRUCT_RENDERS_AS_SHOWN_PATTERN.sub("", as_signature_type(hint, extension_config))
+        == rendered
+    )
 
 
 @fixture(name="docs_namespace", scope="module")
-def docs_namespace_fixture() -> dict[str, object]:  # simplint: ignore[SMP602]  # the reference defines any values
+def docs_namespace_fixture() -> dict[
+    str, object  # simplint: ignore[imprecise-annotation]  # the reference defines any values
+]:
     block = _section("Typing constructs").split(".. code-block:: python\n", 1)[1].split("\n.. ", 1)[0]
-    namespace: dict[str, object] = {"__name__": "reference"}  # simplint: ignore[SMP602]  # any values
+    namespace: dict[str, object] = {"__name__": "reference"}  # simplint: ignore[imprecise-annotation]  # any values
     exec(dedent(block), namespace)  # ruff:ignore[exec-builtin]  # the table names what the reference's own code defines
     return namespace
 
 
-def test_docs_typing_gallery_names_every_public_typing_name() -> None:
-    referenced = findall(
-        r"""
+_REFERENCED_PATTERN: Final[re.Pattern[str]] = re.compile(
+    r"""
         :(?:class|data|func|obj):`  # a cross reference to a typing name
         [^`]*?\btyping\.(\w+)>?`
         """,
-        _GALLERY,
-        VERBOSE,
-    )
-    literal = findall(r"``(?:typing\.)?(\w+)``", _GALLERY)
+    VERBOSE,
+)
+
+_LITERAL_PATTERN: Final[re.Pattern[str]] = re.compile(r"``(?:typing\.)?(\w+)``")
+
+
+def test_docs_typing_gallery_names_every_public_typing_name() -> None:
+    referenced = _REFERENCED_PATTERN.findall(_GALLERY)
+    literal = _LITERAL_PATTERN.findall(_GALLERY)
 
     assert set(typing.__all__) - {*referenced, *literal} == set()
 

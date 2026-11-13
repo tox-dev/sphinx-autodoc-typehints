@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from re import VERBOSE, findall
+import re
+from re import VERBOSE
 from textwrap import dedent
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from pytest import fixture, mark, param
 
@@ -36,6 +37,15 @@ def enum_module_fixture(make_module: MakeModule) -> None:
     )
 
 
+_LINKS_PATTERN: Final[re.Pattern[str]] = re.compile(
+    r"""
+        href="([^"]*)"                                # the link to the member
+        [^>]*><code\ class="xref\ py\ py-attr[^>]*><span\ class="pre">Color\.RED</span>
+        """,
+    VERBOSE,
+)
+
+
 @mark.parametrize(
     ("options", "href"),
     [
@@ -53,14 +63,7 @@ def test_enum_member_in_literal_links(build_text: BuildText, warning: StringIO, 
                {options}
             """)
     )
-    links = findall(
-        r"""
-        href="([^"]*)"                                # the link to the member
-        [^>]*><code\ class="xref\ py\ py-attr[^>]*><span\ class="pre">Color\.RED</span>
-        """,
-        html,
-        VERBOSE,
-    )
+    links = _LINKS_PATTERN.findall(html)
     assert (links, "literal_enum.Color" in warning.getvalue()) == ([href], False)
 
 

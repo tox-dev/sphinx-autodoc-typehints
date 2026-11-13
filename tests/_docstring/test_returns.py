@@ -19,14 +19,19 @@ if TYPE_CHECKING:
 
     from conftest import BuildText, MakeModule
 
-    from sphinx_autodoc_typehints._types import Annotation, Documented
+    from sphinx_autodoc_typehints._types import (  # simplint: ignore[private-import-path]  # keep types private
+        Annotation,
+        Documented,
+    )
 
     from .conftest import Process
 
 pytestmark: Final[MarkDecorator] = mark.sphinx("text", testroot="dummy")
 
 
-def _field_description(metadata: object) -> str | None:  # simplint: ignore[SMP602]  # metadata may be any object
+def _field_description(
+    metadata: object,  # simplint: ignore[imprecise-annotation]  # metadata may be any object
+) -> str | None:
     return metadata.description if isinstance(metadata, FieldInfo) else None
 
 

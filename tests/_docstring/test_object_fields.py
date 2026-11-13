@@ -185,7 +185,7 @@ def test_inject_overloads_leaves_out_types_a_formatter_hides(app: SphinxTestApp)
 def test_inject_overloads_lists_none(
     app: SphinxTestApp,
     what: str,
-    func: Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+    func: Callable[..., object],  # simplint: ignore[callable-ellipsis]  # any callable is passed
     lines: list[str],
     expected: list[str],
 ) -> None:
@@ -527,13 +527,13 @@ def test_override_without_public_target_keeps_warning(build_text: BuildText, war
     assert "py:meth reference target not found: argparse._ActionsContainer.add_argument" in warning.getvalue()
 
 
-def _get_int(self: object) -> int: ...  # simplint: ignore[SMP602]  # any instance
+def _get_int(self: object) -> int: ...  # simplint: ignore[imprecise-annotation]  # any instance
 
 
-def _set_int(self: object, new: int) -> None: ...  # simplint: ignore[SMP602]  # any instance
+def _set_int(self: object, new: int) -> None: ...  # simplint: ignore[imprecise-annotation]  # any instance
 
 
-def _set_int_or_str(self: object, new: int | str) -> None: ...  # simplint: ignore[SMP602]  # any instance
+def _set_int_or_str(self: object, new: int | str) -> None: ...  # simplint: ignore[imprecise-annotation]  # any instance
 
 
 class _Ambiguous:
@@ -544,11 +544,13 @@ class _Ambiguous:
         raise ValueError(msg)
 
 
-def _get_ambiguous(self: object) -> Annotated[int, _Ambiguous()]: ...  # simplint: ignore[SMP602]  # any instance
+def _get_ambiguous(
+    self: object,  # simplint: ignore[imprecise-annotation]  # any instance
+) -> Annotated[int, _Ambiguous()]: ...
 
 
 def _set_ambiguous(
-    self: object,  # simplint: ignore[SMP602]  # any instance
+    self: object,  # simplint: ignore[imprecise-annotation]  # any instance
     new: Annotated[int, _Ambiguous()],
 ) -> None: ...
 
@@ -798,7 +800,7 @@ def test_overloads_name_an_alias_as_written(build_text: BuildText, index: str, e
 
 def test_property_whose_setter_a_mock_decorates_shows_no_setter_type(
     process: Process,
-    mocked_object: Callable[..., None],  # simplint: ignore[SMP603]  # any callable is passed
+    mocked_object: Callable[..., None],  # simplint: ignore[callable-ellipsis]  # any callable is passed
 ) -> None:
     assert process("property", f"{__name__}.Holder.value", property(_get_int, mocked_object), ["Summary."]) == [
         "Summary."

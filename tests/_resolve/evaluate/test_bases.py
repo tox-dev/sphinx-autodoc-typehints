@@ -22,8 +22,8 @@ def test_base_scopes_yields_the_bases_object_first(bases_module: ModuleType) -> 
 
 
 @fixture(name="bases_module")
-def bases_module_fixture(make_module: Callable[[str], ModuleType]) -> ModuleType:
-    return make_module(
+def bases_module_fixture(resolve_module: Callable[[str], ModuleType]) -> ModuleType:
+    return resolve_module(
         dedent("""\
             from __future__ import annotations
             from decimal import Decimal

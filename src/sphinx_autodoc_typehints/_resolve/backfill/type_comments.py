@@ -8,13 +8,17 @@ from textwrap import dedent
 from types import ModuleType
 from typing import TYPE_CHECKING
 
-from sphinx_autodoc_typehints._refs import split_arguments
-from sphinx_autodoc_typehints._warnings import warn
+from sphinx_autodoc_typehints._refs import (  # simplint: ignore[private-import-path]  # init cycle
+    split_arguments,
+)
+from sphinx_autodoc_typehints._warnings import (  # simplint: ignore[private-import-path]  # init cycle
+    warn,
+)
 
 from ..source import parameters
 
 if TYPE_CHECKING:
-    from sphinx_autodoc_typehints._types import Documented
+    from . import Documented
 
 
 def backfill_type_hints(obj: Documented, name: str) -> dict[str, str]:

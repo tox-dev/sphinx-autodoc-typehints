@@ -17,8 +17,13 @@ if TYPE_CHECKING:
     from conftest import BuildText, MakeModule
     from sphinx.testing.util import SphinxTestApp
 
-    from sphinx_autodoc_typehints._objects import QualifiedCallable
-    from sphinx_autodoc_typehints._types import Annotation, Documented
+    from sphinx_autodoc_typehints._objects import (  # simplint: ignore[private-import-path]  # keep object API private
+        QualifiedCallable,
+    )
+    from sphinx_autodoc_typehints._types import (  # simplint: ignore[private-import-path]  # keep types private
+        Annotation,
+        Documented,
+    )
 
 pytestmark: Final[MarkDecorator] = mark.sphinx("text", testroot="dummy")
 
@@ -117,7 +122,7 @@ class _StatesStrings:
 def test_resolved_type_hints(
     app: SphinxTestApp,
     name: str,
-    original: Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+    original: Callable[..., object],  # simplint: ignore[callable-ellipsis]  # any callable is passed
     obj: QualifiedCallable,
     expected: ResolvedHints,
 ) -> None:

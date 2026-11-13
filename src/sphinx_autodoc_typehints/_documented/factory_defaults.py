@@ -5,8 +5,10 @@ from __future__ import annotations
 from dataclasses import MISSING, fields, is_dataclass
 from typing import TYPE_CHECKING
 
-from .._objects import is_attrs_class
-from .._private_imports import HAS_DEFAULT_FACTORY
+from .._objects import is_attrs_class  # simplint: ignore[private-import-path]  # init cycle
+from .._private_imports import (  # simplint: ignore[private-import-path]  # init cycle
+    HAS_DEFAULT_FACTORY,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -15,7 +17,9 @@ if TYPE_CHECKING:
 
 def show_factory_defaults(cls: type, signature: Signature) -> Signature:
     """Replace the placeholder default of each dataclass or attrs field built by a factory with the factory's call."""
-    calls: dict[str, tuple[object, str]] = {}  # simplint: ignore[SMP602]  # the placeholder is a private sentinel
+    calls: dict[
+        str, tuple[object, str]  # simplint: ignore[imprecise-annotation]  # the placeholder is a private sentinel
+    ] = {}
     if is_dataclass(cls):
         for field in fields(cls):
             if field.default_factory is not MISSING:
@@ -42,7 +46,9 @@ def show_factory_defaults(cls: type, signature: Signature) -> Signature:
 
 
 def _call_text(
-    factory: Callable[..., object],  # simplint: ignore[SMP603]  # a dataclass default factory may be any callable
+    factory: Callable[  # simplint: ignore[callable-ellipsis]  # a dataclass default factory may be any callable
+        ..., object
+    ],
     *,
     takes_self: bool,
 ) -> str:

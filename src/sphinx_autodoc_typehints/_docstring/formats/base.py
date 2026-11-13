@@ -2,15 +2,18 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from inspect import Parameter
 from itertools import pairwise
-from re import VERBOSE, match
-from typing import TYPE_CHECKING
+from re import VERBOSE
+from typing import TYPE_CHECKING, Final
 
 from sphinx.util.inspect import object_description
 
-from ..._render.value import value_markup
+from ..._render import (  # simplint: ignore[private-import-path]  # root API stays unchanged
+    value_markup,
+)
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
@@ -28,7 +31,7 @@ class InsertIndexInfo:
 
 def format_default(
     app: Sphinx,
-    default: object,  # simplint: ignore[SMP602]  # a parameter default is any value
+    default: object,  # simplint: ignore[imprecise-annotation]  # a parameter default is any value
     *,
     annotated: bool,
 ) -> str | None:
@@ -42,6 +45,16 @@ def format_default(
     if style.startswith("braces") if annotated else style == "braces-after":
         return f" (default: {formatted})"
     return f"{', ' if annotated else ''}default: {formatted}"
+
+
+_LAST_PARAGRAPH_END_PATTERN: Final[re.Pattern[str]] = re.compile(
+    r"""
+                \s*
+                (?:[-*+]|\d+[.)]|\#\.|\.\.)  # a bullet, an enumerator, an auto-numbered item, or an explicit markup
+                \s
+                """,
+    VERBOSE,
+)
 
 
 def last_paragraph_end(lines: list[str], at: int) -> int:
@@ -67,15 +80,7 @@ def last_paragraph_end(lines: list[str], at: int) -> int:
         if not (
             lines[previous[-1]].endswith("::")
             or line_indent(first) > indent
-            or match(
-                r"""
-                \s*
-                (?:[-*+]|\d+[.)]|\#\.|\.\.)  # a bullet, an enumerator, an auto-numbered item, or an explicit markup
-                \s
-                """,
-                first,
-                VERBOSE,
-            )
+            or _LAST_PARAGRAPH_END_PATTERN.match(first)
         ):
             end = block[-1]
     return end

@@ -10,13 +10,26 @@ from docutils import nodes
 from sphinx import addnodes
 from sphinx.util.typing import stringify_annotation
 
-from sphinx_autodoc_typehints._objects import object_at
-from sphinx_autodoc_typehints._private_imports import parse_annotation, parse_type_list
-from sphinx_autodoc_typehints._types import sentinel
+from sphinx_autodoc_typehints._objects import (  # simplint: ignore[private-import-path]  # init cycle
+    object_at,
+)
+from sphinx_autodoc_typehints._private_imports import (  # simplint: ignore[private-import-path]  # init cycle
+    parse_annotation,
+    parse_type_list,
+)
+from sphinx_autodoc_typehints._types import (  # simplint: ignore[private-import-path]  # init cycle
+    sentinel,
+)
 
-from ..._render.annotation.walker import type_param_fields, unstar
-from ..._resolve.generics import TYPE_PARAM_KINDS, type_params_of
-from ..._resolve.guards.run import guard_bound
+from ..._render import (  # simplint: ignore[private-import-path]  # root API stays unchanged
+    type_param_fields,
+    unstar,
+)
+from ..._resolve import (  # simplint: ignore[private-import-path]  # root API stays unchanged
+    TYPE_PARAM_KINDS,
+    guard_bound,
+    type_params_of,
+)
 from .lookup import documented_signatures
 
 if version_info >= (3, 14):  # pragma: >=3.14 cover
@@ -27,7 +40,7 @@ if TYPE_CHECKING:
     from sphinx.application import Sphinx
     from sphinx.environment import BuildEnvironment
 
-    from sphinx_autodoc_typehints._types import Hint, TypeParam
+    from . import Hint, TypeParam
 
 
 type _Mode = Literal["fully-qualified-except-typing", "smart"]
@@ -104,7 +117,9 @@ def _is_default(node: Node) -> bool:
     return isinstance(node, nodes.inline) and "default_value" in node["classes"]
 
 
-_UNKNOWN = sentinel("_UNKNOWN")  # simplint: ignore[SMP601]  # ty rejects Final sentinels as types, astral-sh/ty#4737
+_UNKNOWN = sentinel(  # simplint: ignore[missing-final]  # ty rejects Final sentinels as types, astral-sh/ty#4737
+    "_UNKNOWN",
+)
 
 
 __all__ = [

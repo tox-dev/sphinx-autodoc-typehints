@@ -8,27 +8,50 @@ from typing import TYPE_CHECKING, Final
 from sphinx import addnodes
 from sphinx.util.inspect import safe_getattr
 
-from sphinx_autodoc_typehints._objects import object_at, prefix_of, property_getter
-from sphinx_autodoc_typehints._private_imports import parse_annotation, suppress_logging
-from sphinx_autodoc_typehints._refs import WrittenTypeAlias
-from sphinx_autodoc_typehints._state import note_type_documented, types_documented
-from sphinx_autodoc_typehints._types import sentinel
+from sphinx_autodoc_typehints._objects import (  # simplint: ignore[private-import-path]  # init cycle
+    object_at,
+    prefix_of,
+    property_getter,
+)
+from sphinx_autodoc_typehints._private_imports import (  # simplint: ignore[private-import-path]  # init cycle
+    parse_annotation,
+    suppress_logging,
+)
+from sphinx_autodoc_typehints._refs import (  # simplint: ignore[private-import-path]  # init cycle
+    WrittenTypeAlias,
+)
+from sphinx_autodoc_typehints._state import (  # simplint: ignore[private-import-path]  # init cycle
+    note_type_documented,
+    types_documented,
+)
+from sphinx_autodoc_typehints._types import (  # simplint: ignore[private-import-path]  # init cycle
+    sentinel,
+)
 
-from ..._documented.scope import render_scope
-from ..._render.annotation.rendered import as_header_type
-from ..._resolve.aliases import type_alias_namespace
-from ..._resolve.generics import bound_type_args, specialize
-from ..._resolve.hints import resolve_annotations
-from ..._resolve.typed_dict import typed_dict_keys
+from ..._documented import (  # simplint: ignore[private-import-path]  # root API stays unchanged
+    render_scope,
+)
+from ..._render import (  # simplint: ignore[private-import-path]  # root API stays unchanged
+    as_header_type,
+)
+from ..._resolve import (  # simplint: ignore[private-import-path]  # root API stays unchanged
+    bound_type_args,
+    resolve_annotations,
+    specialize,
+    type_alias_namespace,
+    typed_dict_keys,
+)
 from .lookup import documented_signatures
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
     from sphinx.application import Sphinx
-    from sphinx.environment import _CurrentDocument
+    from sphinx.environment import (
+        _CurrentDocument,  # simplint: ignore[private-import-path]  # Sphinx private type
+    )
 
-    from sphinx_autodoc_typehints._types import Documented, Hint
+    from . import Documented, Hint
 
 
 # The hints resolved per owner while one document is read, keyed by that document; resolving an owner evaluates every
@@ -130,7 +153,9 @@ def _resolved_hints(app: Sphinx, annotated: Documented, name: str) -> Mapping[st
     return resolve_annotations(app.config.autodoc_mock_imports, annotated, name, localns) | written_aliases
 
 
-_MISSING = sentinel("_MISSING")  # simplint: ignore[SMP601]  # ty rejects Final sentinels as types, astral-sh/ty#4737
+_MISSING = sentinel(  # simplint: ignore[missing-final]  # ty rejects Final sentinels as types, astral-sh/ty#4737
+    "_MISSING",
+)
 
 
 __all__ = [

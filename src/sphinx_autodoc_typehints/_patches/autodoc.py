@@ -10,21 +10,25 @@ from functools import lru_cache, wraps
 from typing import TYPE_CHECKING, Final
 
 from sphinx.directives import ObjectDescription
-from sphinx.ext.autodoc._dynamic import (  # ruff:ignore[import-private-name]  # where autodoc evaluates annotations
+
+# This patch must load Sphinx's private autodoc hooks.
+from sphinx.ext.autodoc._dynamic import (  # ruff:ignore[import-private-name]
     _importer,
     _loader,
 )
 from sphinx.pycode import ModuleAnalyzer
 from sphinx.util.typing import get_type_hints
 
-from .._resolve.guards.overlay import guarded_names_bound
-from .._resolve.overloads import OVERLOADS
-from .._state import signature_lines
+from .._resolve import (  # simplint: ignore[private-import-path]  # root API stays unchanged
+    OVERLOADS,
+    guarded_names_bound,
+)
+from .._state import signature_lines  # simplint: ignore[private-import-path]  # init cycle
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
-    from .._types import Annotation, Documented
+    from . import Annotation, Documented
 
 
 BUILDING: Final[set[int]] = set()
@@ -63,7 +67,9 @@ def patch_signature_lines() -> None:
     original_get_signatures = ObjectDescription.get_signatures
 
     @wraps(original_get_signatures)
-    def get_signatures(self: ObjectDescription[object]) -> list[str]:  # simplint: ignore[SMP602]  # any directive
+    def get_signatures(
+        self: ObjectDescription[object],  # simplint: ignore[imprecise-annotation]  # any directive
+    ) -> list[str]:
         line = self.arguments[0]
         if signatures := signature_lines(self.env).pop(f"{self.options.get('module')}.{line}", None):
             name = line.removesuffix(signatures[0])
@@ -88,8 +94,8 @@ def patch_autodoc_type_hints() -> None:
 @wraps(get_type_hints)
 def _guarded_type_hints(
     obj: Documented,
-    globalns: dict[str, object] | None = None,  # simplint: ignore[SMP602]  # namespaces hold any value
-    localns: Mapping[str, object] | None = None,  # simplint: ignore[SMP602]  # namespaces hold any value
+    globalns: dict[str, object] | None = None,  # simplint: ignore[imprecise-annotation]  # namespaces hold any value
+    localns: Mapping[str, object] | None = None,  # simplint: ignore[imprecise-annotation]  # namespaces hold any value
     # ruff:ignore[boolean-type-hint-positional-argument, boolean-default-value-positional-argument]  # as it replaces
     include_extras: bool = False,
 ) -> dict[str, Annotation]:

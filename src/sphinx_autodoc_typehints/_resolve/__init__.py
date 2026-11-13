@@ -3,3 +3,52 @@ Turns the annotations of a documented object into types, falling back to its stu
 
 It sits beside `_render`, neither imports the other, and both import only the foundation modules.
 """
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING  # simplint: ignore[init-module-content]  # type-only relay avoids cycles
+
+if TYPE_CHECKING:
+    from .._types import Annotation as Annotation  # simplint: ignore[private-import-path]  # root API stays unchanged
+    from .._types import Documented as Documented  # simplint: ignore[private-import-path]  # root API stays unchanged
+    from .._types import Hint as Hint  # simplint: ignore[private-import-path]  # root API stays unchanged
+    from .._types import TypeParam as TypeParam  # simplint: ignore[private-import-path]  # root API stays unchanged
+
+from .aliases import type_alias_namespace, written_type_alias
+from .attributes import get_body_annotations, get_instance_var_annotations
+from .backfill import stub_path
+from .evaluate import resolve_string_annotations
+from .forget import forget_reads
+from .generics import TYPE_PARAM_KINDS, bound_type_args, declared_type_params, specialize, type_params_of
+from .guards import annotation_globals, guard_bound, guarded_names, guarded_names_bound, resolve_type_guarded_imports
+from .hints import get_all_type_hints, get_descriptor_type_hint, resolve_annotations
+from .overloads import OVERLOADS, resolve_overloads
+from .typed_dict import OPEN, extra_items_type, typed_dict_keys
+
+__all__ = [
+    "OPEN",
+    "OVERLOADS",
+    "TYPE_PARAM_KINDS",
+    "annotation_globals",
+    "bound_type_args",
+    "declared_type_params",
+    "extra_items_type",
+    "forget_reads",
+    "get_all_type_hints",
+    "get_body_annotations",
+    "get_descriptor_type_hint",
+    "get_instance_var_annotations",
+    "guard_bound",
+    "guarded_names",
+    "guarded_names_bound",
+    "resolve_annotations",
+    "resolve_overloads",
+    "resolve_string_annotations",
+    "resolve_type_guarded_imports",
+    "specialize",
+    "stub_path",
+    "type_alias_namespace",
+    "type_params_of",
+    "typed_dict_keys",
+    "written_type_alias",
+]

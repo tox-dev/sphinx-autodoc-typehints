@@ -5,7 +5,10 @@ from __future__ import annotations
 from inspect import getattr_static, isclass
 from typing import TYPE_CHECKING
 
-from .._objects import documented_owner, stored_name
+from .._objects import (  # simplint: ignore[private-import-path]  # init cycle
+    documented_owner,
+    stored_name,
+)
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx

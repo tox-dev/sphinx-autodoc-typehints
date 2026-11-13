@@ -8,22 +8,36 @@ from typing import TYPE_CHECKING
 from sphinx.util.inspect import is_builtin_class_method, safe_getattr, stringify_signature
 from sphinx.util.inspect import signature as sphinx_signature
 
-from .._documented.entry import Entry
-from .._documented.factory_defaults import show_factory_defaults
-from .._documented.hints import as_written, documenting_class, resolved_type_hints
-from .._documented.members import class_member_type, overload_skip
-from .._documented.overloads import typed_overloads
-from .._documented.scope import render_scope
-from .._objects import (
+from .._documented import (  # simplint: ignore[private-import-path]  # root API stays unchanged
+    Entry,
+    as_written,
+    class_member_type,
+    documenting_class,
+    overload_skip,
+    render_scope,
+    resolved_type_hints,
+    show_factory_defaults,
+    typed_overloads,
+)
+from .._objects import (  # simplint: ignore[private-import-path]  # init cycle
     callable_target,
     constructor_name,
     declared_signature,
     prefix_of,
 )
-from .._private_imports import METACLASS_CALL_BLACKLIST, suppress_logging
-from .._resolve.generics import bound_type_args
-from .._state import add_signature_lines, note_documented, written_signatures
-from .._warnings import warn
+from .._private_imports import (  # simplint: ignore[private-import-path]  # init cycle
+    METACLASS_CALL_BLACKLIST,
+    suppress_logging,
+)
+from .._resolve import (  # simplint: ignore[private-import-path]  # root API stays unchanged
+    bound_type_args,
+)
+from .._state import (  # simplint: ignore[private-import-path]  # init cycle
+    add_signature_lines,
+    note_documented,
+    written_signatures,
+)
+from .._warnings import warn  # simplint: ignore[private-import-path]  # init cycle
 from .header.overloads import signature_overloads
 from .text import directive_text, names_other_parameters, signature_type
 
@@ -33,8 +47,7 @@ if TYPE_CHECKING:
     from sphinx.application import Sphinx
     from sphinx.ext.autodoc import Options
 
-    from .._objects import QualifiedCallable
-    from .._types import Documented
+    from . import Documented, QualifiedCallable
 
 
 def process_signature(
@@ -105,7 +118,8 @@ def process_signature(
 
 
 def _target(
-    obj: Callable[..., object],  # simplint: ignore[SMP603]  # a class with a metaclass __call__, or any callable
+    # a class with a metaclass __call__, or any callable
+    obj: Callable[..., object],  # simplint: ignore[callable-ellipsis]
 ) -> tuple[QualifiedCallable, QualifiedCallable] | None:
     if isclass(obj) and declared_signature(obj) is None:
         # autodoc takes a class signature from the `__call__` of its metaclass ahead of the constructor

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import sys
 from ast import (
     AST,
@@ -31,8 +32,7 @@ from ast import (
 )
 from functools import cache
 from inspect import getsource
-from re import match
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 from warnings import catch_warnings, simplefilter
 
 if TYPE_CHECKING:
@@ -90,10 +90,10 @@ def _if_blocks(module_code: str) -> list[str]:
     blocks: list[str] = []
     open_block = False
     for line in module_code.splitlines(keepends=True):
-        if match(r"if\b", line):
+        if _IF_BLOCKS_PATTERN.match(line):
             blocks.append(line)
             open_block = True
-        elif open_block and (not line.strip() or line[0] in " \t" or match(r"(?:elif|else)\b", line)):
+        elif open_block and (not line.strip() or line[0] in " \t" or _IF_BLOCKS_PATTERN_2.match(line)):
             blocks[-1] += line
         else:
             open_block = False
@@ -159,6 +159,11 @@ def defined_names(node: AST) -> Iterator[str]:
     elif isinstance(node, stmt):
         for child in iter_child_nodes(node):
             yield from defined_names(child)
+
+
+_IF_BLOCKS_PATTERN: Final[re.Pattern[str]] = re.compile(r"if\b")
+
+_IF_BLOCKS_PATTERN_2: Final[re.Pattern[str]] = re.compile(r"(?:elif|else)\b")
 
 
 __all__ = [

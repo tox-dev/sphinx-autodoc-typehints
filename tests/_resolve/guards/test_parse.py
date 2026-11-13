@@ -346,8 +346,8 @@ def test_defined_names(statement: str, expected: list[str]) -> None:
     ("names", "expected"),
     [param({"Decimal", "Other"}, True, id="binds"), param({"Other"}, False, id="binds-none")],
 )
-def test_guard_binds(make_module: Callable[[str], ModuleType], names: set[str], expected: bool) -> None:
-    assert guard_binds(make_module(_DECIMAL_GUARD), names) is expected
+def test_guard_binds(resolve_module: Callable[[str], ModuleType], names: set[str], expected: bool) -> None:
+    assert guard_binds(resolve_module(_DECIMAL_GUARD), names) is expected
 
 
 @mark.parametrize(
@@ -358,8 +358,8 @@ def test_guard_binds(make_module: Callable[[str], ModuleType], names: set[str], 
     ],
 )
 def test_module_source(
-    make_module: Callable[[str], ModuleType],
+    resolve_module: Callable[[str], ModuleType],
     module: Callable[[Callable[[str], ModuleType]], ModuleType],
     expected: str,
 ) -> None:
-    assert module_source(module(make_module)) == expected
+    assert module_source(module(resolve_module)) == expected

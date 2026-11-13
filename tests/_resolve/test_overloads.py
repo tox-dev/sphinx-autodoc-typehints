@@ -26,8 +26,8 @@ def test_resolve_overloads(overloaded: ModuleType) -> None:
 
 
 @fixture(name="overloaded")
-def overloaded_fixture(make_module: Callable[[str], ModuleType]) -> ModuleType:
-    return make_module(
+def overloaded_fixture(resolve_module: Callable[[str], ModuleType]) -> ModuleType:
+    return resolve_module(
         dedent("""\
             from typing import overload
 
@@ -55,7 +55,7 @@ def test_resolve_overloads_without_overloads(
     overloaded: ModuleType,
     owner: Callable[
         [ModuleType],
-        Callable[..., object],  # simplint: ignore[SMP603]  # any callable is passed
+        Callable[..., object],  # simplint: ignore[callable-ellipsis]  # any callable is passed
     ],
 ) -> None:
     assert resolve_overloads(owner(overloaded)) is None

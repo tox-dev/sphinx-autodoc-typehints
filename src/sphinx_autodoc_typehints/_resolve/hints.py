@@ -11,8 +11,8 @@ from inspect import get_annotations, getmodule, isclass, isroutine
 from types import GetSetDescriptorType, MemberDescriptorType, ModuleType
 from typing import TYPE_CHECKING, NewType, ParamSpec, TypeVar, TypeVarTuple, get_origin
 
-from .._refs import is_type_alias
-from .._warnings import warn
+from .._refs import is_type_alias  # simplint: ignore[private-import-path]  # init cycle
+from .._warnings import warn  # simplint: ignore[private-import-path]  # init cycle
 from .backfill.stubs.context import stub_context
 from .backfill.stubs.extract import find_ast_node, stub_annotations
 from .backfill.stubs.find import parse_stub_ast, stub_path
@@ -27,12 +27,13 @@ from .guards.run import guard_bound, resolve_type_guarded_imports
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
 
-    from .._types import Documented, Hint
+    from . import Documented, Hint
 
 
 def get_all_type_hints(
     autodoc_mock_imports: list[str],
-    obj: Callable[..., object],  # simplint: ignore[SMP603]  # any documented callable, method or class, may lack hints
+    # any documented callable, method or class, may lack hints
+    obj: Callable[..., object],  # simplint: ignore[callable-ellipsis]
     name: str,
     localns: Mapping[str, Documented],
     *,
@@ -86,7 +87,7 @@ def resolve_annotations(
     except RecursionError:
         return {}
     except Exception as exc:  # ruff:ignore[blind-except]  # an annotation runs user code, which may raise anything
-        # `_t.Alias` where `_t` is a module whose own guard binds `Alias`, as `from . import _types as _t`
+        # `_t.Alias` can name an attribute bound only by `_t`'s type guard
         if (
             isinstance(exc, AttributeError)
             and isinstance(module := exc.obj, ModuleType)

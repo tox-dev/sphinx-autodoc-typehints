@@ -13,7 +13,9 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from types import ModuleType
 
-    from sphinx_autodoc_typehints._render.context import TypehintsFormatter
+    from sphinx_autodoc_typehints._render.context import (  # simplint: ignore[private-import-path]  # fixture formatter
+        TypehintsFormatter,
+    )
 
 
 class MakeConfig(Protocol):

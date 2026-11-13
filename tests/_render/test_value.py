@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
-from re import VERBOSE, findall
+from re import VERBOSE
 from textwrap import dedent
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from pytest import mark, param
 
@@ -56,25 +57,28 @@ def _values(html: str) -> list[tuple[str, list[tuple[str, str]]]]:
     return [
         (
             code_class,
-            findall(
-                r"""
+            _VALUES_PATTERN.findall(inner),
+        )
+        for code_class, inner in _VALUES_PATTERN_2.findall(html)
+    ]
+
+
+_VALUES_PATTERN: Final[re.Pattern[str]] = re.compile(
+    r"""
                 (?:<span\ class="(?P<kind>\w+)">)?      # the kind of a token, when it has one
                 <span\ class="pre">(?P<text>[^<]*)</span>  # its text
                 """,
-                inner,
-                VERBOSE,
-            ),
-        )
-        for code_class, inner in findall(
-            r"""
+    VERBOSE,
+)
+
+_VALUES_PATTERN_2: Final[re.Pattern[str]] = re.compile(
+    r"""
             <span\ class="highlight\ sphinx_autodoc_typehints-value">  # a value the extension rendered
             (?:<a\ [^>]*>)?<code\ class="(?P<class>[^"]*)">            # its class, under an optional link
             (?P<inner>.*?)</code>                                      # its tokens
             """,
-            html,
-            VERBOSE,
-        )
-    ]
+    VERBOSE,
+)
 
 
 @mark.parametrize(

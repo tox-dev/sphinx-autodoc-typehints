@@ -19,7 +19,7 @@ from sphinx.util.docutils import sphinx_domains  # undocumented, yet the only wa
 from sphinx.util.logging import suppress_logging  # undocumented, yet the only way to silence a trial parse
 
 try:
-    from sphinx.ext.autodoc._dynamic._signatures import (
+    from sphinx.ext.autodoc._dynamic._signatures import (  # simplint: ignore[private-import-path]  # no public API
         _METACLASS_CALL_BLACKLIST as METACLASS_CALL_BLACKLIST,
     )
 except ImportError:  # Sphinx moves its private autodoc modules between releases, so keep loading with 9.1's value

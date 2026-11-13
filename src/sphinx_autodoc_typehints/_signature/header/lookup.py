@@ -6,7 +6,9 @@ from typing import TYPE_CHECKING
 
 from sphinx import addnodes
 
-from sphinx_autodoc_typehints._state import is_documented
+from sphinx_autodoc_typehints._state import (  # simplint: ignore[private-import-path]  # init cycle
+    is_documented,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

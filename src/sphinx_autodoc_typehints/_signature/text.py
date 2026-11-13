@@ -7,14 +7,17 @@ from typing import TYPE_CHECKING
 
 from sphinx.util.inspect import signature_from_str
 
-from .._render.annotation.rendered import as_signature_type
+from .._render import (  # simplint: ignore[private-import-path]  # root API stays unchanged
+    as_signature_type,
+)
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
 
-    from .._refs import WrittenTypeAlias
-    from .._render.context import AnnotationKind
-    from .._types import Hint
+    from .._render import (  # simplint: ignore[private-import-path]  # root API stays unchanged
+        AnnotationKind,
+    )
+    from . import Hint, WrittenTypeAlias
 
 
 def signature_type(

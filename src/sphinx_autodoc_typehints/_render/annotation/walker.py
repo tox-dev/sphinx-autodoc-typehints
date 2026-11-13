@@ -6,11 +6,11 @@ It also holds the readers of starred aliases and type parameters that the signat
 
 from __future__ import annotations
 
+import re
 import typing  # probed at runtime for names typing_extensions backports
 from dataclasses import dataclass
 from enum import Enum
 from inspect import isclass
-from re import fullmatch, sub
 from sys import modules, version_info
 from types import GenericAlias
 from typing import (
@@ -34,9 +34,18 @@ from sphinx.ext.autodoc.mock import ismock
 from sphinx.util.inspect import TypeAliasForwardRef
 from sphinx.util.typing import is_invalid_builtin_class
 
-from sphinx_autodoc_typehints._objects import alias_lookup_names
-from sphinx_autodoc_typehints._refs import MyTypeAliasForwardRef, WrittenTypeAlias, is_type_alias, split_arguments
-from sphinx_autodoc_typehints._types import sentinel
+from sphinx_autodoc_typehints._objects import (  # simplint: ignore[private-import-path]  # init cycle
+    alias_lookup_names,
+)
+from sphinx_autodoc_typehints._refs import (  # simplint: ignore[private-import-path]  # init cycle
+    MyTypeAliasForwardRef,
+    WrittenTypeAlias,
+    is_type_alias,
+    split_arguments,
+)
+from sphinx_autodoc_typehints._types import (  # simplint: ignore[private-import-path]  # init cycle
+    sentinel,
+)
 
 from ..context import render_context
 from ..deferred import defer_alias_choice
@@ -65,9 +74,8 @@ if TYPE_CHECKING:
 
     from sphinx.config import Config
 
-    from sphinx_autodoc_typehints._types import Hint, RenderNode, TypeParam
-
     from ..context import ContextualTypehintsFormatter, TypehintsFormatter
+    from . import Hint, RenderNode, TypeParam
 
     # yields the annotations nested in a node, receives each one rendered, and yields _Rendered last
     type _Frame = Generator[RenderNode | _Rendered, str, None]
@@ -157,7 +165,7 @@ def _atom(annotation: RenderNode, config: Config) -> str | None:
     # subscript, `<class 'int'>` or `numpy.float64`, as its name and the subscripted object as its module, so this
     # reads the arguments back from that text
     if ismock(annotation) and not (name := getattr(annotation, "__name__", "")).isidentifier():
-        text = sub(r"<class '([^']+)'>", r"\1", name).removeprefix("(").removesuffix(")")
+        text = _ATOM_PATTERN.sub(r"\1", name).removeprefix("(").removesuffix(")")
         return f":py:class:`~{annotation.__module__}`\\ \\[{_format_mock_arguments(text)}]"
     return None
 
@@ -167,10 +175,10 @@ def _format_mock_arguments(text: str) -> str:
 
 
 def _format_mock_argument(part: str) -> str:
-    if fullmatch(r"[\w.]+", part):
+    if _FORMAT_MOCK_ARGUMENT_PATTERN.fullmatch(part):
         return f":py:class:`{'~' if '.' in part else ''}{part}`"
     # an argument is itself subscripted, as `dict[str, typing.Any]`, or a list of them, as `Callable` takes
-    if match := fullmatch(r"(?P<name>[\w.]*)\[(?P<arguments>.*)\]", part):
+    if match := _FORMAT_MOCK_ARGUMENT_PATTERN_2.fullmatch(part):
         name, arguments = match.groups()
         subscript = f"\\[{_format_mock_arguments(arguments)}]"
         return f"{_format_mock_argument(name)}\\ {subscript}" if name else subscript
@@ -344,7 +352,9 @@ def _named_class(reference: _Reference) -> _Frame:
     yield _Rendered(text=f"{text}{'\\ ' if reference.formatted_args else ''}{reference.formatted_args}")
 
 
-@dataclass(slots=True, kw_only=True)  # simplint: ignore[SMP701]  # the renderer reassigns fields while it walks
+@dataclass(
+    slots=True, kw_only=True
+)  # simplint: ignore[dataclass-frozen]  # the renderer reassigns fields while it walks
 class _Reference:
     annotation: Hint | NewType | None
     config: Config
@@ -368,6 +378,14 @@ def _reference_role(config: Config, module: str, class_name: str, full_name: str
     return next((kind for kind in ("class", "data") if full_name in documented.get(f"py:{kind}", {})), None) or (
         "data" if pydata_key in PYDATA_ANNOTATIONS else "class"
     )
+
+
+_ATOM_PATTERN: Final[re.Pattern[str]] = re.compile(r"<class '([^']+)'>")
+
+
+_FORMAT_MOCK_ARGUMENT_PATTERN: Final[re.Pattern[str]] = re.compile(r"[\w.]+")
+
+_FORMAT_MOCK_ARGUMENT_PATTERN_2: Final[re.Pattern[str]] = re.compile(r"(?P<name>[\w.]*)\[(?P<arguments>.*)\]")
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

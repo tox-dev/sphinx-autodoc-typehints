@@ -20,9 +20,15 @@ from typing import TYPE_CHECKING, Final
 from sphinx.ext.autodoc.mock import mock
 from sphinx.util import logging
 
-from sphinx_autodoc_typehints._objects import defining_module
-from sphinx_autodoc_typehints._refs import MyTypeAliasForwardRef
-from sphinx_autodoc_typehints._warnings import warn
+from sphinx_autodoc_typehints._objects import (  # simplint: ignore[private-import-path]  # init cycle
+    defining_module,
+)
+from sphinx_autodoc_typehints._refs import (  # simplint: ignore[private-import-path]  # init cycle
+    MyTypeAliasForwardRef,
+)
+from sphinx_autodoc_typehints._warnings import (  # simplint: ignore[private-import-path]  # init cycle
+    warn,
+)
 
 from .overlay import SHADOWED_BY_GUARD, guarded_names_bound
 from .parse import defined_names, guard_binds, guarded_statements, module_source
@@ -30,7 +36,7 @@ from .parse import defined_names, guard_binds, guarded_statements, module_source
 if TYPE_CHECKING:
     from collections.abc import Generator
 
-    from sphinx_autodoc_typehints._types import Documented
+    from . import Documented
 
 
 _LOGGER: Final[logging.SphinxLoggerAdapter] = logging.getLogger(__name__)

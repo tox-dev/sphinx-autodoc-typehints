@@ -5,12 +5,25 @@ from __future__ import annotations
 from inspect import Parameter, Signature, signature
 from typing import TYPE_CHECKING, Final, get_overloads
 
-from .._objects import alias_lookup_names, declared_signature, prefix_of, unwrapped
-from .._render.context import annotation_state, render_context
-from .._resolve.aliases import type_alias_namespace, written_type_alias
-from .._resolve.evaluate.expression import resolve_string_annotations
-from .._resolve.generics import declared_type_params, specialize
-from .._resolve.guards.overlay import annotation_globals, guarded_names
+from .._objects import (  # simplint: ignore[private-import-path]  # init cycle
+    alias_lookup_names,
+    declared_signature,
+    prefix_of,
+    unwrapped,
+)
+from .._render import (  # simplint: ignore[private-import-path]  # root API stays unchanged
+    annotation_state,
+    render_context,
+)
+from .._resolve import (  # simplint: ignore[private-import-path]  # root API stays unchanged
+    annotation_globals,
+    declared_type_params,
+    guarded_names,
+    resolve_string_annotations,
+    specialize,
+    type_alias_namespace,
+    written_type_alias,
+)
 from .hints import as_written
 
 if TYPE_CHECKING:
@@ -18,8 +31,7 @@ if TYPE_CHECKING:
 
     from sphinx.application import Sphinx
 
-    from .._refs import WrittenTypeAlias
-    from .._types import Annotation, Hint, TypeParam
+    from . import Annotation, Hint, TypeParam, WrittenTypeAlias
 
 
 OVERLOADED_KINDS: Final[frozenset[str]] = frozenset({"function", "method", "class", "exception"})
@@ -28,7 +40,7 @@ OVERLOADED_KINDS: Final[frozenset[str]] = frozenset({"function", "method", "clas
 def typed_overloads(
     app: Sphinx,
     name: str,
-    obj: Callable[..., object],  # simplint: ignore[SMP603]  # any documented callable, overloaded or not
+    obj: Callable[..., object],  # simplint: ignore[callable-ellipsis]  # any documented callable, overloaded or not
     overloads: list[Signature],
     skip: int,
     arguments: dict[TypeParam, Annotation],
@@ -43,7 +55,7 @@ def typed_overloads(
     # and misses those a TYPE_CHECKING block keeps from running, so a count differing from the source gives None each
     if len(functions := get_overloads(obj)) != len(overloads):
         defining: list[
-            Callable[..., object] | None  # simplint: ignore[SMP603]  # an overload set of any signature
+            Callable[..., object] | None  # simplint: ignore[callable-ellipsis]  # an overload set of any signature
         ] = [None] * len(overloads)
     else:
         # a staticmethod or classmethod overload registers the descriptor

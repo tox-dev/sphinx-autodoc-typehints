@@ -15,7 +15,9 @@ if TYPE_CHECKING:
     from sphinx.application import Sphinx
 
 
-@dataclass(slots=True, kw_only=True)  # simplint: ignore[SMP701]  # _convert clears numpydoc_pending on the first read
+@dataclass(  # simplint: ignore[dataclass-frozen]  # _convert clears numpydoc_pending on the first read
+    slots=True, kw_only=True
+)
 class FieldListFormat:
     """
     Read and extend the field list of a docstring.

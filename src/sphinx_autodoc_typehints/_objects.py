@@ -31,13 +31,15 @@ class QualifiedCallable(Protocol):
 
     def __call__(
         self,
-        *args: object,  # simplint: ignore[SMP602]  # the proxy forwards calls of any shape
-        **kwargs: object,  # simplint: ignore[SMP602]  # the proxy forwards calls of any shape
-    ) -> object: ...  # simplint: ignore[SMP602]  # the proxy forwards calls of any shape
+        *args: object,  # simplint: ignore[imprecise-annotation]  # the proxy forwards calls of any shape
+        **kwargs: object,  # simplint: ignore[imprecise-annotation]  # the proxy forwards calls of any shape
+    ) -> object: ...  # simplint: ignore[imprecise-annotation]  # the proxy forwards calls of any shape
 
 
 def callable_target(
-    obj: Callable[..., object],  # simplint: ignore[SMP603]  # a documented object, any callable autodoc finds
+    obj: Callable[  # simplint: ignore[callable-ellipsis]  # a documented object, any callable autodoc finds
+        ..., object
+    ],
 ) -> tuple[QualifiedCallable, QualifiedCallable] | None:
     """
     Return the function callers call through `obj` and the function holding its annotations.
@@ -47,7 +49,7 @@ def callable_target(
     """
     if (callee := unwrapped(obj, stop=lambda func: declared_signature(func) is not None)) is None:
         return None
-    annotated: Callable[..., object] = callee  # simplint: ignore[SMP603]  # the wrapped callee takes any arguments
+    annotated: Callable[..., object] = callee  # simplint: ignore[callable-ellipsis]  # accepts any wrapped call
     # a partial or a partialmethod holds its annotations on the function it calls, and the method a partialmethod
     # builds keeps it under a private name before Python 3.13
     while True:
@@ -67,9 +69,13 @@ def callable_target(
 
 
 def unwrapped(
-    obj: Callable[..., object],  # simplint: ignore[SMP603]  # the wrapper chain may hold any callable, mocks included
+    obj: Callable[  # simplint: ignore[callable-ellipsis]  # the wrapper chain may hold any callable, mocks included
+        ..., object
+    ],
     stop: Callable[
-        [Callable[..., object]],  # simplint: ignore[SMP603]  # the chain's stop predicate receives any callable
+        [
+            Callable[..., object],  # simplint: ignore[callable-ellipsis]  # any wrapped call
+        ],
         bool,
     ] = lambda _: False,
 ) -> QualifiedCallable | None:
@@ -90,7 +96,7 @@ def declared_signature(obj: Documented) -> Signature | None:
 
 def property_getter(
     member: Documented,
-) -> Callable[..., object] | None:  # simplint: ignore[SMP603]  # the fget takes any arguments
+) -> Callable[..., object] | None:  # simplint: ignore[callable-ellipsis]  # the fget takes any arguments
     """Return the getter of a `property` or a `functools.cached_property`, `None` for any other member."""
     if isinstance(member, cached_property):
         return member.func
@@ -156,13 +162,14 @@ def alias_lookup_names(
     module_prefix: str,
     name: str,
     *,
-    guarded: Mapping[str, object] | None = None,  # simplint: ignore[SMP602]  # guarded bindings hold any value
+    guarded: Mapping[str, object]  # simplint: ignore[imprecise-annotation]  # guarded bindings hold any value
+    | None = None,
 ) -> list[str]:
     """Return the names a `py:type` documenting an alias used under `module_prefix` may have, innermost first."""
     scopes = enclosing_scopes(module_prefix)
     missing = object()
 
-    def binding(scope: str) -> object:  # simplint: ignore[SMP602]  # a binding is any attribute value
+    def binding(scope: str) -> object:  # simplint: ignore[imprecise-annotation]  # a binding is any attribute value
         if (prefix := imported_prefix(scope.split("."))) is None:
             return missing
         return getattr(object_at(*prefix), "__dict__", {}).get(name, missing)

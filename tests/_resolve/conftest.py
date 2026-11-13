@@ -1,34 +1,38 @@
 from __future__ import annotations
 
+import re
 from importlib import import_module
 from logging import WARNING
 from pathlib import Path
-from re import sub
 from sys import modules, version_info
 from textwrap import dedent
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from pytest import FixtureRequest, LogCaptureFixture, MonkeyPatch, fixture, mark, param
 
 from sphinx_autodoc_typehints._resolve.guards.overlay import SHADOWED_BY_GUARD
-from sphinx_autodoc_typehints._resolve.guards.run import resolve_type_guarded_imports
+from sphinx_autodoc_typehints._resolve.guards.run import (
+    resolve_type_guarded_imports,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Mapping
     from types import ModuleType
 
-    from sphinx_autodoc_typehints._types import Hint
+    from sphinx_autodoc_typehints._types import (  # simplint: ignore[private-import-path]  # Shared test types
+        Hint,
+    )
 
-type MakeModule = Callable[[str], ModuleType]
+type ResolveModule = Callable[[str], ModuleType]
 type MakeStubbedModule = Callable[[str, str], ModuleType]
 type MakeSubclassOfAGuardedBase = Callable[[str, str], type]
 type AsWritten = Callable[[Mapping[str, Hint]], dict[str, Hint]]
 
 
 @fixture
-def make_stubbed_module(module_dir: Path, make_module: MakeModule) -> MakeStubbedModule:
+def make_stubbed_module(module_dir: Path, resolve_module: ResolveModule) -> MakeStubbedModule:
     def make(runtime: str, stub: str) -> ModuleType:
-        module = make_module(runtime)
+        module = resolve_module(runtime)
         (module_dir / f"{module.__name__}.pyi").write_text(stub)
         return module
 
@@ -36,7 +40,7 @@ def make_stubbed_module(module_dir: Path, make_module: MakeModule) -> MakeStubbe
 
 
 @fixture
-def guarded_subclass(module_dir: Path, make_module: MakeModule, annotations_header: str) -> type:
+def guarded_subclass(module_dir: Path, resolve_module: ResolveModule, annotations_header: str) -> type:
     # the guard of the subclass's module rebinds a name the base annotates with, which must not reach the base
     (module_dir / "unguarded_base.py").write_text(
         annotations_header
@@ -47,7 +51,7 @@ def guarded_subclass(module_dir: Path, make_module: MakeModule, annotations_head
                 inherited: Item
         """)
     )
-    child = make_module(
+    child = resolve_module(
         annotations_header
         + dedent("""\
             from typing import TYPE_CHECKING
@@ -68,7 +72,7 @@ def guarded_subclass(module_dir: Path, make_module: MakeModule, annotations_head
 
 @fixture
 def make_subclass_of_a_guarded_base(
-    module_dir: Path, make_module: MakeModule, decimal_fallback: str
+    module_dir: Path, resolve_module: ResolveModule, decimal_fallback: str
 ) -> MakeSubclassOfAGuardedBase:
     # the base module's guard binds what the base annotates with, and runs before the subclass reads it
     def make(header: str, child: str) -> type:
@@ -80,7 +84,7 @@ def make_subclass_of_a_guarded_base(
                     amount: Decimal
             """)
         )
-        child_cls = make_module(child).Child
+        child_cls = resolve_module(child).Child
         resolve_type_guarded_imports([], import_module("guarded_base"))
         return child_cls
 
@@ -118,10 +122,13 @@ def stub_only_module(module_dir: Path) -> ModuleType:
     return import_module("stubonlypkg.poly")
 
 
-@fixture(name="make_module")
-def make_module_fixture(module_dir: Path, request: FixtureRequest) -> MakeModule:
+_NAME_PATTERN: Final[re.Pattern[str]] = re.compile(r"\W")
+
+
+@fixture(name="resolve_module")
+def resolve_module_fixture(module_dir: Path, request: FixtureRequest) -> ResolveModule:
     # named after the test, as Sphinx caches the analysis of a module by its name
-    name = sub(r"\W", "_", request.node.name)
+    name = _NAME_PATTERN.sub("_", request.node.name)
 
     def make(source: str) -> ModuleType:
         (module_dir / f"{name}.py").write_text(source)
@@ -204,7 +211,7 @@ def decimal_fallback_fixture() -> str:
 
 __all__ = [
     "AsWritten",
-    "MakeModule",
     "MakeStubbedModule",
     "MakeSubclassOfAGuardedBase",
+    "ResolveModule",
 ]

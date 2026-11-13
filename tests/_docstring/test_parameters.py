@@ -223,7 +223,9 @@ def _described(first: Annotated[int, Doc("the first")], second: str) -> None: ..
 def _described_external(first: Annotated[int, AnnotatedDoc("the first")], second: str) -> None: ...
 
 
-def _field_description(metadata: object) -> str | None:  # simplint: ignore[SMP602]  # metadata may be any object
+def _field_description(
+    metadata: object,  # simplint: ignore[imprecise-annotation]  # metadata may be any object
+) -> str | None:
     return metadata.description if isinstance(metadata, FieldInfo) else None
 
 
@@ -274,7 +276,7 @@ def _described_field(first: Annotated[int, Field(description="the first")], seco
 @without_rtype(always_document_param_types=True)
 def test_added_params_keep_signature_order(
     process: Process,
-    func: Callable[..., None],  # simplint: ignore[SMP603]  # any callable is passed
+    func: Callable[..., None],  # simplint: ignore[callable-ellipsis]  # any callable is passed
     lines: list[str],
     expected: list[str],
 ) -> None:

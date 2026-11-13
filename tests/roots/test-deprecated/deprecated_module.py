@@ -28,7 +28,7 @@ class Stale:
 # subclassing warns, and the tests turn warnings into errors
 with catch_warnings(action="ignore", category=DeprecationWarning):
 
-    class Child(Stale):  # ty: ignore[deprecated]  # the case under test
+    class Child(Stale):
         """Not deprecated itself."""
 
 

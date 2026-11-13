@@ -6,22 +6,31 @@ from dataclasses import dataclass
 from inspect import isclass, isfunction
 from typing import TYPE_CHECKING
 
-from .._objects import constructor_name, declared_signature, documented_owner, prefix_of
-from .._resolve.aliases import type_alias_namespace
-from .._resolve.evaluate.expression import resolve_string_annotations
-from .._resolve.generics import bound_type_args, declared_type_params, specialize
-from .._resolve.hints import get_all_type_hints
-from .._types import frozendict
+from .._objects import (  # simplint: ignore[private-import-path]  # init cycle
+    constructor_name,
+    declared_signature,
+    documented_owner,
+    prefix_of,
+)
+from .._resolve import (  # simplint: ignore[private-import-path]  # root API stays unchanged
+    bound_type_args,
+    declared_type_params,
+    get_all_type_hints,
+    resolve_string_annotations,
+    specialize,
+    type_alias_namespace,
+)
+from .._types import frozendict  # simplint: ignore[private-import-path]  # init cycle
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
     from sphinx.application import Sphinx
 
-    from .._objects import QualifiedCallable
-    from .._refs import WrittenTypeAlias
-    from .._render.context import TypeParamScope
-    from .._types import Documented, Hint
+    from .._render import (  # simplint: ignore[private-import-path]  # root API stays unchanged
+        TypeParamScope,
+    )
+    from . import Documented, Hint, QualifiedCallable, WrittenTypeAlias
 
 
 def resolved_type_hints(

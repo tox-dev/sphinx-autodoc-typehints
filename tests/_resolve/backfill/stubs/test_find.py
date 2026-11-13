@@ -19,12 +19,16 @@ from sphinx_autodoc_typehints._resolve.backfill.stubs.find import (
     stub_owner_package,
     stub_path,
 )
+
+# clears cached source reads
 from sphinx_autodoc_typehints._resolve.forget import forget_reads
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from sphinx_autodoc_typehints._types import Documented
+    from sphinx_autodoc_typehints._types import (  # simplint: ignore[private-import-path]  # Shared test types
+        Documented,
+    )
 
 
 def test_stub_path_of_a_module_with_a_stub_beside_it(stub_mod: ModuleType) -> None:

@@ -11,18 +11,27 @@ from contextlib import suppress
 from textwrap import dedent
 from typing import TYPE_CHECKING, Final
 
-from .._objects import is_attrs_class, unwrapped
-from .._render.annotation.rendered import as_field_type
-from .._resolve.attributes import get_body_annotations, get_instance_var_annotations
-from .._resolve.generics import bound_type_args, specialize
-from .._resolve.guards.run import resolve_type_guarded_imports
+from .._objects import (  # simplint: ignore[private-import-path]  # init cycle
+    is_attrs_class,
+    unwrapped,
+)
+from .._render import (  # simplint: ignore[private-import-path]  # root API stays unchanged
+    as_field_type,
+)
+from .._resolve import (  # simplint: ignore[private-import-path]  # root API stays unchanged
+    bound_type_args,
+    get_body_annotations,
+    get_instance_var_annotations,
+    resolve_type_guarded_imports,
+    specialize,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping
 
     from sphinx.application import Sphinx
 
-    from .._types import Annotation
+    from . import Annotation
 
 # the lazy type leaves the last token before the closing colon to the name; a line this does not match, such as a bare
 # `:ivar :`, is no field to type and must not crash the parse (#683)

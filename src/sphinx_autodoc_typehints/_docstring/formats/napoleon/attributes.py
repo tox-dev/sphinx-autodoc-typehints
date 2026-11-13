@@ -9,13 +9,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Final
 
-from sphinx_autodoc_typehints._docstring.attributes import documented_attributes
+from ...attributes import (  # simplint: ignore[private-import-path]  # package init cycle
+    documented_attributes,
+)
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
     from sphinx.ext.autodoc import Options
 
-    from sphinx_autodoc_typehints._types import Documented
+    from . import Documented
 
 
 #: the attributes each docstring documented before napoleon rewrote it, by the id of its line list

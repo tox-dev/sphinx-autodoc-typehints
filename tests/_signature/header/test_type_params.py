@@ -11,7 +11,9 @@ from sphinx import addnodes
 if TYPE_CHECKING:
     from conftest import BuildText
 
-    from _signature.conftest import BuildDoctree
+    from _signature.conftest import (  # simplint: ignore[private-import-path]  # Shared test fixture
+        BuildDoctree,
+    )
 
 
 pytestmark: Final[MarkDecorator] = mark.sphinx("text", testroot="type-params")

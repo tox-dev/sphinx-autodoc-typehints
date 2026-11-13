@@ -16,7 +16,7 @@ from ast import (
 )
 from typing import TYPE_CHECKING, ClassVar, Final, get_args, get_origin
 
-from .._objects import unwrapped
+from .._objects import unwrapped  # simplint: ignore[private-import-path]  # init cycle
 from .evaluate.expression import evaluate_annotation
 from .evaluate.type_hints import type_hints
 from .generics import type_params_of
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
     from types import ModuleType
 
-    from .._types import Annotation
+    from . import Annotation
 
 
 def get_instance_var_annotations(cls: type) -> dict[str, Annotation | str]:

@@ -5,14 +5,20 @@ from typing import TYPE_CHECKING, Annotated, Final
 from pytest import MarkDecorator, mark, param
 from typing_extensions import Doc
 
-from _docstring.conftest import INT, NONE, STR
+from _docstring.conftest import (  # simplint: ignore[private-import-path]  # keep test fixtures local
+    INT,
+    NONE,
+    STR,
+)
 from sphinx_autodoc_typehints._docstring.formats.field_list.keywords import field_keyword_and_argument
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
     from types import FunctionType
 
-    from _docstring.conftest import Process
+    from _docstring.conftest import (  # simplint: ignore[private-import-path]  # keep test fixtures local
+        Process,
+    )
 
 pytestmark: Final[MarkDecorator] = mark.sphinx("text", testroot="dummy")
 
