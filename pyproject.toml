@@ -47,6 +47,8 @@ dynamic = [
   "version",
 ]
 dependencies = [
+  "docutils>=0.21",
+  "pygments>=2.17",
   "sphinx>=9.1",
   "typing-extensions>=4.16; python_version<'3.15'",
 ]
