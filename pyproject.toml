@@ -174,7 +174,6 @@ lint.ignore = [
   "undocumented-public-init",                  # undocumented-public-api (simplint) covers the public API instead
   "undocumented-public-method",                # undocumented-public-api (simplint) covers the public API instead
   "undocumented-public-nested-class",          # undocumented-public-api (simplint) covers the public API instead
-  "unnecessary-regular-expression-compile",    # conflicts with simplint inline-regex
 ]
 lint.per-file-ignores."src/sphinx_autodoc_typehints/_patches/napoleon.py" = [
   "private-member-access", # the module exists to monkeypatch docutils and napoleon internals
