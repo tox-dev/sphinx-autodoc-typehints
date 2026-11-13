@@ -38,7 +38,7 @@ class Account:
         """The fee."""
         raise NotImplementedError
 
-    @classmethod
+    @classmethod  # simplint: ignore[broken-decorator-stack]  # the class property Sphinx's headers are tested on
     @property
     def kind(cls) -> Annotated[str, "a label"]:
         """The kind."""

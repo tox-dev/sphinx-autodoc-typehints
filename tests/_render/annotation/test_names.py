@@ -100,7 +100,10 @@ class AliasedOrigin:
 
 
 _NAMES: Final[
-    tuple[tuple[str, object, str, str, tuple[object, ...]], ...]
+    tuple[
+        tuple[str, object, str, str, tuple[object, ...]],  # simplint: ignore[imprecise-annotation]  # mixed values
+        ...,
+    ]
 ] = (
     ("str", str, "builtins", "str", ()),
     ("None", None, "builtins", "None", ()),
