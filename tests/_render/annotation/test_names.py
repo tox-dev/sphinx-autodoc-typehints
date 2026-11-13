@@ -100,10 +100,8 @@ class AliasedOrigin:
 
 
 _NAMES: Final[
-    list[
-        tuple[str, object, str, str, tuple[object, ...]]  # simplint: ignore[imprecise-annotation]  # mixed values
-    ]
-] = [
+    tuple[tuple[str, object, str, str, tuple[object, ...]], ...]
+] = (
     ("str", str, "builtins", "str", ()),
     ("None", None, "builtins", "None", ()),
     ("ModuleType", ModuleType, "types", "ModuleType", ()),
@@ -149,7 +147,7 @@ _NAMES: Final[
     ("GenericProto", GenericProto, __name__, "GenericProto", ()),
     ("GenericProto-int", GenericProto[int], __name__, "GenericProto", (int,)),
     ("Inner", Plain.Inner, __name__, "Plain.Inner", ()),
-]
+)
 
 
 _FILLED_IN_FROM_313: Final[bool] = version_info >= (3, 13)

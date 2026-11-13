@@ -84,12 +84,12 @@ def _untyped(first, second): ...
 def _untyped(first, second=None): ...
 
 
-_PICK: Final[list[str]] = [
+_PICK: Final[tuple[str, ...]] = (
     ":Overloads:",
     f"   * **value** ({INT}) → {INT}",
     f"   * **value** ({STR}) → {STR}",
     "",
-]
+)
 
 
 @mark.parametrize(

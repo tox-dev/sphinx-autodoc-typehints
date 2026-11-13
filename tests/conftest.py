@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 
 
 pytest_plugins: Final[str] = "sphinx.testing.fixtures"
-collect_ignore: Final[list[str]] = ["roots"]
+collect_ignore: Final[tuple[str, ...]] = ("roots",)
 
 type MakeModule = Callable[[str, str], ModuleType]
 

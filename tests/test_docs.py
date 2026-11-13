@@ -9,7 +9,7 @@ from pathlib import Path
 from re import MULTILINE, VERBOSE, escape, findall, finditer, search
 from sys import version_info
 from textwrap import dedent
-from types import ModuleType, UnionType
+from types import MappingProxyType, ModuleType, UnionType
 from typing import TYPE_CHECKING, Final, Literal, Union, get_args, get_origin, get_type_hints
 
 from pytest import MonkeyPatch, fixture, mark, param, raises
@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 
 _REFERENCE: Final[str] = (Path(__file__).parents[1] / "docs" / "reference.rst").read_text(encoding="utf-8")
 _GALLERY: Final[str] = (Path(__file__).parents[1] / "docs" / "typing.rst").read_text(encoding="utf-8")
-_OPTIONS: Final[dict[str, dict[str, str]]] = {
+_OPTIONS: Final[MappingProxyType[str, dict[str, str]]] = MappingProxyType({
     match["name"]: {key: value.strip("`") for key, value in findall(r":(?P<key>\w+): (?P<value>.*)", match["options"])}
     for match in finditer(
         r"""
@@ -38,7 +38,7 @@ _OPTIONS: Final[dict[str, dict[str, str]]] = {
         _REFERENCE,
         MULTILINE | VERBOSE,
     )
-}
+})
 
 
 def _section(title: str) -> str:
