@@ -10,7 +10,7 @@ from attrs import define
 if TYPE_CHECKING:
     from engines import Engine
 
-PAIRS: Final[list[tuple[int, int]]] = [(1, 2), (3, 4)]
+PAIRS: Final[tuple[tuple[int, int], ...]] = ((1, 2), (3, 4))
 
 
 def compare(
