@@ -6,7 +6,7 @@ It sits beside `_render`, neither imports the other, and both import only the fo
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING  # simplint: ignore[init-module-content]  # type-only relay avoids cycles
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .._types import Annotation as Annotation  # simplint: ignore[private-import-path]  # root API stays unchanged
