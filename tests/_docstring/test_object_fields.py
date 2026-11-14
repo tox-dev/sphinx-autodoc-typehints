@@ -185,7 +185,7 @@ def test_inject_overloads_leaves_out_types_a_formatter_hides(app: SphinxTestApp)
 def test_inject_overloads_lists_none(
     app: SphinxTestApp,
     what: str,
-    func: Callable[..., object],  # simplint: ignore[callable-ellipsis]  # any callable is passed
+    func: Callable[..., object],
     lines: list[str],
     expected: list[str],
 ) -> None:
@@ -800,7 +800,7 @@ def test_overloads_name_an_alias_as_written(build_text: BuildText, index: str, e
 
 def test_property_whose_setter_a_mock_decorates_shows_no_setter_type(
     process: Process,
-    mocked_object: Callable[..., None],  # simplint: ignore[callable-ellipsis]  # any callable is passed
+    mocked_object: Callable[..., None],
 ) -> None:
     assert process("property", f"{__name__}.Holder.value", property(_get_int, mocked_object), ["Summary."]) == [
         "Summary."

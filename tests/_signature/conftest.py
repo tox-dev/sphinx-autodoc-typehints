@@ -22,7 +22,7 @@ class SignatureOf(Protocol):
         self,
         what: str,
         name: str,
-        obj: Callable[..., object],  # simplint: ignore[callable-ellipsis]  # any callable is passed
+        obj: Callable[..., object],
         given: str | None = "",
     ) -> tuple[str, None] | None: ...
 
@@ -32,7 +32,7 @@ def signature_of(app: SphinxTestApp) -> SignatureOf:
     def process(
         what: str,
         name: str,
-        obj: Callable[..., object],  # simplint: ignore[callable-ellipsis]  # any callable is passed
+        obj: Callable[..., object],
         given: str | None = "",
     ) -> tuple[str, None] | None:
         return process_signature(app, what, name, obj, Options(), given, "")

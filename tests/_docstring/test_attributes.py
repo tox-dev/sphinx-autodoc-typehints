@@ -476,7 +476,7 @@ def test_build_documents_the_fields_of_an_attrs_class(build_text: BuildText, rst
 
 def test_instance_variable_of_a_class_whose_init_a_mock_decorates_stays_as_written(
     process: Process,
-    mocked_object: Callable[..., object],  # simplint: ignore[callable-ellipsis]  # any callable is passed
+    mocked_object: Callable[..., object],
 ) -> None:
     widget = type("Widget", (), {"__init__": mocked_object})
     assert process("class", "mod.Widget", widget, [":ivar size: the size"]) == [":ivar size: the size"]
