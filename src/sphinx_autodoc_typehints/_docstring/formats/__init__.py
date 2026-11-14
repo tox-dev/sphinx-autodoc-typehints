@@ -7,7 +7,7 @@ fields napoleon writes from Google and NumPy docstrings.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING  # simplint: ignore[init-module-content]  # type-only relay avoids cycles
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .. import Documented as Documented

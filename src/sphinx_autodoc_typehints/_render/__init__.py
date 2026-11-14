@@ -7,7 +7,7 @@ the guard binder.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING  # simplint: ignore[init-module-content]  # type-only relay avoids cycles
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .._refs import (  # simplint: ignore[private-import-path]  # root API stays unchanged
