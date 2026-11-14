@@ -31,8 +31,8 @@ class QualifiedCallable(Protocol):
 
     def __call__(
         self,
-        *args: object,  # simplint: ignore[imprecise-annotation]  # the proxy forwards calls of any shape
-        **kwargs: object,  # simplint: ignore[imprecise-annotation]  # the proxy forwards calls of any shape
+        *args: object,
+        **kwargs: object,
     ) -> object: ...  # simplint: ignore[imprecise-annotation]  # the proxy forwards calls of any shape
 
 

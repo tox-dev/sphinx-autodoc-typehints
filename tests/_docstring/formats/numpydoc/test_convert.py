@@ -533,7 +533,7 @@ def _annotated_ratio(value: int) -> float: ...
 )
 def test_numpydoc_unnamed_return_keeps_its_type(
     process: Process,
-    func: Callable[..., object],  # simplint: ignore[callable-ellipsis]  # any callable is passed
+    func: Callable[..., object],
     rtype: str,
 ) -> None:
     lines = [":Returns:", "", "    float", "        The ratio.", ""]

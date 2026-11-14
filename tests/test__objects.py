@@ -70,12 +70,12 @@ def test_get_obj_location_of_generated_code_is_none() -> None:
 
 # a mock answers every __wrapped__ with another mock, which unwrapping past it follows to the recursion limit
 def test_callable_target_of_a_mock_is_none(
-    mocked_object: Callable[..., object],  # simplint: ignore[callable-ellipsis]  # any callable is passed
+    mocked_object: Callable[..., object],
 ) -> None:
     assert callable_target(mocked_object) is None
 
 
 def test_constructor_name_of_a_new_a_mock_decorates_is_new(
-    mocked_object: Callable[..., object],  # simplint: ignore[callable-ellipsis]  # any callable is passed
+    mocked_object: Callable[..., object],
 ) -> None:
     assert constructor_name(type("Made", (), {"__new__": mocked_object})) == "__new__"

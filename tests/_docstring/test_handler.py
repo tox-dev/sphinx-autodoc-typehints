@@ -46,7 +46,7 @@ class _Joiner:
 )
 def test_callable_takes_the_types_of_what_it_calls(
     process: Process,
-    obj: Callable[..., str],  # simplint: ignore[callable-ellipsis]  # any callable is passed
+    obj: Callable[..., str],
 ) -> None:
     assert process("function", "mod.joined", obj, [":param sep: the separator"]) == [
         f":type sep: {STR}",
