@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Final
 
-from ...attributes import (  # simplint: ignore[private-import-path]  # package init cycle
+from ...attributes import (
     documented_attributes,
 )
 

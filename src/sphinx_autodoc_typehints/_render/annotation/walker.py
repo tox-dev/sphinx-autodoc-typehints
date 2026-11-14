@@ -359,9 +359,7 @@ def _named_class(reference: _Reference) -> _Frame:
     yield _Rendered(text=f"{text}{'\\ ' if reference.formatted_args else ''}{reference.formatted_args}")
 
 
-@dataclass(
-    slots=True, kw_only=True
-)  # simplint: ignore[dataclass-frozen]  # the renderer reassigns fields while it walks
+@dataclass(slots=True, kw_only=True)
 class _Reference:
     annotation: Hint | NewType | None
     config: Config

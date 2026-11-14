@@ -123,7 +123,7 @@ def setup(app: Sphinx) -> dict[str, bool | int | str]:
     }
 
 
-def _sphinx_autodoc_typehints_type_role(  # simplint: ignore[imprecise-annotation]  # docutils passes any options
+def _sphinx_autodoc_typehints_type_role(
     _role: str,
     _rawtext: str,
     text: str,

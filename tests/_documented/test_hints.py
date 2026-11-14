@@ -122,7 +122,7 @@ class _StatesStrings:
 def test_resolved_type_hints(
     app: SphinxTestApp,
     name: str,
-    original: Callable[..., object],  # simplint: ignore[callable-ellipsis]  # any callable is passed
+    original: Callable[..., object],
     obj: QualifiedCallable,
     expected: ResolvedHints,
 ) -> None:

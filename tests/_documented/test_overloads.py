@@ -120,7 +120,7 @@ _FETCH.__dict__["__signature__"] = signature(_fetch).replace(parameters=list(sig
 def test_typed_overloads_types_each_overload(
     app: SphinxTestApp,
     name: str,
-    target: Callable[..., object],  # simplint: ignore[callable-ellipsis]  # any callable is passed
+    target: Callable[..., object],
     skip: int,
     arguments: dict[TypeParam, Annotation],
     expected: list[tuple[list[str], dict[str, Annotation]]],
@@ -152,7 +152,7 @@ def test_typed_overloads_types_each_overload(
 def test_typed_overloads_declares_the_type_params_of_each_overload(
     app: SphinxTestApp,
     name: str,
-    target: Callable[..., object],  # simplint: ignore[callable-ellipsis]  # any callable is passed
+    target: Callable[..., object],
     expected: list[frozenset[TypeParam]],
 ) -> None:
     overloads = resolve_overloads(target)
@@ -189,7 +189,7 @@ def test_typed_overloads_name_an_alias_in_the_signature(build_text: BuildText) -
 def test_typed_overloads_of_functions_wrapping_a_mock_keep_their_types(
     app: SphinxTestApp,
     monkeypatch: MonkeyPatch,
-    mocked_object: Callable[..., object],  # simplint: ignore[callable-ellipsis]  # any callable is passed
+    mocked_object: Callable[..., object],
 ) -> None:
     for function in get_overloads(_pick):
         monkeypatch.setattr(function, "__wrapped__", mocked_object, raising=False)
@@ -202,7 +202,7 @@ def test_typed_overloads_of_functions_wrapping_a_mock_keep_their_types(
 def test_typed_overloads_stating_a_signature_over_a_mock_keep_every_parameter(
     app: SphinxTestApp,
     monkeypatch: MonkeyPatch,
-    mocked_object: Callable[..., object],  # simplint: ignore[callable-ellipsis]  # any callable is passed
+    mocked_object: Callable[..., object],
 ) -> None:
     monkeypatch.setattr(_FETCH, "__wrapped__", mocked_object)
     overloads = resolve_overloads(_FETCH)
