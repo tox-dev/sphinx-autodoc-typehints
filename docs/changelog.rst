@@ -6,6 +6,29 @@
 
 .. towncrier release notes start
 
+.. _release-3-17-6:
+
+*********************
+ 3.17.6 (2026-11-18)
+*********************
+
+.. _release-3-17-6-fixed:
+
+Fixed
+-----
+
+- Keep the docstring type of a parameter ending in an underscore, such as ``lambda_``, when napoleon writes its fields
+  unescaped (:pr:`1124`) by :user:`abhishekcpp007` and :user:`gaborbernat`.
+
+.. _release-3-17-6-packaging:
+
+Packaging
+---------
+
+- Every wheel now carries a `PEP 770 <https://peps.python.org/pep-0770/>`_ CycloneDX SBOM in its ``.dist-info/sboms``
+  directory, written at build time by `python-sbom <https://github.com/tox-dev/python-sbom>`_ (:pr:`1125`) by
+  :user:`gaborbernat`.
+
 .. _release-3-17-5:
 
 *********************
