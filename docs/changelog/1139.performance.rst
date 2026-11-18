@@ -1,0 +1,1 @@
+Defer extension and resolver imports until their exports are used on Python 3.15.
