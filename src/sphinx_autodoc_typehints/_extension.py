@@ -6,6 +6,18 @@ It registers the options, roles, directive, post-transform and event handlers, a
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "docutils",
+    "pathlib",
+    f"{__spec__.parent}._config",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}._docstring",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}._patches",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}._render",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}._resolve",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}._signature",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.version",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 from pathlib import Path
 from typing import TYPE_CHECKING
 

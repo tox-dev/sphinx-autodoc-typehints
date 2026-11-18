@@ -2,6 +2,12 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "functools",
+    f"{__spec__.parent.rsplit('.', 1)[0]}._render",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent.rsplit('.', 1)[0]}._resolve",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 from functools import partial
 from typing import TYPE_CHECKING, Unpack
 

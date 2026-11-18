@@ -7,6 +7,14 @@ They come from `autodoc_type_aliases`, the documented `py:type` entries, and mod
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    f"{__spec__.parent.rsplit('.', 1)[0]}._objects",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent.rsplit('.', 1)[0]}._refs",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.guards.overlay",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.guards.run",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.source",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 from typing import TYPE_CHECKING
 
 from .._objects import (  # simplint: ignore[private-import-path]  # init cycle

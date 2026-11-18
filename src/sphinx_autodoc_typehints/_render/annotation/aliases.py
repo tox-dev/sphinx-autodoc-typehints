@@ -2,6 +2,14 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "inspect",
+    "sphinx_autodoc_typehints._objects",
+    "types",
+    f"{__spec__.parent.rsplit('.', 1)[0]}.context",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.names",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 from inspect import getmodule
 from sys import modules
 from types import ModuleType

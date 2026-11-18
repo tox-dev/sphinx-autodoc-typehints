@@ -2,6 +2,12 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    f"{__spec__.parent.rsplit('.', 1)[0]}.context",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.markup",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.walker",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 import re
 from re import DOTALL, Match, sub
 from typing import TYPE_CHECKING, Final

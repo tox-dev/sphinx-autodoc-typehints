@@ -2,6 +2,12 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "dataclasses",
+    f"{__spec__.parent.rsplit('.', 1)[0]}._objects",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent.rsplit('.', 1)[0]}._private_imports",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 from dataclasses import MISSING, fields, is_dataclass
 from typing import TYPE_CHECKING
 

@@ -6,6 +6,12 @@ It also wraps `typehints_fixup_module_name` so the cached environment can pickle
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "inspect",
+    "sphinx.errors",
+    f"{__spec__.parent}._render",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 from dataclasses import dataclass
 from inspect import getsource
 from typing import TYPE_CHECKING, Final, Literal

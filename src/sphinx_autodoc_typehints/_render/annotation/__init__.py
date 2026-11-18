@@ -2,6 +2,12 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    f"{__spec__.parent}.names",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.rendered",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.walker",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:

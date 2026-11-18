@@ -2,6 +2,14 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    f"{__spec__.parent.rsplit('.', 1)[0]}.base",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent.rsplit('.', 1)[0]}.napoleon.typed",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent.rsplit('.', 1)[0]}.numpydoc.convert",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.keywords",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.rtype",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 

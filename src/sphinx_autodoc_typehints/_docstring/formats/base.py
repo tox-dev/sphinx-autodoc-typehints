@@ -2,6 +2,13 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "inspect",
+    "itertools",
+    "sphinx.util.inspect",
+    f"{__spec__.parent.rsplit('.', 2)[0]}._render",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 import re
 from dataclasses import dataclass
 from inspect import Parameter

@@ -2,6 +2,12 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "ast",
+    "inspect",
+    "warnings",
+]
+
 import re
 import sys
 from ast import (

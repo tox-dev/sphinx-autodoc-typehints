@@ -2,6 +2,12 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "inspect",
+    "sphinx.util.inspect",
+    f"{__spec__.parent.rsplit('.', 1)[0]}._render",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 from inspect import Parameter
 from typing import TYPE_CHECKING
 

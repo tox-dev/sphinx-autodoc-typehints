@@ -2,6 +2,13 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "inspect",
+    f"{__spec__.parent.rsplit('.', 1)[0]}._objects",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent.rsplit('.', 1)[0]}._resolve",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent.rsplit('.', 1)[0]}._types",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 from dataclasses import dataclass
 from inspect import isclass, isfunction
 from typing import TYPE_CHECKING

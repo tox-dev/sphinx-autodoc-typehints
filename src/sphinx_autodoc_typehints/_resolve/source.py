@@ -6,6 +6,19 @@ It reads a `def`, a module or class body, and the names an annotation refers to.
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "annotationlib",
+    "ast",
+    "collections",
+    "inspect",
+    "sphinx.errors",
+    "sphinx.pycode",
+    "textwrap",
+    "types",
+    "warnings",
+    f"{__spec__.parent.rsplit('.', 1)[0]}._types",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 from ast import AST, AnnAssign, AsyncFunctionDef, ClassDef, FunctionDef, Module, Name, arg, parse, unparse, walk
 from collections import defaultdict
 from functools import cache

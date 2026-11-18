@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    f"{__spec__.parent}.backfill.stubs.find",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.guards.overlay",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 from .backfill.stubs.find import STUB_FILES
 from .guards.overlay import SHADOWED_BY_GUARD
 

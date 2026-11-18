@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "docutils",
+    f"{__spec__.parent}.keywords",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 from typing import TYPE_CHECKING, Final
 
 from docutils import nodes

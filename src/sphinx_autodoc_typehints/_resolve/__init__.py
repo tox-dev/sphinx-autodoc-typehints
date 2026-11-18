@@ -6,6 +6,19 @@ It sits beside `_render`, neither imports the other, and both import only the fo
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    f"{__spec__.parent}.aliases",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.attributes",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.backfill",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.evaluate",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.forget",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.generics",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.guards",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.hints",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.overloads",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.typed_dict",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:

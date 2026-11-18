@@ -6,6 +6,24 @@ It also types a C data descriptor from the stub of its class.
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "ast",
+    "inspect",
+    "types",
+    f"{__spec__.parent.rsplit('.', 1)[0]}._refs",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent.rsplit('.', 1)[0]}._warnings",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.backfill.stubs.context",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.backfill.stubs.extract",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.backfill.stubs.find",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.backfill.type_comments",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.evaluate.expression",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.evaluate.type_hints",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.generics",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.guards.overlay",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.guards.parse",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.guards.run",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 from ast import AnnAssign, ClassDef, FunctionDef, If, Name, stmt, unparse
 from inspect import get_annotations, getmodule, isclass, isroutine
 from types import GetSetDescriptorType, MemberDescriptorType, ModuleType

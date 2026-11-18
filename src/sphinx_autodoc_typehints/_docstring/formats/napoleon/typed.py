@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "typing",
+]
+
 import re
 from typing import Final
 

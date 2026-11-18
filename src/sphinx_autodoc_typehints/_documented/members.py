@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "inspect",
+    f"{__spec__.parent.rsplit('.', 1)[0]}._objects",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 from inspect import getattr_static, isclass
 from typing import TYPE_CHECKING
 

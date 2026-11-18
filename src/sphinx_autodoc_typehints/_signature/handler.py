@@ -2,6 +2,19 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "inspect",
+    "sphinx.util.inspect",
+    f"{__spec__.parent.rsplit('.', 1)[0]}._documented",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent.rsplit('.', 1)[0]}._objects",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent.rsplit('.', 1)[0]}._private_imports",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent.rsplit('.', 1)[0]}._resolve",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent.rsplit('.', 1)[0]}._state",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent.rsplit('.', 1)[0]}._warnings",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.header.overloads",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.text",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 from inspect import Parameter, Signature, isclass, isfunction, ismethod
 from typing import TYPE_CHECKING
 

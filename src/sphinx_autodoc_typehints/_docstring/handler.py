@@ -2,6 +2,23 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "inspect",
+    "sphinx.util.inspect",
+    f"{__spec__.parent.rsplit('.', 1)[0]}._documented",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent.rsplit('.', 1)[0]}._objects",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent.rsplit('.', 1)[0]}._render",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent.rsplit('.', 1)[0]}._resolve",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.attributes",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.class_parts",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.deprecation",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.formats.detect",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.formats.napoleon.attributes",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.object_fields",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.parameters",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.returns",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 from inspect import isclass, isgetsetdescriptor, ismemberdescriptor, ismodule
 from typing import TYPE_CHECKING
 

@@ -7,6 +7,12 @@ packages those two build on.
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    f"{__spec__.parent}.deprecation",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.formats",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.handler",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:

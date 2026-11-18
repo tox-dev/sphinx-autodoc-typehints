@@ -6,6 +6,11 @@ Each category is `sphinx_autodoc_typehints.<subtype>`.
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "sphinx.util",
+    f"{__spec__.parent}._objects",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 from typing import TYPE_CHECKING, Literal
 
 from sphinx.util import logging

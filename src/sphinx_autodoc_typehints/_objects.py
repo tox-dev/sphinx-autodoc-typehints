@@ -6,6 +6,14 @@ They unwrap callables, pick the constructor a signature comes from, and find wha
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "functools",
+    "inspect",
+    "sphinx.ext.autodoc.mock",
+    "sphinx.util.inspect",
+    "types",
+]
+
 from functools import cached_property, partial, partialmethod
 from inspect import Signature, getfile, getmodule, getsourcefile, getsourcelines, isclass, isroutine, unwrap
 from sys import modules
