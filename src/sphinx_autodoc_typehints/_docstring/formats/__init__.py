@@ -7,6 +7,11 @@ fields napoleon writes from Google and NumPy docstrings.
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    f"{__spec__.parent}.field_list",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.napoleon",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:

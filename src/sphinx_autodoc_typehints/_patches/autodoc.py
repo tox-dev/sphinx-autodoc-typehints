@@ -6,6 +6,14 @@ They capture overloads, write multi-line signatures, and evaluate annotations wi
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "sphinx.directives",
+    "sphinx.ext.autodoc._dynamic",
+    "sphinx.pycode",
+    f"{__spec__.parent.rsplit('.', 1)[0]}._resolve",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent.rsplit('.', 1)[0]}._state",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 from functools import lru_cache, wraps
 from typing import TYPE_CHECKING, Final
 

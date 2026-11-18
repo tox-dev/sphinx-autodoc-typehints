@@ -7,6 +7,15 @@ sits below `_docstring` and `_signature` and above `_render` and `_resolve`.
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    f"{__spec__.parent}.entry",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.factory_defaults",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.hints",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.members",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.overloads",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.scope",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:

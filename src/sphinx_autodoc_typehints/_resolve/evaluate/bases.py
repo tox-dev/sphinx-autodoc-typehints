@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "inspect",
+    f"{__spec__.parent.rsplit('.', 1)[0]}.guards.overlay",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 from inspect import get_annotations
 from typing import TYPE_CHECKING, get_type_hints
 

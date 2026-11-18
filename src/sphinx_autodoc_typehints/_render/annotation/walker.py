@@ -6,6 +6,25 @@ It also holds the readers of starred aliases and type parameters that the signat
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "enum",
+    "inspect",
+    "sphinx.ext.autodoc.mock",
+    "sphinx.util.inspect",
+    "sphinx.util.typing",
+    "sphinx_autodoc_typehints._objects",
+    "sphinx_autodoc_typehints._refs",
+    "sphinx_autodoc_typehints._types",
+    "types",
+    f"{__spec__.parent.rsplit('.', 1)[0]}.context",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent.rsplit('.', 1)[0]}.deferred",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent.rsplit('.', 1)[0]}.enum_member",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent.rsplit('.', 1)[0]}.intersphinx",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent.rsplit('.', 1)[0]}.value",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.aliases",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.names",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 import re
 import typing  # probed at runtime for names typing_extensions backports
 from dataclasses import dataclass

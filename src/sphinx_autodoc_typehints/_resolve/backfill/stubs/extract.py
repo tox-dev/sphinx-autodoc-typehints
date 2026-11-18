@@ -2,6 +2,12 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "ast",
+    "sphinx_autodoc_typehints._resolve.source",
+    f"{__spec__.parent}.find",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 from ast import AnnAssign, AsyncFunctionDef, ClassDef, FunctionDef, Name, stmt, unparse
 from typing import TYPE_CHECKING
 

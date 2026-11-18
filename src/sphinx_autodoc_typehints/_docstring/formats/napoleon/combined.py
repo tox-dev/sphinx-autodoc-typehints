@@ -2,6 +2,15 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "inspect",
+    "itertools",
+    "re",
+    "sphinx.locale",
+    f"{__spec__.parent.rsplit('.', 1)[0]}.base",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent.rsplit('.', 3)[0]}._render",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 import re  # a from-import of compile would shadow the builtin
 from inspect import Parameter
 from itertools import accumulate

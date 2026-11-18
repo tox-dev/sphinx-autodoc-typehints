@@ -2,6 +2,16 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "ast",
+    "inspect",
+    "sphinx_autodoc_typehints._refs",
+    "sphinx_autodoc_typehints._warnings",
+    "textwrap",
+    "types",
+    f"{__spec__.parent.rsplit('.', 1)[0]}.source",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 from ast import AsyncFunctionDef, FunctionDef, parse
 from inspect import getsourcelines
 from textwrap import dedent

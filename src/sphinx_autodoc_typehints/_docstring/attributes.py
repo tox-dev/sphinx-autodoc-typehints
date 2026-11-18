@@ -6,6 +6,13 @@ The types come from the annotations of the class or module body and of `__init__
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "contextlib",
+    f"{__spec__.parent.rsplit('.', 1)[0]}._objects",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent.rsplit('.', 1)[0]}._render",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent.rsplit('.', 1)[0]}._resolve",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 import re  # a from-import of compile would shadow the builtin
 from contextlib import suppress
 from textwrap import dedent

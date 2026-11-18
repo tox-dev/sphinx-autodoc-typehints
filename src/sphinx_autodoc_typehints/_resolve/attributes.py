@@ -2,6 +2,16 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "ast",
+    f"{__spec__.parent.rsplit('.', 1)[0]}._objects",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.evaluate.expression",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.evaluate.type_hints",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.generics",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.guards.overlay",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.source",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 from ast import (
     AST,
     AnnAssign,

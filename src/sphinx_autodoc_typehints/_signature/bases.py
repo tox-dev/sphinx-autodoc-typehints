@@ -2,6 +2,13 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "sphinx.ext.autodoc.mock",
+    "sphinx_autodoc_typehints._objects",
+    f"{__spec__.parent.rsplit('.', 1)[0]}._documented",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent.rsplit('.', 1)[0]}._render",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 from typing import TYPE_CHECKING
 
 from sphinx.ext.autodoc.mock import ismock

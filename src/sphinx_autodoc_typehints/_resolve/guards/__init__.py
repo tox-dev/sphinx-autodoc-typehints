@@ -6,6 +6,11 @@ It parses the block, runs it, and lets annotations read what it binds.
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    f"{__spec__.parent}.overlay",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.run",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:

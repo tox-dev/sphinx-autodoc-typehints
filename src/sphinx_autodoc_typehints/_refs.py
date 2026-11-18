@@ -6,6 +6,10 @@ It also holds the helpers that read written annotations.
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "types",
+]
+
 from sys import version_info
 from types import GenericAlias
 from typing import TYPE_CHECKING, TypeAliasType, Union, get_origin, override

@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    f"{__spec__.parent}.field_list.edit",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.numpydoc.convert",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 from .field_list.edit import FieldListFormat
 from .numpydoc.convert import is_numpydoc_section
 

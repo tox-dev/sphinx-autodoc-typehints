@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    "sphinx.ext.napoleon.docstring",
+    f"{__spec__.parent}.autodoc",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 from functools import lru_cache, wraps
 
 from sphinx.ext.napoleon.docstring import GoogleDocstring

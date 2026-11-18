@@ -7,6 +7,16 @@ the guard binder.
 
 from __future__ import annotations
 
+__lazy_modules__ = [
+    f"{__spec__.parent}.annotation",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.context",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.deferred",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.enum_member",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.intersphinx",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.rst",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+    f"{__spec__.parent}.value",  # ty: ignore[unresolved-attribute]  # imported modules have a spec
+]
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
