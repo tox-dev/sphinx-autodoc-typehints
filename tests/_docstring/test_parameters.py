@@ -105,6 +105,13 @@ def _defaulted(amount: int = 1) -> None: ...
             marks=without_rtype(typehints_defaults="comma"),
         ),
         param(
+            lambda lambda_=1: lambda_,
+            [":param lambda_: the factor", ":type lambda_: int"],
+            [r":param lambda\_: the factor", r":type lambda\_: int, default: :sphinx_autodoc_typehints_value:`1`"],
+            id="comma-trailing-underscore",
+            marks=without_rtype(typehints_defaults="comma"),
+        ),
+        param(
             lambda count=1: count,
             [":param count: the count", ":type count: int"],
             [":param count: the count", ":type count: int (default: :sphinx_autodoc_typehints_value:`1`)"],
@@ -315,6 +322,12 @@ def _starred_trailing(*args_: float) -> None: ...
             [r":param lambda\_: description"],
             [rf":type lambda\_: {FLOAT}", r":param lambda\_: description"],
             id="escaped",
+        ),
+        param(
+            _trailing,
+            [":param lambda_: description", ":type lambda_: str"],
+            [r":param lambda\_: description", rf":type lambda\_: {FLOAT}"],
+            id="unescaped-type-line-replaced",
         ),
         param(_trailing, [], [rf":type lambda\_: {FLOAT}", r":param lambda\_:"], id="undocumented-escaped"),
         param(

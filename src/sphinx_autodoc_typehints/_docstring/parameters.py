@@ -39,6 +39,8 @@ if TYPE_CHECKING:
     from .formats.field_list.edit import FieldListFormat
 
 VARIADIC_STARS: Final[Mapping[str, str]] = frozendict({"VAR_POSITIONAL": "\\*", "VAR_KEYWORD": "\\*\\*"})
+# napoleon types a keyword argument with kwtype, and paramtype works for both parameter kinds
+_TYPE_FIELDS: Final[tuple[str, ...]] = ("type", "paramtype", "kwtype")
 
 
 def inject_parameters(
@@ -155,8 +157,7 @@ class _Fields:
             self._write_type(at, doc_name, param, inline_type)
 
     def _write_type(self, at: int, doc_name: str, param: _Parameter, inline_type: str) -> None:
-        # napoleon types a keyword argument with kwtype, and paramtype works for both parameter kinds
-        fields = tuple(f":{field} {doc_name}: " for field in ("type", "paramtype", "kwtype"))
+        fields = tuple(f":{field} {doc_name}: " for field in _TYPE_FIELDS)
         preexisting_line, has_preexisting = next(
             ((line, True) for line in self.lines if line.startswith(fields)), (fields[0], False)
         )
@@ -241,6 +242,11 @@ def _find_param(lines: list[str], arg_name: str, fmt: FieldListFormat) -> tuple[
     if rewritten == lines[insert_index]:
         return arg_name, insert_index
     lines[insert_index] = rewritten
+    # napoleon writes the type field with the same unescaped name, so it moves along to keep pairing with the param
+    type_fields = tuple(f":{field} {arg_name}:" for field in _TYPE_FIELDS)
+    for index, line in enumerate(lines):
+        if line.startswith(type_fields):
+            lines[index] = line.replace(f" {arg_name}:", f" {escaped_name}:", 1)
     return escaped_name, insert_index
 
 
