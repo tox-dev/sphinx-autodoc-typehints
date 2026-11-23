@@ -208,6 +208,26 @@ def test_declared_type_params_of_a_method_documented_under_a_subclass(generic_mo
     assert declared == frozenset((*generic_module.Box.__type_params__, *generic_module.Relay.__type_params__))
 
 
+@mark.sphinx("text", testroot="type-params")
+def test_callable_with_none_qualname_renders_its_type(
+    build_text: BuildText, resolve_module: Callable[[str], ModuleType]
+) -> None:
+    module = resolve_module(
+        dedent("""\
+            class Convert:
+                def __init__(self) -> None:
+                    self.__qualname__ = None
+
+                def __call__(self, value: int) -> str:
+                    return str(value)
+
+            convert = Convert()
+        """),
+    )
+    lines = build_text(f".. autofunction:: {module.__name__}.convert").splitlines()
+    assert lines[lines.index("   Return type:") + 1].strip() == '"str"'
+
+
 @mark.parametrize(
     ("documenting", "attribute", "expected"),
     [

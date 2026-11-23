@@ -44,7 +44,8 @@ def declared_type_params(
     That is its own, those of `function` documenting it, those of the class defining `function`, which a method
     uses from the header of its class, and those of the class `documenting` it, whose own replace inherited ones.
     """
-    owner = object_at(getattr(function, "__module__", None), getattr(function, "__qualname__", "").split(".")[:-1])
+    qualname = getattr(function, "__qualname__", None) or ""
+    owner = object_at(getattr(function, "__module__", None), qualname.split(".")[:-1])
     return frozenset((
         *type_params_of(documented, legacy=True),
         *type_params_of(function, legacy=True),
