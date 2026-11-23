@@ -542,6 +542,26 @@ def test_described_none_return_keeps_its_description(process: Process) -> None:
     assert process("function", "mod.returns_described_none", returns_described_none, []) == [":return: nothing at all"]
 
 
+@mark.sphinx(confoverrides={"autodoc_preserve_defaults": True, "typehints_document_rtype_none": False})
+def test_none_return_hidden_with_preserved_defaults(build_text: BuildText, make_module: MakeModule) -> None:
+    make_module(
+        "preserved_defaults",
+        dedent("""\
+            from __future__ import annotations
+
+
+            def reset(value: int = 0x10) -> None:
+                \"\"\"Reset the value.\"\"\"
+        """),
+    )
+
+    assert build_text(".. autofunction:: preserved_defaults.reset") == dedent("""\
+        preserved_defaults.reset(value=0x10)
+
+           Reset the value.
+    """)
+
+
 @mark.sphinx(confoverrides={"typehints_formatter": hide_type})
 def test_return_type_hidden_by_formatter(process: Process) -> None:
     def double(value: int) -> int: ...
