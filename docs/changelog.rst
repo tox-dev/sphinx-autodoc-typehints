@@ -6,6 +6,28 @@
 
 .. towncrier release notes start
 
+.. _release-3-17-7:
+
+*********************
+ 3.17.7 (2026-11-23)
+*********************
+
+.. _release-3-17-7-fixed:
+
+Fixed
+-----
+
+- Honor ``typehints_document_rtype_none = False`` when Sphinx preserves default values with
+  ``autodoc_preserve_defaults`` (:pr:`1144`) by :user:`gaborbernat`.
+- Render type hints for callables whose ``__qualname__`` is ``None`` (:pr:`1145`) by :user:`gaborbernat`.
+
+.. _release-3-17-7-performance:
+
+Performance
+-----------
+
+- Defer extension and resolver imports until their exports are used on Python 3.15 (:pr:`1139`) by :user:`gaborbernat`.
+
 .. _release-3-17-6:
 
 *********************
