@@ -88,7 +88,9 @@ def inject_rtype(entry: Entry, lines: list[str], fmt: FieldListFormat, hints: Re
         lines.append(f":return: {return_doc}")
 
     # a Doc on a None return still describes it, so the description stays and only the type drops out
-    if not app.config.typehints_document_rtype_none and _unannotated(type_hints["return"]) is NoneType:
+    if not app.config.typehints_document_rtype_none and (
+        (returned := _unannotated(type_hints["return"])) is None or returned is NoneType
+    ):
         return
 
     info = fmt.get_rtype_insert_info(app, lines)
