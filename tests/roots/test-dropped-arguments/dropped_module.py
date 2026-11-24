@@ -133,7 +133,7 @@ class Commented:
 
     kind: Engine[int]
 
-    def bind(self, kind):  # ruff:ignore[missing-type-function-argument, missing-return-type-undocumented-public-function]  # typed by the comment
+    def bind(self, kind):  # ruff:ignore[missing-type-function-argument, missing-return-type-public-function]  # typed by the comment
         # type: (Engine[str]) -> None
         """
         Bind.

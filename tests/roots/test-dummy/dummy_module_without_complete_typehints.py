@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 
-def function_with_some_defaults_and_without_typehints(num, opt=None):  # ruff:ignore[missing-type-function-argument, missing-return-type-undocumented-public-function]  # the fixture omits its types
+def function_with_some_defaults_and_without_typehints(num, opt=None):  # ruff:ignore[missing-type-function-argument, missing-return-type-public-function]  # the fixture omits its types
     """
     Function docstring.
 
@@ -10,7 +10,7 @@ def function_with_some_defaults_and_without_typehints(num, opt=None):  # ruff:ig
     """
 
 
-def function_with_some_defaults_and_some_typehints(num: int, opt=None):  # ruff:ignore[missing-type-function-argument, missing-return-type-undocumented-public-function]  # the fixture omits one type
+def function_with_some_defaults_and_some_typehints(num: int, opt=None):  # ruff:ignore[missing-type-function-argument, missing-return-type-public-function]  # the fixture omits one type
     """
     Function docstring.
 
