@@ -203,6 +203,50 @@ def test_header_type_links_its_names(build_doctree: BuildDoctree, rst: str, expe
     assert [ref["reftarget"] for ref in signature.findall(addnodes.pending_xref)] == expected
 
 
+@mark.parametrize("descriptor", ["property", "cached_property"])
+@mark.sphinx("dummy")
+def test_wrapped_property_header_links_the_getters_return_type(
+    make_module: MakeModule, build_doctree: BuildDoctree, descriptor: str
+) -> None:
+    make_module(
+        "header_decorator",
+        dedent("""\
+            from functools import wraps
+
+            def decorate(getter):
+                @wraps(getter)
+                def wrapper(*args, **kwargs):
+                    return getter(*args, **kwargs)
+
+                return wrapper
+        """),
+    )
+    make_module("wrapped_header_types", "class Result: pass\n")
+    make_module(
+        "wrapped_header",
+        dedent(f"""\
+            from __future__ import annotations
+
+            from functools import cached_property
+
+            from header_decorator import decorate
+            from wrapped_header_types import Result
+
+            class Service:
+                @{descriptor}
+                @decorate
+                def results(self) -> list[Result]:
+                    return []
+        """),
+    )
+
+    signature = next(build_doctree(".. autoproperty:: wrapped_header.Service.results").findall(addnodes.desc_signature))
+    assert [ref["reftarget"] for ref in signature.findall(addnodes.pending_xref)] == [
+        "list",
+        "wrapped_header_types.Result",
+    ]
+
+
 @mark.sphinx("dummy")
 def test_header_type_links_a_name_with_its_field_role(make_module: MakeModule, build_doctree: BuildDoctree) -> None:
     make_module("alias_package", "type Pair[T] = tuple[T, T]\n")

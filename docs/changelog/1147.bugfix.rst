@@ -1,0 +1,1 @@
+Resolve wrapped property return types in the getter's module so cross-references point to the right types.

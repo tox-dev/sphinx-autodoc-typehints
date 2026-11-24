@@ -12,6 +12,7 @@ from sphinx_autodoc_typehints._objects import (  # simplint: ignore[private-impo
     object_at,
     prefix_of,
     property_getter,
+    unwrapped,
 )
 from sphinx_autodoc_typehints._private_imports import (  # simplint: ignore[private-import-path]  # init cycle
     parse_annotation,
@@ -125,7 +126,7 @@ def _hint(app: Sphinx, module: str, fullname: str, objtype: str) -> Hint | Writt
             hint = (
                 _MISSING
                 if (getter := property_getter(member)) is None
-                else _resolved_hints(app, getter, name).get("return", _MISSING)
+                else _resolved_hints(app, unwrapped(getter) or getter, name).get("return", _MISSING)
             )
         else:
             # the document being read is a new object each time, so neither an earlier document nor build matches
