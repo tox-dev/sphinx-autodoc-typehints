@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 Word = NewType("Word", str)
 
 
-def get_local_function():  # ruff:ignore[missing-return-type-undocumented-public-function]  # the local function it returns is the case
+def get_local_function():  # ruff:ignore[missing-return-type-public-function]  # the local function it returns is the case
     def wrapper(self) -> str:  # ruff:ignore[missing-type-function-argument]  # the local function is the case, as written
         """
         Wrapper
@@ -162,7 +162,7 @@ def function_with_trailing_underscore_google(value: int, lambda_: float | None =
     """
 
 
-def function_with_starred_documentation_param_names(*args: int, **kwargs: str):  # ruff:ignore[missing-return-type-undocumented-public-function]  # the case documents no return type
+def function_with_starred_documentation_param_names(*args: int, **kwargs: str):  # ruff:ignore[missing-return-type-public-function]  # the case documents no return type
     r"""
     Function docstring.
 
@@ -175,7 +175,7 @@ def function_with_starred_documentation_param_names(*args: int, **kwargs: str): 
     """
 
 
-def function_with_escaped_default(flag: str = "\b"):  # ruff:ignore[missing-return-type-undocumented-public-function]  # the case documents no return type
+def function_with_escaped_default(flag: str = "\b"):  # ruff:ignore[missing-return-type-public-function]  # the case documents no return type
     """
     Function docstring.
 
@@ -246,7 +246,7 @@ def function_with_type_aliases(flag: ArrayLike | None, count: Schema) -> str:
     """
 
 
-def function_with_unresolvable_annotation(flag: a.b.c):  # ruff:ignore[missing-return-type-undocumented-public-function, undefined-name]  # the unresolvable annotation is the case
+def function_with_unresolvable_annotation(flag: a.b.c):  # ruff:ignore[missing-return-type-public-function, undefined-name]  # the unresolvable annotation is the case
     """
     Function docstring.
 
@@ -254,7 +254,7 @@ def function_with_unresolvable_annotation(flag: a.b.c):  # ruff:ignore[missing-r
     """
 
 
-def function_with_typehint_comment(  # ruff:ignore[missing-return-type-undocumented-public-function]  # the type comment gives the return type
+def function_with_typehint_comment(  # ruff:ignore[missing-return-type-public-function]  # the type comment gives the return type
     flag,  # type: int  # ruff:ignore[missing-type-function-argument]  # the type comment gives the type
     count,  # type: str  # ruff:ignore[missing-type-function-argument]  # the type comment gives the type
 ):
@@ -281,7 +281,7 @@ class ClassWithTypehints:
         # type: (...) -> None
         ...
 
-    def foo(  # ruff:ignore[missing-return-type-undocumented-public-function]  # the type comment gives the return type
+    def foo(  # ruff:ignore[missing-return-type-public-function]  # the type comment gives the return type
         self,
         flag,  # type: str  # ruff:ignore[missing-type-function-argument]  # the type comment gives the type
     ):
@@ -292,13 +292,13 @@ class ClassWithTypehints:
         :arg flag: foo
         """
 
-    def method_without_typehint(self, flag):  # ruff:ignore[missing-type-function-argument, missing-return-type-undocumented-public-function]  # the method without hints is the case
+    def method_without_typehint(self, flag):  # ruff:ignore[missing-type-function-argument, missing-return-type-public-function]  # the method without hints is the case
         """
         Method docstring.
         """
 
 
-def function_with_typehint_comment_not_inline(flag=None, *count, label, **kwargs):  # ruff:ignore[missing-type-function-argument, missing-type-args, missing-type-kwargs, missing-return-type-undocumented-public-function]  # the type comment gives the types
+def function_with_typehint_comment_not_inline(flag=None, *count, label, **kwargs):  # ruff:ignore[missing-type-function-argument, missing-type-args, missing-type-kwargs, missing-return-type-public-function]  # the type comment gives the types
     # type: (Union[str, bytes, None], *str, bytes, **int) -> None
     """
     Function docstring.
@@ -320,7 +320,7 @@ class ClassWithTypehintsNotInline:
     def __init__(self, flag=None) -> None:  # type: (Optional[Callable[[int, bytes], int]]) -> None  # ruff:ignore[missing-type-function-argument]  # the type comment gives the type
         ...
 
-    def foo(self, flag=1):  # type: (Callable[[int, bytes], int]) -> int  # ruff:ignore[missing-type-function-argument, missing-return-type-undocumented-public-function]  # the type comment gives the types
+    def foo(self, flag=1):  # type: (Callable[[int, bytes], int]) -> int  # ruff:ignore[missing-type-function-argument, missing-return-type-public-function]  # the type comment gives the types
         """
         Method docstring.
 
@@ -361,7 +361,7 @@ class Decorator:
     def __init__(self, func: Callable[[int, str], str]) -> None: ...
 
 
-def mocked_import(flag: Mailbox):  # ruff:ignore[missing-return-type-undocumented-public-function]  # the case documents no return type
+def mocked_import(flag: Mailbox):  # ruff:ignore[missing-return-type-public-function]  # the case documents no return type
     """
     A docstring.
 
