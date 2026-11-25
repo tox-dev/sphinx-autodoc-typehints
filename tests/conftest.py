@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from http.client import IncompleteRead
 from importlib import import_module
 from importlib.util import module_from_spec, spec_from_file_location
 from logging import getLogger
@@ -9,7 +10,9 @@ from shutil import copyfile, copytree, ignore_patterns
 from subprocess import CalledProcessError, check_call  # ruff:ignore[suspicious-subprocess-import]  # the C extensions under test need a compiler
 from sys import modules, path, version_info
 from sysconfig import get_config_var, get_path
+from time import sleep
 from typing import TYPE_CHECKING, Final, Protocol
+from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
 
 from pytest import Config, MonkeyPatch, TempPathFactory, fixture, skip
@@ -128,21 +131,33 @@ def inv(pytestconfig: Config) -> Inventory:
     # the cache provider is absent under -p no:cacheprovider
     if (cache := getattr(pytestconfig, "cache", None)) is None or (
         inv_dict := cache.get(cache_path, None)
-    ) is None:  # pragma: no cover -- network fetch, CI has cache
-        url = f"https://docs.python.org/{version_info.major}.{version_info.minor}/objects.inv"
-        try:
-            # sphobjinv downloads without a timeout, so a stalled connection would hang the whole run
-            with urlopen(url, timeout=30) as response:
-                inv_dict = Inventory(
-                    zlib=response.read()  # ty: ignore[unknown-argument]  # https://github.com/astral-sh/ty/issues/2404
-                ).json_dict()
-        except OSError as exc:
-            skip(f"the Python inventory is neither cached nor downloadable from {url}: {exc}")
+    ) is None:  # pragma: no cover -- the network fetch depends on pytest's cache state
+        inv_dict = Inventory(
+            zlib=download_inventory()  # ty: ignore[unknown-argument]  # https://github.com/astral-sh/ty/issues/2404
+        ).json_dict()
         if cache is not None:
             cache.set(cache_path, inv_dict)
     return Inventory(
         inv_dict  # ty: ignore[too-many-positional-arguments]  # https://github.com/astral-sh/ty/issues/2404
     )
+
+
+def download_inventory() -> bytes:
+    url = f"https://docs.python.org/{version_info.major}.{version_info.minor}/objects.inv"
+    delay = 1
+    while True:
+        try:
+            with urlopen(url, timeout=30) as response:
+                return response.read()
+        except (URLError, ConnectionError, TimeoutError, IncompleteRead) as exc:
+            if isinstance(exc, HTTPError):
+                exc.close()
+                if exc.code not in {408, 429, 500, 502, 503, 504}:
+                    raise
+            if delay > 8:
+                raise
+            sleep(delay)
+            delay *= 2
 
 
 @fixture
